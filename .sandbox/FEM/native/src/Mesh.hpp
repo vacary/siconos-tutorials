@@ -49,8 +49,15 @@ struct MVertex
   MVertex(size_t num, double x, double y, double z):_num(num), _x(x), _y(y), _z(z){};
   
   double x(){return _x;};
-  double y(){return _x;};
-  double z(){return _x;};
+  double y(){return _y;};
+  double z(){return _z;};
+
+
+  size_t num()
+  {
+    return _num;
+  }
+
   
   std::vector<MElement *> & elements()
   {

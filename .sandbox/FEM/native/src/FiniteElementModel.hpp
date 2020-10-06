@@ -36,8 +36,6 @@ struct FENode
   /* node number */
   size_t _num;
 
-  /* Element type */
-
   /* associated Mvertex */
   MVertex * _mVertex;
 
@@ -46,13 +44,15 @@ struct FENode
 
   /* */
 
-  FENode(size_t num, MVertex *v, SP::Index dofIndex ):_num(num), _mVertex(v), _dofIndex(dofIndex){};
+  FENode(MVertex *v, SP::Index dofIndex ): _num(v->num()-1), _mVertex(v), _dofIndex(dofIndex){};
 
   SP::Index dofIndex(){return _dofIndex;};
   
   void display()
   {
-    std::cout << " - Fe Node - number: " << _num ;
+    std::cout << "     - Fe Node - number: " << _num
+              << "               - ndof:" << _dofIndex->size()
+              << "               - dofIndex: "<< _dofIndex->front() << ":" << _dofIndex->back()  ;
     std::cout << std::endl;
   };
 };
@@ -65,11 +65,18 @@ enum FINITE_ELEMENT_TYPE
 };
 
 
-static const double GP_T3_x[] = {0.333333333333333333};
-static const double GP_T3_y[] = {0.333333333333333333};
-static const double GP_T3_w[] = {0.5};
-static int  GP_T3_order = 1;
-static  std::vector<const double* > GaussPointsT3 = {GP_T3_x, GP_T3_y, GP_T3_w};
+
+static const double GP_T3_1_p1[]= {0.333333333333333333, 0.333333333333333333, 0.5 }; 
+static  std::vector<const double* > GaussPointsT3_1 = {GP_T3_1_p1};
+
+static const double GP_T3_2_p1[]= {0.66666666666666667, 0.16666666666666667, 0.1666666666666666 };
+static const double GP_T3_2_p2[]= {0.16666666666666667, 0.66666666666666667, 0.1666666666666666 };
+static const double GP_T3_2_p3[]= {0.16666666666666667, 0.16666666666666667, 0.1666666666666666 };
+static  std::vector<const double* > GaussPointsT3_2 = {GP_T3_2_p1, GP_T3_2_p2, GP_T3_2_p3};
+
+
+
+
 
 static  std::vector<const double* > GaussPointsEmpty = {};
 
@@ -87,7 +94,7 @@ struct FElement
   unsigned _ndof;
 
   /** nodes */
-  std::vector<FENode *> _nodes;
+  std::vector<SP::FENode> _nodes;
 
   /* associated Mesh element */
   MElement * _mElement;
@@ -99,13 +106,12 @@ struct FElement
   {
     return _ndof;
   }
-
-  int GaussIntegrationOrder()
+  int order()
   {
     switch(_type)
     {
     case T3:
-      return GP_T3_order;
+      return 1;
       
       break;
     default:
@@ -113,27 +119,61 @@ struct FElement
     }
     return 0;
   }
-  
-  std::vector<const double*> & GaussPoints()
+
+  std::vector<const double*> & GaussPoints(int order)
   {
     switch(_type)
     {
     case T3:
-      return  GaussPointsT3;
+      if (order==1)
+        return  GaussPointsT3_1;
+      else if (order==2)
+        return  GaussPointsT3_2;
       break;
     default:
       RuntimeException::selfThrow("FElement::GaussPoints(). element type not recognized");
     }
     return  GaussPointsEmpty;
   }
-  
+
+  std::vector<SP::FENode> & nodes()
+  {
+    return _nodes;
+  }
+
+  void shapeFunctionIso2D(double ksi, double eta, double* N, double * Nksi, double * Neta )
+  {
+    switch(_type)
+    {
+    case T3:
+    {
+      N[0] = 1.0 - ksi - eta;
+      N[1] = ksi;
+      N[2] = eta;
+      Nksi[0] = -1.0;
+      Nksi[1] = 1.0;
+      Nksi[2] = 0.0;
+      Neta[0] = -1.0;
+      Neta[1] = 0.0;
+      Neta[2] = 1.0;
+      break;
+    }
+    default:
+      RuntimeException::selfThrow("FElement::shapeFunctionIso2D(). element type not recognized");
+    }
+  }
+
   void display()
   {
     std::cout << " - FElement - number: " << _num
               << "            - type: " << _type
               << "            - ndof: " << _ndof
-              << "            - number of nodes" << _nodes.size() ;
+              << "            - number of nodes: " << _nodes.size() ;
     std::cout << std::endl;
+    for (SP::FENode n : _nodes)
+    {
+      n->display();
+    }
   };
 };
 
@@ -147,10 +187,10 @@ protected :
   SP::Mesh _mesh;
 
   /** nodes */
-  std::vector<FENode *> _nodes;
+  std::vector<SP::FENode> _nodes;
 
   /** elements */
-  std::vector<FElement *> _elements;
+  std::vector<SP::FElement> _elements;
 
 
   /** default constructor */
@@ -160,7 +200,7 @@ public:
   FiniteElementModel(SP::Mesh mesh):
     _mesh(mesh){};
 
-  std::vector<FElement *> & elements()
+  std::vector<SP::FElement > &  elements()
   {
     return _elements;
   }
@@ -169,6 +209,24 @@ public:
    * \return the number of dof */
   unsigned int init();
 
+  /* Assembly method for elemetary matrix */
+  void AssembleElementaryMatrix(SP::SiconosMatrix M,
+                                SimpleMatrix& Me, FElement& fe);
+  
+  /** compute Mass Matrix
+   * should be computeMass of LagrangianDS ?
+   **/
+  void computeMassMatrix(SP::SiconosMatrix, double massDensity);
+
+  /** compute elementary Mass Matrix
+   * should be computeMass of LagrangianDS ?
+   **/
+  void computeElementaryMassMatrix(SimpleMatrix& Me, FElement& fe,  double massDensity);
+
+
+
+  
+  
   void display(bool brief) const;
 };
 

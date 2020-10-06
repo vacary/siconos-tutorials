@@ -26,6 +26,8 @@
 DEFINE_SPTR(FiniteElementLinearTIDS)
 DEFINE_SPTR(Material)
 DEFINE_SPTR(Mesh)
+DEFINE_SPTR(FENode)
+DEFINE_SPTR(FElement)
 DEFINE_SPTR(FiniteElementModel)
 
 #endif

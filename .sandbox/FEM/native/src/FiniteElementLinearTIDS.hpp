@@ -74,19 +74,7 @@ public:
   /** destructor */
   ~FiniteElementLinearTIDS(){};
 
-  /** compute Mass Matrix
-   * should be computeMass of LagrangianDS ?
-   **/
-  void computeMassMatrix();
 
-  /** compute elementary Mass Matrix
-   * should be computeMass of LagrangianDS ?
-   **/
-  void computeElementaryMassMatrix(SP::SimpleMatrix Me, FElement * fe);
-
-  void AssembleElementaryMatrix(SP::SiconosMatrix M,
-                                SP::SimpleMatrix Me, FElement * fe);
-  
   void display(bool brief) const;
 
   

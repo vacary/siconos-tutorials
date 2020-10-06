@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
   MVertex * v1 = new MVertex(1, 0.,0.,0.);
   MVertex * v2 = new MVertex(2, 1.,0.,0.);
   MVertex * v3 = new MVertex(3, 0.,1.,0.);
-  MVertex * v4 = new MVertex(4, 0.,1.,0.);
+  MVertex * v4 = new MVertex(4, 1.,1.,0.);
 
   std::vector<MVertex *> vertices = {v1, v2, v3, v4};
 
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
   std::vector<MVertex *> vertices1 = {v1, v2, v3};
   MElement * e1 = new MElement(1, 2, vertices1);
 
-  std::vector<MVertex *> vertices2 = {v2, v3, v4};
+  std::vector<MVertex *> vertices2 = {v2, v4, v3};
   MElement * e2 = new MElement(2, 2, vertices2);
 
   std::vector<MElement *> elements = {e1, e2};
@@ -54,13 +54,11 @@ int main(int argc, char* argv[])
   mesh->display();
 
 
-  SP::Material material(new Material(2300, 2e09, 0.2));
+  SP::Material material(new Material(1, 2e09, 0.2));
  
 
-
-
   SP::FiniteElementLinearTIDS FEsolid (new FiniteElementLinearTIDS(mesh, material));
-
+  std::cout << " " << std::endl; 
   FEsolid->display(true);
 
 
