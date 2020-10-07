@@ -23,33 +23,47 @@
 
 
 
-#define DEBUG_STDOUT
-#define DEBUG_NOCOLOR
-#define DEBUG_MESSAGES
+// #define DEBUG_STDOUT
+// #define DEBUG_NOCOLOR
+// #define DEBUG_MESSAGES
 #include "debug.h"
 
 #include <stdio.h>
 #include <iostream>
 
 FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material):
-_mesh(mesh), _material(material)
+  LagrangianLinearTIDS::LagrangianLinearTIDS(), _mesh(mesh), _material(material)
 {
+  DEBUG_BEGIN("FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material\n");
 
   _FEModel.reset(new FiniteElementModel(mesh));
   _ndof = _FEModel->init();
 
-
   _q0.reset(new SiconosVector(_ndof,0.0));
   _velocity0.reset(new SiconosVector(_ndof,0.0));
+
   LagrangianDS::_init(_q0,_velocity0);
+
   if(!_mass)
   {
-    _mass.reset(new SimpleMatrix(_ndof, _ndof, Siconos::SPARSE));
+    _mass.reset(new SimpleMatrix(_ndof, _ndof, Siconos::DENSE));
   }
   _FEModel->computeMassMatrix(_mass, _material->massDensity());
 
+  if(!_K)
+  {
+    _K.reset(new SimpleMatrix(_ndof, _ndof, Siconos::DENSE));
+  }
+  _FEModel->computeStiffnessMatrix(_K, *_material);
 
-  
+  // if(!_C)
+  // {
+  //   _C.reset(new SimpleMatrix(_ndof, _ndof, Siconos::DENSE));
+  // }
+  // _C->zero();
+
+  DEBUG_END("FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material\n");
+
 }
 
 
@@ -57,6 +71,6 @@ _mesh(mesh), _material(material)
 void FiniteElementLinearTIDS::display(bool brief) const
 {
   std::cout << "===== FiniteElementLinearTIDS display ===== " <<std::endl;
-  std::cout << "- ndof : " << _ndof << std::endl;
+  LagrangianLinearTIDS::display();
   _FEModel->display(brief);
 }

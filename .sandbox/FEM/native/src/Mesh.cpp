@@ -45,7 +45,7 @@ Mesh::Mesh(int dim,
   {
     for (MVertex * v : e->vertices())
     {
-      v->display();
+//      v->display();
       v->elements().push_back(e); 
     }
   }

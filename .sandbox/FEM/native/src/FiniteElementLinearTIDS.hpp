@@ -33,8 +33,6 @@
  * - \f$M\dot v + Cv + Kq = F_{ext}(t,z) + p \f$
  */
 
-
-
 class FiniteElementLinearTIDS : public LagrangianLinearTIDS
 {
 
@@ -42,27 +40,19 @@ protected:
   /* serialization hooks */
   ACCEPT_SERIALIZATION(LagrangianLinearTIDS);
 
-  /** stiffness matrix */
-  SP::SiconosMatrix _K;
-
-  /** damping matrix */
-  SP::SiconosMatrix _C;
-
   /** a mesh */
   SP::Mesh _mesh;
 
   /** a material */
   SP::Material _material;
 
-  /** a material */
+  /** a finite element model */
   SP::FiniteElementModel _FEModel;
 
-  /** integration order */
-  unsigned int _integrationOrder;
-  
   /** default constructor */
   FiniteElementLinearTIDS():LagrangianLinearTIDS() {};
 
+  
 public:
 
   /** constructor from initial state and all matrix operators.
@@ -74,10 +64,15 @@ public:
   /** destructor */
   ~FiniteElementLinearTIDS(){};
 
-
+  SP::FiniteElementModel FEModel()
+  {
+    return _FEModel;
+  };
+  
+  
   void display(bool brief) const;
 
-  
+
 
   ACCEPT_STD_VISITORS();
 

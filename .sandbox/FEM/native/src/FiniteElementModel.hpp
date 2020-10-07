@@ -23,6 +23,7 @@
 #define FINITEELEMENTMODEL_H
 #include <vector>
 #include <iostream>
+#include <map>
 
 #include "SiconosPointers.hpp"                //for SP::
 #include "SiconosAlgebraTypeDef.hpp"          //for Index
@@ -44,9 +45,33 @@ struct FENode
 
   /* */
 
-  FENode(MVertex *v, SP::Index dofIndex ): _num(v->num()-1), _mVertex(v), _dofIndex(dofIndex){};
+  FENode(size_t num, MVertex *v, SP::Index dofIndex ): _num(num), _mVertex(v), _dofIndex(dofIndex){};
 
+
+  size_t num()
+  {
+    return _num;
+  }
+
+
+  
   SP::Index dofIndex(){return _dofIndex;};
+
+
+  double x()
+  {
+    return _mVertex->x();
+  }
+  
+  double y()
+  {
+    return _mVertex->y();
+  }
+  
+  double z()
+  {
+    return _mVertex->z();
+  }
   
   void display()
   {
@@ -59,14 +84,14 @@ struct FENode
 
 enum FINITE_ELEMENT_TYPE
 {
-  T3,
+  T3=2,
   T6,
   Q4
 };
 
 
 
-static const double GP_T3_1_p1[]= {0.333333333333333333, 0.333333333333333333, 0.5 }; 
+static const double GP_T3_1_p1[]= {0.333333333333333333, 0.333333333333333333, 0.5 };
 static  std::vector<const double* > GaussPointsT3_1 = {GP_T3_1_p1};
 
 static const double GP_T3_2_p1[]= {0.66666666666666667, 0.16666666666666667, 0.1666666666666666 };
@@ -106,13 +131,17 @@ struct FElement
   {
     return _ndof;
   }
+
+  
+
+  
   int order()
   {
     switch(_type)
     {
     case T3:
       return 1;
-      
+
       break;
     default:
       RuntimeException::selfThrow("FElement::GaussPoints(). element type not recognized");
@@ -192,6 +221,11 @@ protected :
   /** elements */
   std::vector<SP::FElement> _elements;
 
+  /** vertex to node map **/
+  std::map<MVertex * , SP::FENode > _vertexToNode;
+
+  /** MElement to FElement map **/
+  std::map<MElement * , SP::FElement > _mElementTOFElement;
 
   /** default constructor */
   FiniteElementModel() {};
@@ -204,7 +238,15 @@ public:
   {
     return _elements;
   }
-  
+
+  std::vector<SP::FENode > &  nodes()
+  {
+    return _nodes;
+  }
+  SP::FENode vertexToNode(MVertex * v)
+  {
+    return _vertexToNode.at(v);
+  }
   /* create the FEM model from the mesh and the element type
    * \return the number of dof */
   unsigned int init();
@@ -212,7 +254,7 @@ public:
   /* Assembly method for elemetary matrix */
   void AssembleElementaryMatrix(SP::SiconosMatrix M,
                                 SimpleMatrix& Me, FElement& fe);
-  
+
   /** compute Mass Matrix
    * should be computeMass of LagrangianDS ?
    **/
@@ -223,10 +265,19 @@ public:
    **/
   void computeElementaryMassMatrix(SimpleMatrix& Me, FElement& fe,  double massDensity);
 
+  /** compute Stiffness Matrix
+   * should be computeMass of LagrangianDS ?
+   **/
+  void computeStiffnessMatrix(SP::SiconosMatrix, Material& mat );
+
+  /** compute elementary Stiffness Matrix
+   * should be computeMass of LagrangianDS ?
+   **/
+  void computeElementaryStiffnessMatrix(SimpleMatrix& Me, FElement& fe, Material& mat);
 
 
-  
-  
+
+
   void display(bool brief) const;
 };
 

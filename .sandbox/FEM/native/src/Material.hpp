@@ -29,6 +29,18 @@
 /** A simple class for material
  */
 
+
+
+enum ANALYSIS_TYPE_2D
+{
+  PLANE_STRAIN,
+  PLANE_STRESS,
+  AXYSYMMETRIC
+};
+
+
+
+
 class Material
 {
 
@@ -40,10 +52,16 @@ protected:
   double _massDensity;
 
   /** Young Modulus */
-  double _ElasticYoungModulus;
+  double _elasticYoungModulus;
 
   /** Poison coefficient */
   double _poissonCoefficient;
+
+  /** Analysis type in 2D */
+  ANALYSIS_TYPE_2D _analysisType2D;
+ 
+  /** thickness in 2D plane stress analysis */
+  double _thickness;
 
   /** default constructor */
   Material() {};
@@ -54,8 +72,10 @@ public:
    */
   Material(double massDensity, double ElasticYoungModulus,  double poissonCoefficient):
     _massDensity(massDensity),
-    _ElasticYoungModulus(ElasticYoungModulus),
-    _poissonCoefficient(poissonCoefficient){};
+    _elasticYoungModulus(ElasticYoungModulus),
+    _poissonCoefficient(poissonCoefficient),
+    _analysisType2D(PLANE_STRAIN),
+    _thickness(1.0){};
 
 
   /** destructor */
@@ -66,6 +86,25 @@ public:
     return _massDensity;
   }
 
+  double elasticYoungModulus()
+  {
+    return _elasticYoungModulus;
+  }
+  
+  double poissonCoefficient()
+  {
+    return _poissonCoefficient;
+  }
+
+  ANALYSIS_TYPE_2D analysisType2D()
+  {
+    return _analysisType2D;
+  }
+
+  double thickness()
+  {
+    return _thickness;
+  }
   
   /** print the data of the Material
    */
