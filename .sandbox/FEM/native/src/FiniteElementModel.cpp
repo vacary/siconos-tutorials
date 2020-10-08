@@ -54,6 +54,9 @@ unsigned int FiniteElementModel::init()
     {
       case 2: // 3-node triangle.
       {
+        /* We should normally ask the user for the type of element we associate with 
+         * the type of MElement of gmsh */
+        
         SP::FElement fe (new FElement(T3, 6, e));
         _elements.push_back(fe); /* the FE element number is equal to the MElement number */
         _mElementTOFElement[e] = _elements.back();
@@ -81,7 +84,7 @@ unsigned int FiniteElementModel::init()
             {
               if (e->type() != typeElement)
               {
-                RuntimeException::selfThrow("FiniteElementModel::initDOF(). Element type are consistent for all the elements connected to the vertices.");
+                RuntimeException::selfThrow("FiniteElementModel::initDOF(). Element type are consistent for all the elements connected to the vertex.");
                 return 0;
               }
             }

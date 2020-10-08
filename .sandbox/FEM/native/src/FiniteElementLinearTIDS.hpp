@@ -24,8 +24,9 @@
 
 #include "LagrangianLinearTIDS.hpp"
 #include "Mesh.hpp"
-
 #include "FiniteElementModel.hpp"
+//#include "SiconosMatrix.hpp"       // UBLAS_TYPE
+
 
 #include "FemFwd.hpp"
 
@@ -49,6 +50,9 @@ protected:
   /** a finite element model */
   SP::FiniteElementModel _FEModel;
 
+  /* Storage type for the matrices */
+  Siconos::UBLAS_TYPE _storageType;
+  
   /** default constructor */
   FiniteElementLinearTIDS():LagrangianLinearTIDS() {};
 
@@ -59,15 +63,23 @@ public:
    * \param mesh the mesh that defined the spatial discretization
    * \param material
    */
-  FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material);
+  FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material,  Siconos::UBLAS_TYPE storageType=Siconos::DENSE);
 
   /** destructor */
   ~FiniteElementLinearTIDS(){};
 
+  void setStorageType(Siconos::UBLAS_TYPE type)
+  {
+    _storageType=type;
+  }
+
+  
   SP::FiniteElementModel FEModel()
   {
     return _FEModel;
   };
+
+  
   
   
   void display(bool brief) const;

@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
 
   double Ly= 0.3;
 //  SP::Mesh mesh (createMesh2x1());
-  SP::Mesh mesh (createMeshnxm(5, 3 , 3., Ly));
+  SP::Mesh mesh (createMeshnxm(50, 15 , 3., Ly));
   //mesh->display();
   outputMeshforPython(mesh);
 
@@ -169,12 +169,20 @@ int main(int argc, char* argv[])
   SP::Material material(new Material(1, 100000, 0.0));
 
   try{
-    SP::FiniteElementLinearTIDS FEsolid (new FiniteElementLinearTIDS(mesh, material));
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+    start = std::chrono::system_clock::now();
+    SP::FiniteElementLinearTIDS FEsolid (new FiniteElementLinearTIDS(mesh, material, Siconos::SPARSE));
+    end = std::chrono::system_clock::now();
+    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
+      (end-start).count();
+    cout << "Assembly time : " << elapsed << " ms" << endl;
     std::cout << " " << std::endl;
     //FEsolid->display(true);
 
     SP::FiniteElementModel femodel = FEsolid->FEModel();
 
+    
+    /*------------------------------------------------- Applied forces  */
     SP::SiconosVector forces(new SiconosVector(FEsolid->dimension()));
     forces->zero();
 
@@ -187,10 +195,10 @@ int main(int argc, char* argv[])
         unsigned int idx_y = (*n->dofIndex())[1];
         (*forces)(idx_y) = -100.;
       }
-    }    
+    }
     //(*forces)(FEsolid->dimension()-1) = -100.;
     FEsolid->setFExtPtr(forces);
-    
+
 
     /*------------------------------------------------- Boundary Conditions  */
     /* This part should be hidden in a new BC function for a node number
@@ -228,7 +236,7 @@ int main(int argc, char* argv[])
 
     // add the dynamical system in the non smooth dynamical system
     solid->insertDynamicalSystem(FEsolid);
-    
+
     /*------------------------------------------------- Contact Conditions  */
     double e =0.0;
     SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
@@ -294,12 +302,11 @@ int main(int argc, char* argv[])
     preOutputDisplacementforPython();
 
 
-    
+
     // --- Time loop ---
     cout << "====> Start computation ... " << endl;
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
-    std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
     while(s->hasNextEvent())
     {
@@ -319,7 +326,7 @@ int main(int argc, char* argv[])
 
     }
     end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
+    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
       (end-start).count();
     cout << endl <<  "End of computation - Number of iterations done: " << k - 1 << endl;
     cout << "Computation time : " << elapsed << " ms" << endl;

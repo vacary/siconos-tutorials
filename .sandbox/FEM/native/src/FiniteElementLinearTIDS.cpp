@@ -31,8 +31,8 @@
 #include <stdio.h>
 #include <iostream>
 
-FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material):
-  LagrangianLinearTIDS::LagrangianLinearTIDS(), _mesh(mesh), _material(material)
+FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material,  Siconos::UBLAS_TYPE storageType):
+  LagrangianLinearTIDS::LagrangianLinearTIDS(), _mesh(mesh), _material(material), _storageType(storageType)
 {
   DEBUG_BEGIN("FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material\n");
 
@@ -46,19 +46,19 @@ FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material mat
 
   if(!_mass)
   {
-    _mass.reset(new SimpleMatrix(_ndof, _ndof, Siconos::DENSE));
+    _mass.reset(new SimpleMatrix(_ndof, _ndof, _storageType));
   }
   _FEModel->computeMassMatrix(_mass, _material->massDensity());
 
   if(!_K)
   {
-    _K.reset(new SimpleMatrix(_ndof, _ndof, Siconos::DENSE));
+    _K.reset(new SimpleMatrix(_ndof, _ndof, _storageType));
   }
   _FEModel->computeStiffnessMatrix(_K, *_material);
 
   // if(!_C)
   // {
-  //   _C.reset(new SimpleMatrix(_ndof, _ndof, Siconos::DENSE));
+  //   _C.reset(new SimpleMatrix(_ndof, _ndof, _storageType));
   // }
   // _C->zero();
 
