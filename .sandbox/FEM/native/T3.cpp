@@ -87,7 +87,84 @@ static Mesh* createMeshnxm(int n, int m, double Lx, double Ly)
   }
   return new Mesh(2, vertices, elements);
 }
+static Mesh* createMeshFromGMSH(string gmsh_filename)
+{
 
+
+
+
+  int *element_node;
+  int element_num;
+  int element_order;
+
+  int m;
+  int node_num;
+  double *node_x;
+
+  cout << "\n";
+  cout << "  Read data from a file.\n";
+//
+//  Get the data size.
+//
+  gmsh_size_read ( gmsh_filename, node_num, m, element_num,
+    element_order );
+//
+//  Print the sizes.
+//
+  cout << "\n";
+  cout << "  Node data read from file \"" << gmsh_filename << "\"\n";
+  cout << "\n";
+  cout << "  Number of nodes = " << node_num << "\n";
+  cout << "  Spatial dimension = " << m << "\n";
+  cout << "  Number of elements = " << element_num << "\n";
+  cout << "  Element order = " << element_order << "\n";
+
+//
+//  Allocate memory.
+//
+  node_x = ( double * ) malloc ( m * node_num * sizeof ( double ) );
+  element_node = ( int * )
+    malloc ( element_order * element_num * sizeof ( int ) );
+  std::vector<MVertex *> vertices;
+  //vertices.resize(node_num);
+  std::vector<MElement *> elements;
+  //elements.resize(elements);
+//
+//  Get the data.
+//
+  gmsh_data_read ( gmsh_filename, m, node_num, node_x,
+    element_order, element_num, element_node );
+
+  for(int v = 0; v <node_num; v++)
+  {
+    vertices.push_back(new MVertex(v, node_x[0+v*m] , node_x[1+v*m], 0.));
+  }
+  unsigned int element_cnt=0;
+  for(int e = 0; e <element_num; e++)
+  {
+    std::vector<MVertex *> vertices_e ;
+    for ( int i = 0; i < element_order; i++ )
+    {
+      int num_v = element_node[i+e *element_order] - 1;
+      vertices_e.push_back(vertices[num_v]);
+    }
+
+    elements.push_back(new MElement(element_cnt++, 2, vertices_e));
+  }
+
+
+
+//
+//  Print some of the data.
+//
+  r8mat_transpose_print_some ( m, node_num, node_x,
+    1, 1, m, 10, "  Coordinates for first 10 nodes:" );
+
+  i4mat_transpose_print_some ( element_order, element_num, element_node,
+    1, 1, element_order, 10, "  Connectivity for first 10 elements:" );
+  return new Mesh(m, vertices, elements);
+
+}
 static void  outputMeshforPython(SP::Mesh  mesh)
 {
   FILE * foutput = fopen("mesh.py", "w");
@@ -102,7 +179,7 @@ static void  outputMeshforPython(SP::Mesh  mesh)
     fprintf(foutput, "triangle.append([");
     for (MVertex * v : e->vertices())
     {
-      fprintf(foutput, "%i, ", v->num());
+      fprintf(foutput, "%zu, ", v->num());
     }
     fprintf(foutput, "])\n");
   }
@@ -121,36 +198,28 @@ static void  outputDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel 
 {
   FILE * foutput = fopen("displacement.py", "a");
   fprintf(foutput, "x.append(np.array([");
+
   for (MVertex * v : mesh->vertices())
   {
     SP::FENode n = femodel->vertexToNode(v);
     unsigned int idx= (*n->dofIndex())[0];
     double value =(*x)(idx);
-    if (idx == x->size()-2)
-    {
-      fprintf(foutput, "%e]))\n", value) ;
-    }
-    else
-    {
-      fprintf(foutput, "%e,", value) ;
-    }
+    fprintf(foutput, "%e,", value) ;
+
   }
+  fprintf(foutput, "]))\n") ;
   fprintf(foutput, "\n");
+
   fprintf(foutput, "y.append(np.array([");
   for (MVertex * v : mesh->vertices())
   {
     SP::FENode n = femodel->vertexToNode(v);
     unsigned int idx= (*n->dofIndex())[1];
     double value =(*x)(idx);
-    if (idx == x->size()-1)
-    {
-      fprintf(foutput, "%e]))\n", value) ;
-    }
-    else
-    {
-      fprintf(foutput, "%e,", value) ;
-    }
+    fprintf(foutput, "%e,", value) ;
+
   }
+  fprintf(foutput, "]))\n") ;
   fprintf(foutput, "\n");
   fclose(foutput);
 }
@@ -158,11 +227,15 @@ static void  outputDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel 
 
 int main(int argc, char* argv[])
 {
-
+  
   double Ly= 0.3;
 //  SP::Mesh mesh (createMesh2x1());
-  SP::Mesh mesh (createMeshnxm(50, 15 , 3., Ly));
-  //mesh->display();
+//  SP::Mesh mesh (createMeshnxm(50, 15 , 3., Ly));
+  Ly =10.0;
+  string gmsh_filename = "./step_2d.msh";
+//   string gmsh_filename = "./square_v4.msh";
+  SP::Mesh mesh (createMeshFromGMSH(gmsh_filename));
+  mesh->display(true);
   outputMeshforPython(mesh);
 
 
@@ -181,7 +254,7 @@ int main(int argc, char* argv[])
 
     SP::FiniteElementModel femodel = FEsolid->FEModel();
 
-    
+
     /*------------------------------------------------- Applied forces  */
     SP::SiconosVector forces(new SiconosVector(FEsolid->dimension()));
     forces->zero();
@@ -193,7 +266,7 @@ int main(int argc, char* argv[])
       {
         //std::cout << "node number : " << n->num() << " " << n->y() <<  std::endl;
         unsigned int idx_y = (*n->dofIndex())[1];
-        (*forces)(idx_y) = -100.;
+        (*forces)(idx_y) = -10000.;
       }
     }
     //(*forces)(FEsolid->dimension()-1) = -100.;
@@ -240,7 +313,7 @@ int main(int argc, char* argv[])
     /*------------------------------------------------- Contact Conditions  */
     double e =0.0;
     SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-    SP::SiconosVector  initial_gap(new SiconosVector(1, .1));
+    SP::SiconosVector  initial_gap(new SiconosVector(1, Ly*0.1));
     for(SP::FENode n : femodel->nodes())
     {
       if (fabs(n->y()) <= 1e-16 and fabs(n->x()) >= 1e-16)
@@ -266,6 +339,7 @@ int main(int argc, char* argv[])
 
     // -- (1) OneStepIntegrators --
     SP::MoreauJeanOSI OSI(new MoreauJeanOSI(theta));
+    OSI->setIsWSymmetricDefinitePositive(true);
 
 
     // -- (2) Time discretisation --
@@ -359,217 +433,6 @@ int main(int argc, char* argv[])
 
   }
 
-
-
-
-
-// //  string gmsh_filename = "./step_2d.msh";
-//   string gmsh_filename = "./square_v4.msh";
-//   int *element_node;
-//   int element_num;
-//   int element_order;
-
-//   int m;
-//   int node_num;
-//   double *node_x;
-
-//   cout << "\n";
-//   cout << "  Read data from a file.\n";
-// //
-// //  Get the data size.
-// //
-//   gmsh_size_read ( gmsh_filename, node_num, m, element_num,
-//     element_order );
-// //
-// //  Print the sizes.
-// //
-//   cout << "\n";
-//   cout << "  Node data read from file \"" << gmsh_filename << "\"\n";
-//   cout << "\n";
-//   cout << "  Number of nodes = " << node_num << "\n";
-//   cout << "  Spatial dimension = " << m << "\n";
-//   cout << "  Number of elements = " << element_num << "\n";
-//   cout << "  Element order = " << element_order << "\n";
-// //
-// //  Allocate memory.
-// //
-//   node_x = ( double * ) malloc ( m * node_num * sizeof ( double ) );
-//   element_node = ( int * )
-//     malloc ( element_order * element_num * sizeof ( int ) );
-// //
-// //  Get the data.
-// //
-//   gmsh_data_read ( gmsh_filename, m, node_num, node_x,
-//     element_order, element_num, element_node );
-// //
-// //  Print some of the data.
-// //
-//   r8mat_transpose_print_some ( m, node_num, node_x,
-//     1, 1, m, 10, "  Coordinates for first 10 nodes:" );
-
-//   i4mat_transpose_print_some ( element_order, element_num, element_node,
-//     1, 1, element_order, 100, "  Connectivity for first 10 elements:" );
-
-
-
-
-  // try
-  // {
-
-  //   // ================= Creation of the model =======================
-
-  //   // User-defined main parameters
-  //   unsigned int nDof = 3;           // degrees of freedom for the ball
-  //   double t0 = 0;                   // initial computation time
-  //   double T = 10;                  // final computation time
-  //   double h = 0.005;                // time step
-  //   double position_init = 1.0;      // initial position for lowest bead.
-  //   double velocity_init = 0.0;      // initial velocity for lowest bead.
-  //   double theta = 0.5;              // theta for MoreauJeanOSI integrator
-  //   double R = 0.1; // Ball radius
-  //   double m = 1; // Ball mass
-  //   double g = 9.81; // Gravity
-  //   // -------------------------
-  //   // --- Dynamical systems ---
-  //   // -------------------------
-
-  //   cout << "====> Model loading ..." <<  endl;
-
-  //   SP::SiconosMatrix Mass(new SimpleMatrix(nDof, nDof));
-  //   (*Mass)(0, 0) = m;
-  //   (*Mass)(1, 1) = m;
-  //   (*Mass)(2, 2) = 2. / 5 * m * R * R;
-
-  //   // -- Initial positions and velocities --
-  //   SP::SiconosVector q0(new SiconosVector(nDof));
-  //   SP::SiconosVector v0(new SiconosVector(nDof));
-  //   (*q0)(0) = position_init;
-  //   (*v0)(0) = velocity_init;
-
-  //   // -- The dynamical system --
-  //   SP::LagrangianLinearTIDS ball(new LagrangianLinearTIDS(q0, v0, Mass));
-
-  //   // -- Set external forces (weight) --
-  //   SP::SiconosVector weight(new SiconosVector(nDof));
-  //   (*weight)(0) = -m * g;
-  //   ball->setFExtPtr(weight);
-
-  //   // --------------------
-  //   // --- Interactions ---
-  //   // --------------------
-
-  //   // -- nslaw --
-  //   double e = 0.9;
-
-  //   // Interaction ball-floor
-  //   //
-  //   SP::SimpleMatrix H(new SimpleMatrix(1, nDof));
-  //   (*H)(0, 0) = 1.0;
-
-  //   SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-  //   SP::Relation relation(new LagrangianLinearTIR(H));
-
-  //   SP::Interaction inter(new Interaction(nslaw, relation));
-
-  //   // -------------
-  //   // --- Model ---
-  //   // -------------
-  //   SP::NonSmoothDynamicalSystem bouncingBall(new NonSmoothDynamicalSystem(t0, T));
-
-  //   // add the dynamical system in the non smooth dynamical system
-  //   bouncingBall->insertDynamicalSystem(ball);
-
-  //   // link the interaction and the dynamical system
-  //   bouncingBall->link(inter, ball);
-
-  //   // ------------------
-  //   // --- Simulation ---
-  //   // ------------------
-
-  //   // -- (1) OneStepIntegrators --
-  //   SP::MoreauJeanOSI OSI(new MoreauJeanOSI(theta));
-
-
-  //   // -- (2) Time discretisation --
-  //   SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
-
-  //   // -- (3) one step non smooth problem
-  //   SP::OneStepNSProblem osnspb(new LCP());
-
-  //   // -- (4) Simulation setup with (1) (2) (3)
-  //   SP::TimeStepping s(new TimeStepping(bouncingBall, t, OSI, osnspb));
-
-  //   // =========================== End of model definition ===========================
-
-  //   // ================================= Computation =================================
-
-
-  //   int N = ceil((T - t0) / h); // Number of time steps
-
-  //   // --- Get the values to be plotted ---
-  //   // -> saved in a matrix dataPlot
-  //   unsigned int outputSize = 5;
-  //   SimpleMatrix dataPlot(N + 1, outputSize);
-
-  //   SP::SiconosVector q = ball->q();
-  //   SP::SiconosVector v = ball->velocity();
-  //   SP::SiconosVector p = ball->p(1);
-  //   SP::SiconosVector lambda = inter->lambda(1);
-
-  //   dataPlot(0, 0) = bouncingBall->t0();
-  //   dataPlot(0, 1) = (*q)(0);
-  //   dataPlot(0, 2) = (*v)(0);
-  //   dataPlot(0, 3) = (*p)(0);
-  //   dataPlot(0, 4) = (*lambda)(0);
-  //   // --- Time loop ---
-  //   cout << "====> Start computation ... " << endl;
-  //   // ==== Simulation loop - Writing without explicit event handling =====
-  //   int k = 1;
-  //   std::chrono::time_point<std::chrono::system_clock> start, end;
-  //   start = std::chrono::system_clock::now();
-  //   while(s->hasNextEvent())
-  //   {
-  //     s->computeOneStep();
-  //     // --- Get values to be plotted ---
-  //     dataPlot(k, 0) =  s->nextTime();
-  //     dataPlot(k, 1) = (*q)(0);
-  //     dataPlot(k, 2) = (*v)(0);
-  //     dataPlot(k, 3) = (*p)(0);
-  //     dataPlot(k, 4) = (*lambda)(0);
-  //     s->nextStep();
-  //     k++;
-  //     progressBar((double)k/N);
-
-  //   }
-  //   end = std::chrono::system_clock::now();
-  //   int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
-  //                 (end-start).count();
-  //   cout << endl <<  "End of computation - Number of iterations done: " << k - 1 << endl;
-  //   cout << "Computation time : " << elapsed << " ms" << endl;
-
-  //   // --- Output files ---
-  //   cout << "====> Output file writing ..." << endl;
-  //   dataPlot.resize(k, outputSize);
-  //   ioMatrix::write("result.dat", "ascii", dataPlot, "noDim");
-  //   double error=0.0, eps=1e-12;
-  //   if((error=ioMatrix::compareRefFile(dataPlot, "BouncingBallTS.ref", eps)) >= 0.0
-  //       && error > eps)
-  //     return 1;
-
-  // }
-
-  // catch(SiconosException& e)
-  // {
-  //   cerr << e.report() << endl;
-  //   return 1;
-
-  // }
-  // catch(...)
-  // {
-  //   cerr << "Exception caught in BouncingBallTS.cpp" << endl;
-  //   return 1;
-
-  // }
 
 
 

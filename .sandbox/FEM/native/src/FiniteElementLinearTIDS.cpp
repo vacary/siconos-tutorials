@@ -47,12 +47,16 @@ FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material mat
   if(!_mass)
   {
     _mass.reset(new SimpleMatrix(_ndof, _ndof, _storageType));
+    _mass->setIsSymmetric(true);
+    _mass->setIsPositiveDefinite(true);
   }
   _FEModel->computeMassMatrix(_mass, _material->massDensity());
 
   if(!_K)
   {
     _K.reset(new SimpleMatrix(_ndof, _ndof, _storageType));
+    _K->setIsSymmetric(true);
+    _K->setIsPositiveDefinite(true);
   }
   _FEModel->computeStiffnessMatrix(_K, *_material);
 

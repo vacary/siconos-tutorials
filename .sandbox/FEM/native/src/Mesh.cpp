@@ -60,15 +60,29 @@ void Mesh::display(bool brief) const
   std::cout << "- numberOfNodes : " << _numberOfVertices << std::endl;
   std::cout << "- numberOfElements : " << _numberOfElements << std::endl;
 
+
+  int cnt =0;
   for (MVertex * v : _vertices)
   {
     v->display();
+    if(brief and cnt >10)
+    {
+      std::cout << "  ..... " << std::endl;
+      break;
+    }
+      cnt++;
   }
 
-  
+  cnt=0;
   for (MElement * e : _elements)
   {
     e->display();
+    if(brief and cnt >10)
+    {
+      std::cout << "  ..... " << std::endl;
+      break;
+    }
+    cnt++;
   }
   
   
