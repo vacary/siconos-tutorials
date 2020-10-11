@@ -54,7 +54,7 @@ struct FENode
   }
 
 
-  
+
   SP::Index dofIndex(){return _dofIndex;};
 
 
@@ -62,17 +62,17 @@ struct FENode
   {
     return _mVertex->x();
   }
-  
+
   double y()
   {
     return _mVertex->y();
   }
-  
+
   double z()
   {
     return _mVertex->z();
   }
-  
+
   void display()
   {
     std::cout << "     - Fe Node - number: " << _num
@@ -82,13 +82,23 @@ struct FENode
   };
 };
 
-enum FINITE_ELEMENT_TYPE
+enum FINITE_ELEMENT_TYPE // we follow the gmsh numbering convention.
 {
-  T3=2,
-  T6,
-  Q4
+  L2=1,  // 2-node line.
+  T3=2,  // 3-node triangle.
+  Q4=3,  // 4-node quadrangle.
+  TH4=4, // 4-node tetrahedron.
+  H8=5,  // 8-node hexahedron.
+  P6=6,  // 6-node prism.
+  PY5=7, // 5-node pyramid.
+  L3=8,  // 3-node second order line (2 nodes associated with the vertices and 1 with the edge).
+  T6=9,  // 6-node second order triangle (3 nodes associated with the vertices and 3 with the edges).
 };
 
+static const double I_TET2_X [] = {0.13819660112501052, 0.13819660112501052, 0.13819660112501052, 0.58541019662496840};
+static const double I_TET2_Y [] = {0.13819660112501052, 0.13819660112501052, 0.58541019662496840, 0.13819660112501052};
+static const double I_TET2_Z [] = {0.13819660112501052, 0.58541019662496840, 0.13819660112501052, 0.13819660112501052};
+static const double I_TET2_W [] = {0.04166666666666666, 0.04166666666666666, 0.04166666666666666, 0.04166666666666666};
 
 
 static const double GP_T3_1_p1[]= {0.333333333333333333, 0.333333333333333333, 0.5 };
@@ -99,6 +109,14 @@ static const double GP_T3_2_p2[]= {0.16666666666666667, 0.66666666666666667, 0.1
 static const double GP_T3_2_p3[]= {0.16666666666666667, 0.16666666666666667, 0.1666666666666666 };
 static  std::vector<const double* > GaussPointsT3_2 = {GP_T3_2_p1, GP_T3_2_p2, GP_T3_2_p3};
 
+static const double GP_TH4_1_p1[]= {0.25, 0.25, 0.25,  1.0 };
+static  std::vector<const double* > GaussPointsTH4_1 = {GP_TH4_1_p1};
+
+static const double GP_TH4_2_p1[]= {0.13819660112501052, 0.13819660112501052, 0.13819660112501052,  0.04166666666666666 };
+static const double GP_TH4_2_p2[]= {0.13819660112501052, 0.13819660112501052, 0.58541019662496840,  0.04166666666666666 };
+static const double GP_TH4_2_p3[]= {0.13819660112501052, 0.585410196624968405,0.13819660112501052,  0.04166666666666666 };
+static const double GP_TH4_2_p4[]= {0.58541019662496840, 0.13819660112501052, 0.13819660112501052,  0.04166666666666666 };
+static  std::vector<const double* > GaussPointsTH4_2 = {GP_TH4_2_p1, GP_TH4_2_p2, GP_TH4_2_p3, GP_TH4_2_p4};
 
 
 
@@ -132,19 +150,31 @@ struct FElement
     return _ndof;
   }
 
-  
-
-  
   int order()
   {
     switch(_type)
     {
     case T3:
+    case TH4:
       return 1;
 
       break;
     default:
-      RuntimeException::selfThrow("FElement::GaussPoints(). element type not recognized");
+      throw("FElement::order(). element type not recognized");
+    }
+    return 0;
+  }
+  int ndofPerNode()
+  {
+    switch(_type)
+    {
+    case T3:
+    case Q4:
+      return 2;
+    case TH4:
+      return 3;
+    default:
+      throw("FElement::ndorPernode(). element type not recognized");
     }
     return 0;
   }
@@ -159,8 +189,15 @@ struct FElement
       else if (order==2)
         return  GaussPointsT3_2;
       break;
+    case TH4:
+      if (order==1)
+        return  GaussPointsTH4_1;
+      else if (order==2)
+        return  GaussPointsTH4_2;
+      break;
+ 
     default:
-      RuntimeException::selfThrow("FElement::GaussPoints(). element type not recognized");
+      throw("FElement::GaussPoints(). element type not recognized");
     }
     return  GaussPointsEmpty;
   }
@@ -188,7 +225,40 @@ struct FElement
       break;
     }
     default:
-      RuntimeException::selfThrow("FElement::shapeFunctionIso2D(). element type not recognized");
+      THROW_EXCEPTION("FElement::shapeFunctionIso2D(). element type not recognized");
+    }
+  }
+  void shapeFunctionIso3D(double ksi, double eta, double zeta,
+                          double* N, double * Nksi, double * Neta, double * Nzeta)
+  {
+    switch(_type)
+    {
+    case TH4:
+    {
+      N[0] = 1.0 - ksi - eta - zeta;
+      N[1] = ksi;
+      N[2] = eta;
+      N[2] = zeta;
+
+      Nksi[0] = -1.0;
+      Nksi[1] = 1.0;
+      Nksi[2] = 0.0;
+      Nksi[3] = 0.0;
+
+      Neta[0] = -1.0;
+      Neta[1] = 0.0;
+      Neta[2] = 1.0;
+      Neta[3] = 0.0;
+
+      Nzeta[0] = -1.0;
+      Nzeta[1] = 0.0;
+      Nzeta[2] = 0.0;
+      Nzeta[3] = 1.0;
+
+      break;
+    }
+    default:
+      throw("FElement::shapeFunctionIso3D(). element type not recognized");
     }
   }
 
@@ -245,6 +315,11 @@ public:
   }
   SP::FENode vertexToNode(MVertex * v)
   {
+    if (_vertexToNode.find(v) == _vertexToNode.end())
+    {
+      SP::FENode f;
+      return f;
+    }
     return _vertexToNode.at(v);
   }
   /* create the FEM model from the mesh and the element type
@@ -273,7 +348,8 @@ public:
   /** compute elementary Stiffness Matrix
    * should be computeMass of LagrangianDS ?
    **/
-  void computeElementaryStiffnessMatrix(SimpleMatrix& Me, FElement& fe, Material& mat);
+  void computeElementaryStiffnessMatrix(SimpleMatrix& Me, FElement& fe,
+                                        SP::SimpleMatrix D, double thickness);
 
 
 

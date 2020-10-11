@@ -43,11 +43,11 @@ struct MVertex
 
   /** elements to which the node belongs **/
   std::vector<MElement *> _elements;
-  
-  
+
+
   /* Constructor from data */
   MVertex(size_t num, double x, double y, double z):_num(num), _x(x), _y(y), _z(z){};
-  
+
   double x(){return _x;};
   double y(){return _y;};
   double z(){return _z;};
@@ -58,18 +58,18 @@ struct MVertex
     return _num;
   }
 
-  
+
   std::vector<MElement *> & elements()
   {
     return _elements;
   };
-  
+
   void display()
   {
     std::cout << " - Vertex - number: " << _num
               << " ; (x,y,z): "
-              << _x <<", " 
-              << _y <<", " 
+              << _x <<", "
+              << _y <<", "
               << _z  ;
     std::cout << std::endl;
   };
@@ -151,7 +151,7 @@ protected:
 
 public:
   Mesh(int dim, int numberOfNodes, int numberOfElements );
-  
+
   /** constructor
    *  \param dim dimension
    */
@@ -166,18 +166,18 @@ public:
   {
     return _dim;
   };
-  
+
   std::vector<MVertex *> & vertices()
   {
     return _vertices;
   }
-  
+
   std::vector<MElement *> & elements()
   {
     return _elements;
   }
 
-  
+
   /** print the data of the Mesh
    */
   void display(bool brief = true) const;

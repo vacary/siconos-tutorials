@@ -34,61 +34,8 @@
 
 using namespace std;
 
-
-static Mesh* createMesh2x1()
-{
-  MVertex * v1 = new MVertex(1, 0.,0.,0.);
-  MVertex * v2 = new MVertex(2, 1.,0.,0.);
-  MVertex * v3 = new MVertex(3, 0.,1.,0.);
-  MVertex * v4 = new MVertex(4, 1.,1.,0.);
-
-  std::vector<MVertex *> vertices = {v1, v2, v3, v4};
-
-
-  std::vector<MVertex *> vertices1 = {v1, v2, v3};
-  MElement * e1 = new MElement(1, 2, vertices1);
-
-  std::vector<MVertex *> vertices2 = {v2, v4, v3};
-  MElement * e2 = new MElement(2, 2, vertices2);
-
-  std::vector<MElement *> elements = {e1, e2};
-
-  return new Mesh(2, vertices, elements);
-}
-static Mesh* createMeshnxm(int n, int m, double Lx, double Ly)
-{
-
-  double lx = Lx/n;
-  double ly = Ly/m;
-
-
-  std::vector<MVertex *> vertices;
-
-  vertices.resize((n+1)*(m+1));
-
-  for (int i =0;  i < n+1; i++)
-  {
-    for (int j =0;  j < m+1; j++)
-    {
-      vertices[i+j*(n+1)] = new MVertex(i+j*(n+1), i*lx , j*ly, 0.);
-    }
-  }
-  std::vector<MElement *> elements;
-  //elements.resize(2*n*m);
-  int element_cnt=0;
-  for (int i =0;  i < n; i++)
-  {
-    for (int j =0;  j < m; j++)
-    {
-      std::vector<MVertex *> vertices_e_1 = {vertices[i+j*(n+1)], vertices[i+1+(j)*(n+1)], vertices[i+(j+1)*(n+1)]};
-      elements.push_back(new MElement(element_cnt++, 2, vertices_e_1));
-
-      std::vector<MVertex *> vertices_e_2 = {vertices[i+1+(j)*(n+1)], vertices[i+1+(j+1)*(n+1)], vertices[i+(j+1)*(n+1)]};
-      elements.push_back(new MElement(element_cnt++, 2, vertices_e_2));
-    }
-  }
-  return new Mesh(2, vertices, elements);
-}
+//#include "cube_fine.cpp"
+//#include "beam.cpp"
 
 static void  outputMeshforPython(SP::Mesh  mesh)
 {
@@ -116,6 +63,7 @@ static void  preOutputDisplacementforPython()
   FILE * foutput = fopen("displacement.py", "w");
   fprintf(foutput, "import numpy as np\nx=[]\n");
   fprintf(foutput, "import numpy as np\ny=[]\n");
+  fprintf(foutput, "import numpy as np\nz=[]\n");
   fclose(foutput);
 }
 
@@ -127,25 +75,54 @@ static void  outputDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel 
   for (MVertex * v : mesh->vertices())
   {
     SP::FENode n = femodel->vertexToNode(v);
-    unsigned int idx= (*n->dofIndex())[0];
-    double value =(*x)(idx);
+    double value = 0.0;
+    if (n)
+    {
+      unsigned int idx= (*n->dofIndex())[0];
+      value =(*x)(idx);
+    }
     fprintf(foutput, "%e,", value) ;
 
   }
   fprintf(foutput, "]))\n") ;
+  
   fprintf(foutput, "\n");
+
 
   fprintf(foutput, "y.append(np.array([");
   for (MVertex * v : mesh->vertices())
   {
     SP::FENode n = femodel->vertexToNode(v);
-    unsigned int idx= (*n->dofIndex())[1];
-    double value =(*x)(idx);
+    double value = 0.0;
+    if (n)
+    {
+      unsigned int idx= (*n->dofIndex())[1];
+      value =(*x)(idx);
+    }
     fprintf(foutput, "%e,", value) ;
 
   }
   fprintf(foutput, "]))\n") ;
   fprintf(foutput, "\n");
+
+
+  fprintf(foutput, "z.append(np.array([");
+  for (MVertex * v : mesh->vertices())
+  {
+    SP::FENode n = femodel->vertexToNode(v);
+    double value = 0.0;
+    if (n)
+    {
+      unsigned int idx= (*n->dofIndex())[2];
+      value =(*x)(idx);
+    }
+    fprintf(foutput, "%e,", value) ;
+
+  }
+  fprintf(foutput, "]))\n") ;
+  fprintf(foutput, "\n");
+
+  
   fclose(foutput);
 }
 
@@ -153,19 +130,13 @@ static void  outputDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel 
 int main(int argc, char* argv[])
 {
   
-  double Ly= 0.3;
-//  SP::Mesh mesh (createMesh2x1());
-//  SP::Mesh mesh (createMeshnxm(50, 15 , 3., Ly));
-  Ly =10.0;
-  string gmsh_filename = "./step_2d.msh";
-  //string gmsh_filename = "./square_v4.msh";
-  //string gmsh_filename = "./test.msh";
-  SP::Mesh mesh (createMeshFromGMSH(gmsh_filename));
-  mesh->display(true);
+  double Lz= 1.0;
+  //SP::Mesh mesh (createMesh());
+  SP::Mesh mesh (createMeshFromGMSH2("cube.msh2"));
+//mesh->display(false);
   outputMeshforPython(mesh);
 
-
-  SP::Material material(new Material(1, 100000, 0.0));
+  SP::Material material(new Material(2500, 100000, 0.0));
 
   try{
     std::chrono::time_point<std::chrono::system_clock> start, end;
@@ -184,18 +155,18 @@ int main(int argc, char* argv[])
     /*------------------------------------------------- Applied forces  */
     SP::SiconosVector forces(new SiconosVector(FEsolid->dimension()));
     forces->zero();
-
+    std::cout << "node number applied forces: [";
     for(SP::FENode n : femodel->nodes())
     {
       //std::cout << "node number : " << n->num() << " " << n->x() << " " << n->y() <<  std::endl;
-      if (fabs(n->y()-Ly) <= 1e-16 and fabs(n->x()) >= 1e-16)
+      if (fabs(n->z()-Lz) <= 1e-16 and fabs(n->x()) >= 1e-16)
       {
-        //std::cout << "node number : " << n->num() << " " << n->y() <<  std::endl;
-        unsigned int idx_y = (*n->dofIndex())[1];
-        (*forces)(idx_y) = -10000.;
+        std::cout   << " " << n->num();
+        unsigned int idx_z = (*n->dofIndex())[2];
+        (*forces)(idx_z) = -10;
       }
     }
-    //(*forces)(FEsolid->dimension()-1) = -100.;
+    std::cout << " ]"  <<  std::endl;
     FEsolid->setFExtPtr(forces);
 
 
@@ -203,17 +174,22 @@ int main(int argc, char* argv[])
     /* This part should be hidden in a new BC function for a node number
      * and a dof index. */
     SP::IndexInt bdIndex(new IndexInt(0));
+
+    std::cout << "Boundary conditions node number : [ ";
     for(SP::FENode n : femodel->nodes())
     {
       if (fabs(n->x()) <= 1e-16)
       {
-        //std::cout << "node number : " << n->num() << " " << n->x() <<  std::endl;
+        std::cout  << n->num() << " " ;
         unsigned int idx_x = (*n->dofIndex())[0];
         bdIndex->push_back(idx_x);
         unsigned int idx_y = (*n->dofIndex())[1];
         bdIndex->push_back(idx_y);
+        unsigned int idx_z = (*n->dofIndex())[2];
+        bdIndex->push_back(idx_z);
       }
     }
+    std::cout  <<  "] " <<  std::endl;
     SP::SiconosVector bdPrescribedVelocity(new SiconosVector(bdIndex->size()));
     for (int i=0; i < bdIndex->size() ; i++)
     {
@@ -227,9 +203,9 @@ int main(int argc, char* argv[])
     // --- Model ---
     // -------------
     double t0 = 0;                   // initial computation time
-    double T = 1e-01;                  // final computation time
-    double h = 1e-03;                // time step
-    double theta = 1.0;              // theta for MoreauJeanOSI integrator
+    double T = 100;                  // final computation time
+    double h = 1e-00;                // time step
+    double theta = 0.5;              // theta for MoreauJeanOSI integrator
 
     SP::NonSmoothDynamicalSystem solid(new NonSmoothDynamicalSystem(t0, T));
 
@@ -239,15 +215,16 @@ int main(int argc, char* argv[])
     /*------------------------------------------------- Contact Conditions  */
     double e =0.0;
     SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-    SP::SiconosVector  initial_gap(new SiconosVector(1, Ly*0.1));
+    SP::SiconosVector  initial_gap(new SiconosVector(1, Lz*0.05));
+    std::cout << "contact node number : [ "  ;
     for(SP::FENode n : femodel->nodes())
     {
-      if (fabs(n->y()) <= 1e-16 and fabs(n->x()) >= 1e-16)
+      if (fabs(n->z()) <= 1e-16 and fabs(n->x()) >= 8.)
       {
-        //std::cout << "node number : " << n->num() << " " << n->y() <<  std::endl;
-        unsigned int idx_y = (*n->dofIndex())[1];
+        std::cout << " " << n->num() ;
+        unsigned int idx_z = (*n->dofIndex())[2];
         SP::SimpleMatrix H(new SimpleMatrix(1, FEsolid->dimension()));
-        (*H)(0, idx_y) = 1.0;
+        (*H)(0, idx_z) = 1.0;
         SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
         SP::Relation relation(new LagrangianLinearTIR(H, initial_gap));
         SP::Interaction inter(new Interaction(nslaw, relation));
@@ -255,6 +232,7 @@ int main(int argc, char* argv[])
         solid->link(inter, FEsolid);
       }
     }
+    std::cout << "]"<< std::endl;
 
     // // link the interaction and the dynamical system
     // bouncingBall->link(inter, FEsolid);
@@ -334,7 +312,7 @@ int main(int argc, char* argv[])
     // --- Output files ---
     cout << "====> Output file writing ..." << endl;
     dataPlot.resize(k, outputSize);
-    ioMatrix::write("T3.dat", "ascii", dataPlot, "noDim");
+    ioMatrix::write("TH4.dat", "ascii", dataPlot, "noDim");
     // double error=0.0, eps=1e-12;
     // if((error=ioMatrix::compareRefFile(dataPlot, "BouncingBallTS.ref", eps)) >= 0.0
     //     && error > eps)
@@ -346,15 +324,11 @@ int main(int argc, char* argv[])
 
 
   }
-  catch(SiconosException& e)
-  {
-    cerr << e.report() << endl;
-    return 1;
-
-  }
   catch(...)
   {
-    cerr << "Exception caught in T3.cpp" << endl;
+    
+    cerr << "Exception caught in TH4.cpp" << endl;
+    Siconos::exception::process();
     return 1;
 
   }
