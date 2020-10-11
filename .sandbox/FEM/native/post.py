@@ -20,12 +20,12 @@ print('size of x :', x[0].shape)
 coord = np.array(coord)
 triangle=np.array(triangle)
 
-# plt.figure()
-# tripost = mtri.Triangulation(coord[:,0], coord[:,1], triangles = triangle)
-# ax= plt.axes()
-# ax.set_aspect('equal')
-# ax.triplot(tripost,lw = 0.5)
-# plt.show();
+plt.figure()
+tripost = mtri.Triangulation(coord[:,0], coord[:,1], triangles = triangle)
+ax= plt.axes()
+ax.set_aspect('equal')
+ax.triplot(tripost,lw = 0.5)
+plt.show();
 
 # plt.ylim(-3, 3)
 # plt.xlim(0, 3)

@@ -116,6 +116,7 @@ static void  preOutputDisplacementforPython()
   FILE * foutput = fopen("displacement.py", "w");
   fprintf(foutput, "import numpy as np\nx=[]\n");
   fprintf(foutput, "import numpy as np\ny=[]\n");
+  fprintf(foutput, "import numpy as np\nz=[]\n");
   fclose(foutput);
 }
 
@@ -127,25 +128,54 @@ static void  outputDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel 
   for (MVertex * v : mesh->vertices())
   {
     SP::FENode n = femodel->vertexToNode(v);
-    unsigned int idx= (*n->dofIndex())[0];
-    double value =(*x)(idx);
+    double value = 0.0;
+    if (n)
+    {
+      unsigned int idx= (*n->dofIndex())[0];
+      value =(*x)(idx);
+    }
     fprintf(foutput, "%e,", value) ;
 
   }
   fprintf(foutput, "]))\n") ;
+  
   fprintf(foutput, "\n");
+
 
   fprintf(foutput, "y.append(np.array([");
   for (MVertex * v : mesh->vertices())
   {
     SP::FENode n = femodel->vertexToNode(v);
-    unsigned int idx= (*n->dofIndex())[1];
-    double value =(*x)(idx);
+    double value = 0.0;
+    if (n)
+    {
+      unsigned int idx= (*n->dofIndex())[1];
+      value =(*x)(idx);
+    }
     fprintf(foutput, "%e,", value) ;
 
   }
   fprintf(foutput, "]))\n") ;
   fprintf(foutput, "\n");
+
+
+  fprintf(foutput, "z.append(np.array([");
+  for (MVertex * v : mesh->vertices())
+  {
+    SP::FENode n = femodel->vertexToNode(v);
+    double value = 0.0;
+    if (n)
+    {
+      unsigned int idx= (*n->dofIndex())[2];
+      value =(*x)(idx);
+    }
+    fprintf(foutput, "%e,", value) ;
+
+  }
+  fprintf(foutput, "]))\n") ;
+  fprintf(foutput, "\n");
+
+  
   fclose(foutput);
 }
 
@@ -153,17 +183,12 @@ static void  outputDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel 
 int main(int argc, char* argv[])
 {
   
-  double Ly= 0.3;
-//  SP::Mesh mesh (createMesh2x1());
-//  SP::Mesh mesh (createMeshnxm(50, 15 , 3., Ly));
-  Ly =10.0;
-  string gmsh_filename = "./step_2d.msh";
-  //string gmsh_filename = "./square_v4.msh";
-  //string gmsh_filename = "./test.msh";
+  double Lz= 1.0;
+  string gmsh_filename = "./cube_xx.msh";
   SP::Mesh mesh (createMeshFromGMSH(gmsh_filename));
-  mesh->display(true);
+  mesh->display(false);
   outputMeshforPython(mesh);
-
+  getchar();
 
   SP::Material material(new Material(1, 100000, 0.0));
 
@@ -188,11 +213,11 @@ int main(int argc, char* argv[])
     for(SP::FENode n : femodel->nodes())
     {
       //std::cout << "node number : " << n->num() << " " << n->x() << " " << n->y() <<  std::endl;
-      if (fabs(n->y()-Ly) <= 1e-16 and fabs(n->x()) >= 1e-16)
+      if (fabs(n->z()-Lz) <= 1e-16 and fabs(n->x()) >= 1e-16)
       {
-        //std::cout << "node number : " << n->num() << " " << n->y() <<  std::endl;
-        unsigned int idx_y = (*n->dofIndex())[1];
-        (*forces)(idx_y) = -10000.;
+        std::cout << "node number applied forces: " << n->num() << " " << n->z() <<  std::endl;
+        unsigned int idx_z = (*n->dofIndex())[2];
+        (*forces)(idx_z) = -10000.;
       }
     }
     //(*forces)(FEsolid->dimension()-1) = -100.;
@@ -207,11 +232,13 @@ int main(int argc, char* argv[])
     {
       if (fabs(n->x()) <= 1e-16)
       {
-        //std::cout << "node number : " << n->num() << " " << n->x() <<  std::endl;
+        std::cout << "Boundary conditions node number : " << n->num() << " " << n->x() <<  std::endl;
         unsigned int idx_x = (*n->dofIndex())[0];
         bdIndex->push_back(idx_x);
         unsigned int idx_y = (*n->dofIndex())[1];
         bdIndex->push_back(idx_y);
+        unsigned int idx_z = (*n->dofIndex())[2];
+        bdIndex->push_back(idx_z);
       }
     }
     SP::SiconosVector bdPrescribedVelocity(new SiconosVector(bdIndex->size()));
@@ -239,15 +266,15 @@ int main(int argc, char* argv[])
     /*------------------------------------------------- Contact Conditions  */
     double e =0.0;
     SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-    SP::SiconosVector  initial_gap(new SiconosVector(1, Ly*0.1));
+    SP::SiconosVector  initial_gap(new SiconosVector(1, Lz*0.1));
     for(SP::FENode n : femodel->nodes())
     {
-      if (fabs(n->y()) <= 1e-16 and fabs(n->x()) >= 1e-16)
+      if (fabs(n->z()) <= 1e-16 and fabs(n->x()) >= 1e-16)
       {
-        //std::cout << "node number : " << n->num() << " " << n->y() <<  std::endl;
-        unsigned int idx_y = (*n->dofIndex())[1];
+        std::cout << "contact node number : " << n->num() << " " << n->z() <<  std::endl;
+        unsigned int idx_z = (*n->dofIndex())[2];
         SP::SimpleMatrix H(new SimpleMatrix(1, FEsolid->dimension()));
-        (*H)(0, idx_y) = 1.0;
+        (*H)(0, idx_z) = 1.0;
         SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
         SP::Relation relation(new LagrangianLinearTIR(H, initial_gap));
         SP::Interaction inter(new Interaction(nslaw, relation));
@@ -334,7 +361,7 @@ int main(int argc, char* argv[])
     // --- Output files ---
     cout << "====> Output file writing ..." << endl;
     dataPlot.resize(k, outputSize);
-    ioMatrix::write("T3.dat", "ascii", dataPlot, "noDim");
+    ioMatrix::write("TH4.dat", "ascii", dataPlot, "noDim");
     // double error=0.0, eps=1e-12;
     // if((error=ioMatrix::compareRefFile(dataPlot, "BouncingBallTS.ref", eps)) >= 0.0
     //     && error > eps)
@@ -354,7 +381,7 @@ int main(int argc, char* argv[])
   }
   catch(...)
   {
-    cerr << "Exception caught in T3.cpp" << endl;
+    cerr << "Exception caught in TH4.cpp" << endl;
     return 1;
 
   }
