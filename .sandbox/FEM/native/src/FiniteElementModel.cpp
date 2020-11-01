@@ -53,25 +53,38 @@ unsigned int FiniteElementModel::init()
     /* ------------- contruction of an FE element */
     DEBUG_PRINTF("MElement->num() : %zu\n", e->num() );
     SP::FElement fe;
-    switch(e->type()) // we follow gmsh convention
+    if (dim ==2)
     {
-    case 2: // 3-node triangle.
-    {
-      /* We should normally ask the user for the type of element we associate with
-       * the type of MElement of gmsh */
-      fe.reset(new FElement(T3, 6, e)); /* the FE element number is equal to the MElement number */
-      break;
+      switch(e->type()) // we follow gmsh convention
+      {
+      case 2: // 3-node triangle.
+      {
+        /* We should normally ask the user for the type of element we associate with
+         * the type of MElement of gmsh */
+        fe.reset(new FElement(T3, 6, e)); /* the FE element number is equal to the MElement number */
+        break;
+      }
+      default:
+        std::cout << "FiniteElementModel::initDOF(). element type "<< e->type()<<" not recognized and ignored" <<std::endl;
+        continue;
+      }
     }
-    case 4: // 3-node triangle.
+    else if (dim ==3)
     {
-      /* We should normally ask the user for the type of element we associate with
-       * the type of MElement of gmsh */
-      fe.reset(new FElement(TH4, 12, e)); /* the FE element number is equal to the MElement number */
-      break;
-    }
-    
-    default:
-      RuntimeException::selfThrow("FiniteElementModel::initDOF(). element not recognized");
+      switch(e->type()) // we follow gmsh convention
+      {
+      case 4: // 4-node tetra.
+      {
+        /* We should normally ask the user for the type of element we associate with
+         * the type of MElement of gmsh */
+        fe.reset(new FElement(TH4, 12, e)); /* the FE element number is equal to the MElement number */
+        break;
+      }
+      default:
+        std::cout << "FiniteElementModel::initDOF(). element type "<< e->type()<<" not recognized and ignored" <<std::endl;
+        continue;
+      }
+     
     }
 
     /* ------------- add the FE element in the elements vector */
@@ -97,15 +110,15 @@ unsigned int FiniteElementModel::init()
       else
       {
         DEBUG_PRINTF("  node already exists for vertex : %zu \n", v->num() );
-        int typeElement = v->elements()[0]->type();
-        for (MElement * e : v->elements())
-        {
-          if (e->type() != typeElement)
-          {
-            RuntimeException::selfThrow("FiniteElementModel::initDOF(). Element type are consistent for all the elements connected to the vertex.");
-            return 0;
-          }
-        }
+        // int typeElement = v->elements()[0]->type();
+        // for (MElement * e : v->elements())
+        // {
+        //   if (e->type() != typeElement)
+        //   {
+        //     THROW_EXCEPTION("FiniteElementModel::initDOF(). Element type are consistent for all the elements connected to the vertex.");
+        //     return 0;
+        //   }
+        // }
       }
       //assert(_nodes[num_node]);
       //DEBUG_EXPR(vertexNode.at(v)->display(););
@@ -501,7 +514,7 @@ void FiniteElementModel::computeStiffnessMatrix(SP::SiconosMatrix K, Material& m
       (*D)(2,2) = 0.5*coef*(1.0 - 2* nu);
     }
     else
-      RuntimeException::selfThrow("FiniteElementModel::computeStiffnessMatrix. Other type of analysis not yet implemented");
+      THROW_EXCEPTION("FiniteElementModel::computeStiffnessMatrix. Other type of analysis not yet implemented");
   }
   else if (_mesh->dim() ==3)
   {

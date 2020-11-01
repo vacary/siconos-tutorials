@@ -18,95 +18,183 @@
 
 #include "MeshUtils.hpp"
 #include "Mesh.hpp"
-#include "./src/gmsh_io.hpp"
+#include <math.h>
+
+#include <fstream>
+using namespace std;
+#include <stdio.h>
+#include <iostream>
+#include <sstream>
+
+#include <string>
+#include <algorithm>
+#include <iterator>
+
 #define DEBUG_STDOUT
 #define DEBUG_NOCOLOR
 #define DEBUG_MESSAGES
 #include "debug.h"
 
-#include <stdio.h>
-#include <iostream>
 
+template <class Container>
+void split(const std::string& str, Container& cont,
+              const std::string& delims = " ")
+{
+    std::size_t current, previous = 0;
+    current = str.find_first_of(delims);
+    while (current != std::string::npos) {
+        cont.push_back(str.substr(previous, current - previous));
+        previous = current + 1;
+        current = str.find_first_of(delims, previous);
+    }
+    cont.push_back(str.substr(previous, current - previous));
+}
 
-Mesh* createMeshFromGMSH(std::string gmsh_filename)
+Mesh* createMeshFromGMSH2(std::string gmsh_filename)
 {
 
-  int *element_node;
-  int element_num;
-  int element_order;
+  ifstream in(gmsh_filename);
 
-  int m;
-  int node_num;
-  double *node_x;
+  if(!in) {
+    cout << "Cannot open input file.\n";
+    return NULL;
+  }
 
-  cout << "\n";
-  cout << "  Read data from a file.\n";
-//
-//  Get the data size.
-//
-  gmsh_size_read ( gmsh_filename, node_num, m, element_num,
-    element_order );
-//
-//  Print the sizes.
-//
-  cout << "\n";
-  cout << "  Node data read from file \"" << gmsh_filename << "\"\n";
-  cout << "\n";
-  cout << "  Number of nodes = " << node_num << "\n";
-  cout << "  Spatial dimension = " << m << "\n";
-  cout << "  Number of elements = " << element_num << "\n";
-  cout << "  Element order = " << element_order << "\n";
+  char str[500];
 
-//
-//  Allocate memory.
-//
-  node_x = ( double * ) malloc ( m * node_num * sizeof ( double ) );
-  element_node = ( int * )
-    malloc ( element_order * element_num * sizeof ( int ) );
+
+
+  float gmsh_version;
+  int m =3;
+  unsigned int number_of_vertices;
   std::vector<MVertex *> vertices;
-  //vertices.resize(node_num);
+  unsigned int number_of_elements;
   std::vector<MElement *> elements;
-  //elements.resize(elements);
-//
-//  Get the data.
-//
-  gmsh_data_read ( gmsh_filename, m, node_num, node_x,
-    element_order, element_num, element_node );
+  double min_z= 1e+64, max_z = -1e+64;
+  string toto;
 
-  for(int v = 0; v <node_num; v++)
-  {
-    if (m==2)
+  while(in) {
+    std::string line;
+    std::getline(in, line);
+    //if(in) cout << line << endl;
+    //std::cout << "line.front()" << line.front() << std::endl;
+
+    // std::vector<std::string> words;
+    // split4(line, words);
+    // std::copy(words.begin(), words.end(),
+    //           std::ostream_iterator<std::string>(std::cout, "\n"));
+
+    if (line.compare("$MeshFormat") == 0 )
     {
-      vertices.push_back(new MVertex(v, node_x[0+v*m] , node_x[1+v*m], 0.));
+      std::getline(in, line);
+      std::vector<std::string> words;
+      split(line, words);
+      // std::copy(words.begin(), words.end(),
+      //           std::ostream_iterator<std::string>(std::cout, "\n"));
+
+      stringstream token(words[0]);
+      token >> gmsh_version;
+      //std::cout << "gmsh_version :" << gmsh_version << endl;
     }
-    else if (m==3)
+
+    if (line.compare("$Nodes") == 0 )
     {
-      vertices.push_back(new MVertex(v, node_x[0+v*m] , node_x[1+v*m], node_x[2+v*m]));
+      std::getline(in, line);
+      stringstream token(line);
+      token >> number_of_vertices;
+      std::cout << "number_of_vertices : " << number_of_vertices <<  endl;
+      while (std::getline(in, line))
+      {
+        if (line.compare("$EndNodes") == 0 ) break;
+        std::vector<std::string> words;
+        split(line, words);
+        // std::copy(words.begin(), words.end(),
+        //           std::ostream_iterator<std::string>(std::cout, "\n"));
+        stringstream token(words[0]);
+        int vertex_number ;
+        token >> vertex_number;
+        double x, y, z ;
+        stringstream t_x(words[1]); t_x >> x;
+        stringstream t_y(words[2]); t_y >> y;
+        stringstream t_z(words[3]); t_z >> z;
+        max_z = std::max(max_z,z);
+        min_z = std::min(min_z,z);
+        vertices.push_back(new MVertex(vertex_number, x, y, z));
+        //vertices.back()->display();
+      }
     }
+
+    if (fabs(min_z-max_z) < 1e-16)
+    {
+      m =2;
+    }
+    if (line.compare("$Elements") == 0 )
+    {
+      std::getline(in, line);
+      stringstream token(line);
+      token >> number_of_elements;
+      std::cout << "number_of_elements : " << number_of_elements <<  endl;
+      while (std::getline(in, line))
+      {
+        if (line.compare("$EndElements") == 0 ) break;
+        std::vector<std::string> words;
+        split(line, words);
+        // std::copy(words.begin(), words.end(),
+        //           std::ostream_iterator<std::string>(std::cout, "\n"));
+        stringstream token(words[0]);
+        int element_number ;
+        token >> element_number;
+        stringstream t_type(words[1]);
+        int element_type ;
+        t_type >> element_type;
+        stringstream t_nt(words[2]);
+        int number_of_tags ;
+        t_nt >> number_of_tags;
+        std::vector<int> tags ;
+        for (int k =0 ; k < number_of_tags; k++)
+        {
+          int tag;
+          stringstream token(words[k]);
+          token >> tag;
+          tags.push_back(tag);
+        }
+        
+        std::vector<MVertex *> vertices_e ;
+        for (int k = 3+number_of_tags; k < words.size(); k++)
+        {
+          int node_number;
+          stringstream token(words[k]);
+          token >> node_number;
+          //        std::cout << "node_number" << node_number << std::endl;
+          int v;
+          for (int k  = 0 ; k <  vertices.size(); k++)
+          {
+            if (node_number-1+k < vertices.size())
+              v  = node_number-1+k;
+            else
+            {
+              v = node_number-1+k -vertices.size();
+            }
+
+            if (node_number == vertices[v]->num())
+            {
+              vertices_e.push_back(vertices[v]); 
+              break;
+            }
+          }
+        }
+        elements.push_back(new MElement(element_number, element_type, vertices_e));
+        //elements.back()->display();
+      }
+    }
+
+
+
+
   }
-  unsigned int element_cnt=0;
-  for(int e = 0; e <element_num; e++)
-  {
-    std::vector<MVertex *> vertices_e ;
-    for ( int i = 0; i < element_order; i++ )
-    {
-      int num_v = element_node[i+e *element_order] - 1;
-      vertices_e.push_back(vertices[num_v]);
-    }
 
-    elements.push_back(new MElement(element_cnt++, element_order, vertices_e));
-  }
+  in.close();
 
-
-
-//
-//  Print some of the data.
-//
-  r8mat_transpose_print_some ( m, node_num, node_x,
-    1, 1, m, 1000, "  Coordinates for first 10 nodes:" );
-
-  i4mat_transpose_print_some ( element_order, element_num, element_node,
-    1, 1, element_order, 100, "  Connectivity for first 10 elements:" );
-  return new Mesh(m, vertices, elements);
-
+  
+  return new Mesh(m, vertices, elements);;
 }

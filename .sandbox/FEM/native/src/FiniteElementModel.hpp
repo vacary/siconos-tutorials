@@ -160,7 +160,7 @@ struct FElement
 
       break;
     default:
-      RuntimeException::selfThrow("FElement::order(). element type not recognized");
+      throw("FElement::order(). element type not recognized");
     }
     return 0;
   }
@@ -174,7 +174,7 @@ struct FElement
     case TH4:
       return 3;
     default:
-      RuntimeException::selfThrow("FElement::ndorPernode(). element type not recognized");
+      throw("FElement::ndorPernode(). element type not recognized");
     }
     return 0;
   }
@@ -197,7 +197,7 @@ struct FElement
       break;
  
     default:
-      RuntimeException::selfThrow("FElement::GaussPoints(). element type not recognized");
+      throw("FElement::GaussPoints(). element type not recognized");
     }
     return  GaussPointsEmpty;
   }
@@ -225,7 +225,7 @@ struct FElement
       break;
     }
     default:
-      RuntimeException::selfThrow("FElement::shapeFunctionIso2D(). element type not recognized");
+      THROW_EXCEPTION("FElement::shapeFunctionIso2D(). element type not recognized");
     }
   }
   void shapeFunctionIso3D(double ksi, double eta, double zeta,
@@ -258,7 +258,7 @@ struct FElement
       break;
     }
     default:
-      RuntimeException::selfThrow("FElement::shapeFunctionIso3D(). element type not recognized");
+      throw("FElement::shapeFunctionIso3D(). element type not recognized");
     }
   }
 

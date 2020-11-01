@@ -26,5 +26,5 @@
 #define MESHUTILS_H
 
 Mesh* createMeshFromGMSH(std::string gmsh_filename);
-
+Mesh* createMeshFromGMSH2(std::string gmsh_filename);
 #endif

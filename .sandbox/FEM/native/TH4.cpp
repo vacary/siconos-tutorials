@@ -34,61 +34,8 @@
 
 using namespace std;
 
-
-static Mesh* createMesh2x1()
-{
-  MVertex * v1 = new MVertex(1, 0.,0.,0.);
-  MVertex * v2 = new MVertex(2, 1.,0.,0.);
-  MVertex * v3 = new MVertex(3, 0.,1.,0.);
-  MVertex * v4 = new MVertex(4, 1.,1.,0.);
-
-  std::vector<MVertex *> vertices = {v1, v2, v3, v4};
-
-
-  std::vector<MVertex *> vertices1 = {v1, v2, v3};
-  MElement * e1 = new MElement(1, 2, vertices1);
-
-  std::vector<MVertex *> vertices2 = {v2, v4, v3};
-  MElement * e2 = new MElement(2, 2, vertices2);
-
-  std::vector<MElement *> elements = {e1, e2};
-
-  return new Mesh(2, vertices, elements);
-}
-static Mesh* createMeshnxm(int n, int m, double Lx, double Ly)
-{
-
-  double lx = Lx/n;
-  double ly = Ly/m;
-
-
-  std::vector<MVertex *> vertices;
-
-  vertices.resize((n+1)*(m+1));
-
-  for (int i =0;  i < n+1; i++)
-  {
-    for (int j =0;  j < m+1; j++)
-    {
-      vertices[i+j*(n+1)] = new MVertex(i+j*(n+1), i*lx , j*ly, 0.);
-    }
-  }
-  std::vector<MElement *> elements;
-  //elements.resize(2*n*m);
-  int element_cnt=0;
-  for (int i =0;  i < n; i++)
-  {
-    for (int j =0;  j < m; j++)
-    {
-      std::vector<MVertex *> vertices_e_1 = {vertices[i+j*(n+1)], vertices[i+1+(j)*(n+1)], vertices[i+(j+1)*(n+1)]};
-      elements.push_back(new MElement(element_cnt++, 2, vertices_e_1));
-
-      std::vector<MVertex *> vertices_e_2 = {vertices[i+1+(j)*(n+1)], vertices[i+1+(j+1)*(n+1)], vertices[i+(j+1)*(n+1)]};
-      elements.push_back(new MElement(element_cnt++, 2, vertices_e_2));
-    }
-  }
-  return new Mesh(2, vertices, elements);
-}
+//#include "cube_fine.cpp"
+//#include "beam.cpp"
 
 static void  outputMeshforPython(SP::Mesh  mesh)
 {
@@ -184,13 +131,12 @@ int main(int argc, char* argv[])
 {
   
   double Lz= 1.0;
-  string gmsh_filename = "./cube_xx.msh";
-  SP::Mesh mesh (createMeshFromGMSH(gmsh_filename));
-  mesh->display(false);
+  //SP::Mesh mesh (createMesh());
+  SP::Mesh mesh (createMeshFromGMSH2("cube.msh2"));
+//mesh->display(false);
   outputMeshforPython(mesh);
-  getchar();
 
-  SP::Material material(new Material(1, 100000, 0.0));
+  SP::Material material(new Material(2500, 100000, 0.0));
 
   try{
     std::chrono::time_point<std::chrono::system_clock> start, end;
@@ -209,18 +155,18 @@ int main(int argc, char* argv[])
     /*------------------------------------------------- Applied forces  */
     SP::SiconosVector forces(new SiconosVector(FEsolid->dimension()));
     forces->zero();
-
+    std::cout << "node number applied forces: [";
     for(SP::FENode n : femodel->nodes())
     {
       //std::cout << "node number : " << n->num() << " " << n->x() << " " << n->y() <<  std::endl;
       if (fabs(n->z()-Lz) <= 1e-16 and fabs(n->x()) >= 1e-16)
       {
-        std::cout << "node number applied forces: " << n->num() << " " << n->z() <<  std::endl;
+        std::cout   << " " << n->num();
         unsigned int idx_z = (*n->dofIndex())[2];
-        (*forces)(idx_z) = -10000.;
+        (*forces)(idx_z) = -10;
       }
     }
-    //(*forces)(FEsolid->dimension()-1) = -100.;
+    std::cout << " ]"  <<  std::endl;
     FEsolid->setFExtPtr(forces);
 
 
@@ -228,11 +174,13 @@ int main(int argc, char* argv[])
     /* This part should be hidden in a new BC function for a node number
      * and a dof index. */
     SP::IndexInt bdIndex(new IndexInt(0));
+
+    std::cout << "Boundary conditions node number : [ ";
     for(SP::FENode n : femodel->nodes())
     {
       if (fabs(n->x()) <= 1e-16)
       {
-        std::cout << "Boundary conditions node number : " << n->num() << " " << n->x() <<  std::endl;
+        std::cout  << n->num() << " " ;
         unsigned int idx_x = (*n->dofIndex())[0];
         bdIndex->push_back(idx_x);
         unsigned int idx_y = (*n->dofIndex())[1];
@@ -241,6 +189,7 @@ int main(int argc, char* argv[])
         bdIndex->push_back(idx_z);
       }
     }
+    std::cout  <<  "] " <<  std::endl;
     SP::SiconosVector bdPrescribedVelocity(new SiconosVector(bdIndex->size()));
     for (int i=0; i < bdIndex->size() ; i++)
     {
@@ -254,9 +203,9 @@ int main(int argc, char* argv[])
     // --- Model ---
     // -------------
     double t0 = 0;                   // initial computation time
-    double T = 1e-01;                  // final computation time
-    double h = 1e-03;                // time step
-    double theta = 1.0;              // theta for MoreauJeanOSI integrator
+    double T = 100;                  // final computation time
+    double h = 1e-00;                // time step
+    double theta = 0.5;              // theta for MoreauJeanOSI integrator
 
     SP::NonSmoothDynamicalSystem solid(new NonSmoothDynamicalSystem(t0, T));
 
@@ -266,12 +215,13 @@ int main(int argc, char* argv[])
     /*------------------------------------------------- Contact Conditions  */
     double e =0.0;
     SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-    SP::SiconosVector  initial_gap(new SiconosVector(1, Lz*0.1));
+    SP::SiconosVector  initial_gap(new SiconosVector(1, Lz*0.05));
+    std::cout << "contact node number : [ "  ;
     for(SP::FENode n : femodel->nodes())
     {
-      if (fabs(n->z()) <= 1e-16 and fabs(n->x()) >= 1e-16)
+      if (fabs(n->z()) <= 1e-16 and fabs(n->x()) >= 8.)
       {
-        std::cout << "contact node number : " << n->num() << " " << n->z() <<  std::endl;
+        std::cout << " " << n->num() ;
         unsigned int idx_z = (*n->dofIndex())[2];
         SP::SimpleMatrix H(new SimpleMatrix(1, FEsolid->dimension()));
         (*H)(0, idx_z) = 1.0;
@@ -282,6 +232,7 @@ int main(int argc, char* argv[])
         solid->link(inter, FEsolid);
       }
     }
+    std::cout << "]"<< std::endl;
 
     // // link the interaction and the dynamical system
     // bouncingBall->link(inter, FEsolid);
@@ -373,15 +324,11 @@ int main(int argc, char* argv[])
 
 
   }
-  catch(SiconosException& e)
-  {
-    cerr << e.report() << endl;
-    return 1;
-
-  }
   catch(...)
   {
+    
     cerr << "Exception caught in TH4.cpp" << endl;
+    Siconos::exception::process();
     return 1;
 
   }
