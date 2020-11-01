@@ -94,6 +94,11 @@ enum FINITE_ELEMENT_TYPE // we follow the gmsh numbering convention.
   L3=8,  // 3-node second order line (2 nodes associated with the vertices and 1 with the edge).
   T6=9,  // 6-node second order triangle (3 nodes associated with the vertices and 3 with the edges).
 };
+enum FINITE_ELEMENT_FAMILY
+{
+  ISOPARAMETRIC
+};
+
 
 static const double I_TET2_X [] = {0.13819660112501052, 0.13819660112501052, 0.13819660112501052, 0.58541019662496840};
 static const double I_TET2_Y [] = {0.13819660112501052, 0.13819660112501052, 0.58541019662496840, 0.13819660112501052};
@@ -133,6 +138,9 @@ struct FElement
   /* Element type */
   FINITE_ELEMENT_TYPE _type;
 
+  /* Element Family */
+  FINITE_ELEMENT_FAMILY _family;
+  
   /* number of dof by Element  */
   unsigned _ndof;
 
@@ -150,6 +158,11 @@ struct FElement
     return _ndof;
   }
 
+  FINITE_ELEMENT_FAMILY family()
+  {
+    return _family;
+  }
+  
   int order()
   {
     switch(_type)
@@ -333,7 +346,7 @@ public:
   /** compute Mass Matrix
    * should be computeMass of LagrangianDS ?
    **/
-  void computeMassMatrix(SP::SiconosMatrix, double massDensity);
+  void computeMassMatrix(SP::SiconosMatrix, std::vector<SP::Material> & mat);
 
   /** compute elementary Mass Matrix
    * should be computeMass of LagrangianDS ?
@@ -343,7 +356,7 @@ public:
   /** compute Stiffness Matrix
    * should be computeMass of LagrangianDS ?
    **/
-  void computeStiffnessMatrix(SP::SiconosMatrix, Material& mat );
+  void computeStiffnessMatrix(SP::SiconosMatrix,  std::vector<SP::Material> & mat);
 
   /** compute elementary Stiffness Matrix
    * should be computeMass of LagrangianDS ?

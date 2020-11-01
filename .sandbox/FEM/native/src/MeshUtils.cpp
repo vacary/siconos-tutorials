@@ -151,7 +151,7 @@ Mesh* createMeshFromGMSH2(std::string gmsh_filename)
         int number_of_tags ;
         t_nt >> number_of_tags;
         std::vector<int> tags ;
-        for (int k =0 ; k < number_of_tags; k++)
+        for (int k =3 ; k < 3+number_of_tags; k++)
         {
           int tag;
           stringstream token(words[k]);
@@ -183,7 +183,7 @@ Mesh* createMeshFromGMSH2(std::string gmsh_filename)
             }
           }
         }
-        elements.push_back(new MElement(element_number, element_type, vertices_e));
+        elements.push_back(new MElement(element_number, element_type, vertices_e, tags));
         //elements.back()->display();
       }
     }
@@ -197,4 +197,92 @@ Mesh* createMeshFromGMSH2(std::string gmsh_filename)
 
   
   return new Mesh(m, vertices, elements);;
+}
+
+void  writeMeshforPython(SP::Mesh  mesh)
+{
+  FILE * foutput = fopen("mesh.py", "w");
+  fprintf(foutput, "coord=[]\n");
+  for (MVertex * v : mesh->vertices())
+  {
+    fprintf(foutput, "coord.append([%e, %e])\n", v->x(), v->y());
+  }
+  fprintf(foutput, "triangle=[]\n");
+  for (MElement * e : mesh->elements())
+  {
+    fprintf(foutput, "triangle.append([");
+    for (MVertex * v : e->vertices())
+    {
+      fprintf(foutput, "%zu, ", v->num());
+    }
+    fprintf(foutput, "])\n");
+  }
+  fclose(foutput);
+}
+void  prepareWriteDisplacementforPython()
+{
+  FILE * foutput = fopen("displacement.py", "w");
+  fprintf(foutput, "import numpy as np\nx=[]\n");
+  fprintf(foutput, "import numpy as np\ny=[]\n");
+  fprintf(foutput, "import numpy as np\nz=[]\n");
+  fclose(foutput);
+}
+
+void  writeDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel femodel, SP::SiconosVector x)
+{
+  FILE * foutput = fopen("displacement.py", "a");
+  fprintf(foutput, "x.append(np.array([");
+
+  for (MVertex * v : mesh->vertices())
+  {
+    SP::FENode n = femodel->vertexToNode(v);
+    double value = 0.0;
+    if (n)
+    {
+      unsigned int idx= (*n->dofIndex())[0];
+      value =(*x)(idx);
+    }
+    fprintf(foutput, "%e,", value) ;
+
+  }
+  fprintf(foutput, "]))\n") ;
+
+  fprintf(foutput, "\n");
+
+
+  fprintf(foutput, "y.append(np.array([");
+  for (MVertex * v : mesh->vertices())
+  {
+    SP::FENode n = femodel->vertexToNode(v);
+    double value = 0.0;
+    if (n)
+    {
+      unsigned int idx= (*n->dofIndex())[1];
+      value =(*x)(idx);
+    }
+    fprintf(foutput, "%e,", value) ;
+
+  }
+  fprintf(foutput, "]))\n") ;
+  fprintf(foutput, "\n");
+
+
+  fprintf(foutput, "z.append(np.array([");
+  for (MVertex * v : mesh->vertices())
+  {
+    SP::FENode n = femodel->vertexToNode(v);
+    double value = 0.0;
+    if (n)
+    {
+      unsigned int idx= (*n->dofIndex())[2];
+      value =(*x)(idx);
+    }
+    fprintf(foutput, "%e,", value) ;
+
+  }
+  fprintf(foutput, "]))\n") ;
+  fprintf(foutput, "\n");
+
+
+  fclose(foutput);
 }

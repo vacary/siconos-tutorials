@@ -23,12 +23,11 @@
 #include <chrono>
 #include <stdio.h>
 
-#include "MeshUtils.hpp"
-
 
 
 #include "FiniteElementLinearTIDS.hpp"
 #include "Material.hpp"
+#include "MeshUtils.hpp"
 //#include "FiniteElementModel.hpp"
 //#include "FemFwd.hpp"
 
@@ -37,122 +36,42 @@ using namespace std;
 //#include "cube_fine.cpp"
 //#include "beam.cpp"
 
-static void  outputMeshforPython(SP::Mesh  mesh)
-{
-  FILE * foutput = fopen("mesh.py", "w");
-  fprintf(foutput, "coord=[]\n");
-  for (MVertex * v : mesh->vertices())
-  {
-    fprintf(foutput, "coord.append([%e, %e])\n", v->x(), v->y());
-  }
-  fprintf(foutput, "triangle=[]\n");
-  for (MElement * e : mesh->elements())
-  {
-    fprintf(foutput, "triangle.append([");
-    for (MVertex * v : e->vertices())
-    {
-      fprintf(foutput, "%zu, ", v->num());
-    }
-    fprintf(foutput, "])\n");
-  }
-  fclose(foutput);
-}
 
-static void  preOutputDisplacementforPython()
-{
-  FILE * foutput = fopen("displacement.py", "w");
-  fprintf(foutput, "import numpy as np\nx=[]\n");
-  fprintf(foutput, "import numpy as np\ny=[]\n");
-  fprintf(foutput, "import numpy as np\nz=[]\n");
-  fclose(foutput);
-}
-
-static void  outputDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel femodel, SP::SiconosVector x)
-{
-  FILE * foutput = fopen("displacement.py", "a");
-  fprintf(foutput, "x.append(np.array([");
-
-  for (MVertex * v : mesh->vertices())
-  {
-    SP::FENode n = femodel->vertexToNode(v);
-    double value = 0.0;
-    if (n)
-    {
-      unsigned int idx= (*n->dofIndex())[0];
-      value =(*x)(idx);
-    }
-    fprintf(foutput, "%e,", value) ;
-
-  }
-  fprintf(foutput, "]))\n") ;
-  
-  fprintf(foutput, "\n");
-
-
-  fprintf(foutput, "y.append(np.array([");
-  for (MVertex * v : mesh->vertices())
-  {
-    SP::FENode n = femodel->vertexToNode(v);
-    double value = 0.0;
-    if (n)
-    {
-      unsigned int idx= (*n->dofIndex())[1];
-      value =(*x)(idx);
-    }
-    fprintf(foutput, "%e,", value) ;
-
-  }
-  fprintf(foutput, "]))\n") ;
-  fprintf(foutput, "\n");
-
-
-  fprintf(foutput, "z.append(np.array([");
-  for (MVertex * v : mesh->vertices())
-  {
-    SP::FENode n = femodel->vertexToNode(v);
-    double value = 0.0;
-    if (n)
-    {
-      unsigned int idx= (*n->dofIndex())[2];
-      value =(*x)(idx);
-    }
-    fprintf(foutput, "%e,", value) ;
-
-  }
-  fprintf(foutput, "]))\n") ;
-  fprintf(foutput, "\n");
-
-  
-  fclose(foutput);
-}
 
 
 int main(int argc, char* argv[])
 {
-  
-  double Lz= 1.0;
-  //SP::Mesh mesh (createMesh());
-  SP::Mesh mesh (createMeshFromGMSH2("cube.msh2"));
-//mesh->display(false);
-  outputMeshforPython(mesh);
-
-  SP::Material material(new Material(2500, 100000, 0.0));
-
   try{
+    /* Mesh creation *********************************************************/
+    double Lz= 1.0;
+    //SP::Mesh mesh (createMesh());
+    SP::Mesh mesh (createMeshFromGMSH2("cube.msh2"));
+    //mesh->display(false);
+
+    writeMeshforPython(mesh);
+
+    /* Material creation *****************************************************/
+    SP::Material mat1(new Material(2500, 100000, 0.0));
+    std::vector<SP::Material> materials = {mat1};
+
+
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
-    SP::FiniteElementLinearTIDS FEsolid (new FiniteElementLinearTIDS(mesh, material, Siconos::SPARSE));
+
+    /* Finite Element Dynamical Systenms  ************************************/
+    SP::FiniteElementLinearTIDS FEsolid (new FiniteElementLinearTIDS(mesh, materials, Siconos::SPARSE));
+
     end = std::chrono::system_clock::now();
     int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
       (end-start).count();
     cout << "Assembly time : " << elapsed << " ms" << endl;
     std::cout << " " << std::endl;
     //FEsolid->display(true);
-
     SP::FiniteElementModel femodel = FEsolid->FEModel();
 
 
-    /*------------------------------------------------- Applied forces  */
+    /* Applied forces  *******************************************************/
+
     SP::SiconosVector forces(new SiconosVector(FEsolid->dimension()));
     forces->zero();
     std::cout << "node number applied forces: [";
@@ -169,8 +88,8 @@ int main(int argc, char* argv[])
     std::cout << " ]"  <<  std::endl;
     FEsolid->setFExtPtr(forces);
 
+    /* Boundary Conditions  *******************************************************/
 
-    /*------------------------------------------------- Boundary Conditions  */
     /* This part should be hidden in a new BC function for a node number
      * and a dof index. */
     SP::IndexInt bdIndex(new IndexInt(0));
@@ -204,15 +123,13 @@ int main(int argc, char* argv[])
     // -------------
     double t0 = 0;                   // initial computation time
     double T = 100;                  // final computation time
-    double h = 1e-00;                // time step
-    double theta = 0.5;              // theta for MoreauJeanOSI integrator
 
     SP::NonSmoothDynamicalSystem solid(new NonSmoothDynamicalSystem(t0, T));
 
     // add the dynamical system in the non smooth dynamical system
     solid->insertDynamicalSystem(FEsolid);
 
-    /*------------------------------------------------- Contact Conditions  */
+    /* Contact Conditions  ***************************************************/
     double e =0.0;
     SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
     SP::SiconosVector  initial_gap(new SiconosVector(1, Lz*0.05));
@@ -234,17 +151,15 @@ int main(int argc, char* argv[])
     }
     std::cout << "]"<< std::endl;
 
-    // // link the interaction and the dynamical system
-    // bouncingBall->link(inter, FEsolid);
-
     // ------------------
     // --- Simulation ---
     // ------------------
+    double h = 1e-00;                // time step
+    double theta = 0.5;              // theta for MoreauJeanOSI integrator
 
     // -- (1) OneStepIntegrators --
     SP::MoreauJeanOSI OSI(new MoreauJeanOSI(theta));
     OSI->setIsWSymmetricDefinitePositive(true);
-
 
     // -- (2) Time discretisation --
     SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
@@ -259,9 +174,7 @@ int main(int argc, char* argv[])
 
     // ================================= Computation =================================
 
-
     int N = ceil((T - t0) / h); // Number of time steps
-
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 5;
@@ -277,7 +190,7 @@ int main(int argc, char* argv[])
     dataPlot(0, 2) = (*v)(FEsolid->dimension()-1);
     dataPlot(0, 3) = (*p)(0);
     //dataPlot(0, 4) = (*lambda)(0);
-    preOutputDisplacementforPython();
+    prepareWriteDisplacementforPython();
 
 
 
@@ -296,7 +209,7 @@ int main(int argc, char* argv[])
       dataPlot(k, 1) = (*q)(FEsolid->dimension()-1);
       dataPlot(k, 2) = (*v)(FEsolid->dimension()-1);
       dataPlot(k, 3) = (*p)(0);
-      outputDisplacementforPython(mesh, femodel, q);
+      writeDisplacementforPython(mesh, femodel, q);
       //dataPlot(k, 4) = (*lambda)(0);
       s->nextStep();
       k++;
@@ -318,15 +231,9 @@ int main(int argc, char* argv[])
     //     && error > eps)
     //   return 1;
 
-
-
-
-
-
   }
   catch(...)
   {
-    
     cerr << "Exception caught in TH4.cpp" << endl;
     Siconos::exception::process();
     return 1;

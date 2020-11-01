@@ -45,7 +45,7 @@ protected:
   SP::Mesh _mesh;
 
   /** a material */
-  SP::Material _material;
+  std::vector<SP::Material> _materials;
 
   /** a finite element model */
   SP::FiniteElementModel _FEModel;
@@ -63,7 +63,9 @@ public:
    * \param mesh the mesh that defined the spatial discretization
    * \param material
    */
-  FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material,  Siconos::UBLAS_TYPE storageType=Siconos::DENSE);
+  FiniteElementLinearTIDS(SP::Mesh mesh,
+                          std::vector<SP::Material> materials,
+                          Siconos::UBLAS_TYPE storageType=Siconos::DENSE);
 
   /** destructor */
   ~FiniteElementLinearTIDS(){};

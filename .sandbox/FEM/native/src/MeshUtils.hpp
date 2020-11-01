@@ -21,10 +21,18 @@
  */
 
 #include "Mesh.hpp"
-
+#include "FiniteElementModel.hpp"
+#include "FemFwd.hpp"
+#include <SiconosKernel.hpp>
 #ifndef MESHUTILS_H
 #define MESHUTILS_H
 
-Mesh* createMeshFromGMSH(std::string gmsh_filename);
+
 Mesh* createMeshFromGMSH2(std::string gmsh_filename);
+
+
+void  writeMeshforPython(SP::Mesh  mesh);
+void  prepareWriteDisplacementforPython();
+void  writeDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel femodel, SP::SiconosVector x);
+  
 #endif
