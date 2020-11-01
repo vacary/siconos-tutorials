@@ -27,7 +27,7 @@
 // #define DEBUG_STDOUT
 // #define DEBUG_NOCOLOR
 // #define DEBUG_MESSAGES
-#include "debug.h"
+#include "siconos_debug.h"
 
 #include <stdio.h>
 #include <iostream>
@@ -48,6 +48,8 @@ unsigned int FiniteElementModel::init()
 
   unsigned int num_node=0;
 
+  std::vector<MElement*> ignored_elements;
+
   for (MElement * e : _mesh->elements())
   {
     /* ------------- contruction of an FE element */
@@ -65,7 +67,7 @@ unsigned int FiniteElementModel::init()
         break;
       }
       default:
-        std::cout << "FiniteElementModel::initDOF(). element type "<< e->type()<<" not recognized and ignored" <<std::endl;
+        ignored_elements.push_back(e);
         continue;
       }
     }
@@ -81,10 +83,9 @@ unsigned int FiniteElementModel::init()
         break;
       }
       default:
-        std::cout << "FiniteElementModel::initDOF(). element type "<< e->type()<<" not recognized and ignored" <<std::endl;
+        ignored_elements.push_back(e);
         continue;
       }
-     
     }
 
     /* ------------- add the FE element in the elements vector */
@@ -110,24 +111,23 @@ unsigned int FiniteElementModel::init()
       else
       {
         DEBUG_PRINTF("  node already exists for vertex : %zu \n", v->num() );
-        // int typeElement = v->elements()[0]->type();
-        // for (MElement * e : v->elements())
-        // {
-        //   if (e->type() != typeElement)
-        //   {
-        //     THROW_EXCEPTION("FiniteElementModel::initDOF(). Element type are consistent for all the elements connected to the vertex.");
-        //     return 0;
-        //   }
-        // }
       }
       //assert(_nodes[num_node]);
       //DEBUG_EXPR(vertexNode.at(v)->display(););
       fe->nodes().push_back(_vertexToNode.at(v));
     }
   }
+  std::cout << "Element type not recognised or ignored : [" ;
+  for (MElement * e: ignored_elements)
+  {
+    std::cout << " " << e->num() ;
+  }
+  std::cout << "]" << std::endl ;
+
+
   DEBUG_PRINTF("number of nodes : %i\n", _nodes.size());
   DEBUG_PRINTF("number of elements : %i\n", _elements.size());
-  
+
   return ndof;
   DEBUG_END("FiniteElement::init()\n");
 
@@ -187,7 +187,7 @@ void FiniteElementModel::computeElementaryMassMatrix(SimpleMatrix& Me, FElement&
   int integrationOrder=2;
   for (const double* gp : fe.GaussPoints(integrationOrder))
   {
-    if (_mesh->dim() ==2) //Ugly
+    if (_mesh->dim() ==2 and fe.family() == ISOPARAMETRIC)
     {
       // Compute shape function and derivatives of shape function
       double  gp_eta= gp[0];
@@ -222,7 +222,7 @@ void FiniteElementModel::computeElementaryMassMatrix(SimpleMatrix& Me, FElement&
         }
       }
     }
-    else if (_mesh->dim() ==3) //Ugly
+    else if (_mesh->dim() ==3 and fe.family() == ISOPARAMETRIC) //Ugly
     {
       // Compute shape function and derivatives of shape function
       double  gp_eta  = gp[0];
@@ -251,7 +251,7 @@ void FiniteElementModel::computeElementaryMassMatrix(SimpleMatrix& Me, FElement&
       // DEBUG_EXPR(std::cout << "Gauss points : "<< gp_eta << " "  << gp_ksi << " "  << gp_w << " "   << std::endl;);
 
       double coeff = gp_w * massDensity * detJ;
-
+      DEBUG_EXPR(std::cout << "coeff: "<< coeff << std::endl;);
       /* M += (coeff * Nt N)*/
       for (int i = 0; i < nnodes; i++)
       {
@@ -274,7 +274,7 @@ void FiniteElementModel::computeElementaryMassMatrix(SimpleMatrix& Me, FElement&
 
 
 
-void FiniteElementModel::computeMassMatrix(SP::SiconosMatrix M, double massDensity )
+void FiniteElementModel::computeMassMatrix(SP::SiconosMatrix M, std::map<unsigned int, SP::Material> & mat )
 {
   DEBUG_BEGIN("FiniteElementModel::computeMassMatrix(SP::SiconosMatrix M, double massDensity )\n");
   M->zero();
@@ -284,6 +284,7 @@ void FiniteElementModel::computeMassMatrix(SP::SiconosMatrix M, double massDensi
   {
     unsigned int ndofElement  = fe->_ndof;
     SP::SimpleMatrix Me(new SimpleMatrix(ndofElement,ndofElement)); // to be optimized if all the element are similar
+    double massDensity = mat[fe->_mElement->tags(0)]->massDensity();
     computeElementaryMassMatrix(*Me, *fe, massDensity);
     AssembleElementaryMatrix(M, *Me, *fe);
   }
@@ -326,7 +327,7 @@ void FiniteElementModel::computeElementaryStiffnessMatrix(SimpleMatrix& Ke,
   int integrationOrder=1;
   for (const double* gp : fe.GaussPoints(integrationOrder))
   {
-    if (_mesh->dim() ==2) //Ugly
+    if (_mesh->dim() ==2 and fe.family() == ISOPARAMETRIC) //Ugly
     {
       // Compute shape function and derivatives of shape function
       double  gp_eta= gp[0];
@@ -362,7 +363,7 @@ void FiniteElementModel::computeElementaryStiffnessMatrix(SimpleMatrix& Ke,
         //DEBUG_PRINTF(" Nx[%i] = %e\t Ny[%i] = %e\n", n, Nx[n], n, Ny[n]);
       }
 
-      // Construct the B matrix (its form is consistent with the choice of the reprensentation of strain)
+      // Construct the B matrix (its form is consistent with the choice of the representation of strain)
       SP::SimpleMatrix B(new SimpleMatrix(3,ndof));
       B->zero();
       for (int n =0; n < nnodes; n++)
@@ -388,7 +389,7 @@ void FiniteElementModel::computeElementaryStiffnessMatrix(SimpleMatrix& Ke,
       Ke += (coeff * *BTDB) ;
 
     }
-    else if (_mesh->dim() ==3) //Ugly
+    else if (_mesh->dim() ==3 and fe.family() == ISOPARAMETRIC) //Ugly
     {
       // Compute shape function and derivatives of shape function
       double  gp_eta  = gp[0];
@@ -420,7 +421,7 @@ void FiniteElementModel::computeElementaryStiffnessMatrix(SimpleMatrix& Ke,
         b[j]=1.0;
         int info = solv3x3(J, &Jinv[j*3], b);
       }
-      
+
       // Compute the derivative w.r.t x and y of the shape function
       for (int n =0; n < nnodes; n++)
       {
@@ -486,69 +487,72 @@ void FiniteElementModel::computeElementaryStiffnessMatrix(SimpleMatrix& Ke,
 
 
 
-void FiniteElementModel::computeStiffnessMatrix(SP::SiconosMatrix K, Material& mat  )
+void FiniteElementModel::computeStiffnessMatrix(SP::SiconosMatrix K, std::map<unsigned int, SP::Material> & materials  )
 {
   DEBUG_BEGIN("FiniteElementModel::computeStiffnessMatrix(SP::SiconosMatrix K, Material& mat )\n");
   K->zero();
 
   // We compute first the D matrix. Warning:  to be adpated if several materials.
   SP::SimpleMatrix D;
-  if (_mesh->dim() ==2)
-  {
-    D.reset(new SimpleMatrix(3,3));
-    double E = mat.elasticYoungModulus();
-    double nu =  mat.poissonCoefficient();
-    double coef = E/(1-nu*nu);
-    if (mat.analysisType2D() == PLANE_STRAIN)
-    {
-      (*D)(0,0) = coef*(1.-nu);
-      (*D)(0,1) = coef*nu;
-      (*D)(0,2) = 0.0;
-
-      (*D)(1,0) = (*D)(0,1);
-      (*D)(1,1) = (*D)(0,0);
-      (*D)(1,2) = 0.0;
-
-      (*D)(2,0) = 0.0;
-      (*D)(2,1) = 0.0;
-      (*D)(2,2) = 0.5*coef*(1.0 - 2* nu);
-    }
-    else
-      THROW_EXCEPTION("FiniteElementModel::computeStiffnessMatrix. Other type of analysis not yet implemented");
-  }
-  else if (_mesh->dim() ==3)
-  {
-   //Compute 3D elastic tensor.
-    D.reset(new SimpleMatrix(6,6));
-    D->zero();
-    double E = mat.elasticYoungModulus();
-    double nu =  mat.poissonCoefficient();
-    double coef = E/((1+nu)*(1-2.*nu));
-
-    (*D)(0,0) = coef*(1.-nu);
-    (*D)(0,1) = coef*nu;
-    (*D)(0,2) = coef*nu;
-
-
-    (*D)(1,0) = (*D)(0,1);
-    (*D)(1,1) = (*D)(0,0);
-    (*D)(1,2) = coef*nu;
-
-    (*D)(2,0) = (*D)(0,2);
-    (*D)(2,1) = (*D)(1,2);
-    (*D)(2,2) = (*D)(0,0);
-
-    (*D)(2,2) = (*D)(0,0);
-    (*D)(2,2) = (*D)(0,0);
-
-    (*D)(3,3) = coef*(1.-2.*nu)/2.;
-    (*D)(4,4) = coef*(1.-2.*nu)/2.;
-    (*D)(5,5) = coef*(1.-2.*nu)/2.;
-  }
 
   /* loop over the elements */
   for (SP::FElement fe : elements())
   {
+    Material & mat= *(materials[fe->_mElement->tags(0)]);
+    if (_mesh->dim() ==2)
+    {
+      D.reset(new SimpleMatrix(3,3));
+      double E = mat.elasticYoungModulus();
+      double nu =  mat.poissonCoefficient();
+      double coef = E/(1-nu*nu);
+      if (mat.analysisType2D() == PLANE_STRAIN)
+      {
+        (*D)(0,0) = coef*(1.-nu);
+        (*D)(0,1) = coef*nu;
+        (*D)(0,2) = 0.0;
+
+        (*D)(1,0) = (*D)(0,1);
+        (*D)(1,1) = (*D)(0,0);
+        (*D)(1,2) = 0.0;
+
+        (*D)(2,0) = 0.0;
+        (*D)(2,1) = 0.0;
+        (*D)(2,2) = 0.5*coef*(1.0 - 2* nu);
+      }
+      else
+        THROW_EXCEPTION("FiniteElementModel::computeStiffnessMatrix. Other type of analysis not yet implemented");
+    }
+    else if (_mesh->dim() ==3)
+    {
+      //Compute 3D elastic tensor.
+      D.reset(new SimpleMatrix(6,6));
+      D->zero();
+      double E = mat.elasticYoungModulus();
+      double nu =  mat.poissonCoefficient();
+      double coef = E/((1+nu)*(1-2.*nu));
+
+      (*D)(0,0) = coef*(1.-nu);
+      (*D)(0,1) = coef*nu;
+      (*D)(0,2) = coef*nu;
+
+
+      (*D)(1,0) = (*D)(0,1);
+      (*D)(1,1) = (*D)(0,0);
+      (*D)(1,2) = coef*nu;
+
+      (*D)(2,0) = (*D)(0,2);
+      (*D)(2,1) = (*D)(1,2);
+      (*D)(2,2) = (*D)(0,0);
+
+      (*D)(2,2) = (*D)(0,0);
+      (*D)(2,2) = (*D)(0,0);
+
+      (*D)(3,3) = coef*(1.-2.*nu)/2.;
+      (*D)(4,4) = coef*(1.-2.*nu)/2.;
+      (*D)(5,5) = coef*(1.-2.*nu)/2.;
+    }
+
+
     unsigned int ndofElement  = fe->_ndof;
     SP::SimpleMatrix Ke(new SimpleMatrix(ndofElement,ndofElement)); // to be optimized if all the element are similar
     computeElementaryStiffnessMatrix(*Ke, *fe, D, mat.thickness());
@@ -557,6 +561,82 @@ void FiniteElementModel::computeStiffnessMatrix(SP::SiconosMatrix K, Material& m
   //DEBUG_EXPR(K->display(););
   DEBUG_END("FiniteElementModel::computeStiffnessMatrix(SP::SiconosMatrix K, Material& mat )\n");
 }
+
+
+void FiniteElementModel::applyDirichletBoundaryConditions(int physical_entity_tag, SP::IndexInt node_dof_index, SP::BoundaryCondition _boundaryCondition)
+{
+  DEBUG_BEGIN("FiniteElementModel::applyDirichletBoundaryConditions(int physical_entity_tag, SP::IndexInt node_dof_index, SP::BoundaryCondition _boundaryCondition)\n");
+
+
+  SP::IndexInt bdIndex = _boundaryCondition->velocityIndices();
+  SP::SiconosVector bdPrescribedVelocity = _boundaryCondition->prescribedVelocity();
+
+  int  bdIndex_old_size = bdIndex->size();
+  for (MElement * e : _mesh->elements())
+  {
+    if (e->tags(0) == physical_entity_tag)
+    {
+      for (MVertex * v : e->vertices())
+      {
+        SP::FENode n = _vertexToNode[v];
+        SP::Index n_dof_index = n->dofIndex();
+        for (unsigned int i : *node_dof_index)
+        {
+          // std::cout << "e->tags(0) " << e->tags(0)<< std::endl;;
+          // std::cout << " i dof " << i <<std ::endl;
+          // std::cout << " n_dof_index(i) " << (*n_dof_index)[i] << std ::endl;
+          // std::cout << " x y z" <<  v->x() << v-> y() << v->z() << std::endl;
+          if( find(bdIndex->begin(), bdIndex->end(), (*n_dof_index)[i]) == bdIndex->end() )// check if the dof is already existing
+          {
+            //std::cout << " n_dof_index(i) added" << (*n_dof_index)[i] << std ::endl;
+            bdIndex->push_back((*n_dof_index)[i]);
+          }
+        }
+      }
+    }
+  }
+  int  bdIndex_added_size = bdIndex->size() - bdIndex_old_size;
+
+  int  bdPrescribedVelocity_old_size = bdPrescribedVelocity->size();
+  bdPrescribedVelocity->resize(bdPrescribedVelocity_old_size +  bdIndex_added_size );
+
+  for (unsigned int k =0; k <bdIndex_added_size; k++)
+  {
+    bdPrescribedVelocity->setValue(k+bdPrescribedVelocity_old_size, 0.0);
+  }
+
+  DEBUG_END("FiniteElementModel::applyDirichletBoundaryConditions(int physical_entity_tag, SP::IndexInt node_dof_index, SP::BoundaryCondition _boundaryCondition)\n");
+}
+
+void FiniteElementModel::applyNodalForces(int physical_entity_tag, SP::SiconosVector nodal_forces, SP::SiconosVector forces)
+{
+  DEBUG_BEGIN("FiniteElementModel::applyNodalForces(int physical_entity_tag, SP::SiconosVector nodal_forces, SP::SiconosVector forces)\n");
+
+  SP::IndexInt f_index (new IndexInt(0));
+  for (MElement * e : _mesh->elements())
+  {
+    if (e->tags(0) == physical_entity_tag)
+    {
+      for (MVertex * v : e->vertices())
+      {
+        SP::FENode n = _vertexToNode[v];
+
+        if( find(f_index->begin(), f_index->end(), n->num()) == f_index->end() )// check if the node is already existing
+        {
+          std::cout <<"Apply nodal force on node number " <<  n->num()  << " vertex number " << v->num() << std::endl;
+          f_index->push_back(n->num());
+          SP::Index n_dof_index = n->dofIndex();
+          for (unsigned int i =0; i < nodal_forces->size(); i++)
+          {
+            forces->setValue((*n_dof_index)[i], (*nodal_forces)(i));
+          }
+        }
+      }
+    }
+  }
+  DEBUG_END("FiniteElementModel::applyNodalForces(int physical_entity_tag, SP::SiconosVector nodal_forces, SP::SiconosVector forces)\n");
+}
+
 
 void FiniteElementModel::display(bool brief) const
 {

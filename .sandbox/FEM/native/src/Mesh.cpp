@@ -21,10 +21,11 @@
 #define DEBUG_STDOUT
 #define DEBUG_NOCOLOR
 #define DEBUG_MESSAGES
-#include "debug.h"
+#include "siconos_debug.h"
 
 #include <stdio.h>
 #include <iostream>
+#include <string>
 // --- Constructor from a list of attributes
 Mesh::Mesh(int dim, int numberOfVertices, int numberOfElements ):
   _dim(dim),_numberOfVertices(numberOfVertices),_numberOfElements(numberOfElements)
@@ -45,13 +46,21 @@ Mesh::Mesh(int dim,
   {
     for (MVertex * v : e->vertices())
     {
-//      v->display();
-      v->elements().push_back(e); 
+      v->elements().push_back(e);
     }
   }
-  
+
+  _physical_entities={};
+
 };
 
+Mesh::Mesh(int dim,
+           std::vector<MVertex *> vertices,
+           std::vector<MElement *> elements,
+           std::vector< std::tuple<int, std::string>> physical_entities): Mesh(dim, vertices, elements)
+{
+  _physical_entities=physical_entities;
+};
 
 void Mesh::display(bool brief) const
 {
@@ -84,11 +93,19 @@ void Mesh::display(bool brief) const
     }
     cnt++;
   }
-  
-  
+
+  int k=0;
+  std::cout << "Physical entities : (number, tag,  type, name)" << std::endl;
+  for (std::tuple<int, std::string> physical_entry :  _physical_entities)
+  {
+    std::cout << k  << " "  <<  k+1 << " " << std::get<0>(physical_entry) << " " <<  std::get<1>(physical_entry) <<    std::endl;
+    k++;
+  }
+
+
    // for(std::vector<MElement *>::iterator it = _elements.begin();
    //     it != _elements.end(); ++it) {
-   //   std::cout << *it << std::endl; 
+   //   std::cout << *it << std::endl;
    // }
   std::cout << "=========================================================== " <<std::endl;
 

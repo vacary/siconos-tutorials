@@ -22,197 +22,143 @@
 #include <SiconosKernel.hpp>
 #include <chrono>
 #include <stdio.h>
-
-#include "MeshUtils.hpp"
-
+#include <string.h>
 
 
 #include "FiniteElementLinearTIDS.hpp"
 #include "Material.hpp"
+#include "MeshUtils.hpp"
 //#include "FiniteElementModel.hpp"
 //#include "FemFwd.hpp"
 
 using namespace std;
 
-//#include "cube_fine.cpp"
-//#include "beam.cpp"
 
-static void  outputMeshforPython(SP::Mesh  mesh)
-{
-  FILE * foutput = fopen("mesh.py", "w");
-  fprintf(foutput, "coord=[]\n");
-  for (MVertex * v : mesh->vertices())
-  {
-    fprintf(foutput, "coord.append([%e, %e])\n", v->x(), v->y());
-  }
-  fprintf(foutput, "triangle=[]\n");
-  for (MElement * e : mesh->elements())
-  {
-    fprintf(foutput, "triangle.append([");
-    for (MVertex * v : e->vertices())
-    {
-      fprintf(foutput, "%zu, ", v->num());
-    }
-    fprintf(foutput, "])\n");
-  }
-  fclose(foutput);
-}
+// Mesh file in C++ to read directly mesh (this file can be produced with meshio_prepost)
+//#include "./mesh_data/cube_fine.cpp"
+//#include "./mesh_data/beam.cpp"
 
-static void  preOutputDisplacementforPython()
-{
-  FILE * foutput = fopen("displacement.py", "w");
-  fprintf(foutput, "import numpy as np\nx=[]\n");
-  fprintf(foutput, "import numpy as np\ny=[]\n");
-  fprintf(foutput, "import numpy as np\nz=[]\n");
-  fclose(foutput);
-}
-
-static void  outputDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel femodel, SP::SiconosVector x)
-{
-  FILE * foutput = fopen("displacement.py", "a");
-  fprintf(foutput, "x.append(np.array([");
-
-  for (MVertex * v : mesh->vertices())
-  {
-    SP::FENode n = femodel->vertexToNode(v);
-    double value = 0.0;
-    if (n)
-    {
-      unsigned int idx= (*n->dofIndex())[0];
-      value =(*x)(idx);
-    }
-    fprintf(foutput, "%e,", value) ;
-
-  }
-  fprintf(foutput, "]))\n") ;
-  
-  fprintf(foutput, "\n");
-
-
-  fprintf(foutput, "y.append(np.array([");
-  for (MVertex * v : mesh->vertices())
-  {
-    SP::FENode n = femodel->vertexToNode(v);
-    double value = 0.0;
-    if (n)
-    {
-      unsigned int idx= (*n->dofIndex())[1];
-      value =(*x)(idx);
-    }
-    fprintf(foutput, "%e,", value) ;
-
-  }
-  fprintf(foutput, "]))\n") ;
-  fprintf(foutput, "\n");
-
-
-  fprintf(foutput, "z.append(np.array([");
-  for (MVertex * v : mesh->vertices())
-  {
-    SP::FENode n = femodel->vertexToNode(v);
-    double value = 0.0;
-    if (n)
-    {
-      unsigned int idx= (*n->dofIndex())[2];
-      value =(*x)(idx);
-    }
-    fprintf(foutput, "%e,", value) ;
-
-  }
-  fprintf(foutput, "]))\n") ;
-  fprintf(foutput, "\n");
-
-  
-  fclose(foutput);
-}
 
 
 int main(int argc, char* argv[])
 {
-  
-  double Lz= 1.0;
-  //SP::Mesh mesh (createMesh());
-  SP::Mesh mesh (createMeshFromGMSH2("cube.msh2"));
-//mesh->display(false);
-  outputMeshforPython(mesh);
-
-  SP::Material material(new Material(2500, 100000, 0.0));
-
   try{
+    /* Mesh creation *********************************************************/
+    double Lz= 16.0;
+    //SP::Mesh mesh (createMesh()); // to create a mesh for a cpp file
+
+    // simple beam example
+    SP::Mesh mesh (createMeshFromGMSH2("./mesh_data/beam.msh"));
+    mesh->display(false);
+    int bulk_material_tag = 1;
+    int boundary_condition_tag = 2;
+    int applied_force_tag = 3;
+
+    writeMeshforPython(mesh);
+
+    /* Material creation *****************************************************/
+    SP::Material mat1(new Material(2500, 100000, 0.0));
+    std::map<unsigned int, SP::Material> materials = {{bulk_material_tag, mat1}};
+
+
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
-    SP::FiniteElementLinearTIDS FEsolid (new FiniteElementLinearTIDS(mesh, material, Siconos::SPARSE));
+
+    /* Finite Element Dynamical Systenms  ************************************/
+    SP::FiniteElementLinearTIDS FEsolid (new FiniteElementLinearTIDS(mesh, materials, Siconos::SPARSE));
+
     end = std::chrono::system_clock::now();
     int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
       (end-start).count();
     cout << "Assembly time : " << elapsed << " ms" << endl;
     std::cout << " " << std::endl;
     //FEsolid->display(true);
-
     SP::FiniteElementModel femodel = FEsolid->FEModel();
+    //femodel->display(true);
 
 
-    /*------------------------------------------------- Applied forces  */
-    SP::SiconosVector forces(new SiconosVector(FEsolid->dimension()));
-    forces->zero();
-    std::cout << "node number applied forces: [";
-    for(SP::FENode n : femodel->nodes())
-    {
-      //std::cout << "node number : " << n->num() << " " << n->x() << " " << n->y() <<  std::endl;
-      if (fabs(n->z()-Lz) <= 1e-16 and fabs(n->x()) >= 1e-16)
-      {
-        std::cout   << " " << n->num();
-        unsigned int idx_z = (*n->dofIndex())[2];
-        (*forces)(idx_z) = -10;
-      }
-    }
-    std::cout << " ]"  <<  std::endl;
-    FEsolid->setFExtPtr(forces);
+    // FEsolid->K()->display();
+    // FEsolid->mass()->display();
 
 
-    /*------------------------------------------------- Boundary Conditions  */
-    /* This part should be hidden in a new BC function for a node number
-     * and a dof index. */
-    SP::IndexInt bdIndex(new IndexInt(0));
+    /* Applied forces  *******************************************************/
 
-    std::cout << "Boundary conditions node number : [ ";
-    for(SP::FENode n : femodel->nodes())
-    {
-      if (fabs(n->x()) <= 1e-16)
-      {
-        std::cout  << n->num() << " " ;
-        unsigned int idx_x = (*n->dofIndex())[0];
-        bdIndex->push_back(idx_x);
-        unsigned int idx_y = (*n->dofIndex())[1];
-        bdIndex->push_back(idx_y);
-        unsigned int idx_z = (*n->dofIndex())[2];
-        bdIndex->push_back(idx_z);
-      }
-    }
-    std::cout  <<  "] " <<  std::endl;
-    SP::SiconosVector bdPrescribedVelocity(new SiconosVector(bdIndex->size()));
-    for (int i=0; i < bdIndex->size() ; i++)
-    {
-      bdPrescribedVelocity->setValue(i,0.0);
-    }
-    SP::BoundaryCondition bd (new BoundaryCondition(bdIndex,bdPrescribedVelocity));
-    FEsolid->setBoundaryConditions(bd);
+    // SP::SiconosVector forces(new SiconosVector(FEsolid->dimension()));
+    // forces->zero();
+    // std::cout << "node number applied forces: [";
+    // for(SP::FENode n : femodel->nodes())
+    // {
+    //   //std::cout << "node number : " << n->num() << " " << n->x() << " " << n->y() <<  std::endl;
+    //   if (fabs(n->z()-Lz) <= 1e-16 and fabs(n->x()) >= 1e-16)
+    //   {
+    //     std::cout   << " " << n->num();
+    //     unsigned int idx_z = (*n->dofIndex())[2];
+    //     (*forces)(idx_z) = -10;
+    //   }
+    // }
+    // std::cout << " ]"  <<  std::endl;
+    // FEsolid->setFExtPtr(forces);
+
+
+    SP::SiconosVector nodal_forces(new SiconosVector(3));
+    nodal_forces->zero();
+    (*nodal_forces)(2) = -10;
+    (*nodal_forces)(1) = -10;
+    FEsolid->applyNodalForces(applied_force_tag , nodal_forces);
+
+
+
+    /* Boundary Conditions  *******************************************************/
+
+    // /* This part should be hidden in a new BC function for a node number
+    //  * and a dof index. */
+    // SP::IndexInt bdIndex(new IndexInt(0));
+
+    // std::cout << "Boundary conditions node number : [ ";
+    // for(SP::FENode n : femodel->nodes())
+    // {
+    //   if (fabs(n->x()) <= 1e-16)
+    //   {
+    //     std::cout  << n->num() << " " ;
+    //     unsigned int idx_x = (*n->dofIndex())[0];
+    //     bdIndex->push_back(idx_x);
+    //     unsigned int idx_y = (*n->dofIndex())[1];
+    //     bdIndex->push_back(idx_y);
+    //     unsigned int idx_z = (*n->dofIndex())[2];
+    //     bdIndex->push_back(idx_z);
+    //   }
+    // }
+    // std::cout  <<  "] " <<  std::endl;
+    // SP::SiconosVector bdPrescribedVelocity(new SiconosVector(bdIndex->size()));
+    // for (int i=0; i < bdIndex->size() ; i++)
+    // {
+    //   bdPrescribedVelocity->setValue(i,0.0);
+    // }
+    // SP::BoundaryCondition bd (new BoundaryCondition(bdIndex,bdPrescribedVelocity));
+    // FEsolid->setBoundaryConditions(bd);
+    // FEsolid->boundaryConditions()->display();
+
+    SP::IndexInt node_dof_index(new IndexInt(0));
+    node_dof_index->push_back(0);
+    node_dof_index->push_back(1);
+    node_dof_index->push_back(2);
+
+    FEsolid->applyDirichletBoundaryConditions(boundary_condition_tag, node_dof_index);
+    FEsolid->boundaryConditions()->display();
 
 
     // -------------
     // --- Model ---
     // -------------
     double t0 = 0;                   // initial computation time
-    double T = 100;                  // final computation time
-    double h = 1e-00;                // time step
-    double theta = 0.5;              // theta for MoreauJeanOSI integrator
+    double T = 10;                  // final computation time
 
     SP::NonSmoothDynamicalSystem solid(new NonSmoothDynamicalSystem(t0, T));
 
     // add the dynamical system in the non smooth dynamical system
     solid->insertDynamicalSystem(FEsolid);
 
-    /*------------------------------------------------- Contact Conditions  */
+    /* Contact Conditions  ***************************************************/
     double e =0.0;
     SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
     SP::SiconosVector  initial_gap(new SiconosVector(1, Lz*0.05));
@@ -229,22 +175,20 @@ int main(int argc, char* argv[])
         SP::Relation relation(new LagrangianLinearTIR(H, initial_gap));
         SP::Interaction inter(new Interaction(nslaw, relation));
         // link the interaction and the dynamical system
-        solid->link(inter, FEsolid);
+        //solid->link(inter, FEsolid);
       }
     }
     std::cout << "]"<< std::endl;
 
-    // // link the interaction and the dynamical system
-    // bouncingBall->link(inter, FEsolid);
-
     // ------------------
     // --- Simulation ---
     // ------------------
+    double h = 1e-02;                // time step
+    double theta = 1.0;//0.5;              // theta for MoreauJeanOSI integrator
 
     // -- (1) OneStepIntegrators --
     SP::MoreauJeanOSI OSI(new MoreauJeanOSI(theta));
     OSI->setIsWSymmetricDefinitePositive(true);
-
 
     // -- (2) Time discretisation --
     SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
@@ -259,9 +203,7 @@ int main(int argc, char* argv[])
 
     // ================================= Computation =================================
 
-
     int N = ceil((T - t0) / h); // Number of time steps
-
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 5;
@@ -277,8 +219,8 @@ int main(int argc, char* argv[])
     dataPlot(0, 2) = (*v)(FEsolid->dimension()-1);
     dataPlot(0, 3) = (*p)(0);
     //dataPlot(0, 4) = (*lambda)(0);
-    preOutputDisplacementforPython();
-
+    std::string filename = prepareWriteDisplacementforPython("TH4");
+    writeDisplacementforPython(mesh, femodel, q, filename);
 
 
     // --- Time loop ---
@@ -296,7 +238,7 @@ int main(int argc, char* argv[])
       dataPlot(k, 1) = (*q)(FEsolid->dimension()-1);
       dataPlot(k, 2) = (*v)(FEsolid->dimension()-1);
       dataPlot(k, 3) = (*p)(0);
-      outputDisplacementforPython(mesh, femodel, q);
+      writeDisplacementforPython(mesh, femodel, q, filename);
       //dataPlot(k, 4) = (*lambda)(0);
       s->nextStep();
       k++;
@@ -318,15 +260,9 @@ int main(int argc, char* argv[])
     //     && error > eps)
     //   return 1;
 
-
-
-
-
-
   }
   catch(...)
   {
-    
     cerr << "Exception caught in TH4.cpp" << endl;
     Siconos::exception::process();
     return 1;

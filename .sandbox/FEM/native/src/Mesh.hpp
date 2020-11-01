@@ -24,7 +24,7 @@
 
 #include <vector>
 #include <iostream>
-
+#include <string>
 
 /** a Mesh container
  */
@@ -90,12 +90,20 @@ protected :
   /** vertices **/
   std::vector<MVertex *> _vertices;
 
+  /** tags **/
+  std::vector<int> _tags;
+
+
+
   /** default constructor */
   MElement() {};
 
 public:
-  MElement(size_t num, int type, std::vector<MVertex *> vertices ):
-    _num(num),_type(type),_vertices(vertices){};
+  MElement(size_t num, int type, std::vector<MVertex *> vertices):
+    _num(num),_type(type),_vertices(vertices){ _tags.push_back(0);};
+
+  MElement(size_t num, int type, std::vector<MVertex *> vertices, std::vector<int> tags):
+    _num(num),_type(type),_vertices(vertices),_tags(tags){};
 
   int type()
   {
@@ -109,16 +117,26 @@ public:
   {
     return _vertices;
   }
- void display()
+  int tags(int n)
+  {
+    return _tags[n];
+  }
+  void display()
   {
     std::cout << " - Element - number: " << _num
               << " ; type: " << _type
               << " ; vertices: ";
 
-      for(MVertex * v :_vertices)
-      {
-        std::cout << " " << v->_num ;
-      }
+    for(MVertex * v :_vertices)
+    {
+      std::cout << " " << v->_num ;
+    }
+    std::cout << " - Tags: ";
+    for(int  t :_tags)
+    {
+      std::cout << " " << t ;
+    }
+
     std::cout << std::endl;
   };
 };
@@ -146,6 +164,12 @@ protected:
   /** elements */
   std::vector<MElement *> _elements;
 
+  /** Physical entities
+   * This vector enables to link the tags to Physical entities
+   */
+  std::vector< std::tuple<int, std::string>> _physical_entities;
+
+
   /** default constructor */
   Mesh() {};
 
@@ -158,6 +182,14 @@ public:
   Mesh(int dim,
        std::vector<MVertex *> vertices,
        std::vector<MElement *> elements);
+
+  /** constructor
+   *  \param dim dimension
+   */
+  Mesh(int dim,
+       std::vector<MVertex *> vertices,
+       std::vector<MElement *> elements,
+       std::vector< std::tuple<int, std::string>> physical_entities);
 
   /** destructor */
   ~Mesh(){};
@@ -177,7 +209,10 @@ public:
     return _elements;
   }
 
-
+  std::vector< std::tuple<int, std::string>> physical_entities()
+  {
+    return _physical_entities;
+  }
   /** print the data of the Mesh
    */
   void display(bool brief = true) const;

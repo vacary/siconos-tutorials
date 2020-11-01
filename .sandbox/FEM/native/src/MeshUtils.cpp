@@ -29,16 +29,17 @@ using namespace std;
 #include <string>
 #include <algorithm>
 #include <iterator>
+#include <tuple>
 
 #define DEBUG_STDOUT
 #define DEBUG_NOCOLOR
 #define DEBUG_MESSAGES
-#include "debug.h"
+#include "siconos_debug.h"
 
 
 template <class Container>
 void split(const std::string& str, Container& cont,
-              const std::string& delims = " ")
+           const std::string& delims = " ")
 {
     std::size_t current, previous = 0;
     current = str.find_first_of(delims);
@@ -49,6 +50,8 @@ void split(const std::string& str, Container& cont,
     }
     cont.push_back(str.substr(previous, current - previous));
 }
+
+
 
 Mesh* createMeshFromGMSH2(std::string gmsh_filename)
 {
@@ -66,6 +69,8 @@ Mesh* createMeshFromGMSH2(std::string gmsh_filename)
 
   float gmsh_version;
   int m =3;
+  unsigned int number_of_physical_names=0;
+  std::vector< std::tuple<int, string>> physical_entities;
   unsigned int number_of_vertices;
   std::vector<MVertex *> vertices;
   unsigned int number_of_elements;
@@ -95,6 +100,37 @@ Mesh* createMeshFromGMSH2(std::string gmsh_filename)
       stringstream token(words[0]);
       token >> gmsh_version;
       //std::cout << "gmsh_version :" << gmsh_version << endl;
+    }
+
+    if (line.compare("$PhysicalNames") == 0 )
+    {
+      std::getline(in, line);
+      stringstream token(line);
+      token >> number_of_physical_names;
+      std::cout << "number_of_physical_names : " << number_of_physical_names <<  endl;
+      physical_entities.resize(number_of_physical_names);
+      while (std::getline(in, line))
+      {
+        if (line.compare("$EndPhysicalNames") == 0 ) break;
+        std::deque<std::string> words;
+        split(line, words);
+        stringstream t_type(words.front());
+        words.pop_front();
+        stringstream t_number(words.front());
+        words.pop_front();
+        std::string name;
+        for (std::string s : words)
+        {
+          name += s + " ";
+        }
+        name.erase(name.end()-1); name.erase(name.end()-1); name.erase(name.begin());
+        int type, number;
+        t_type >> type;
+        t_number >> number;
+        std::cout << type << " " << number << " name: "<<name<< std::endl;
+        physical_entities[number-1] = make_tuple(type, name);
+      }
+
     }
 
     if (line.compare("$Nodes") == 0 )
@@ -151,14 +187,14 @@ Mesh* createMeshFromGMSH2(std::string gmsh_filename)
         int number_of_tags ;
         t_nt >> number_of_tags;
         std::vector<int> tags ;
-        for (int k =0 ; k < number_of_tags; k++)
+        for (int k =3 ; k < 3+number_of_tags; k++)
         {
           int tag;
           stringstream token(words[k]);
           token >> tag;
           tags.push_back(tag);
         }
-        
+
         std::vector<MVertex *> vertices_e ;
         for (int k = 3+number_of_tags; k < words.size(); k++)
         {
@@ -178,12 +214,12 @@ Mesh* createMeshFromGMSH2(std::string gmsh_filename)
 
             if (node_number == vertices[v]->num())
             {
-              vertices_e.push_back(vertices[v]); 
+              vertices_e.push_back(vertices[v]);
               break;
             }
           }
         }
-        elements.push_back(new MElement(element_number, element_type, vertices_e));
+        elements.push_back(new MElement(element_number, element_type, vertices_e, tags));
         //elements.back()->display();
       }
     }
@@ -191,10 +227,107 @@ Mesh* createMeshFromGMSH2(std::string gmsh_filename)
 
 
 
+
+
   }
+
 
   in.close();
 
-  
-  return new Mesh(m, vertices, elements);;
+
+  return new Mesh(m, vertices, elements, physical_entities);;
+}
+
+void  writeMeshforPython(SP::Mesh  mesh)
+{
+  FILE * foutput = fopen("mesh.py", "w");
+  fprintf(foutput, "coord=[]\n");
+  for (MVertex * v : mesh->vertices())
+  {
+    fprintf(foutput, "coord.append([%e, %e])\n", v->x(), v->y());
+  }
+  fprintf(foutput, "triangle=[]\n");
+  for (MElement * e : mesh->elements())
+  {
+    fprintf(foutput, "triangle.append([");
+    for (MVertex * v : e->vertices())
+    {
+      fprintf(foutput, "%zu, ", v->num());
+    }
+    fprintf(foutput, "])\n");
+  }
+  fclose(foutput);
+}
+std::string prepareWriteDisplacementforPython(std::string basename)
+{
+
+  std::string filename = basename + "_displacement.py" ;
+
+  std::cout << "Output displacement for python post-processing in " << filename << std::endl;
+
+  FILE * foutput = fopen(filename.c_str(), "w");
+  fprintf(foutput, "import numpy as np\nx=[]\n");
+  fprintf(foutput, "y=[]\n");
+  fprintf(foutput, "z=[]\n");
+  fclose(foutput);
+  return filename;
+}
+
+void  writeDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel femodel, SP::SiconosVector x, std::string filename)
+{
+  FILE * foutput = fopen(filename.c_str(), "a");
+  fprintf(foutput, "x.append(np.array([");
+
+  for (MVertex * v : mesh->vertices())
+  {
+    SP::FENode n = femodel->vertexToNode(v);
+    double value = 0.0;
+    if (n)
+    {
+      unsigned int idx= (*n->dofIndex())[0];
+      value =(*x)(idx);
+    }
+    fprintf(foutput, "%e,", value) ;
+
+  }
+  fprintf(foutput, "]))\n") ;
+
+  fprintf(foutput, "\n");
+
+
+  fprintf(foutput, "y.append(np.array([");
+  for (MVertex * v : mesh->vertices())
+  {
+    SP::FENode n = femodel->vertexToNode(v);
+    double value = 0.0;
+    if (n)
+    {
+      unsigned int idx= (*n->dofIndex())[1];
+      value =(*x)(idx);
+    }
+    fprintf(foutput, "%e,", value) ;
+
+  }
+  fprintf(foutput, "]))\n") ;
+  fprintf(foutput, "\n");
+
+
+  fprintf(foutput, "z.append(np.array([");
+  for (MVertex * v : mesh->vertices())
+  {
+    SP::FENode n = femodel->vertexToNode(v);
+    double value = 0.0;
+    if (n)
+    {
+      unsigned int idx= (*n->dofIndex())[2];
+      value =(*x)(idx);
+    }
+    fprintf(foutput, "%e,", value) ;
+
+  }
+  fprintf(foutput, "]))\n") ;
+  fprintf(foutput, "\n");
+
+
+  fclose(foutput);
 }

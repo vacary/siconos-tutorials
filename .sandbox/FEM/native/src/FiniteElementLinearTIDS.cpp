@@ -20,19 +20,20 @@
 #include "FiniteElementModel.hpp"
 #include "Material.hpp"
 #include "SiconosMatrix.hpp"
+#include "BoundaryCondition.hpp"
 
 
 
 // #define DEBUG_STDOUT
 // #define DEBUG_NOCOLOR
 // #define DEBUG_MESSAGES
-#include "debug.h"
+#include "siconos_debug.h"
 
 #include <stdio.h>
 #include <iostream>
 
-FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material,  Siconos::UBLAS_TYPE storageType):
-  LagrangianLinearTIDS::LagrangianLinearTIDS(), _mesh(mesh), _material(material), _storageType(storageType)
+FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, std::map<unsigned int, SP::Material> materials,  Siconos::UBLAS_TYPE storageType):
+  LagrangianLinearTIDS::LagrangianLinearTIDS(), _mesh(mesh), _materials(materials), _storageType(storageType)
 {
   DEBUG_BEGIN("FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material\n");
 
@@ -50,7 +51,7 @@ FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material mat
     _mass->setIsSymmetric(true);
     _mass->setIsPositiveDefinite(true);
   }
-  _FEModel->computeMassMatrix(_mass, _material->massDensity());
+  _FEModel->computeMassMatrix(_mass, _materials);
 
   if(!_K)
   {
@@ -58,7 +59,7 @@ FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material mat
     _K->setIsSymmetric(true);
     _K->setIsPositiveDefinite(true);
   }
-  _FEModel->computeStiffnessMatrix(_K, *_material);
+  _FEModel->computeStiffnessMatrix(_K, _materials);
 
   // if(!_C)
   // {
@@ -69,8 +70,33 @@ FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material mat
   DEBUG_END("FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material\n");
 
 }
+void FiniteElementLinearTIDS::applyDirichletBoundaryConditions(int physical_entity_tag, SP::IndexInt node_dof_index)
+{
 
+  if (!_boundaryConditions)
+  {
+    SP::IndexInt bdIndex(new IndexInt(0));
+    SP::SiconosVector bdPrescribedVelocity(new SiconosVector(0));
+    _boundaryConditions.reset(new BoundaryCondition(bdIndex,bdPrescribedVelocity));
+  }
 
+  _FEModel->applyDirichletBoundaryConditions(physical_entity_tag, node_dof_index, _boundaryConditions);
+  _reactionToBoundaryConditions.reset(new SiconosVector(_boundaryConditions->velocityIndices()->size()));
+
+};
+
+void FiniteElementLinearTIDS::applyNodalForces(int physical_entity_tag, SP::SiconosVector nodal_forces)
+{
+
+  if (!_fExt)
+  {
+    _fExt.reset(new SiconosVector(dimension()));
+    _fExt->zero();
+  }
+
+  _FEModel->applyNodalForces(physical_entity_tag, nodal_forces, _fExt);
+
+};
 
 void FiniteElementLinearTIDS::display(bool brief) const
 {

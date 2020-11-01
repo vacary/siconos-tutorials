@@ -25,8 +25,8 @@
 #include "LagrangianLinearTIDS.hpp"
 #include "Mesh.hpp"
 #include "FiniteElementModel.hpp"
-//#include "SiconosMatrix.hpp"       // UBLAS_TYPE
 
+#include "SimulationTypeDef.hpp" //for SP::IndexInt
 
 #include "FemFwd.hpp"
 
@@ -45,25 +45,27 @@ protected:
   SP::Mesh _mesh;
 
   /** a material */
-  SP::Material _material;
+  std::map<unsigned int, SP::Material> _materials;
 
   /** a finite element model */
   SP::FiniteElementModel _FEModel;
 
   /* Storage type for the matrices */
   Siconos::UBLAS_TYPE _storageType;
-  
+
   /** default constructor */
   FiniteElementLinearTIDS():LagrangianLinearTIDS() {};
 
-  
+
 public:
 
   /** constructor from initial state and all matrix operators.
    * \param mesh the mesh that defined the spatial discretization
    * \param material
    */
-  FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material,  Siconos::UBLAS_TYPE storageType=Siconos::DENSE);
+  FiniteElementLinearTIDS(SP::Mesh mesh,
+                          std::map<unsigned int, SP::Material> materials,
+                          Siconos::UBLAS_TYPE storageType=Siconos::DENSE);
 
   /** destructor */
   ~FiniteElementLinearTIDS(){};
@@ -73,15 +75,19 @@ public:
     _storageType=type;
   }
 
-  
+
   SP::FiniteElementModel FEModel()
   {
     return _FEModel;
   };
 
-  
-  
-  
+
+  void applyDirichletBoundaryConditions(int physical_entity_tag, SP::IndexInt node_dof_index);
+
+  void applyNodalForces(int physical_entity_tag, SP::SiconosVector nodal_forces);
+
+
+
   void display(bool brief) const;
 
 
