@@ -26,6 +26,7 @@
 */
 
 #include "SiconosKernel.hpp"
+#include "MechanicsFwd.hpp"
 #include "BinaryCohesiveNSL.hpp"
 #include <chrono>
 
@@ -125,7 +126,7 @@ int main(int argc, char* argv[])
     (*HOfBeads)(1, 4) = 1.0;
     (*HOfBeads)(2, 1) = -1.0; //fake tangent direction
     (*HOfBeads)(2, 4) = 1.0;
-    
+
      SP::SiconosVector bOfBeads(new SiconosVector(3));
     (*bOfBeads)(0) = -2 * R;
     (*bOfBeads)(1) = -2 * R;
@@ -134,7 +135,7 @@ int main(int argc, char* argv[])
     std::vector<SP::NonSmoothLaw > nslaws(nBeads - 1);
     std::vector<SP::Interaction > interOfBeads(nBeads - 1);
     std::vector<SP::Relation > relationOfBeads(nBeads - 1);
- 
+
 
     // --------------------------------------
     // ---      Model and simulation      ---
@@ -155,6 +156,7 @@ int main(int argc, char* argv[])
 
     // -- (3) one step non smooth problem
     SP::OneStepNSProblem osnspb(new CohesiveFrictionContact(3));
+    osnspb->numericsSolverOptions()->dparam[SICONOS_DPARAM_TOL] = 1e-10; // Tolerance
 
     // -- (4) Simulation setup with (1) (2) (3)
     SP::TimeStepping s(new TimeStepping(columnOfBeads, t, OSI, osnspb));
@@ -200,7 +202,7 @@ int main(int argc, char* argv[])
     {
 
 
-      std::cout << "\n\n\n nest time step "<<std::endl;
+      std::cout << "\n\n\n next time step "<< k <<std::endl;
       // Rough contact detection
       for(unsigned int i = 0; i < nBeads - 1; i++)
       {
@@ -209,12 +211,12 @@ int main(int argc, char* argv[])
         // Between first bead and plane
         if(abs(((beads[i])->q())->getValue(0) - R) < alert)
         {
-          
+
           if(!inter)
           {
             ncontact++;
             std::cout << "Number of contact = " << ncontact << std::endl;
-            
+
             inter.reset(new Interaction(nslaw, relation));
             columnOfBeads->link(inter, beads[0]);
 
@@ -254,7 +256,7 @@ int main(int argc, char* argv[])
           interOfBeads[i]->y(0)->display();
         }
       }
-      
+
       // --- Get values to be plotted ---
       int idx =0;
       dataPlot(k, idx++) =  s->nextTime();
@@ -266,18 +268,18 @@ int main(int argc, char* argv[])
       dataPlot(k,idx++) = (inter->lambda(1))->getValue(0);
       dataPlot(k,idx++) = (inter->y(0))->getValue(0);
       SP::BinaryCohesiveNSL nslaw_BinaryCohesiveNSL(std::dynamic_pointer_cast<BinaryCohesiveNSL>(inter->nonSmoothLaw()));
-      dataPlot(k,idx++) = nslaw_BinaryCohesiveNSL->beta();
+      dataPlot(k,idx++) = nslaw_BinaryCohesiveNSL->beta(*inter);
       for (unsigned int i =1; i< nBeads; i++)
       {
         dataPlot(k,idx++) = (interOfBeads[i-1]->lambda(1))->getValue(0);
         dataPlot(k,idx++) = (interOfBeads[i-1]->y(0))->getValue(0);
         SP::BinaryCohesiveNSL nslaw_BinaryCohesiveNSL(std::dynamic_pointer_cast<BinaryCohesiveNSL>(interOfBeads[i-1]->nonSmoothLaw()));
-        dataPlot(k,idx++) = nslaw_BinaryCohesiveNSL->beta();
+        dataPlot(k,idx++) = nslaw_BinaryCohesiveNSL->beta(*(interOfBeads[i-1]));
       }
-      
+
       for (unsigned int i =1; i< nBeads; i++)
       {
-       
+
       }
 
       s->nextStep();
@@ -293,12 +295,12 @@ int main(int argc, char* argv[])
     // --- Output files ---
     cout << "====> Output file writing ..." << endl;
     dataPlot.resize(k, outputSize);
-    ioMatrix::write("ColumnOfbeadsTS.dat", "ascii", dataPlot, "noDim");
+    ioMatrix::write("ColumnOfbeadsTS-BinaryCZM.dat", "ascii", dataPlot, "noDim");
 
-    // double error=0.0, eps=1e-12;
-    // if((error=ioMatrix::compareRefFile(dataPlot, "ColumnOfbeadsTS.ref", eps)) >= 0.0
-    //     && error > eps)
-    //   return 1;
+    double error=0.0, eps=1e-12;
+    if((error=ioMatrix::compareRefFile(dataPlot, "ColumnOfbeadsTS-BinaryCZM.ref", eps)) >= 0.0
+        && error > eps)
+      return 1;
 
   }
 

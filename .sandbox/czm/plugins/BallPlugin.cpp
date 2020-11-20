@@ -29,13 +29,13 @@ extern "C" double FextFunction(double time)
 {
   double t_start;
   double res = 10000.*time;
-  if (time < 0.05)
+  if (time < 0.1)
   {
     res = 1e+00;
   }
-  else if ((time >= 0.05) and (time < 0.2)) 
+  else if ((time >= 0.1) and (time < 0.3)) 
   {
-    res = 1e+00;
+    res = 2e+00;
   }
   
   else
