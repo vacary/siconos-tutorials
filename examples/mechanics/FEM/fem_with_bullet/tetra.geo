@@ -1,0 +1,21 @@
+Point(1) = {0, 0., 0, 1.0};
+Point(2) = {0, 0., 1, 1.0};
+Point(3) = {0, 1., 0, 1.0};
+Point(4) = {1, 0., 0, 1.0};
+
+Line(2) = {2, 1};
+Line(3) = {1, 3};
+Line(4) = {3, 2};
+Line(5) = {2, 4};
+Line(6) = {4, 1};
+Line(7) = {4, 3};
+Line Loop(8) = {7, 4, 5};
+Plane Surface(9) = {8};
+Line Loop(10) = {3, 4, 2};
+Plane Surface(11) = {10};
+Line Loop(12) = {6, -2, 5};
+Plane Surface(13) = {12};
+Line Loop(14) = {7, -3, -6};
+Plane Surface(15) = {14};
+Surface Loop(16) = {9, 15, 11, 13};
+Volume(17) = {16};
