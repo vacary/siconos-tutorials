@@ -26,6 +26,8 @@
 #include "SiconosKernel.hpp"
 #include <chrono>
 #include "SiconosAlgebraProd.hpp"
+#include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -145,6 +147,15 @@ int main(int argc, char* argv[])
 
     cout << "beam length = " << l <<  endl;
 
+    if(argc==3)
+    {
+      //printf("argv[0] %s\n", argv[0]);
+      printf("h is set to %e\n", atof(argv[1]));
+      printf("nElement is set to %i\n", atoi(argv[2]));
+      h  = atof(argv[1]);
+      nElement = atoi(argv[2]);
+    }
+    
     unsigned int nDof = (nElement +1) * 2;
     cout << "number of element = " << nElement <<  endl;
     cout << "number of dof = " << nDof <<  endl;
@@ -152,7 +163,7 @@ int main(int argc, char* argv[])
 
     SP::SimpleMatrix SparseMass(new SimpleMatrix(nDof,nDof,Siconos::SPARSE,6*nDof));
     SP::SimpleMatrix SparseStiffness(new SimpleMatrix(nDof,nDof,Siconos::SPARSE,6*nDof));
-    bool lumpedMass = false;
+    bool lumpedMass = true;
     for (int e = 0; e< nElement; e++)
      {
       addElementaryStiffnessMatrix(SparseStiffness, e, nDof, l);
@@ -166,6 +177,11 @@ int main(int argc, char* argv[])
     cout << "(*SparseMass)(0,1) = " << SparseMass->getValue(0,1)  <<  endl;
     cout << "(*SparseMass)(1,0) = " << SparseMass->getValue(1,0)  <<  endl;
     cout << "(*SparseMass)(1,1) = " << SparseMass->getValue(1,1)  <<  endl;
+    
+    cout << "(*SparseStiffness)(0,0) = " << SparseStiffness->getValue(0,0)  <<  endl;
+    cout << "(*SparseStiffness)(0,1) = " << SparseStiffness->getValue(0,1)  <<  endl;
+    cout << "(*SparseStiffness)(1,0) = " << SparseStiffness->getValue(1,0)  <<  endl;
+    cout << "(*SparseStiffness)(1,1) = " << SparseStiffness->getValue(1,1)  <<  endl;
 
 
     // SparseMass->display();
@@ -267,7 +283,7 @@ int main(int argc, char* argv[])
     SP::TimeDiscretisation t(new TimeDiscretisation(t0,h));
 
     // -- (3) one step non smooth problem
-    SP::OneStepNSProblem osnspb(new LCP());
+    SP::LCP osnspb(new LCP());
 
     // -- (4) Simulation setup with (1) (2) (3)
     SP::TimeStepping s(new TimeStepping(impactingBeam, t, OSI, osnspb));
@@ -280,7 +296,7 @@ int main(int argc, char* argv[])
 
 
     int N = floor((T-t0)/h); // Number of time steps
-
+    N = 100;
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 17;
@@ -345,10 +361,11 @@ int main(int argc, char* argv[])
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
     double max_impulse = 0.0;
+    double W_00 =0.0;
     //    while (s->nextTime() < T)
     while(k < N)
     {
-      if (k%100 == 0)
+      //if (k%100 == 0)
         std::cout << "k :"  << k << "/" << N << std::endl;
       s->computeOneStep();
       //osnspb->display();
@@ -412,8 +429,11 @@ int main(int argc, char* argv[])
       if ((*lambda)(0) >0 )
       {
         max_impulse = fmax(max_impulse, (*lambda)(0));
-        // osnspb->display();
-        // break;
+        osnspb->display();
+        SP::NumericsMatrix nm = osnspb->M()->numericsMatrix();
+        W_00= NM_get_value(&(*nm),0,0);
+        std::cout<< "W(0,0)" << NM_get_value(&(*nm),0,0) << std::endl;
+        break;
       }
 
       s->nextStep();
@@ -429,6 +449,17 @@ int main(int argc, char* argv[])
     printf("totalImpactEnergy = %e\n", totalImpactEnergy);
     printf("max_impulse = %e\n", max_impulse);
 
+    ofstream myfile;
+    myfile.open ("percussion.txt", ios::out | ios::app );
+    myfile  << nElement << " "
+           << h << " "
+           << totalImpactEnergy << " "
+           << std::setprecision(24) << std::scientific 
+           << max_impulse << " "
+           << W_00 <<  endl;;
+    myfile.close();
+    exit(0);
+    
     cout<<endl << "End of computation - Number of iterations done: "<<k-1<<endl;
     cout << "Computation Time " << endl;;
     end = std::chrono::system_clock::now();
