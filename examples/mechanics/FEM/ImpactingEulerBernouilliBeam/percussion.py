@@ -1,36 +1,5 @@
 
 
-def analytic():
-    v1_m = 2
-
-    m_1=1.
-    m_2=1e-0
-
-    e=0
-
-    p = - m_1* m_2*(1+e)/(m_1+ m_2)* v1_m
-    v2_p = - p /m_2
-    v1_p = p /m_1 + v1_m
-
-    print("p = ", p)
-    print("v1_p =", v1_p)
-    print("v2_p =", v2_p)
-
-    assert(abs(m_1* (v1_p-v1_m) - p ) < 1e-14)
-    assert(abs(m_2* (v2_p) + p ) < 1e-14)
-    assert(abs((v1_p - v2_p) + e* (v1_m) ) < 1e-14)
-    print("\n")
-
-
-    def percussion(m_1, m_2, e, v1_m):
-        return - m_1* m_2*(1+e)/(m_1+ m_2)* v1_m
-    for i in range(10):
-        m =1./(10**i)
-        print("m, p", m, percussion(m_1,m,e,v1_m))
-
-#analytic()
-
-
 import subprocess
 import os
 

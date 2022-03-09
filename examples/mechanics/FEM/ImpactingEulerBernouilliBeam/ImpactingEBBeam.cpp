@@ -143,9 +143,7 @@ int main(int argc, char* argv[])
 
     cout << "====> Model loading ..." <<endl<<endl;
 
-    double l = L/nElement; // length of an element
 
-    cout << "beam length = " << l <<  endl;
 
     if(argc==3)
     {
@@ -160,10 +158,12 @@ int main(int argc, char* argv[])
     cout << "number of element = " << nElement <<  endl;
     cout << "number of dof = " << nDof <<  endl;
 
+    double l = L/nElement; // length of an element
+    cout << "beam length = " << l <<  endl;
 
     SP::SimpleMatrix SparseMass(new SimpleMatrix(nDof,nDof,Siconos::SPARSE,6*nDof));
     SP::SimpleMatrix SparseStiffness(new SimpleMatrix(nDof,nDof,Siconos::SPARSE,6*nDof));
-    bool lumpedMass = true;
+    bool lumpedMass = false;
     for (int e = 0; e< nElement; e++)
      {
       addElementaryStiffnessMatrix(SparseStiffness, e, nDof, l);
@@ -244,7 +244,7 @@ int main(int argc, char* argv[])
     // --------------------
 
     // -- nslaw --
-    double e = 0.0;
+
 
     // Interaction beam-ball
     //
