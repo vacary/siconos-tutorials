@@ -122,8 +122,6 @@ static const double GP_TH4_2_p4[]= {0.58541019662496840, 0.13819660112501052, 0.
 static  std::vector<const double* > GaussPointsTH4_2 = {GP_TH4_2_p1, GP_TH4_2_p2, GP_TH4_2_p3, GP_TH4_2_p4};
 
 
-
-
 static  std::vector<const double* > GaussPointsEmpty = {};
 
 
@@ -258,7 +256,7 @@ struct FElement
       N[0] = 1.0 - ksi - eta - zeta;
       N[1] = ksi;
       N[2] = eta;
-      N[2] = zeta;
+      N[3] = zeta;
 
       Nksi[0] = -1.0;
       Nksi[1] = 1.0;
@@ -370,6 +368,12 @@ public:
    **/
   void computeElementaryStiffnessMatrix(SimpleMatrix& Me, FElement& fe,
                                         SP::SimpleMatrix D, double thickness);
+
+  /** compute elementary Stiffness Matrix with a direct method
+   * for linear element
+   **/
+  void computeElementaryStiffnessMatrix_direct(SimpleMatrix& Me, FElement& fe,
+                                               SP::SimpleMatrix D, double thickness);
 
 
   void applyDirichletBoundaryConditions(int physical_entity_tag, SP::IndexInt node_dof_index, SP::BoundaryCondition _boundaryCondition);

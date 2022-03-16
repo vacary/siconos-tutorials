@@ -14,7 +14,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 #include "FiniteElementModel.hpp"
 #include "SimpleMatrix.hpp"
@@ -22,7 +22,6 @@
 #include "SiconosAlgebraProd.hpp"
 #include "SimpleMatrixFriends.hpp"
 #include "op3X3.h"
-
 
 // #define DEBUG_STDOUT
 // #define DEBUG_NOCOLOR
@@ -250,7 +249,8 @@ void FiniteElementModel::computeElementaryMassMatrix(SimpleMatrix& Me, FElement&
       DEBUG_PRINTF("detJ = %e\n", detJ );
       // DEBUG_EXPR(std::cout << "Gauss points : "<< gp_eta << " "  << gp_ksi << " "  << gp_w << " "   << std::endl;);
 
-      double coeff = gp_w * massDensity * detJ;
+      double coeff = gp_w * massDensity * detJ / 6.0; // we divide again by 6.0 since the reference element has volume equal to 1/6.0
+
       DEBUG_EXPR(std::cout << "coeff: "<< coeff << std::endl;);
       /* M += (coeff * Nt N)*/
       for (int i = 0; i < nnodes; i++)
@@ -258,8 +258,9 @@ void FiniteElementModel::computeElementaryMassMatrix(SimpleMatrix& Me, FElement&
         for (int j= 0; j < nnodes; j++)
         {
           // DEBUG_PRINTF(" N[%i] = %e\t N[%i] = %e\t entry = %e \n", i, N[i], j, N[j], coeff* N[i]*N[j]);
-          Me.setValue(i*2,j*2, coeff* N[i]*N[j] + Me.getValue(i*2,j*2));
-          Me.setValue(i*2+1,j*2+1, coeff* N[i]*N[j] + Me.getValue(i*2+1,j*2+1));
+          Me.setValue(i*3,  j*3,   coeff* N[i]*N[j] + Me.getValue(i*3,  j*3));
+          Me.setValue(i*3+1,j*3+1, coeff* N[i]*N[j] + Me.getValue(i*3+1,j*3+1));
+          Me.setValue(i*3+2,j*3+2, coeff* N[i]*N[j] + Me.getValue(i*3+2,j*3+2)); // to be checked carefully
         }
       }
     }
@@ -290,6 +291,175 @@ void FiniteElementModel::computeMassMatrix(SP::SiconosMatrix M, std::map<unsigne
   }
   DEBUG_END("FiniteElementModel::computeMassMatrix(SP::SiconosMatrix M, double massDensity )\n");
 }
+
+
+
+
+
+void FiniteElementModel::computeElementaryStiffnessMatrix_direct(SimpleMatrix& Ke,
+                                                                 FElement& fe,
+                                                                 SP::SimpleMatrix D,
+                                                                 double thickness)
+{
+  DEBUG_BEGIN("FiniteElementModel::computeElementaryStiffnessMatrix_direct(SimpleMatrix& Ke, FElement& fe, Material& mat  )\n");
+
+  Ke.zero();
+
+  // Compute element determinant
+  int ndof = fe.ndof();
+  int order = fe.order();
+
+  std::vector<SP::FENode> & nodes= fe.nodes();
+  int nnodes= nodes.size();
+  int dim = _mesh->dim();
+
+
+  /** We perform integration by summing over the gauss points
+   * this could be simplified by explicit formulae
+   */
+
+  if (_mesh->dim() ==2 and fe.family() == ISOPARAMETRIC) //Ugly
+  {
+
+    // TODO
+
+  }
+  else if (_mesh->dim() ==3 and fe.family() == ISOPARAMETRIC) //Ugly
+  {
+
+    /* Construct the B matrix (its form is consistent with the choice
+     * of the representation of strain) */
+    SP::SimpleMatrix B(new SimpleMatrix(6,ndof));
+
+    // Direct computation without Gauss Integration
+    double x1 = nodes[0]->_mVertex->x();
+    double x2 = nodes[1]->_mVertex->x();
+    double x3 = nodes[2]->_mVertex->x();
+    double x4 = nodes[3]->_mVertex->x();
+
+    double y1 = nodes[0]->_mVertex->y();
+    double y2 = nodes[1]->_mVertex->y();
+    double y3 = nodes[2]->_mVertex->y();
+    double y4 = nodes[3]->_mVertex->y();
+
+    double z1 = nodes[0]->_mVertex->z();
+    double z2 = nodes[1]->_mVertex->z();
+    double z3 = nodes[2]->_mVertex->z();
+    double z4 = nodes[3]->_mVertex->z();
+
+    double x21 = x2-x1;
+
+    double x31 = x3-x1;
+    double x32 = x3-x2;
+
+    double x41 = x4-x1;
+    double x42 = x4-x2;
+    double x43 = x4-x3;
+
+    double y21 = y2-y1;
+
+    double y31 = y3-y1;
+    double y32 = y3-y2;
+
+    double y41 = y4-y1;
+    double y42 = y4-y2;
+    double y43 = y4-y3;
+
+    double z21 = z2-z1;
+
+    double z31 = z3-z1;
+    double z32 = z3-z2;
+
+    double z41 = z4-z1;
+    double z42 = z4-z2;
+    double z43 = z4-z3;
+
+    double a1 =   y2 * z43 - y3 * z42 + y4 * z32;
+    double a2 = - y1 * z43 + y3 * z41 - y4 * z31;
+    double a3 =   y1 * z42 - y2 * z41 + y4 * z21;
+    double a4 = - y1 * z32 + y2 * z31 - y3 * z21;
+
+    double b1 = - x2 * z43 + x3 * z42 - x4 * z32;
+    double b2 =   x1 * z43 - x3 * z41 + x4 * z31;
+    double b3 = - x1 * z42 + x2 * z41 - x4 * z21;
+    double b4 =   x1 * z32 - x2 * z31 + x3 * z21;
+
+    double c1 =   x2 * y43 - x3 * y42 + x4 * y32;
+    double c2 = - x1 * y43 + x3 * y41 - x4 * y31;
+    double c3 =   x1 * y42 - x2 * y41 + x4 * y21;
+    double c4 = - x1 * y32 + x2 * y31 - x3 * y21;
+
+
+    double sixV =
+      x21*(y31 * z41 - y41* z31) +
+      y21*(x41 * z31 - x31* z41) +
+      z21*(x31 * y41 - x41* y31);
+
+    DEBUG_PRINTF("V = %e\n", sixV/6.0);
+
+    B->setValue(0, 0,   a1);
+    B->setValue(0, 3,   a2);
+    B->setValue(0, 6,   a3);
+    B->setValue(0, 9,   a4);
+
+    B->setValue(1, 1,   b1);
+    B->setValue(1, 4,   b2);
+    B->setValue(1, 7,   b3);
+    B->setValue(1, 10,  b4);
+
+    B->setValue(2, 2,   c1);
+    B->setValue(2, 5,   c2);
+    B->setValue(2, 8,   c3);
+    B->setValue(2, 11,  c4);
+
+    B->setValue(3, 0,   b1);
+    B->setValue(3, 1,   a1);
+    B->setValue(3, 3,   b2);
+    B->setValue(3, 4,   a2);
+    B->setValue(3, 6,   b3);
+    B->setValue(3, 7,   a3);
+    B->setValue(3, 9,   b4);
+    B->setValue(3, 10,  a4);
+
+    B->setValue(4, 1,   c1);
+    B->setValue(4, 2,   b1);
+    B->setValue(4, 4,   c2);
+    B->setValue(4, 5,   b2);
+    B->setValue(4, 7,   c3);
+    B->setValue(4, 8,   b3);
+    B->setValue(4, 10,  c4);
+    B->setValue(4, 11,  b4);
+
+    B->setValue(5, 0,   c1);
+    B->setValue(5, 2,   a1);
+    B->setValue(5, 3,   c2);
+    B->setValue(5, 5,   a2);
+    B->setValue(5, 6,   c3);
+    B->setValue(5, 8,   a3);
+    B->setValue(5, 9,   c4);
+    B->setValue(5, 11,  a4);
+
+    DEBUG_EXPR(B->display(););
+    *B = 1./sixV * *B ;
+
+    // Compte BT D B
+    SP::SimpleMatrix DB(new SimpleMatrix(6,ndof));
+    prod(*D, *B, *DB, true);
+    SP::SimpleMatrix BT(new SimpleMatrix(ndof,6));
+    BT->trans(*B);
+    SP::SimpleMatrix BTDB(new SimpleMatrix(ndof,ndof));
+    prod(*BT, *DB, *BTDB, true);
+    DEBUG_EXPR(BTDB->display(););
+
+    Ke =  sixV /6.0 * *BTDB ;
+
+  }
+
+  DEBUG_EXPR(Ke.display(););
+
+  DEBUG_END("FiniteElementModel::computeElementaryStiffnessMatrix_direct(SimpleMatrix& Ke, FElement& fe, Material& mat  )\n");
+}
+
 
 void FiniteElementModel::computeElementaryStiffnessMatrix(SimpleMatrix& Ke,
                                                           FElement& fe,
@@ -414,7 +584,7 @@ void FiniteElementModel::computeElementaryStiffnessMatrix(SimpleMatrix& Ke,
         J[8] = J[8] + Nzeta[n]*nodes[n]->_mVertex->z();
       }
       double detJ = det3x3(J);
-      // DEBUG_PRINTF("detJ = %e\n", detJ );
+      DEBUG_PRINTF("detJ = %e\n", detJ );
       for (int j =0; j <3 ; j++)
       {
         for (int i =0; i <3 ; i++)  b[i]=0.0;
@@ -459,7 +629,7 @@ void FiniteElementModel::computeElementaryStiffnessMatrix(SimpleMatrix& Ke,
         B->setValue(4, 3*n+2, Ny[n]);
         B->setValue(5, 3*n+2, Nx[n]);
       }
-
+      DEBUG_EXPR(B->display(););
       // Compte BT D B
       SP::SimpleMatrix DB(new SimpleMatrix(6,ndof));
       prod(*D, *B, *DB, true);
@@ -467,11 +637,16 @@ void FiniteElementModel::computeElementaryStiffnessMatrix(SimpleMatrix& Ke,
       BT->trans(*B);
       SP::SimpleMatrix BTDB(new SimpleMatrix(ndof,ndof));
       prod(*BT, *DB, *BTDB, true);
+      DEBUG_EXPR(BTDB->display(););
 
       double coeff =0.0;
-      coeff = gp_w  * detJ;
-
+      coeff = gp_w  * detJ / 6.0; // we divide again by 6.0 since the reference element has volume equal to 1/6.0
       Ke += (coeff * *BTDB) ;
+
+      // // check with direct computation (see AFEM Chap 16 Felippa)
+      // SP::SimpleMatrix Ke_direct(new SimpleMatrix(ndof,ndof));
+      // computeElementaryStiffnessMatrix_direct(*Ke_direct, fe, D, thickness );
+      // std::cout << "diff " <<   (*Ke_direct- Ke).normInf() << std::endl;
     }
   }
   DEBUG_EXPR(Ke.display(););
@@ -535,17 +710,15 @@ void FiniteElementModel::computeStiffnessMatrix(SP::SiconosMatrix K, std::map<un
       (*D)(0,1) = coef*nu;
       (*D)(0,2) = coef*nu;
 
+      (*D)(1,1) = (*D)(0,0);
 
       (*D)(1,0) = (*D)(0,1);
-      (*D)(1,1) = (*D)(0,0);
       (*D)(1,2) = coef*nu;
+
+      (*D)(2,2) = (*D)(0,0);
 
       (*D)(2,0) = (*D)(0,2);
       (*D)(2,1) = (*D)(1,2);
-      (*D)(2,2) = (*D)(0,0);
-
-      (*D)(2,2) = (*D)(0,0);
-      (*D)(2,2) = (*D)(0,0);
 
       (*D)(3,3) = coef*(1.-2.*nu)/2.;
       (*D)(4,4) = coef*(1.-2.*nu)/2.;
