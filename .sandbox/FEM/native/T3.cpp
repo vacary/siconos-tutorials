@@ -25,8 +25,6 @@
 
 #include "MeshUtils.hpp"
 
-
-
 #include "FiniteElementLinearTIDS.hpp"
 #include "Material.hpp"
 //#include "FiniteElementModel.hpp"
@@ -34,143 +32,37 @@
 
 using namespace std;
 
-
-static Mesh* createMesh2x1()
-{
-  MVertex * v1 = new MVertex(1, 0.,0.,0.);
-  MVertex * v2 = new MVertex(2, 1.,0.,0.);
-  MVertex * v3 = new MVertex(3, 0.,1.,0.);
-  MVertex * v4 = new MVertex(4, 1.,1.,0.);
-
-  std::vector<MVertex *> vertices = {v1, v2, v3, v4};
-
-
-  std::vector<MVertex *> vertices1 = {v1, v2, v3};
-  MElement * e1 = new MElement(1, 2, vertices1);
-
-  std::vector<MVertex *> vertices2 = {v2, v4, v3};
-  MElement * e2 = new MElement(2, 2, vertices2);
-
-  std::vector<MElement *> elements = {e1, e2};
-
-  return new Mesh(2, vertices, elements);
-}
-static Mesh* createMeshnxm(int n, int m, double Lx, double Ly)
-{
-
-  double lx = Lx/n;
-  double ly = Ly/m;
-
-
-  std::vector<MVertex *> vertices;
-
-  vertices.resize((n+1)*(m+1));
-
-  for (int i =0;  i < n+1; i++)
-  {
-    for (int j =0;  j < m+1; j++)
-    {
-      vertices[i+j*(n+1)] = new MVertex(i+j*(n+1), i*lx , j*ly, 0.);
-    }
-  }
-  std::vector<MElement *> elements;
-  //elements.resize(2*n*m);
-  int element_cnt=0;
-  for (int i =0;  i < n; i++)
-  {
-    for (int j =0;  j < m; j++)
-    {
-      std::vector<MVertex *> vertices_e_1 = {vertices[i+j*(n+1)], vertices[i+1+(j)*(n+1)], vertices[i+(j+1)*(n+1)]};
-      elements.push_back(new MElement(element_cnt++, 2, vertices_e_1));
-
-      std::vector<MVertex *> vertices_e_2 = {vertices[i+1+(j)*(n+1)], vertices[i+1+(j+1)*(n+1)], vertices[i+(j+1)*(n+1)]};
-      elements.push_back(new MElement(element_cnt++, 2, vertices_e_2));
-    }
-  }
-  return new Mesh(2, vertices, elements);
-}
-
-static void  outputMeshforPython(SP::Mesh  mesh)
-{
-  FILE * foutput = fopen("mesh.py", "w");
-  fprintf(foutput, "coord=[]\n");
-  for (MVertex * v : mesh->vertices())
-  {
-    fprintf(foutput, "coord.append([%e, %e])\n", v->x(), v->y());
-  }
-  fprintf(foutput, "triangle=[]\n");
-  for (MElement * e : mesh->elements())
-  {
-    fprintf(foutput, "triangle.append([");
-    for (MVertex * v : e->vertices())
-    {
-      fprintf(foutput, "%zu, ", v->num());
-    }
-    fprintf(foutput, "])\n");
-  }
-  fclose(foutput);
-}
-
-static void  preOutputDisplacementforPython()
-{
-  FILE * foutput = fopen("displacement.py", "w");
-  fprintf(foutput, "import numpy as np\nx=[]\n");
-  fprintf(foutput, "import numpy as np\ny=[]\n");
-  fclose(foutput);
-}
-
-static void  outputDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel femodel, SP::SiconosVector x)
-{
-  FILE * foutput = fopen("displacement.py", "a");
-  fprintf(foutput, "x.append(np.array([");
-
-  for (MVertex * v : mesh->vertices())
-  {
-    SP::FENode n = femodel->vertexToNode(v);
-    unsigned int idx= (*n->dofIndex())[0];
-    double value =(*x)(idx);
-    fprintf(foutput, "%e,", value) ;
-
-  }
-  fprintf(foutput, "]))\n") ;
-  fprintf(foutput, "\n");
-
-  fprintf(foutput, "y.append(np.array([");
-  for (MVertex * v : mesh->vertices())
-  {
-    SP::FENode n = femodel->vertexToNode(v);
-    unsigned int idx= (*n->dofIndex())[1];
-    double value =(*x)(idx);
-    fprintf(foutput, "%e,", value) ;
-
-  }
-  fprintf(foutput, "]))\n") ;
-  fprintf(foutput, "\n");
-  fclose(foutput);
-}
-
-
 int main(int argc, char* argv[])
 {
-  
-  double Ly= 0.3;
-//  SP::Mesh mesh (createMesh2x1());
-//  SP::Mesh mesh (createMeshnxm(50, 15 , 3., Ly));
-  Ly =10.0;
-  string gmsh_filename = "./step_2d.msh";
-  //string gmsh_filename = "./square_v4.msh";
-  //string gmsh_filename = "./test.msh";
-  SP::Mesh mesh (createMeshFromGMSH(gmsh_filename));
-  mesh->display(true);
-  outputMeshforPython(mesh);
 
+  double Ly= 1.0;
+//  SP::Mesh mesh (create2dMesh2x1());
+//  SP::Mesh mesh (create2dMeshnxm(50, 15 , 3., Ly));
+  Ly =1.0;
+  //string gmsh_filename = "./mesh_data/triangle_felippa.msh";
+  //string gmsh_filename = "./mesh_data/triangle_reference.msh";
+  //string gmsh_filename = "./mesh_data/square_6.msh";
+  string gmsh_filename = "./mesh_data/square_2720.msh";
 
-  SP::Material material(new Material(1, 100000, 0.0));
+  SP::Mesh mesh (createMeshFromGMSH2(gmsh_filename));
+  mesh->display(false);
+
+  writeMeshforPython(mesh);
+
+  int bulk_material_tag = 1;
+  int boundary_condition_tag = 2;
+  int applied_force_tag = 3;
+
+  //SP::Material mat1(new Material(1, 8*36/5., 1/5.)); // material for  triangle_felippa.msh
+  double density = 7800.;
+  SP::Material mat1(new Material(density, 210e9, 1/3.));
+  std::map<unsigned int, SP::Material> materials = {{bulk_material_tag, mat1}};
+
 
   try{
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
-    SP::FiniteElementLinearTIDS FEsolid (new FiniteElementLinearTIDS(mesh, material, Siconos::SPARSE));
+    SP::FiniteElementLinearTIDS FEsolid (new FiniteElementLinearTIDS(mesh, materials, Siconos::SPARSE));
     end = std::chrono::system_clock::now();
     int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
       (end-start).count();
@@ -179,56 +71,36 @@ int main(int argc, char* argv[])
     //FEsolid->display(true);
 
     SP::FiniteElementModel femodel = FEsolid->FEModel();
+    // FEsolid->K()->display();
+    // getchar();
 
 
     /*------------------------------------------------- Applied forces  */
-    SP::SiconosVector forces(new SiconosVector(FEsolid->dimension()));
-    forces->zero();
 
-    for(SP::FENode n : femodel->nodes())
-    {
-      //std::cout << "node number : " << n->num() << " " << n->x() << " " << n->y() <<  std::endl;
-      if (fabs(n->y()-Ly) <= 1e-16 and fabs(n->x()) >= 1e-16)
-      {
-        //std::cout << "node number : " << n->num() << " " << n->y() <<  std::endl;
-        unsigned int idx_y = (*n->dofIndex())[1];
-        (*forces)(idx_y) = -10000.;
-      }
-    }
-    //(*forces)(FEsolid->dimension()-1) = -100.;
-    FEsolid->setFExtPtr(forces);
+    SP::SiconosVector nodal_forces(new SiconosVector(2));
+    nodal_forces->zero();
+    //(*nodal_forces)(0) = 1e6;
+    (*nodal_forces)(1) = -1e7;
+    FEsolid->applyNodalForces(applied_force_tag , nodal_forces);
 
 
     /*------------------------------------------------- Boundary Conditions  */
     /* This part should be hidden in a new BC function for a node number
      * and a dof index. */
-    SP::IndexInt bdIndex(new IndexInt(0));
-    for(SP::FENode n : femodel->nodes())
-    {
-      if (fabs(n->x()) <= 1e-16)
-      {
-        //std::cout << "node number : " << n->num() << " " << n->x() <<  std::endl;
-        unsigned int idx_x = (*n->dofIndex())[0];
-        bdIndex->push_back(idx_x);
-        unsigned int idx_y = (*n->dofIndex())[1];
-        bdIndex->push_back(idx_y);
-      }
-    }
-    SP::SiconosVector bdPrescribedVelocity(new SiconosVector(bdIndex->size()));
-    for (int i=0; i < bdIndex->size() ; i++)
-    {
-      bdPrescribedVelocity->setValue(i,0.0);
-    }
-    SP::BoundaryCondition bd (new BoundaryCondition(bdIndex,bdPrescribedVelocity));
-    FEsolid->setBoundaryConditions(bd);
 
+    SP::IndexInt node_dof_index(new IndexInt(0));
+    node_dof_index->push_back(0);
+    node_dof_index->push_back(1);
+
+    FEsolid->applyDirichletBoundaryConditions(boundary_condition_tag, node_dof_index);
+    FEsolid->boundaryConditions()->display();
 
     // -------------
     // --- Model ---
     // -------------
     double t0 = 0;                   // initial computation time
-    double T = 1e-01;                  // final computation time
-    double h = 1e-03;                // time step
+    double T = 1e-02;                  // final computation time
+    double h = 1e-05;                // time step
     double theta = 1.0;              // theta for MoreauJeanOSI integrator
 
     SP::NonSmoothDynamicalSystem solid(new NonSmoothDynamicalSystem(t0, T));
@@ -239,12 +111,12 @@ int main(int argc, char* argv[])
     /*------------------------------------------------- Contact Conditions  */
     double e =0.0;
     SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-    SP::SiconosVector  initial_gap(new SiconosVector(1, Ly*0.1));
+    SP::SiconosVector  initial_gap(new SiconosVector(1, Ly*5e-4));
     for(SP::FENode n : femodel->nodes())
     {
       if (fabs(n->y()) <= 1e-16 and fabs(n->x()) >= 1e-16)
       {
-        //std::cout << "node number : " << n->num() << " " << n->y() <<  std::endl;
+        std::cout << "contact node number : " << n->num() << " " << n->y() <<  std::endl;
         unsigned int idx_y = (*n->dofIndex())[1];
         SP::SimpleMatrix H(new SimpleMatrix(1, FEsolid->dimension()));
         (*H)(0, idx_y) = 1.0;
@@ -299,9 +171,9 @@ int main(int argc, char* argv[])
     dataPlot(0, 2) = (*v)(FEsolid->dimension()-1);
     dataPlot(0, 3) = (*p)(0);
     //dataPlot(0, 4) = (*lambda)(0);
-    preOutputDisplacementforPython();
 
-
+    std::string filename = prepareWriteDisplacementforPython("T3");
+    writeDisplacementforPython(mesh, femodel, q, filename);
 
     // --- Time loop ---
     cout << "====> Start computation ... " << endl;
@@ -311,14 +183,16 @@ int main(int argc, char* argv[])
     while(s->hasNextEvent())
     {
       s->computeOneStep();
-      //osnspb->display();
+      osnspb->display();
       // --- Get values to be plotted ---
       dataPlot(k, 0) =  s->nextTime();
       //std::cout << (*q)(0) << std::endl;
       dataPlot(k, 1) = (*q)(FEsolid->dimension()-1);
       dataPlot(k, 2) = (*v)(FEsolid->dimension()-1);
       dataPlot(k, 3) = (*p)(0);
-      outputDisplacementforPython(mesh, femodel, q);
+
+      if (k%1 == 0)
+        writeDisplacementforPython(mesh, femodel, q, filename);
       //dataPlot(k, 4) = (*lambda)(0);
       s->nextStep();
       k++;
@@ -346,20 +220,11 @@ int main(int argc, char* argv[])
 
 
   }
-  catch(SiconosException& e)
-  {
-    cerr << e.report() << endl;
-    return 1;
-
-  }
   catch(...)
   {
-    cerr << "Exception caught in T3.cpp" << endl;
-    return 1;
-
+   cerr << "Exception caught in TH4.cpp" << endl;
+   Siconos::exception::process();
+   return 1;
   }
-
-
-
 
 }

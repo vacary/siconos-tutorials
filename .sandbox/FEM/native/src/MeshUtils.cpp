@@ -31,6 +31,8 @@ using namespace std;
 #include <iterator>
 #include <tuple>
 
+#include <stdexcept>
+
 #define DEBUG_STDOUT
 #define DEBUG_NOCOLOR
 #define DEBUG_MESSAGES
@@ -51,6 +53,62 @@ void split(const std::string& str, Container& cont,
     cont.push_back(str.substr(previous, current - previous));
 }
 
+
+Mesh* create2dMesh2x1()
+{
+  MVertex * v1 = new MVertex(1, 0.,0.,0.);
+  MVertex * v2 = new MVertex(2, 1.,0.,0.);
+  MVertex * v3 = new MVertex(3, 0.,1.,0.);
+  MVertex * v4 = new MVertex(4, 1.,1.,0.);
+
+  std::vector<MVertex *> vertices = {v1, v2, v3, v4};
+
+
+  std::vector<MVertex *> vertices1 = {v1, v2, v3};
+  MElement * e1 = new MElement(1, 2, vertices1);
+
+  std::vector<MVertex *> vertices2 = {v2, v4, v3};
+  MElement * e2 = new MElement(2, 2, vertices2);
+
+  std::vector<MElement *> elements = {e1, e2};
+
+  return new Mesh(2, vertices, elements);
+}
+
+Mesh* create2dMeshnxm(int n, int m, double Lx, double Ly)
+{
+
+  double lx = Lx/n;
+  double ly = Ly/m;
+
+
+  std::vector<MVertex *> vertices;
+
+  vertices.resize((n+1)*(m+1));
+
+  for (int i =0;  i < n+1; i++)
+  {
+    for (int j =0;  j < m+1; j++)
+    {
+      vertices[i+j*(n+1)] = new MVertex(i+j*(n+1), i*lx , j*ly, 0.);
+    }
+  }
+  std::vector<MElement *> elements;
+  //elements.resize(2*n*m);
+  int element_cnt=0;
+  for (int i =0;  i < n; i++)
+  {
+    for (int j =0;  j < m; j++)
+    {
+      std::vector<MVertex *> vertices_e_1 = {vertices[i+j*(n+1)], vertices[i+1+(j)*(n+1)], vertices[i+(j+1)*(n+1)]};
+      elements.push_back(new MElement(element_cnt++, 2, vertices_e_1));
+
+      std::vector<MVertex *> vertices_e_2 = {vertices[i+1+(j)*(n+1)], vertices[i+1+(j+1)*(n+1)], vertices[i+(j+1)*(n+1)]};
+      elements.push_back(new MElement(element_cnt++, 2, vertices_e_2));
+    }
+  }
+  return new Mesh(2, vertices, elements);
+}
 
 
 Mesh* createMeshFromGMSH2(std::string gmsh_filename)
@@ -99,7 +157,12 @@ Mesh* createMeshFromGMSH2(std::string gmsh_filename)
 
       stringstream token(words[0]);
       token >> gmsh_version;
-      //std::cout << "gmsh_version :" << gmsh_version << endl;
+      std::cout << "gmsh_version : " << gmsh_version << endl;
+      if (gmsh_version >= 3.0)
+      {
+        std::cout << "this simple reader has been written for gmsh v2. Use meshio to translate in gmsh2 format" << std::endl;
+        throw std::invalid_argument( "Wrong gmsg format" );
+      }
     }
 
     if (line.compare("$PhysicalNames") == 0 )
@@ -312,6 +375,7 @@ void  writeDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel femodel,
   fprintf(foutput, "\n");
 
 
+
   fprintf(foutput, "z.append(np.array([");
   for (MVertex * v : mesh->vertices())
   {
@@ -319,8 +383,12 @@ void  writeDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel femodel,
     double value = 0.0;
     if (n)
     {
-      unsigned int idx= (*n->dofIndex())[2];
-      value =(*x)(idx);
+      if (mesh->dim() > 2)
+      {
+        unsigned int idx= (*n->dofIndex())[2];
+        value =(*x)(idx);}
+      else
+        value=0.0;
     }
     fprintf(foutput, "%e,", value) ;
 

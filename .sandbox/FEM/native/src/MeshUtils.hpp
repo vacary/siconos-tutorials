@@ -30,11 +30,13 @@
 #define MESHUTILS_H
 
 
-Mesh* createMeshFromGMSH2(std::string gmsh_filename);
+Mesh* create2dMesh2x1();
+Mesh* create2dMeshnxm(int n, int m, double Lx, double Ly);
 
+Mesh* createMeshFromGMSH2(std::string gmsh_filename);
 
 void  writeMeshforPython(SP::Mesh  mesh);
 std::string prepareWriteDisplacementforPython(std::string basename);
 void  writeDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel femodel, SP::SiconosVector x, std::string filename);
-  
+
 #endif

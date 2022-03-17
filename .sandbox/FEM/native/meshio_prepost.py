@@ -6,17 +6,21 @@ import os.path
 from os import path
 
 
+
+
 mesh_filename = './mesh_data/beam.msh'
 mesh_filename = './mesh_data/cube.msh'
 mesh_filename = './mesh_data/cube_multi.msh'
 #mesh_filename = './mesh_data/tetra_simple.msh'
 
+mesh_filename = './mesh_data/square_2720.msh'
 
 root_mesh_filename = os.path.splitext(mesh_filename)[0]
 mesh_basename = os.path.splitext(os.path.split(mesh_filename)[1])[0]
 
 
 example_name = 'TH4'
+example_name = 'T3'
 
 
 exec(open(example_name + '_displacement.py').read())

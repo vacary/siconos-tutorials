@@ -205,7 +205,7 @@ void FiniteElementModel::computeElementaryMassMatrix(SimpleMatrix& Me, FElement&
         J[3] = J[3] + Neta[n]*nodes[n]->_mVertex->y();
       }
       double detJ = J[0]*J[3] - J[1]*J[2];
-      // DEBUG_PRINTF("detJ = %e\n", detJ );
+      DEBUG_PRINTF("detJ = %e\n", detJ );
       // DEBUG_EXPR(std::cout << "Gauss points : "<< gp_eta << " "  << gp_ksi << " "  << gp_w << " "   << std::endl;);
 
       double coeff = gp_w * massDensity * detJ;
@@ -321,7 +321,61 @@ void FiniteElementModel::computeElementaryStiffnessMatrix_direct(SimpleMatrix& K
   if (_mesh->dim() ==2 and fe.family() == ISOPARAMETRIC) //Ugly
   {
 
-    // TODO
+
+    // Direct computation without Gauss Integration
+    double x1 = nodes[0]->_mVertex->x();
+    double x2 = nodes[1]->_mVertex->x();
+    double x3 = nodes[2]->_mVertex->x();
+
+    double y1 = nodes[0]->_mVertex->y();
+    double y2 = nodes[1]->_mVertex->y();
+    double y3 = nodes[2]->_mVertex->y();
+
+    double x21 = x2-x1;
+    double x31 = x3-x1;
+    double x32 = x3-x2;
+
+    double y21 = y2-y1;
+    double y31 = y3-y1;
+    double y32 = y3-y2;
+
+    double twoA =
+      x2*y3-x3*y2 +
+      x3*y1-x1*y3 +
+      x1*y2-x2*y1;
+    DEBUG_PRINTF("twoA = %e\n", twoA );
+    SP::SimpleMatrix B(new SimpleMatrix(3,ndof));
+
+    B->setValue(0,0, - y32);
+    B->setValue(0,2,   y31);
+    B->setValue(0,4, - y21);
+
+    B->setValue(1,1,   x32);
+    B->setValue(1,3, - x31);
+    B->setValue(1,5,   x21);
+
+    B->setValue(2,0,   x32);
+    B->setValue(2,1, - y32);
+    B->setValue(2,2, - x31);
+    B->setValue(2,3,   y31);
+    B->setValue(2,4,   x21);
+    B->setValue(2,5, - y21);
+
+    *B = 1.0/twoA * *B;
+
+    DEBUG_EXPR(B->display());
+
+    // Compte BT D B
+    SP::SimpleMatrix DB(new SimpleMatrix(3,ndof));
+    prod(*D, *B, *DB, true);
+    SP::SimpleMatrix BT(new SimpleMatrix(ndof,3));
+    BT->trans(*B);
+    SP::SimpleMatrix BTDB(new SimpleMatrix(ndof,ndof));
+    prod(*BT, *DB, *BTDB, true);
+
+
+    Ke = (twoA/2.0 * thickness*  *BTDB) ;
+
 
   }
   else if (_mesh->dim() ==3 and fe.family() == ISOPARAMETRIC) //Ugly
@@ -516,7 +570,7 @@ void FiniteElementModel::computeElementaryStiffnessMatrix(SimpleMatrix& Ke,
         J[3] = J[3] + Neta[n]*nodes[n]->_mVertex->y();
       }
       double detJ = J[0]*J[3] - J[1]*J[2];
-      // DEBUG_PRINTF("detJ = %e\n", detJ );
+      DEBUG_PRINTF("detJ = %e\n", detJ );
 
       // compute inverse of the Jacobian
       Jinv[0] = J[3]/detJ;
@@ -558,6 +612,10 @@ void FiniteElementModel::computeElementaryStiffnessMatrix(SimpleMatrix& Ke,
 
       Ke += (coeff * *BTDB) ;
 
+      // // check with direct computation (see IFEM Chap 15 Felippa)
+      // SP::SimpleMatrix Ke_direct(new SimpleMatrix(ndof,ndof));
+      // computeElementaryStiffnessMatrix_direct(*Ke_direct, fe, D, thickness );
+      // std::cout << "diff " <<   (*Ke_direct- Ke).normInf() << std::endl;
     }
     else if (_mesh->dim() ==3 and fe.family() == ISOPARAMETRIC) //Ugly
     {
@@ -679,9 +737,10 @@ void FiniteElementModel::computeStiffnessMatrix(SP::SiconosMatrix K, std::map<un
       D.reset(new SimpleMatrix(3,3));
       double E = mat.elasticYoungModulus();
       double nu =  mat.poissonCoefficient();
-      double coef = E/(1-nu*nu);
+
       if (mat.analysisType2D() == PLANE_STRAIN)
       {
+        double coef = E/((1+nu)*(1-2.*nu));
         (*D)(0,0) = coef*(1.-nu);
         (*D)(0,1) = coef*nu;
         (*D)(0,2) = 0.0;
@@ -694,8 +753,25 @@ void FiniteElementModel::computeStiffnessMatrix(SP::SiconosMatrix K, std::map<un
         (*D)(2,1) = 0.0;
         (*D)(2,2) = 0.5*coef*(1.0 - 2* nu);
       }
+      else if (mat.analysisType2D() == PLANE_STRESS)
+      {
+        double coef = E/(1-nu*nu);
+        (*D)(0,0) = coef;
+        (*D)(0,1) = coef*nu;
+        (*D)(0,2) = 0.0;
+
+        (*D)(1,0) = (*D)(0,1);
+        (*D)(1,1) = (*D)(0,0);
+        (*D)(1,2) = 0.0;
+
+        (*D)(2,0) = 0.0;
+        (*D)(2,1) = 0.0;
+        (*D)(2,2) = 0.5*coef*(1.0 - nu);
+      }
       else
         THROW_EXCEPTION("FiniteElementModel::computeStiffnessMatrix. Other type of analysis not yet implemented");
+
+      DEBUG_EXPR(D->display(););
     }
     else if (_mesh->dim() ==3)
     {
