@@ -7,8 +7,9 @@ from os import path
 
 
 mesh_filename = './mesh_data/beam.msh'
-#mesh_filename = './mesh_data/cube.msh2'
-
+mesh_filename = './mesh_data/cube.msh'
+mesh_filename = './mesh_data/cube_multi.msh'
+#mesh_filename = './mesh_data/tetra_simple.msh'
 
 
 root_mesh_filename = os.path.splitext(mesh_filename)[0]

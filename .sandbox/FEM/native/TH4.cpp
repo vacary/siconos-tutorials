@@ -44,11 +44,13 @@ int main(int argc, char* argv[])
 {
   try{
     /* Mesh creation *********************************************************/
-    double Lz= 16.0;
     //SP::Mesh mesh (createMesh()); // to create a mesh for a cpp file
+    //SP::Mesh mesh (createMeshFromGMSH2("./mesh_data/tetra_simple.msh"));    // simple reference tetrahedron for debugging TH4 element
+    //SP::Mesh mesh (createMeshFromGMSH2("./mesh_data/tetra_simple2.msh"));   // simple tetrahedron for debugging TH4 element from Felippa's book
+    //SP::Mesh mesh (createMeshFromGMSH2("./mesh_data/cube.msh"));            // simple cube example
+    SP::Mesh mesh (createMeshFromGMSH2("./mesh_data/cube_multi.msh"));        // simple beam example with a symmetric mesh
+    //SP::Mesh mesh (createMeshFromGMSH2("./mesh_data/beam.msh"));            // simple beam example
 
-    // simple beam example
-    SP::Mesh mesh (createMeshFromGMSH2("./mesh_data/beam.msh"));
     mesh->display(false);
     int bulk_material_tag = 1;
     int boundary_condition_tag = 2;
@@ -57,7 +59,10 @@ int main(int argc, char* argv[])
     writeMeshforPython(mesh);
 
     /* Material creation *****************************************************/
-    SP::Material mat1(new Material(2500, 100000, 0.0));
+
+    //SP::Material mat1(new Material(0.0, 96, 1./3.));
+    double density = 0.;
+    SP::Material mat1(new Material(density, 210e9, 1./3.));
     std::map<unsigned int, SP::Material> materials = {{bulk_material_tag, mat1}};
 
 
@@ -79,64 +84,19 @@ int main(int argc, char* argv[])
 
     // FEsolid->K()->display();
     // FEsolid->mass()->display();
-
+    // getchar();
 
     /* Applied forces  *******************************************************/
 
-    // SP::SiconosVector forces(new SiconosVector(FEsolid->dimension()));
-    // forces->zero();
-    // std::cout << "node number applied forces: [";
-    // for(SP::FENode n : femodel->nodes())
-    // {
-    //   //std::cout << "node number : " << n->num() << " " << n->x() << " " << n->y() <<  std::endl;
-    //   if (fabs(n->z()-Lz) <= 1e-16 and fabs(n->x()) >= 1e-16)
-    //   {
-    //     std::cout   << " " << n->num();
-    //     unsigned int idx_z = (*n->dofIndex())[2];
-    //     (*forces)(idx_z) = -10;
-    //   }
-    // }
-    // std::cout << " ]"  <<  std::endl;
-    // FEsolid->setFExtPtr(forces);
-
-
     SP::SiconosVector nodal_forces(new SiconosVector(3));
     nodal_forces->zero();
-    (*nodal_forces)(2) = -10;
-    (*nodal_forces)(1) = -10;
+    //(*nodal_forces)(0) = 1e6;
+    //(*nodal_forces)(1) = 1e5;
+    (*nodal_forces)(2) = 1e5;
     FEsolid->applyNodalForces(applied_force_tag , nodal_forces);
 
 
-
     /* Boundary Conditions  *******************************************************/
-
-    // /* This part should be hidden in a new BC function for a node number
-    //  * and a dof index. */
-    // SP::IndexInt bdIndex(new IndexInt(0));
-
-    // std::cout << "Boundary conditions node number : [ ";
-    // for(SP::FENode n : femodel->nodes())
-    // {
-    //   if (fabs(n->x()) <= 1e-16)
-    //   {
-    //     std::cout  << n->num() << " " ;
-    //     unsigned int idx_x = (*n->dofIndex())[0];
-    //     bdIndex->push_back(idx_x);
-    //     unsigned int idx_y = (*n->dofIndex())[1];
-    //     bdIndex->push_back(idx_y);
-    //     unsigned int idx_z = (*n->dofIndex())[2];
-    //     bdIndex->push_back(idx_z);
-    //   }
-    // }
-    // std::cout  <<  "] " <<  std::endl;
-    // SP::SiconosVector bdPrescribedVelocity(new SiconosVector(bdIndex->size()));
-    // for (int i=0; i < bdIndex->size() ; i++)
-    // {
-    //   bdPrescribedVelocity->setValue(i,0.0);
-    // }
-    // SP::BoundaryCondition bd (new BoundaryCondition(bdIndex,bdPrescribedVelocity));
-    // FEsolid->setBoundaryConditions(bd);
-    // FEsolid->boundaryConditions()->display();
 
     SP::IndexInt node_dof_index(new IndexInt(0));
     node_dof_index->push_back(0);
@@ -146,12 +106,11 @@ int main(int argc, char* argv[])
     FEsolid->applyDirichletBoundaryConditions(boundary_condition_tag, node_dof_index);
     FEsolid->boundaryConditions()->display();
 
-
     // -------------
     // --- Model ---
     // -------------
-    double t0 = 0;                   // initial computation time
-    double T = 10;                  // final computation time
+    double t0 = 0;                    // initial computation time
+    double T = 1e-03;                  // final computation time
 
     SP::NonSmoothDynamicalSystem solid(new NonSmoothDynamicalSystem(t0, T));
 
@@ -160,6 +119,7 @@ int main(int argc, char* argv[])
 
     /* Contact Conditions  ***************************************************/
     double e =0.0;
+    double Lz=10.;
     SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
     SP::SiconosVector  initial_gap(new SiconosVector(1, Lz*0.05));
     std::cout << "contact node number : [ "  ;
@@ -179,12 +139,12 @@ int main(int argc, char* argv[])
       }
     }
     std::cout << "]"<< std::endl;
-
+    //getchar();
     // ------------------
     // --- Simulation ---
     // ------------------
-    double h = 1e-02;                // time step
-    double theta = 1.0;//0.5;              // theta for MoreauJeanOSI integrator
+    double h = 1e-05;                // time step
+    double theta = 1.0; //0.5;              // theta for MoreauJeanOSI integrator
 
     // -- (1) OneStepIntegrators --
     SP::MoreauJeanOSI OSI(new MoreauJeanOSI(theta));
@@ -210,6 +170,7 @@ int main(int argc, char* argv[])
     SimpleMatrix dataPlot(N + 1, outputSize);
 
     SP::SiconosVector q = FEsolid->q();
+    SP::SiconosVector fext = FEsolid->fExt();
     SP::SiconosVector v = FEsolid->velocity();
     SP::SiconosVector p = FEsolid->p(1);
     //SP::SiconosVector lambda = inter->lambda(1);
@@ -238,12 +199,14 @@ int main(int argc, char* argv[])
       dataPlot(k, 1) = (*q)(FEsolid->dimension()-1);
       dataPlot(k, 2) = (*v)(FEsolid->dimension()-1);
       dataPlot(k, 3) = (*p)(0);
-      writeDisplacementforPython(mesh, femodel, q, filename);
+
+      if (k%1 == 0)
+        writeDisplacementforPython(mesh, femodel, q, filename);
+
       //dataPlot(k, 4) = (*lambda)(0);
       s->nextStep();
       k++;
       progressBar((double)k/N);
-
     }
     end = std::chrono::system_clock::now();
     elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
