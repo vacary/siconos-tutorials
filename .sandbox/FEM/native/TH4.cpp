@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     /* Material creation *****************************************************/
 
     //SP::Material mat1(new Material(0.0, 96, 1./3.));
-    double density = 0.;
+    double density = 7800; //0.;
     SP::Material mat1(new Material(density, 210e9, 1./3.));
     std::map<unsigned int, SP::Material> materials = {{bulk_material_tag, mat1}};
 
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
     nodal_forces->zero();
     //(*nodal_forces)(0) = 1e6;
     //(*nodal_forces)(1) = 1e5;
-    (*nodal_forces)(2) = 1e5;
+    (*nodal_forces)(2) = -1e6;
     FEsolid->applyNodalForces(applied_force_tag , nodal_forces);
 
 
@@ -121,11 +121,11 @@ int main(int argc, char* argv[])
     double e =0.0;
     double Lz=10.;
     SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-    SP::SiconosVector  initial_gap(new SiconosVector(1, Lz*0.05));
+    SP::SiconosVector  initial_gap(new SiconosVector(1, Lz*1e-05));
     std::cout << "contact node number : [ "  ;
     for(SP::FENode n : femodel->nodes())
     {
-      if (fabs(n->z()) <= 1e-16 and fabs(n->x()) >= 8.)
+      if (fabs(n->z()) <= 1e-16 and fabs(n->x()) >= 40.)
       {
         std::cout << " " << n->num() ;
         unsigned int idx_z = (*n->dofIndex())[2];
@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
         SP::Relation relation(new LagrangianLinearTIR(H, initial_gap));
         SP::Interaction inter(new Interaction(nslaw, relation));
         // link the interaction and the dynamical system
-        //solid->link(inter, FEsolid);
+        solid->link(inter, FEsolid);
       }
     }
     std::cout << "]"<< std::endl;
@@ -192,7 +192,7 @@ int main(int argc, char* argv[])
     while(s->hasNextEvent())
     {
       s->computeOneStep();
-      //osnspb->display();
+      osnspb->display();
       // --- Get values to be plotted ---
       dataPlot(k, 0) =  s->nextTime();
       //std::cout << (*q)(0) << std::endl;
