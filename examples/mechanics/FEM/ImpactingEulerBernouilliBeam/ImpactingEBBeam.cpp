@@ -224,7 +224,7 @@ int main(int argc, char* argv[])
     //  Impacting ball
 
     SP::SimpleMatrix ballMass(new SimpleMatrix(1,1,Siconos::SPARSE,1));
-    double ball_mass = 1.0;
+
     ballMass->setValue(0, 0, ball_mass);
 
     // SP::SimpleMatrix ballMass(new SimpleMatrix(1,1));
