@@ -38,17 +38,29 @@ int main(int argc, char* argv[])
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-//#include "UserDefinedParameter.hpp"
-#include "UserDefinedParameter-ref.hpp"
+#include "UserDefinedParameter.hpp"
+//#include "UserDefinedParameter-ref.hpp"
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
 
     cout << "====> Model loading ..." <<endl<<endl;
 
-    double l = L/nDof; // length of an element
+    if(argc==3)
+    {
+      //printf("argv[0] %s\n", argv[0]);
+      printf("h is set to %e\n", atof(argv[1]));
+      printf("nElement is set to %i\n", atoi(argv[2]));
+      h  = atof(argv[1]);
+      nElement = atoi(argv[2]);
+    }
+    unsigned int nDof = (nElement +1);
+    cout << "number of element = " << nElement <<  endl;
+    cout << "number of dof = " << nDof <<  endl;
 
-    cout << "bar length" << l <<  endl;
+    double l = L/nElement; // length of an element
+
+    cout << "bar length " << l <<  endl;
 
     SP::SiconosMatrix SparseMass(new SimpleMatrix(nDof,nDof,Siconos::SPARSE,nDof));
     SP::SiconosMatrix SparseStiffness(new SimpleMatrix(nDof,nDof,Siconos::SPARSE,3*nDof));
@@ -155,7 +167,7 @@ int main(int argc, char* argv[])
     SP::TimeDiscretisation t(new TimeDiscretisation(t0,h));
 
     // -- (3) one step non smooth problem
-    SP::OneStepNSProblem osnspb(new LCP());
+    SP::LCP osnspb(new LCP());
 
     // -- (4) Simulation setup with (1) (2) (3)
 #ifdef TS_PROJ
@@ -190,7 +202,7 @@ int main(int argc, char* argv[])
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 12;
-    SimpleMatrix dataPlot(N,outputSize);
+    SimpleMatrix dataPlot(2,outputSize);
 
     SP::SiconosVector q = bar->q();
     SP::SiconosVector v = bar->velocity();
@@ -233,12 +245,14 @@ int main(int argc, char* argv[])
 
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
-
+    double max_impulse = 0.0;
+    double W_00 =0.0;
+    std::cout << "N :"  << N << std::endl;
 //    while (s->nextTime() < T)
-    while(k < N)
+    while(k < 10)
     {
       // if (k%100 == 0)
-      //   std::cout << "k :"  << k << std::endl;
+      std::cout << "k :"  << k << std::endl;
       s->computeOneStep();
 
 //       std::cout << "position"  << std::endl;
@@ -277,7 +291,15 @@ int main(int argc, char* argv[])
 
 //       std::cout <<"potentialEnergy ="<<potentialEnergy << std::endl;
 //       std::cout <<"kineticEnergy ="<<kineticEnergy << std::endl;
-
+      if ((*lambda)(0) >0 )
+      {
+        max_impulse = fmax(max_impulse, (*lambda)(0));
+        osnspb->display();
+        SP::NumericsMatrix nm = osnspb->M()->numericsMatrix();
+        W_00= NM_get_value(&(*nm),0,0);
+        std::cout<< "W(0,0)" << NM_get_value(&(*nm),0,0) << std::endl;
+        break;
+      }
 
 
       s->nextStep();
@@ -290,7 +312,19 @@ int main(int argc, char* argv[])
     {
       totalImpactEnergy = totalImpactEnergy + dataPlot(p, 11);
     }
-    printf("totalImpactEnergy = %e", totalImpactEnergy);
+    printf("totalImpactEnergy = %e\n", totalImpactEnergy);
+    printf("max_impulse = %e\n", max_impulse);
+
+    ofstream myfile;
+    myfile.open ("percussion.txt", ios::out | ios::app );
+    myfile  << nElement << " "
+           << h << " "
+           << totalImpactEnergy << " "
+           << std::setprecision(24) << std::scientific 
+           << max_impulse << " "
+           << W_00 <<  endl;;
+    myfile.close();
+    exit(0);
 
     cout<<endl << "End of computation - Number of iterations done: "<<k-1<<endl;
     cout << "Computation Time " << endl;;
@@ -301,19 +335,19 @@ int main(int argc, char* argv[])
     // --- Output files ---
     cout<<"====> Output file writing ..."<<endl;
     ioMatrix::write("ImpactingBar.dat", "ascii", dataPlot,"noDim");
-    cout << " Comparison with a reference file" << endl;
-    SimpleMatrix dataPlotRef(dataPlot);
-    dataPlotRef.zero();
-    ioMatrix::read("ImpactingBar.ref", "ascii", dataPlotRef);
+    // cout << " Comparison with a reference file" << endl;
+    // SimpleMatrix dataPlotRef(dataPlot);
+    // dataPlotRef.zero();
+    // ioMatrix::read("ImpactingBar.ref", "ascii", dataPlotRef);
 
-    double error = (dataPlot - dataPlotRef).normInf() ;
-    cout << "Error = " << error << endl;
-    if(error > 1e-11)
-    {
-      std::cout << "Warning. The result is rather different from the reference file." << std::endl;
-      std::cout << "Error = "<< (dataPlot - dataPlotRef).normInf()<<std::endl;
-      return 1;
-    }
+    // double error = (dataPlot - dataPlotRef).normInf() ;
+    // cout << "Error = " << error << endl;
+    // if(error > 1e-11)
+    // {
+    //   std::cout << "Warning. The result is rather different from the reference file." << std::endl;
+    //   std::cout << "Error = "<< (dataPlot - dataPlotRef).normInf()<<std::endl;
+    //   return 1;
+    // }
 
 
   }

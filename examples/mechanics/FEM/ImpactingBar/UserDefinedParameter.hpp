@@ -1,9 +1,9 @@
 // User-defined main parameters
-unsigned int nDof = 10;// degrees of freedom for the beam
-double t0 = 1e-8;                   // initial computation time
-double T = 0.0015;                  // final computation time
+unsigned int nElement = 10;// degrees of freedom for the beam
+double t0 = 0.0;                   // initial computation time
+double T = 1.0;                  // final computation time
 double h = 1e-7;                // time step
-double position_init = 0.00005;      // initial position
+double position_init = 0.0000;      // initial position
 double velocity_init =  -.1;      // initial velocity
 double epsilon = 0.0;//1e-1;
 double theta = 1/2.0 + epsilon;              // theta for MoreauJeanOSI integrator
