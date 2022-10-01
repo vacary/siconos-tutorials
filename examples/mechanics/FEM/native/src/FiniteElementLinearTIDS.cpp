@@ -32,10 +32,12 @@
 #include <stdio.h>
 #include <iostream>
 
-FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, std::map<unsigned int, SP::Material> materials,  Siconos::UBLAS_TYPE storageType):
+siconos::mechanics::fem::native::FiniteElementLinearTIDS::FiniteElementLinearTIDS(std::shared_ptr<Mesh> mesh,
+    std::map<unsigned int, std::shared_ptr<Material> > materials,
+    Siconos::UBLAS_TYPE storageType):
   LagrangianLinearTIDS::LagrangianLinearTIDS(), _mesh(mesh), _materials(materials), _storageType(storageType)
 {
-  DEBUG_BEGIN("FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material\n");
+  DEBUG_BEGIN("FiniteElementLinearTIDS::FiniteElementLinearTIDS(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material\n");
 
   _FEModel.reset(new FiniteElementModel(mesh));
   _ndof = _FEModel->init();
@@ -67,30 +69,30 @@ FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, std::map<unsigne
   // }
   // _C->zero();
 
-  DEBUG_END("FiniteElementLinearTIDS::FiniteElementLinearTIDS(SP::Mesh mesh, SP::Material material\n");
+  DEBUG_END("FiniteElementLinearTIDS::FiniteElementLinearTIDS(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material\n");
 
 }
-void FiniteElementLinearTIDS::applyDirichletBoundaryConditions(int physical_entity_tag, SP::IndexInt node_dof_index)
+void siconos::mechanics::fem::native::FiniteElementLinearTIDS::applyDirichletBoundaryConditions(int physical_entity_tag, std::shared_ptr<IndexInt> node_dof_index)
 {
 
-  if (!_boundaryConditions)
+  if(!_boundaryConditions)
   {
-    SP::IndexInt bdIndex(new IndexInt(0));
-    SP::SiconosVector bdPrescribedVelocity(new SiconosVector(0));
-    _boundaryConditions.reset(new BoundaryCondition(bdIndex,bdPrescribedVelocity));
+    std::shared_ptr<IndexInt> bdIndex = std::make_shared<IndexInt>(0);
+    std::shared_ptr<SiconosVector> bdPrescribedVelocity = std::make_shared<SiconosVector>(0);
+    _boundaryConditions = std::make_shared<BoundaryCondition>(bdIndex,bdPrescribedVelocity);
   }
 
   _FEModel->applyDirichletBoundaryConditions(physical_entity_tag, node_dof_index, _boundaryConditions);
-  _reactionToBoundaryConditions.reset(new SiconosVector(_boundaryConditions->velocityIndices()->size()));
+  _reactionToBoundaryConditions = std::make_shared<SiconosVector>(_boundaryConditions->velocityIndices()->size());
 
 };
 
-void FiniteElementLinearTIDS::applyNodalForces(int physical_entity_tag, SP::SiconosVector nodal_forces)
+void siconos::mechanics::fem::native::FiniteElementLinearTIDS::applyNodalForces(int physical_entity_tag, std::shared_ptr<SiconosVector> nodal_forces)
 {
 
-  if (!_fExt)
+  if(!_fExt)
   {
-    _fExt.reset(new SiconosVector(dimension()));
+    _fExt =  std::make_shared<SiconosVector>(dimension());
     _fExt->zero();
   }
 
@@ -98,7 +100,7 @@ void FiniteElementLinearTIDS::applyNodalForces(int physical_entity_tag, SP::Sico
 
 };
 
-void FiniteElementLinearTIDS::display(bool brief) const
+void siconos::mechanics::fem::native::FiniteElementLinearTIDS::display(bool brief) const
 {
   std::cout << "===== FiniteElementLinearTIDS display ===== " <<std::endl;
   LagrangianLinearTIDS::display();

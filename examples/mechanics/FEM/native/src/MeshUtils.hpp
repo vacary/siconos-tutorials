@@ -19,24 +19,30 @@
 /*! \file MeshUtils.hpp
 
  */
-
-#include "Mesh.hpp"
-#include "FiniteElementModel.hpp"
-#include "FemFwd.hpp"
-#include <SiconosKernel.hpp>
-#include <string.h>
-
 #ifndef MESHUTILS_H
 #define MESHUTILS_H
 
+#include "Mesh.hpp"
+#include "FiniteElementModel.hpp"
+#include <SiconosKernel.hpp>
+#include <string.h>
+
+namespace siconos::mechanics::fem::native
+{
 
 Mesh* create2dMesh2x1();
+
 Mesh* create2dMeshnxm(int n, int m, double Lx, double Ly);
 
 Mesh* createMeshFromGMSH2(std::string gmsh_filename);
 
-void  writeMeshforPython(SP::Mesh  mesh);
-std::string prepareWriteDisplacementforPython(std::string basename);
-void  writeDisplacementforPython(SP::Mesh  mesh, SP::FiniteElementModel femodel, SP::SiconosVector x, std::string filename);
+void  writeMeshforPython(std::shared_ptr<Mesh>  mesh);
 
+std::string prepareWriteDisplacementforPython(std::string basename);
+
+void  writeDisplacementforPython(std::shared_ptr<Mesh>  mesh,
+                                 std::shared_ptr<FiniteElementModel> femodel,
+                                 std::shared_ptr<SiconosVector> x, std::string filename);
+
+}
 #endif

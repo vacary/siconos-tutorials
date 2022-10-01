@@ -25,15 +25,13 @@
 #include "LagrangianLinearTIDS.hpp"
 #include "Mesh.hpp"
 #include "FiniteElementModel.hpp"
-
-#include "SimulationTypeDef.hpp" //for SP::IndexInt
-
-#include "FemFwd.hpp"
+#include "SimulationTypeDef.hpp" //for IndexInt
 
 /** Finite Element discretization of elastic solids that inherits from Lagrangian Linear Systems with time invariant coefficients
  * - \f$M\dot v + Cv + Kq = F_{ext}(t,z) + p \f$
  */
-
+namespace siconos::mechanics::fem::native
+{
 class FiniteElementLinearTIDS : public LagrangianLinearTIDS
 {
 
@@ -42,13 +40,13 @@ protected:
   ACCEPT_SERIALIZATION(LagrangianLinearTIDS);
 
   /** a mesh */
-  SP::Mesh _mesh;
+  std::shared_ptr<Mesh> _mesh;
 
   /** a material */
-  std::map<unsigned int, SP::Material> _materials;
+  std::map<unsigned int, std::shared_ptr<Material> > _materials;
 
   /** a finite element model */
-  SP::FiniteElementModel _FEModel;
+  std::shared_ptr<FiniteElementModel> _FEModel;
 
   /* Storage type for the matrices */
   Siconos::UBLAS_TYPE _storageType;
@@ -63,12 +61,12 @@ public:
    * \param mesh the mesh that defined the spatial discretization
    * \param material
    */
-  FiniteElementLinearTIDS(SP::Mesh mesh,
-                          std::map<unsigned int, SP::Material> materials,
+  FiniteElementLinearTIDS(std::shared_ptr<Mesh> mesh,
+                          std::map<unsigned int, std::shared_ptr<Material> > materials,
                           Siconos::UBLAS_TYPE storageType=Siconos::DENSE);
 
   /** destructor */
-  ~FiniteElementLinearTIDS(){};
+  ~FiniteElementLinearTIDS() {};
 
   void setStorageType(Siconos::UBLAS_TYPE type)
   {
@@ -76,23 +74,26 @@ public:
   }
 
 
-  SP::FiniteElementModel FEModel()
+  std::shared_ptr<FiniteElementModel> FEModel()
   {
     return _FEModel;
   };
 
 
-  void applyDirichletBoundaryConditions(int physical_entity_tag, SP::IndexInt node_dof_index);
+  void applyDirichletBoundaryConditions(int physical_entity_tag, std::shared_ptr<IndexInt> node_dof_index);
 
-  void applyNodalForces(int physical_entity_tag, SP::SiconosVector nodal_forces);
+  void applyNodalForces(int physical_entity_tag, std::shared_ptr<SiconosVector> nodal_forces);
 
 
 
-  void display(bool brief) const;
+  void display(bool brief) const override;
 
 
 
   ACCEPT_STD_VISITORS();
 
 };
+
+} // namespace siconos::mechanics::fem::native
 #endif // FINITEELEMENTLAGRANGIANTIDS_H
+

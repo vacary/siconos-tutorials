@@ -27,42 +27,42 @@
 #include <iostream>
 #include <string>
 // --- Constructor from a list of attributes
-Mesh::Mesh(int dim, int numberOfVertices, int numberOfElements ):
+siconos::mechanics::fem::native::Mesh::Mesh(int dim, int numberOfVertices, int numberOfElements):
   _dim(dim),_numberOfVertices(numberOfVertices),_numberOfElements(numberOfElements)
 {
-  DEBUG_BEGIN("Mesh::Mesh(int dim, int numberOfNodes, int numberOfElements )\n");
-  DEBUG_END("Mesh::Mesh(int dim, int numberOfNodes, int numberOfElements) \n");
+  DEBUG_BEGIN("siconos::mechanics::fem:native::Mesh::Mesh(int dim, int numberOfNodes, int numberOfElements )\n");
+  DEBUG_END("siconos::mechanics::fem:native::Mesh::Mesh(int dim, int numberOfNodes, int numberOfElements) \n");
 };
 
-Mesh::Mesh(int dim,
-           std::vector<MVertex *> vertices,
-           std::vector<MElement *> elements): _dim(dim), _vertices(vertices), _elements(elements)
+siconos::mechanics::fem::native::Mesh::Mesh(int dim,
+    std::vector<MVertex *> vertices,
+    std::vector<MElement *> elements): _dim(dim), _vertices(vertices), _elements(elements)
 {
   _numberOfElements =  _elements.size();
   _numberOfVertices =  _vertices.size();
 
   // Construction of the reverse map : node -> element
-  for (MElement * e : _elements)
+  for(MElement * e : _elements)
   {
-    for (MVertex * v : e->vertices())
+    for(MVertex * v : e->vertices())
     {
       v->elements().push_back(e);
     }
   }
 
-  _physical_entities={};
+  _physical_entities= {};
 
 };
 
-Mesh::Mesh(int dim,
-           std::vector<MVertex *> vertices,
-           std::vector<MElement *> elements,
-           std::vector< std::tuple<int, std::string>> physical_entities): Mesh(dim, vertices, elements)
+siconos::mechanics::fem::native::Mesh::Mesh(int dim,
+    std::vector<MVertex *> vertices,
+    std::vector<MElement *> elements,
+    std::vector< std::tuple<int, std::string>> physical_entities): Mesh(dim, vertices, elements)
 {
   _physical_entities=physical_entities;
 };
 
-void Mesh::display(bool brief) const
+void siconos::mechanics::fem::native::Mesh::display(bool brief) const
 {
   std::cout << "===== Mesh display ===== " <<std::endl;
   std::cout << "- dimension : " << _dim << std::endl;
@@ -71,7 +71,7 @@ void Mesh::display(bool brief) const
 
 
   int cnt =0;
-  for (MVertex * v : _vertices)
+  for(MVertex * v : _vertices)
   {
     v->display();
     if(brief and cnt >10)
@@ -79,11 +79,11 @@ void Mesh::display(bool brief) const
       std::cout << "  ..... " << std::endl;
       break;
     }
-      cnt++;
+    cnt++;
   }
 
   cnt=0;
-  for (MElement * e : _elements)
+  for(MElement * e : _elements)
   {
     e->display();
     if(brief and cnt >10)
@@ -96,17 +96,17 @@ void Mesh::display(bool brief) const
 
   int k=0;
   std::cout << "Physical entities : (number, tag,  type, name)" << std::endl;
-  for (std::tuple<int, std::string> physical_entry :  _physical_entities)
+  for(std::tuple<int, std::string> physical_entry :  _physical_entities)
   {
     std::cout << k  << " "  <<  k+1 << " " << std::get<0>(physical_entry) << " " <<  std::get<1>(physical_entry) <<    std::endl;
     k++;
   }
 
 
-   // for(std::vector<MElement *>::iterator it = _elements.begin();
-   //     it != _elements.end(); ++it) {
-   //   std::cout << *it << std::endl;
-   // }
+  // for(std::vector<MElement *>::iterator it = _elements.begin();
+  //     it != _elements.end(); ++it) {
+  //   std::cout << *it << std::endl;
+  // }
   std::cout << "=========================================================== " <<std::endl;
 
 }

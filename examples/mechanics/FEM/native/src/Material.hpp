@@ -59,7 +59,7 @@ protected:
 
   /** Analysis type in 2D */
   ANALYSIS_TYPE_2D _analysisType2D;
- 
+
   /** thickness in 2D plane stress analysis */
   double _thickness;
 
@@ -75,11 +75,11 @@ public:
     _elasticYoungModulus(ElasticYoungModulus),
     _poissonCoefficient(poissonCoefficient),
     _analysisType2D(PLANE_STRAIN),
-    _thickness(1.0){};
+    _thickness(1.0) {};
 
 
   /** destructor */
-  ~Material(){};
+  ~Material() {};
 
   double massDensity()
   {
@@ -90,7 +90,7 @@ public:
   {
     return _elasticYoungModulus;
   }
-  
+
   double poissonCoefficient()
   {
     return _poissonCoefficient;
@@ -105,7 +105,7 @@ public:
   {
     return _thickness;
   }
-  
+
   /** print the data of the Material
    */
   void display(bool brief = true) const;
@@ -114,4 +114,5 @@ public:
   //ACCEPT_STD_VISITORS();
 
 };
+
 #endif // MESH_H

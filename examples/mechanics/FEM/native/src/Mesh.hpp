@@ -26,6 +26,10 @@
 #include <iostream>
 #include <string>
 
+
+
+namespace siconos::mechanics::fem::native
+{
 /** a Mesh container
  */
 
@@ -46,11 +50,20 @@ struct MVertex
 
 
   /* Constructor from data */
-  MVertex(size_t num, double x, double y, double z):_num(num), _x(x), _y(y), _z(z){};
+  MVertex(size_t num, double x, double y, double z):_num(num), _x(x), _y(y), _z(z) {};
 
-  double x(){return _x;};
-  double y(){return _y;};
-  double z(){return _z;};
+  double x()
+  {
+    return _x;
+  };
+  double y()
+  {
+    return _y;
+  };
+  double z()
+  {
+    return _z;
+  };
 
 
   size_t num()
@@ -100,10 +113,13 @@ protected :
 
 public:
   MElement(size_t num, int type, std::vector<MVertex *> vertices):
-    _num(num),_type(type),_vertices(vertices){ _tags.push_back(0);};
+    _num(num),_type(type),_vertices(vertices)
+  {
+    _tags.push_back(0);
+  };
 
   MElement(size_t num, int type, std::vector<MVertex *> vertices, std::vector<int> tags):
-    _num(num),_type(type),_vertices(vertices),_tags(tags){};
+    _num(num),_type(type),_vertices(vertices),_tags(tags) {};
 
   int type()
   {
@@ -174,7 +190,7 @@ protected:
   Mesh() {};
 
 public:
-  Mesh(int dim, int numberOfNodes, int numberOfElements );
+  Mesh(int dim, int numberOfNodes, int numberOfElements);
 
   /** constructor
    *  \param dim dimension
@@ -192,7 +208,7 @@ public:
        std::vector< std::tuple<int, std::string>> physical_entities);
 
   /** destructor */
-  ~Mesh(){};
+  ~Mesh() {};
 
   int dim()
   {
@@ -221,4 +237,7 @@ public:
   //ACCEPT_STD_VISITORS();
 
 };
+
+
+} // namespace siconos::mechanics::fem::native
 #endif // MESH_H

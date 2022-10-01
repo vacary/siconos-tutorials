@@ -25,14 +25,15 @@
 #include <iostream>
 #include <map>
 
-#include "SiconosPointers.hpp"                //for SP::
+
 #include "SiconosAlgebraTypeDef.hpp"          //for Index
-#include "SimulationTypeDef.hpp"              //for SP::IndexInt
+#include "SimulationTypeDef.hpp"              //for IndexInt
 #include "BoundaryCondition.hpp"
 
-#include "FemFwd.hpp"
 #include "Mesh.hpp"
-
+#include "Material.hpp"
+namespace siconos::mechanics::fem::native
+{
 // a Finite Element node
 struct FENode
 {
@@ -43,18 +44,21 @@ struct FENode
   MVertex * _mVertex;
 
   /* associated dof number  in the global dof vector*/
-  SP::Index _dofIndex;
+  std::shared_ptr<Index> _dofIndex;
 
   /* */
 
-  FENode(size_t num, MVertex *v, SP::Index dofIndex ): _num(num), _mVertex(v), _dofIndex(dofIndex){};
+  FENode(size_t num, MVertex *v, std::shared_ptr<Index> dofIndex): _num(num), _mVertex(v), _dofIndex(dofIndex) {};
 
   size_t num()
   {
     return _num;
   }
 
-  SP::Index dofIndex(){return _dofIndex;};
+  std::shared_ptr<Index> dofIndex()
+  {
+    return _dofIndex;
+  };
 
   double x()
   {
@@ -79,6 +83,9 @@ struct FENode
     std::cout << std::endl;
   };
 };
+DEFINE_SPTR(FENode)
+
+
 
 enum FINITE_ELEMENT_TYPE // we follow the gmsh numbering convention.
 {
@@ -136,18 +143,18 @@ struct FElement
 
   /* Element Family */
   FINITE_ELEMENT_FAMILY _family;
-  
+
   /* number of dof by Element  */
   unsigned _ndof;
 
   /** nodes */
-  std::vector<SP::FENode> _nodes;
+  std::vector<std::shared_ptr<FENode> > _nodes;
 
   /* associated Mesh element */
   MElement * _mElement;
 
   FElement(FINITE_ELEMENT_TYPE type, unsigned int ndof, MElement *e):
-    _num(e->num()), _type(type), _ndof(ndof), _mElement(e), _family(ISOPARAMETRIC){};
+    _num(e->num()), _type(type), _ndof(ndof), _mElement(e), _family(ISOPARAMETRIC) {};
 
   unsigned int ndof()
   {
@@ -157,17 +164,17 @@ struct FElement
   {
     return _num;
   }
-  
+
   MElement * mElement()
   {
     return _mElement;
   }
-  
+
   FINITE_ELEMENT_FAMILY family()
   {
     return _family;
   }
-  
+
   int order()
   {
     switch(_type)
@@ -202,30 +209,30 @@ struct FElement
     switch(_type)
     {
     case T3:
-      if (order==1)
+      if(order==1)
         return  GaussPointsT3_1;
-      else if (order==2)
+      else if(order==2)
         return  GaussPointsT3_2;
       break;
     case TH4:
-      if (order==1)
+      if(order==1)
         return  GaussPointsTH4_1;
-      else if (order==2)
+      else if(order==2)
         return  GaussPointsTH4_2;
       break;
- 
+
     default:
       throw("FElement::GaussPoints(). element type not recognized");
     }
     return  GaussPointsEmpty;
   }
 
-  std::vector<SP::FENode> & nodes()
+  std::vector<std::shared_ptr<FENode> > & nodes()
   {
     return _nodes;
   }
 
-  void shapeFunctionIso2D(double ksi, double eta, double* N, double * Nksi, double * Neta )
+  void shapeFunctionIso2D(double ksi, double eta, double* N, double * Nksi, double * Neta)
   {
     switch(_type)
     {
@@ -287,13 +294,13 @@ struct FElement
               << "            - ndof: " << _ndof
               << "            - number of nodes: " << _nodes.size() ;
     std::cout << std::endl;
-    for (SP::FENode n : _nodes)
+    for(std::shared_ptr<FENode> n : _nodes)
     {
       n->display();
     }
   };
 };
-
+DEFINE_SPTR(FElement)
 
 // a finite element model
 class FiniteElementModel
@@ -301,41 +308,41 @@ class FiniteElementModel
 protected :
 
   /** a mesh */
-  SP::Mesh _mesh;
+  std::shared_ptr<Mesh> _mesh;
 
   /** nodes */
-  std::vector<SP::FENode> _nodes;
+  std::vector<std::shared_ptr<FENode>> _nodes;
 
   /** elements */
-  std::vector<SP::FElement> _elements;
+  std::vector<std::shared_ptr<FElement>> _elements;
 
   /** vertex to node map **/
-  std::map<MVertex * , SP::FENode > _vertexToNode;
+  std::map<MVertex *, std::shared_ptr<FENode> > _vertexToNode;
 
   /** MElement to FElement map **/
-  std::map<MElement * , SP::FElement > _mElementTOFElement;
+  std::map<MElement *, std::shared_ptr<FElement> >  _mElementTOFElement;
 
   /** default constructor */
   FiniteElementModel() {};
 
 public:
-  FiniteElementModel(SP::Mesh mesh):
-    _mesh(mesh){};
+  FiniteElementModel(std::shared_ptr<Mesh> mesh):
+    _mesh(mesh) {};
 
-  std::vector<SP::FElement > &  elements()
+  std::vector<std::shared_ptr<FElement> > &  elements()
   {
     return _elements;
   }
 
-  std::vector<SP::FENode > &  nodes()
+  std::vector<std::shared_ptr<FENode> > &  nodes()
   {
     return _nodes;
   }
-  SP::FENode vertexToNode(MVertex * v)
+  std::shared_ptr<FENode> vertexToNode(MVertex * v)
   {
-    if (_vertexToNode.find(v) == _vertexToNode.end())
+    if(_vertexToNode.find(v) == _vertexToNode.end())
     {
-      SP::FENode f;
+      std::shared_ptr<FENode> f;
       return f;
     }
     return _vertexToNode.at(v);
@@ -345,13 +352,13 @@ public:
   unsigned int init();
 
   /* Assembly method for elemetary matrix */
-  void AssembleElementaryMatrix(SP::SiconosMatrix M,
+  void AssembleElementaryMatrix(std::shared_ptr<SiconosMatrix> M,
                                 SimpleMatrix& Me, FElement& fe);
 
   /** compute Mass Matrix
    * should be computeMass of LagrangianDS ?
    **/
-  void computeMassMatrix(SP::SiconosMatrix, std::map<unsigned int, SP::Material> & mat);
+  void computeMassMatrix(std::shared_ptr<SiconosMatrix>, std::map<unsigned int, std::shared_ptr<Material> > & mat);
 
   /** compute elementary Mass Matrix
    * should be computeMass of LagrangianDS ?
@@ -361,28 +368,31 @@ public:
   /** compute Stiffness Matrix
    * should be computeMass of LagrangianDS ?
    **/
-  void computeStiffnessMatrix(SP::SiconosMatrix,  std::map<unsigned int, SP::Material> & mat);
+  void computeStiffnessMatrix(std::shared_ptr<SiconosMatrix>,  std::map<unsigned int, std::shared_ptr<Material> > & mat);
 
   /** compute elementary Stiffness Matrix
    * should be computeMass of LagrangianDS ?
    **/
   void computeElementaryStiffnessMatrix(SimpleMatrix& Me, FElement& fe,
-                                        SP::SimpleMatrix D, double thickness);
+                                        std::shared_ptr<SimpleMatrix> D, double thickness);
 
   /** compute elementary Stiffness Matrix with a direct method
    * for linear element
    **/
   void computeElementaryStiffnessMatrix_direct(SimpleMatrix& Me, FElement& fe,
-                                               SP::SimpleMatrix D, double thickness);
+      std::shared_ptr<SimpleMatrix> D, double thickness);
 
 
-  void applyDirichletBoundaryConditions(int physical_entity_tag, SP::IndexInt node_dof_index, SP::BoundaryCondition _boundaryCondition);
-  
-  void applyNodalForces(int physical_entity_tag, SP::SiconosVector nodal_forces, SP::SiconosVector forces);
+  void applyDirichletBoundaryConditions(int physical_entity_tag, std::shared_ptr<IndexInt> node_dof_index,
+                                        std::shared_ptr<BoundaryCondition> _boundaryCondition);
+
+  void applyNodalForces(int physical_entity_tag, std::shared_ptr<SiconosVector> nodal_forces, std::shared_ptr<SiconosVector> forces);
 
   void display(bool brief) const;
 };
+DEFINE_SPTR(FiniteElementModel)
 
+} // namespace siconos::mechanics::fem::native
 
 
 #endif // FINITEELEMENTMODEL_H
