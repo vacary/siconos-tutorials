@@ -7,6 +7,7 @@ unset multiplot
 set xrange [*:*]
 set yrange [-1e-04:1e-03]
 
+threshold(x) = 1e-04
 
 set term my_terminal i
 set multiplot

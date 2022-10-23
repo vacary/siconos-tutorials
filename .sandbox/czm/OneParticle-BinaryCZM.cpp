@@ -84,8 +84,10 @@ int main(int argc, char* argv[])
     (*H)(0, 0) = 1.0;
     (*H)(1, 1) = 1.0;
     (*H)(2, 2) = 0.0;
+
     
-    SP::NonSmoothLaw nslaw(new BinaryCohesiveNSL(e, 0, 0, sigma_c, delta_c,3));
+    //SP::NonSmoothLaw nslaw(new BinaryCohesiveNSL(e, 0, 0, sigma_c, delta_c,3, BinaryCohesiveNSL::TRIANGLE_SHAPE));
+    SP::NonSmoothLaw nslaw(new BinaryCohesiveNSL(e, 0, 0, sigma_c, delta_c,3, BinaryCohesiveNSL::DOOR_SHAPE));
     SP::Relation relation(new LagrangianLinearTIR(H));
 
     SP::Interaction inter(new Interaction(nslaw, relation));
