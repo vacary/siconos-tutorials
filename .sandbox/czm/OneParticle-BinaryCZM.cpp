@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
     // User-defined main parameters
     unsigned int nDof = 3;           // degrees of freedom for the ball
     double t0 = 0;                   // initial computation time
-    double T = 0.25;                  // final computation time
+    double T = 0.4;                  // final computation time
     double h = 1e-4;                // time step
     double position_init = 0.0;      // initial position for lowest bead.
     double velocity_init = 0.0;      // initial velocity for lowest bead.
@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
     SP::SimpleMatrix H(new SimpleMatrix(3, nDof));
     (*H)(0, 0) = 1.0;
     (*H)(1, 1) = 1.0;
-    (*H)(2, 2) = 0.0;
+    (*H)(2, 2) = 1.0;
 
     
     //SP::NonSmoothLaw nslaw(new BinaryCohesiveNSL(e, 0, 0, sigma_c, delta_c,3, BinaryCohesiveNSL::TRIANGLE_SHAPE));
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
     start = std::chrono::system_clock::now();
     while(s->hasNextEvent())
     {
-      std::cout << "\n\n\n next time step "<< k <<std::endl;
+      std::cout << "\nnext time step "<< k <<std::endl;
       s->computeOneStep();
       // --- Get values to be plotted ---
       idx=0;
@@ -180,12 +180,13 @@ int main(int argc, char* argv[])
       dataPlot(k, idx++) = nslaw_BinaryCohesiveNSL->beta(*(inter));
       dataPlot(k, idx++) = (*f)(0);
     
-      std::cout << "beta = " << nslaw_BinaryCohesiveNSL->beta(*(inter)) << std::endl;
-      std::cout << "f = " <<  (*f)(0) << std::endl;
+      std::cout << "    beta = " << nslaw_BinaryCohesiveNSL->beta(*(inter)) << std::endl;
+      //std::cout << "   f = " <<  (*f)(0) << std::endl;
       
       //getchar();
       //osnspb->display();
       s->nextStep();
+      //getchar();
       k++;
     }
     end = std::chrono::system_clock::now();
@@ -197,7 +198,7 @@ int main(int argc, char* argv[])
     // --- Output files ---
     cout << "====> Output file writing ..." << endl;
     dataPlot.resize(k, outputSize);
-    ioMatrix::write("OneParticle-BinaryCZM.dat", "ascii", dataPlot, "noDim");
+    ioMatrix::write("OneParticle-BinaryCZM.ref", "ascii", dataPlot);
     double error=0.0, eps=1e-12;
     if((error=ioMatrix::compareRefFile(dataPlot, "OneParticle-BinaryCZM.ref", eps)) >= 0.0
         && error > eps)
