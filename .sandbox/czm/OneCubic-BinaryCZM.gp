@@ -35,7 +35,7 @@ set origin 0.1,0.1
 set yrange [-1e-4: 2e-4]
 plot result_file u 1:7 w l t 'y_N 1', result_file u 1:13 w l t 'y_N 2', threshold(x)
 set origin 0.1,0.3
-set yrange [-2e-4: 1e-4]
+set yrange [-1e-4: 2e-4]
 plot result_file u 1:9 w l t '$lambda_N 1 $', result_file u 1:15 w l t '$lambda_N 2$'
 
 set origin 0.1,0.5
@@ -43,7 +43,7 @@ set yrange [-0.1:1.1]
 plot result_file u 1:11 w l t 'beta 1 ', result_file u 1:17 w l t 'beta 2 ',
 
 set origin 0.1,0.7
-set yrange [-1:2.0]
+set yrange [-1:4.0]
 plot result_file u 1:12 w l t 'applied force'
 
 

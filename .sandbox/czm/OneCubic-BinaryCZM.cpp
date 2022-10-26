@@ -25,6 +25,10 @@
 #include <chrono>
 using namespace std;
 
+#define SYMMETRIC
+//#define SHORTER_RIGHT
+// #define SHORTER_LEFT
+
 
 int main(int argc, char* argv[])
 {
@@ -38,6 +42,7 @@ int main(int argc, char* argv[])
     double t0 = 0;                   // initial computation time
     double T = 0.4;                  // final computation time
     double h = 1e-4;                // time step
+    //T=100*h;
     double position_init = 0.0;      // initial position for lowest bead.
     double velocity_init = 0.0;      // initial velocity for lowest bead.
     double theta = 0.5;              // theta for MoreauJeanOSI integrator
@@ -82,7 +87,14 @@ int main(int argc, char* argv[])
     // Interaction ball-floor
     //
     double l_x = - 1.0;
-    double l_y = - 1.0;
+#ifdef SYMMETRIC    
+    double l_y = -1. ; 
+#endif
+#ifdef SHORTER_RIGHT
+    double l_y = -1. ;
+#endif
+    
+
     
     SP::SimpleMatrix H1(new SimpleMatrix(3, nDof));
     (*H1)(0, 0) = 1.0;
@@ -93,10 +105,13 @@ int main(int argc, char* argv[])
     SP::Relation relation1(new LagrangianLinearTIR(H1));
     SP::Interaction inter1(new Interaction(nslaw, relation1));
 
-
-
     l_x = -1.0;
-    l_y =  0.5;
+#ifdef SYMMETRIC 
+    l_y =  1.0 ; 
+#endif
+#ifdef SHORTER_RIGHT
+    l_y  =  .5;
+#endif
     SP::SimpleMatrix H2(new SimpleMatrix(3, nDof));
     (*H2)(0, 0) = 1.0;
     (*H2)(0, 2) = -l_y;   
@@ -105,8 +120,6 @@ int main(int argc, char* argv[])
     (*H2)(2, 2) = 0.0;
     SP::Relation relation2(new LagrangianLinearTIR(H2));
     SP::Interaction inter2(new Interaction(nslaw, relation2));
-
-
     
     // -------------
     // --- Model ---
@@ -126,7 +139,7 @@ int main(int argc, char* argv[])
 
     // -- (1) OneStepIntegrators --
     SP::MoreauJeanOSI OSI(new MoreauJeanOSI(theta));
-
+    OSI->setConstraintActivationThreshold(1e-6);
 
     // -- (2) Time discretisation --
     SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
@@ -213,7 +226,7 @@ int main(int argc, char* argv[])
       std::cout << "f = " <<  (*f)(0) << std::endl;
       
       //getchar();
-      osnspb->display();
+      //osnspb->display();
       s->nextStep();
       //getchar();
       k++;
@@ -229,10 +242,16 @@ int main(int argc, char* argv[])
     dataPlot.resize(k, outputSize);
     ioMatrix::write("OneCubic-BinaryCZM.dat", "ascii", dataPlot, "noDim");
     double error=0.0, eps=1e-12;
+#ifdef SYMMETRIC 
     if((error=ioMatrix::compareRefFile(dataPlot, "OneCubic-BinaryCZM.ref", eps)) >= 0.0
         && error > eps)
       return 1;
-
+#endif
+#ifdef SHORTER_RIGHT 
+    if((error=ioMatrix::compareRefFile(dataPlot, "OneCubic-BinaryCZM-right.ref", eps)) >= 0.0
+       && error > eps)
+	    return 1;
+#endif
   }
 
   catch(...)
