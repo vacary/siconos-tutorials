@@ -6,7 +6,7 @@
 #
 
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+from siconos.io.mechanics_run import MechanicsHdf5Runner, MechanicsHdf5Runner_run_options
 
 import siconos.numerics as sn
 import siconos.kernel as sk
@@ -56,7 +56,7 @@ def square_sphere_pack(io,R, n_spheres, rotation_angle=0):
                           velocity=[0, 0, 0, 0, 0, 0],
                           mass=1)
             
-def cube_sphere_pack(io,R, n_spheres, rotation_angle=0):
+def cube_sphere_pack(io,R, n_spheres, rotation_angle=0, init_x =0, init_y =0 , init_z=0):
     initial_gap=R/5.
     initial_gap=0.0
     for i in range(n_spheres):
@@ -68,11 +68,9 @@ def cube_sphere_pack(io,R, n_spheres, rotation_angle=0):
                 x = center_x 
                 y = math.cos(rotation_angle) * center_y  -math.sin(rotation_angle)* center_z
                 z = math.sin(rotation_angle) * center_y  +math.cos(rotation_angle)* center_z
-            
-
-            
+                
                 io.add_object('sphere' + str(i)+str(j)+str(k), [Contactor('Sphere',collision_group=1)],
-                              translation=[x, y, z],
+                              translation=[init_x+x, init_y+y, init_z+z],
                               velocity=[0, 0, 0, 0, 0, 0],
                               mass=1)
    
@@ -85,7 +83,7 @@ with MechanicsHdf5Runner() as io:
     # Definition of a sphere
     io.add_primitive_shape('Sphere', 'Sphere', (R,),
                            insideMargin=0.2, outsideMargin=0.0)
-    R_impact = 1.0
+    R_impact = 0.7
     io.add_primitive_shape('Sphere_impact', 'Sphere', (R_impact,),
                            insideMargin=0.2, outsideMargin=0.0)
 
@@ -99,7 +97,8 @@ with MechanicsHdf5Runner() as io:
     n_spheres=6
     angle=math.pi/6
     angle=0.0
-    cube_sphere_pack(io, R, n_spheres,rotation_angle=angle)
+    #cube_sphere_pack(io, R, n_spheres,rotation_angle=angle, init_x = - n_spheres*R +R/2, init_y = - n_spheres*R+R/2 )
+    cube_sphere_pack(io, R, n_spheres,rotation_angle=angle, init_x = - n_spheres*R, init_y = - n_spheres*R )
 
     # for i in range(n_spheres):
     #     io.add_object('sphere' + str(-i), [Contactor('Sphere')],
@@ -107,10 +106,11 @@ with MechanicsHdf5Runner() as io:
     #                   velocity=[0, 0, 0, 0, 0, 0],
     #                   mass=1)
 
-    # io.add_object('sphere_impact' , [Contactor('Sphere_impact',collision_group=0)],
-    #               translation=[n_spheres*R-R, n_spheres*R-R, n_spheres*2*R+2*R+R_impact],
-    #               velocity=[0, 0, -1, 0, 0, 0],
-    #               mass=1)
+    io.add_object('sphere_impact' , [Contactor('Sphere_impact',collision_group=0)],
+                  #translation=[n_spheres*R-R, n_spheres*R-R, n_spheres*2*R+2*R+R_impact],
+                  translation=[0, 0, n_spheres*2*R+2*R+R_impact],
+                  velocity=[0, 0, -4, 0, 0, 0],
+                  mass=1)
  
 
     
@@ -137,8 +137,8 @@ with MechanicsHdf5Runner() as io:
 from siconos.mechanics.collision.bullet import SiconosBulletOptions
 bullet_options = SiconosBulletOptions()
 bullet_options.worldScale = 1.0
-bullet_options.contactBreakingThreshold = 0.04
-bullet_options.multipoints_iterations = False
+bullet_options.contactBreakingThreshold = 0.004
+bullet_options.perturbationIterations = 1
 
 options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 1000
@@ -147,27 +147,47 @@ options.iparam[sn.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 50
 internal_options = sk.solver_options_get_internal_solver(options, 0)
 internal_options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 10
 
-
 h=1e-3
 
 T=347*h
-T=4000*h
-#T=10*h
+T=10000*h
+#T=500*h
 #T=1000*h
-with MechanicsHdf5Runner(mode='r+') as io:
+#T=3*h
 
-    # By default earth gravity is applied and the units are those
-    # of the International System of Units.
-    io.run(with_timer=True,
-           bullet_options=bullet_options,
-           face_class=None,
-           edge_class=None,
-           t0=0,
-           T=T,
-           h=h,
-           theta=0.50001,
-           Newton_max_iter=1,
-           set_external_forces=None,
-           solver_options=options,
-           numerics_verbose=False,
-           output_frequency=10)
+run_options=MechanicsHdf5Runner_run_options()
+run_options['t0']=0
+run_options['T']=T
+run_options['h']=h
+run_options['theta']= 0.50001
+
+run_options['bullet_options']=bullet_options
+run_options['solver_options']=options
+run_options['constraint_activation_threshold']=1e-05
+
+run_options['Newton_options']=sk.SICONOS_TS_LINEAR
+#run_options['skip_last_update_output']=True
+#run_options['skip_reset_lambdas']=True
+
+run_options['osns_assembly_type']= sk.REDUCED_DIRECT
+
+run_options['verbose']=True
+run_options['with_timer']=True
+run_options['explode_Newton_solve']=True
+run_options['explode_computeOneStep']=True
+
+#run_options['numerics_verbose']=True
+#run_options['numerics_verbose_level']=0
+
+run_options['output_frequency']=10
+
+run_options['time_stepping']=None
+run_options['Newton_max_iter']=1
+run_options['output_contact_index_set']=1
+
+
+with MechanicsHdf5Runner(mode='r+') as io:
+    io.run(run_options)
+
+
+    
