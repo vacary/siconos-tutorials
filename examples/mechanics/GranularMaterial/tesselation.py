@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+from siconos.io.mechanics_run import MechanicsHdf5Runner, MechanicsHdf5Runner_run_options
 import siconos.numerics as sn
 import siconos.kernel as sk
 
@@ -108,7 +108,8 @@ with MechanicsHdf5Runner(mode='w', io_filename=fn) as io:
     io.add_primitive_shape('Ground', 'Box', (4.0, 4.0, 0.2),
                            insideMargin=0.0, outsideMargin=0.0)
     io.add_object('ground', [Contactor('Ground')],
-                  translation=[0.5, 0.5, -0.5-0.5])
+                  translation=[0.5, 0.5, -0.5-0.5],
+                  orientation = [1])
 
     io.add_Newton_impact_friction_nsl('contact', mu=1.0, e=0.0)
 
@@ -118,12 +119,39 @@ with MechanicsHdf5Runner(mode='w', io_filename=fn) as io:
 options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 1000
 options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-3
+
+
+run_options=MechanicsHdf5Runner_run_options()
+run_options['t0']=0
+run_options['T']=T
+run_options['h']=hstep
+run_options['theta']= 1.0
+
+#run_options['bullet_options']=bullet_options
+run_options['solver_options']=options
+#run_options['constraint_activation_threshold']=1e-05
+
+run_options['Newton_options']=sk.SICONOS_TS_LINEAR
+#run_options['skip_last_update_output']=True
+#run_options['skip_reset_lambdas']=True
+
+run_options['osns_assembly_type']= sk.REDUCED_DIRECT
+
+run_options['verbose']=True
+#run_options['with_timer']=True
+#run_options['explode_Newton_solve']=True
+#run_options['explode_computeOneStep']=True
+
+#run_options['numerics_verbose']=True
+#run_options['numerics_verbose_level']=0
+
+run_options['output_frequency']=1
+
+#run_options['time_stepping']=None
+#run_options['Newton_max_iter']=1
+#run_options['output_contact_index_set']=1
+
+
+
 with MechanicsHdf5Runner(mode='r+', io_filename=fn) as io:
-    io.run(t0=0,
-           T=T,
-           h=hstep,
-           multipoints_iterations=True,
-           theta=1.0,
-           Newton_max_iter=1,
-           solver_options=options,
-           output_frequency=1)
+    io.run(run_options)
