@@ -16,6 +16,8 @@ BinaryCohesiveNSL.hpp  Implementation in Mechanics.
   
 + Initialization of the Interaction through Bullet
   + we need to be careful on the initilization of beta if bullet creates new contact afterwards.
+  + computation of surfaces when we deal with convexhull and mesh 
+  
 
 + output cohesion forces in hdf5?
   + how to do that?
