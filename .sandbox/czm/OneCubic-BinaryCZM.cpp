@@ -145,9 +145,10 @@ int main(int argc, char* argv[])
     SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
 
     // -- (3) one step non smooth problem
-    SP::OneStepNSProblem osnspb(new CohesiveFrictionContact(3));
+    SP::LinearOSNS osnspb(new CohesiveFrictionContact(3));
     osnspb->numericsSolverOptions()->dparam[SICONOS_DPARAM_TOL] = 1e-10; // Tolerance
-
+    osnspb->setAssemblyType(REDUCED_DIRECT);
+    osnspb->setMStorageType(NM_SPARSE);
     // -- (4) Simulation setup with (1) (2) (3)
     SP::TimeStepping s(new TimeStepping(bouncingBall, t, OSI, osnspb));
 
