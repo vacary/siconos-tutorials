@@ -125,7 +125,7 @@ with MechanicsHdf5Runner() as io:
     
     # Definition of a non smooth law. As no group ids are specified it
     # is between contactors of group id 0.
-    io.add_binary_cohesive_nsl('contact_sphere_sphere', mu=0.0, e=0.0, sigma_c=1.5e-00, delta_c=1e-02, collision_group1=1, collision_group2=1 )
+    io.add_binary_cohesive_nsl('contact_sphere_sphere', mu=0.0, e=0.0, sigma_c=1.5e-02, delta_c=1e-03, collision_group1=1, collision_group2=1 )
     
     #io.add_Newton_impact_friction_nsl('contact_sphere_sphere', e=0.0, mu=1.0, collision_group1=1, collision_group2=1)
     
