@@ -53,9 +53,13 @@ with MechanicsHdf5Runner() as io:
 options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 100000
 options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-8
+
+h=0.005
 test=True
 if test:
     T=5.0
+    T=77*h # first contact detection
+    T=200*h
     options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 1000
     options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-3
 else:
@@ -68,11 +72,12 @@ with MechanicsHdf5Runner(mode='r+') as io:
     io.run(with_timer=False,
            t0=0,
            T=T,
-           h=0.005,
+           h=h,
            multipoints_iterations=True,
            theta=0.50001,
-           Newton_max_iter=20,
+           Newton_max_iter=1,
            set_external_forces=None,
            solver_options=options,
            numerics_verbose=False,
-           output_frequency=None)
+           output_frequency=None,
+           output_contact_index_set=0)

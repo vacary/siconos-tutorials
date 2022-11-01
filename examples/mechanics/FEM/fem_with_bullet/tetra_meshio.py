@@ -8,6 +8,9 @@ mesh = meshio.read(
 )
 
 print(mesh)
+print(mesh.points)
+print(mesh.cells)
+print(mesh.cells_dict['triangle'])
 
 meshio.write(
     'tetra.stl',  # string, os.PathLike, or a buffer/open file

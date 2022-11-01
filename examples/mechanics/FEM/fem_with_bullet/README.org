@@ -1,0 +1,21 @@
+* Try to understand how the contact detector of bullet is working with meshes
+
+
+** Keep trace of the original meshes indices.
+
++ Do not know if it possible since stl file does not have the notion of vertices.
+
++ How the stl file in read in Siconos and give to bullet?
+
+
++ in BulletUtils  `display_info manifold`, we get the complete description of the btGImpactMeshShape contained in the collision shape.
+
+  
+** how to change the `shape_vs_shape_collision` algorithm such that we put our own contact points
+
++ Bullet puts maximum 4 point sper manifold and there is only one manifold by pair of collision shape.
+  + is is really the case with convex shape?
+  + this can be problematic with defomarble body when we want to more contact points when we have surface/surface contact.
+
+    
+
