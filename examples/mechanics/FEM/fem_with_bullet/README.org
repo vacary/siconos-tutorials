@@ -7,15 +7,116 @@
 
 + How the stl file in read in Siconos and give to bullet?
 
-
 + in BulletUtils  `display_info manifold`, we get the complete description of the btGImpactMeshShape contained in the collision shape.
 
   
-** how to change the `shape_vs_shape_collision` algorithm such that we put our own contact points
+** How to change the `shape_vs_shape_collision` algorithm such that we put our own contact points
 
-+ Bullet puts maximum 4 point sper manifold and there is only one manifold by pair of collision shape.
-  + is is really the case with convex shape?
-  + this can be problematic with defomarble body when we want to more contact points when we have surface/surface contact.
++ Bullet puts maximum 4 points per manifold and there is only one manifold by pair of collision shape.
+  + is it really the case with concave shape?
+  + this can be problematic with defomable body when we want to more contact points when we have surface/surface contact.
+
++ Perhaps, we have to keep convex convex algo as it is but changing the way we collect and filter points (see below)
+
+** Who is doing what:
+
+*** btGImpactCollisionAlgorithm
+ + btPersistentManifold* newContactManifold
+   create and affect a new m_manifoldPtr 
+
+
+** Strategies to retrive the maximum non identical contact points in the collision detection process
+
+In the process of contact detection, each pair of triangles are processed sequentially, then all the potential contact point are found
+
+
+*** Strategy 1: PersitentManifold modification
+----------
++ we keep the standard contact point detection
++ we transform the manifold such that
+  + it keeps all the contact points
+  + it filters identical contact points.
+
+Question:
+1. should inherit from btPersistentManifold or  create a complete new type of SiconosPersistentManifold?
+2. should we do that just with the call back.
+
+      
+**** Derivation of btPersistentManifold -- issues
++ Most of the important attributes are private
++ All the methods are  non virtual
++ The size of m_pointCache is fixed to 4?
+  + why it is like that ? to fix the memory size such that the pool allocator works well.
+
+**** Copy of btPersistentManifold in a new class SiconosPersistentManifold -- issues
++ most of the important attributes are private
++ the methods are  non virtual
++ the size of m_pointCache is fixed to 4?
+  + why it is like that ? to fix the memory size such that the pool allocator works well.    
++ The btPersistentManifold is allocated in btCollisionDispatcher::getNewManifold . To get a new type of manifold needs to reimplement a new inherited class of Collision dispatcher.
++ Difficulty to have a efficient pool allocator.
++ We need to iterate on SiconosPersitentManifold? how to?
++ m_manifoldPtr is in the CollisionAlgorithm and also in manifold.
+  We need to reimplement a large part of bullet ....
+
+  
+
+
+*** Strategy 2: use of callback
+----------
+SiconosBulletCollisionManager::bulletContactAddedCallback is called each time addContactPoint is called.
++ here, we can keep a complete list of contact points if we set insertIndex always equals to -1.
+  + contact points knows the PersistentManifold so we can do waht we want
+    + we can store extra information like vertex, edges and faces in the mesh related to the contact points.
+
+#+begin_src C++ 
+typedef bool (*ContactDestroyedCallback)(void* userPersistentData);
+typedef bool (*ContactProcessedCallback)(btManifoldPoint& cp, void* body0, void* body1);
+typedef void (*ContactStartedCallback)(btPersistentManifold* const& manifold);
+typedef void (*ContactEndedCallback)(btPersistentManifold* const& manifold);
+#+end_src C++ 
+
+*** Strategy 3: brute force . a contact shape per triangle
+
+** Implementation by inheritance of btPersistentManifold.
+
+
+*** Remain to do
+
++ optional : use sn_logger in hdf5 to outpu info and then use h5py
+
+  
+
+
++ container for the siconos_m_cachePoint
+  + should we use std::vector container rather fixed C array of btManifoldPoint ?
+  + did we need efficient here in the iteration over the contact point?
+  + we can imagine a single container fro all contact whatever the manifold.
+
+
++ mesh mesh contact is again problematic. internal edges problems.
+
++ Do we need SiconosConvexConvexAlgorithm?
+
++ where can we store the triangle and node indices?
+  + for a more efficient strategy, it could be interestinf the have the map
+    - contact point --> triangle and then node if needed
+    - triangle --> set of contact points and node detected.
+      if number of cp >= 3, then we can treat the contact triangle/convex or triangle/triangle
+      if number of cp == 2
+
+
++ how to organize the choice between collision detection startegies?
+  + user options?
+  + detection of the colliding Object ?
+
+
++ What happens in the case of convexhull / convexhull contact?
+  + ex
+  
+    
+  
+  
 
     
-
+    

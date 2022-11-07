@@ -12,11 +12,18 @@ import siconos.numerics as sn
 import siconos.kernel as sk
 # Creation of the hdf5 file for input/output
 with MechanicsHdf5Runner() as io:
-
+    scale= 0.5
+    
     # Load a mesh.  The example mesh is a low-poly version of the
     # Stanford Bunny by Saf, license: Creative Commons - Attribution.
     # Taken from http://www.thingiverse.com/thing:466857
-    io.add_mesh_from_file('Tetra', "tetra.stl", scale=0.5,
+    # io.add_mesh_from_file('Mesh', "tetra.stl", scale=scale,
+    #                       insideMargin=0.0, outsideMargin=0.0)
+
+    #io.add_mesh_from_file('Mesh', "cube.stl", scale=scale,
+    #                      insideMargin=0.0, outsideMargin=0.0)
+
+    io.add_mesh_from_file('Mesh', "cube_fine.stl", scale=scale,
                           insideMargin=0.0, outsideMargin=0.0)
 
     # Definition of the ground shape
@@ -33,11 +40,18 @@ with MechanicsHdf5Runner() as io:
     # the mesh inertia matrix here, but it is not done in this
     # example.
     n_tetra=1
+    import math
+    angle = math.pi/6
     for i in range(n_tetra):
-        io.add_object('bunny%d' % i, [Contactor('Tetra')],
+        io.add_object('mesh%d' % i, [Contactor('Mesh', relative_translation=[-.5*scale,-.5*scale,-.5*scale])],
+                      translation=[0, 0.05*i, i],
+                      orientation=[math.cos(angle), 0, 0, math.sin(angle)],
+                      velocity=[0, 0, 0, 0, 0, 0],
+                      mass=1)
+        io.add_object('mesh%d' % (i+1), [Contactor('Mesh', relative_translation=[-.5*scale,-.5*scale,-.5*scale])],
                       translation=[0, 0.05*i, 0.5+i],
                       orientation=[1, 0, 0, 0],
-                      velocity=[0, 0, 0, 1, 0, 0],
+                      velocity=[0, 0, 0, 0, 0, 0],
                       mass=1)
 
     # the ground object made with the ground shape. As the mass is
@@ -57,9 +71,10 @@ options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-8
 h=0.005
 test=True
 if test:
-    T=5.0
-    T=77*h # first contact detection
-    T=200*h
+    T=1.0
+    #T=77*h # first contact detection
+    #T=2*h
+    
     options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 1000
     options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-3
 else:

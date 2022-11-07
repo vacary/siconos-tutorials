@@ -17,7 +17,7 @@ def export_vtk_mesh_from_manifold(manifold):
     cells =[("triangle", idx)]
 
     #print('points', points)
-    print('cells', cells)
+    #print('cells', cells)
 
     mesh = meshio.Mesh(
         points,
@@ -30,7 +30,7 @@ def export_vtk_mesh_from_manifold(manifold):
     )
 
 def export_vtk_contact_points_from_manifold(manifold, file_number):
-    print(manifold['contact_points'])
+    #print(manifold['contact_points'])
     points = []
     idx= []
     k=0
@@ -53,8 +53,8 @@ def export_vtk_contact_points_from_manifold(manifold, file_number):
 
     cells = [("vertex",idx)]    
     
-    print('points', points)
-    print('cells', cells)
+    #print('points', points)
+    #print('cells', cells)
 
     
     mesh = meshio.Mesh(
@@ -74,7 +74,61 @@ def export_vtk_contact_points_from_manifold(manifold, file_number):
 
 
     
-def export_vtk_colliding_results(vertices, triangles, contact_points):
+def export_vtk_colliding_results(vertices, triangles, contact_points, file_number):
+    
+    points = []
+    idx= []
+
+    k=0
+    point_data={}
+    point_data['triangle']= []
+    point_data['body']= []
+    
+    #print(contact_points)
+    points = []
+    idx= []
+    k=0
+    point_data={}
+    point_data['body']= []
+    for cp in contact_points:
+        points.append(cp['pt_A'])
+        point_data['body'].append(0)
+        idx.append([k])
+        k=k+1
+        
+    for cp in contact_points:
+        points.append(cp['pt_B'])
+        point_data['body'].append(1)
+        idx.append([k])
+        k=k+1
+    cells = [("vertex",idx)]    
+    
+    #print('points', points)
+    #print('point_data', point_data)
+    #print('cells', cells)
+    
+
+    
+    mesh = meshio.Mesh(
+        points,
+        cells,
+    )
+    
+    
+    meshio.write_points_cells(
+        'colliding_debug/colliding_results_all_contact_points_'+file_number+'.vtk',  # str, os.PathLike, or buffer/open file
+        points=mesh.points,
+        cells=mesh.cells,
+        # Optionally provide extra data on points, cells, etc.
+        point_data=point_data
+        # cell_data=cell_data,
+        # field_data=field_data
+    )
+
+
+
+
+    
     pass
 
 
@@ -83,8 +137,8 @@ file_number='00246'
 filename = 'colliding_debug/colliding_results_' + file_number + '.py'
 exec(open(filename).read())
 #print(manifold)
-export_vtk_mesh_from_manifold(manifold)
-export_vtk_contact_points_from_manifold(manifold,file_number)
+#export_vtk_mesh_from_manifold(manifold)
+#export_vtk_contact_points_from_manifold(manifold,file_number)
           
 #export_vtk_colliding_results(vertices, triangles, contact_points)
 
@@ -95,13 +149,17 @@ import glob
 import os
 cnt_file =0
 for name in glob.glob('colliding_debug/colliding_results_*.py'):
-    print(name)
+    print('\n ######################################## ')
+    print('vtk output of ', name)
     filename = os.path.basename(name).split('.')[0]
-    print(filename)
+#    print(filename)
     file_number = filename.split('_')[-1]
-    print(file_number)
+#    print(file_number)
     exec(open(name).read())
     export_vtk_contact_points_from_manifold(manifold,file_number)
+    export_vtk_colliding_results(vertices, triangles, contact_points, file_number)
     cnt_file = cnt_file+1
+    #if cnt_file > 10:
+    #    break
     
     
