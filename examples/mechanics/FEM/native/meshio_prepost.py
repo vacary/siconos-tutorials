@@ -13,14 +13,15 @@ mesh_filename = './mesh_data/cube.msh'
 mesh_filename = './mesh_data/cube_multi.msh'
 #mesh_filename = './mesh_data/tetra_simple.msh'
 
-#mesh_filename = './mesh_data/square_2720.msh'
+mesh_filename = './mesh_data/square_6.msh'
+mesh_filename = './mesh_data/square_200.msh'
 
 root_mesh_filename = os.path.splitext(mesh_filename)[0]
 mesh_basename = os.path.splitext(os.path.split(mesh_filename)[1])[0]
 
 
-example_name = 'TH4'
-#example_name = 'T3'
+#example_name = 'TH4'
+example_name = 'T3'
 
 
 exec(open(example_name + '_displacement.py').read())
@@ -110,8 +111,8 @@ meshio.write(
 )
 
 #------------------------------------- siconos output #
-print_meshio_prepost('output mesh in cpp format for siconos ', root_mesh_filename + ".cpp")
-create_Meshcpp_for_siconos(mesh, mesh_filename)
+#print_meshio_prepost('output mesh in cpp format for siconos ', root_mesh_filename + ".cpp")
+#create_Meshcpp_for_siconos(mesh, mesh_filename)
 
 #------------------------------------- post processing for paraview"
 
