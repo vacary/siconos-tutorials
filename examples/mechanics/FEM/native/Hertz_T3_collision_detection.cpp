@@ -20,6 +20,8 @@
  */
 
 #include <SiconosKernel.hpp>
+#include "SolverOptions.h"
+#include "NumericsVerbose.h"
 #include <chrono>
 #include <memory>
 #include <stdio.h>
@@ -38,17 +40,20 @@ class MyContactDetection : public InteractionManager
 protected:
   double _initial_gap ;
 
+  unsigned int _contact_condition_tag;
+
   std::shared_ptr<SiconosVector> _normal;
-  
+
   std::shared_ptr<SiconosVector> _tangent;
 
   std::shared_ptr<NonSmoothLaw> _nslaw;
   unsigned int  _contact_frame_dimension = 1;
 
-  
+
   std::shared_ptr<FiniteElementModel> _femodel;
 
   std::shared_ptr<FiniteElementLinearTIDS> _fesolid;
+  std::list<std::shared_ptr<FENode> >  _contacting_node_zone;
 
   struct contacting_node
   {
@@ -63,11 +68,13 @@ protected:
 
 public:
   MyContactDetection(double initial_gap,
-		       std::shared_ptr<SiconosVector> normal,
-		       std::shared_ptr<NonSmoothLaw> nslaw,
-		       std::shared_ptr<FiniteElementLinearTIDS> fesolid) :
+		     int contact_condition_tag,
+		     std::shared_ptr<SiconosVector> normal,
+		     std::shared_ptr<NonSmoothLaw> nslaw,
+		     std::shared_ptr<FiniteElementLinearTIDS> fesolid) :
     InteractionManager()
     , _initial_gap(initial_gap)
+    , _contact_condition_tag(contact_condition_tag)
     , _nslaw(nslaw)
     , _normal(normal)
     , _fesolid(fesolid)
@@ -75,10 +82,13 @@ public:
   {
     _femodel = _fesolid->FEModel();
 
+     _contacting_node_zone =
+       *_femodel->contactingNodes(_contact_condition_tag);
+
     std::shared_ptr<NewtonImpactFrictionNSL> nslaw_with_friction = std::dynamic_pointer_cast<NewtonImpactFrictionNSL>(nslaw);
     if (nslaw_with_friction)
       _contact_frame_dimension = 2  ;
-    
+
     if (_contact_frame_dimension == 2) // create tangent vertor
       {
 	_tangent = std::make_shared<SiconosVector>(2);
@@ -118,10 +128,12 @@ public:
 
     // update the list of contacting node by brute contact detection
     //_contacting_nodes.clear();
-    for(std::shared_ptr<FENode> n : _femodel->nodes())
+
+
+    for(std::shared_ptr<FENode> n : _contacting_node_zone)
       {
 	//std::cout << "n->num() is: " << n->num() << std::endl;
-	if(fabs(n->y()) <= 1e-16 and fabs(n->x()) >= 1e-16)
+	if(fabs(n->y()) <= 1e-01)// and fabs(n->x()) >= 1e-05)
 	  {
 	    //std::cout << "contact node number : " << n->num() << " " << n->y() <<  std::endl;
 	    contacting_node* cn = new contacting_node(n,(*n->dofIndex())[0]);
@@ -150,7 +162,7 @@ public:
 	if (cn->_inter) // update interaction->relation
 	  {
 	    //std::cout << "update interaction" << std::endl;
-	    
+
 	    std::shared_ptr<SiconosVector> pc2;
 	    if (_contact_frame_dimension == 2 )
 	      {
@@ -198,27 +210,20 @@ int main(int argc, char* argv[])
 {
 
   double Ly= 1.0;
-//  std::shared_ptr<Mesh> mesh = create2dMesh2x1();
-//  std::shared_ptr<Mesh> mesh = create2dMeshnxm(50, 15 , 3., Ly);
-  Ly =1.0;
-  //string gmsh_filename = "./mesh_data/triangle_felippa.msh";
-  //string gmsh_filename = "./mesh_data/triangle_reference.msh";
-  string gmsh_filename = "./mesh_data/square_200.msh";
-  //string gmsh_filename = "./mesh_data/square_6.msh";
-  //string gmsh_filename = "./mesh_data/square_2720.msh";
+  string gmsh_filename = "./mesh_data/hertz.msh2";
 
   std::shared_ptr<Mesh> mesh(createMeshFromGMSH2(gmsh_filename));
   //mesh->display(false);
 
   writeMeshforPython(mesh);
 
-  int bulk_material_tag = 1;
-  int boundary_condition_tag = 2;
-  int applied_force_tag = 3;
+  int bulk_material_tag = 6;
+  int contact_condition_tag = 4;
+  int applied_force_tag = 5;
 
-  //std::shared_ptr<Material> mat1 = std::make_shared<Material>(1, 8*36/5., 1/5.); // material for  triangle_felippa.msh
   double density = 7800.;
-  std::shared_ptr<Material> mat1 = std::make_shared<Material>(density, 210e9, 1/3.);
+  // a very soft materila is used to postprocess large deformations.
+  std::shared_ptr<Material> mat1 = std::make_shared<Material>(density, 210e6, 1/3.);
   std::map<unsigned int, std::shared_ptr<Material> > materials = {{bulk_material_tag, mat1}};
 
 
@@ -235,7 +240,8 @@ int main(int argc, char* argv[])
     //FEsolid->display(true);
 
     std::shared_ptr<FiniteElementModel> femodel = FEsolid->FEModel();
-    // FEsolid->K()->display();
+    //FEsolid->K()->display();
+    //FEsolid->mass()->display();
     // getchar();
 
 
@@ -244,20 +250,24 @@ int main(int argc, char* argv[])
     std::shared_ptr<SiconosVector> nodal_forces = std::make_shared<SiconosVector>(2);
     nodal_forces->zero();
     //(*nodal_forces)(0) = 1e6;
-    (*nodal_forces)(1) = -1e7;
+    (*nodal_forces)(1) = -1e6;
     FEsolid->applyNodalForces(applied_force_tag, nodal_forces);
 
+    // FEsolid->fExt()->display();
+    // getchar();
 
-    /*------------------------------------------------- Boundary Conditions  */
-    /* This part should be hidden in a new BC function for a node number
-     * and a dof index. */
 
-    std::shared_ptr<IndexInt> node_dof_index = std::make_shared<IndexInt>(0);
-    node_dof_index->push_back(0);
-    node_dof_index->push_back(1);
 
-    FEsolid->applyDirichletBoundaryConditions(boundary_condition_tag, node_dof_index);
-    FEsolid->boundaryConditions()->display();
+    // /*------------------------------------------------- Boundary Conditions  */
+    // /* This part should be hidden in a new BC function for a node number
+    //  * and a dof index. */
+
+    // std::shared_ptr<IndexInt> node_dof_index = std::make_shared<IndexInt>(0);
+    // node_dof_index->push_back(0);
+    // node_dof_index->push_back(1);
+
+    // FEsolid->applyDirichletBoundaryConditions(boundary_condition_tag, node_dof_index);
+    // FEsolid->boundaryConditions()->display();
 
     // -------------
     // --- Model ---
@@ -282,13 +292,13 @@ int main(int argc, char* argv[])
 #else
     std::shared_ptr<NonSmoothLaw> nslaw = std::make_shared<NewtonImpactNSL>(e);
 #endif
-    
-    double initial_gap =  Ly*5e-4;
+
+    double initial_gap = 0.0;// Ly*5e-05;
     std::shared_ptr<SiconosVector> displacement = FEsolid->q();
     std::shared_ptr<SiconosVector> normal = std::make_shared<SiconosVector>(2);
     normal->setValue(0,0.0);
     normal->setValue(1,1.0);
-    std::shared_ptr<MyContactDetection> collision_detection = std::make_shared<MyContactDetection>(initial_gap, normal, nslaw, FEsolid);
+    std::shared_ptr<MyContactDetection> collision_detection = std::make_shared<MyContactDetection>(initial_gap, contact_condition_tag, normal, nslaw, FEsolid);
 
     // ------------------
     // --- Simulation ---
@@ -297,6 +307,7 @@ int main(int argc, char* argv[])
     // -- (1) OneStepIntegrators --
     std::shared_ptr<MoreauJeanOSI> OSI = std::make_shared<MoreauJeanOSI>(theta);
     OSI->setIsWSymmetricDefinitePositive(true);
+    OSI->setGamma(0.0);
 
 
     // -- (2) Time discretisation --
@@ -308,6 +319,13 @@ int main(int argc, char* argv[])
 #else
     std::shared_ptr<OneStepNSProblem> osnspb = std::make_shared<LCP>();
 #endif
+    SolverOptions * options = osnspb->numericsSolverOptions().get();
+
+    
+    options->dparam[SICONOS_DPARAM_TOL] = 1e-10;
+    // numerics_set_verbose(2);
+    // solver_options_print(options);
+    
     // -- (4) Simulation setup with (1) (2) (3)
     std::shared_ptr<TimeStepping> s = std::make_shared<TimeStepping>(solid, t, OSI, osnspb);
 
@@ -345,6 +363,7 @@ int main(int argc, char* argv[])
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
     start = std::chrono::system_clock::now();
+    
     while(s->hasNextEvent())
     {
       s->computeOneStep();
@@ -356,12 +375,32 @@ int main(int argc, char* argv[])
       dataPlot(k, 2) = (*v)(FEsolid->dimension()-1);
       dataPlot(k, 3) = (*p)(0);
 
+
+
+      
       if(k%1 == 0)
         writeDisplacementforPython(mesh, femodel, q, filename);
+
+      std::cout << "numerics -- " 
+		<< " iterations: "      << options->iparam[SICONOS_IPARAM_ITER_DONE]
+		<< " precision: "	<< options->dparam[SICONOS_DPARAM_RESIDU]
+		<< std::endl;
+
       //dataPlot(k, 4) = (*lambda)(0);
       s->nextStep();
+      // std::cout << "y     " ;
+      // s->y(0,0)->display();
+      // std::cout << "ydot  ";
+      // s->y(1,0)->display();
+      // std::cout << "lambda";
+      // s->lambda(1,0)->display();
+
+      double y_max =0.0;
+      unsigned int id_max;
+      getMax(-1.0 * *(s->y(0,0)), y_max,id_max);
+      std::cout << "y_max violation " << std::max(y_max,0.0) << std::endl; 
       k++;
-      progressBar((double)k/N);
+      //progressBar((double)k/N);
 
     }
     end = std::chrono::system_clock::now();
@@ -373,14 +412,14 @@ int main(int argc, char* argv[])
     // --- Output files ---
     cout << "====> Output file writing ..." << endl;
     dataPlot.resize(k, outputSize);
-    ioMatrix::write("T3_square_200.dat", "ascii", dataPlot, "noDim");
+    ioMatrix::write("Hertz_T3_1612.dat", "ascii", dataPlot, "noDim");
     double error=0.0, eps=1e-12;
 #ifdef WITH_FRICTION
-    if((error=ioMatrix::compareRefFile(dataPlot, "T3_square_200_with_friction.ref", eps)) >= 0.0
+    if((error=ioMatrix::compareRefFile(dataPlot, "Hertz_T3_1612_with_friction.ref", eps)) >= 0.0
         && error > eps)
       return 1;
 #else
-    if((error=ioMatrix::compareRefFile(dataPlot, "T3_square_200.ref", eps)) >= 0.0
+    if((error=ioMatrix::compareRefFile(dataPlot, "Hertz_T3_1612.ref", eps)) >= 0.0
         && error > eps)
       return 1;
 #endif

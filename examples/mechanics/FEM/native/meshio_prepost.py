@@ -15,6 +15,9 @@ mesh_filename = './mesh_data/cube_multi.msh'
 
 mesh_filename = './mesh_data/square_6.msh'
 mesh_filename = './mesh_data/square_200.msh'
+mesh_filename = './mesh_data/square_2720.msh'
+mesh_filename = './mesh_data/disk.msh'
+mesh_filename = './mesh_data/hertz.msh'
 
 root_mesh_filename = os.path.splitext(mesh_filename)[0]
 mesh_basename = os.path.splitext(os.path.split(mesh_filename)[1])[0]
@@ -92,13 +95,13 @@ mesh = meshio.read(
 import numpy as np
 #print(mesh.points, mesh.cells, mesh.cells_dict)
 
-# ------------------------------------- vtk output #
-print_meshio_prepost('output mesh in vtk format in ', root_mesh_filename + ".vtk")
-meshio.write(
-    os.path.splitext(mesh_filename)[0] + ".vtk",  # str, os.PathLike, or buffer/ open file
-    mesh,
-    # file_format="vtk",  # optional if first argument is a path; inferred from extension
-)
+#------------------------------------- vtk output #
+# print_meshio_prepost('output mesh in vtk format in ', root_mesh_filename + ".vtk")
+# meshio.write(
+#     os.path.splitext(mesh_filename)[0] + ".vtk",  # str, os.PathLike, or buffer/ open file
+#     mesh,
+#     # file_format="vtk",  # optional if first argument is a path; inferred from extension
+# )
 
 # ------------------------------------- gmsh v2 output #
 print_meshio_prepost('output mesh in gmsh v2 format in ', root_mesh_filename + ".msh2")
