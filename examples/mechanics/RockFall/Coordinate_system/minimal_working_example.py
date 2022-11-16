@@ -51,8 +51,8 @@ def sphere_setup(io_hdf5, mZ, resolution):
         ## Center of coordiante system  (0, 0, 0) in the middle!
         ## Corners of heightmap are grid points, e.g. lower right = [-1, -1], top left = [0, 0]
         
-        Xpos = resolution* (start_index[0] - 0.5*mZ.shape[0] )
-        Ypos = resolution* (start_index[1] - 0.5*mZ.shape[1] )
+        Xpos = resolution* (start_index[0] - 0.5*(mZ.shape[0]-1))
+        Ypos = resolution* (start_index[1] - 0.5*(mZ.shape[1]-1))
         Zpos = mZ[start_index[0], start_index[1]]
         
         
@@ -82,8 +82,8 @@ def create_incline(length, width, inclination, resolution):
     
 
     # Number of coordinate pairs i.e. segment resolution per axis
-    nX = int(np.ceil(length/resolution))
-    nY = int(np.ceil(width/resolution))
+    nX = int(np.ceil(length/resolution))+1
+    nY = int(np.ceil(width/resolution))+1
 
     # Coordinate axis
     x_axis = np.linspace(0, length, nX)    
@@ -120,7 +120,7 @@ mu_r = 0
 
 # Max time to simulate
 T = 50.
-
+T=0.01
 
 with MechanicsHdf5Runner() as io:
 
@@ -128,7 +128,7 @@ with MechanicsHdf5Runner() as io:
          # Setup soil
          
             # Add map and soil params to simulation
-    io.add_height_map('MyTerrain_1', heightmap, (resolution*heightmap.shape[0], resolution*heightmap.shape[1]), outsideMargin=0.01, insideMargin=0.01)
+    io.add_height_map('MyTerrain_1', heightmap, (resolution*(heightmap.shape[0]-1), resolution*(heightmap.shape[1]-1)), outsideMargin=0.01, insideMargin=0.01)
     io.add_object('ground_1', [Contactor('MyTerrain_1', collision_group=1)], translation=[0, 0, 0])        
     
     io.add_Newton_impact_rolling_friction_nsl('contact_1', e=e, mu=mu, mu_r=mu_r, collision_group1=100, collision_group2=1)
