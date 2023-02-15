@@ -14,7 +14,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 /*!\file BouncingBallED.cpp
   \brief \ref EMBouncingBall - C++ input file, Event-Driven version - V. Acary, F. Perignon.
@@ -24,88 +24,85 @@
   Simulation with an Event-Driven scheme.
 */
 
-#include "SiconosKernel.hpp"
+#include <SiconosKernel.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <chrono>
 
-using namespace std;
+using Matrix = siconos::algebra::SimpleMatrix;
+using Vector = siconos::algebra::SiconosVector;
 
-int main(int argc, char* argv[])
-{
-  std::chrono::time_point<std::chrono::system_clock> start, end;
-  start = std::chrono::system_clock::now();
-  try
-  {
+int main(int argc, char *argv[]) {
+  try {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 3;           // degrees of freedom for the ball
-    double t0 = 0;                   // initial computation time
-    double T = 10.0;                   // final computation time
-    double h = 0.01;                // time step
-    double position_init = 1.0;      // initial position for lowest bead.
-    double velocity_init = 10.0;      // initial velocity for lowest bead.
+    unsigned int nDof = 3;        // degrees of freedom for the ball
+    double t0 = 0;                // initial computation time
+    double T = 10.0;              // final computation time
+    double h = 0.01;              // time step
+    double position_init = 1.0;   // initial position for lowest bead.
+    double velocity_init = 10.0;  // initial velocity for lowest bead.
     double Heightbox = 1.5;
-    double R = 0.1; // Ball radius
-    double m = 1; // Ball mass
-    double g = 10.0; // Gravity
+    double R = 0.1;   // Ball radius
+    double m = 1;     // Ball mass
+    double g = 10.0;  // Gravity
 
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
-    cout << "====> Model loading ..." << endl << endl;
-    SP::SiconosMatrix Mass(new SimpleMatrix(nDof, nDof));
+
+    std::cout << "====> Model loading ...\n";
+
+    auto Mass = std::make_shared<Matrix>(nDof, nDof);
     (*Mass)(0, 0) = m;
     (*Mass)(1, 1) = m;
-    (*Mass)(2, 2) = 3. / 5 * m * R * R;
+    (*Mass)(2, 2) = 2. / 5 * m * R * R;
 
     // -- Initial positions and velocities --
-    SP::SiconosVector q0(new SiconosVector(nDof));
-    SP::SiconosVector v0(new SiconosVector(nDof));
+    auto q0 = std::make_shared<Vector>(nDof);
+    auto v0 = std::make_shared<Vector>(nDof);
     (*q0)(0) = position_init;
     (*v0)(0) = velocity_init;
+
     // -- The dynamical system --
-    SP::LagrangianLinearTIDS ball(new LagrangianLinearTIDS(q0, v0, Mass));
+    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, Mass);
+
     // -- Set external forces (weight) --
-    SP::SiconosVector weight(new SiconosVector(nDof));
+    auto weight = std::make_shared<Vector>(nDof);
     (*weight)(0) = -m * g;
     ball->setFExtPtr(weight);
-    //
+
     // --------------------
     // --- Interactions ---
     // --------------------
 
     // -- nslaw --
-    double e = 0.8; // Warning this example does not work with e=0.0
+    double e = 0.8;  // Warning this example does not work with e=0.0
 
     // Interaction ball-floor-ceiling
     //
-    SP::SimpleMatrix H1(new SimpleMatrix(1, nDof));
+    auto H1 = std::make_shared<Matrix>(1, nDof);
     (*H1)(0, 0) = 1.0;
-    SP::SiconosVector E1(new SiconosVector(1));
-    (*E1)(0) = 0.0;//-1.0*R;
+    auto E1 = std::make_shared<Vector>(1);
+    (*E1)(0) = 0.0;  //-1.0*R;
     //
-    SP::SimpleMatrix H2(new SimpleMatrix(1, nDof));
+    auto H2 = std::make_shared<Matrix>(1, nDof);
     (*H2)(0, 0) = -1.0;
-    SP::SiconosVector E2(new SiconosVector(1));
-    (*E2)(0) = Heightbox ;//- R;
+    auto E2 = std::make_shared<Vector>(1);
+    (*E2)(0) = Heightbox;  //- R;
     // impact law
-    SP::NonSmoothLaw  nslaw(new NewtonImpactNSL(e));
+    auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
     // Interaction at contact 1 (ball-floor)
-    SP::Relation relation1(new LagrangianLinearTIR(H1, E1));
-    SP::Interaction inter1(new Interaction(nslaw, relation1));
+    auto relation1 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H1, E1);
+    auto inter1 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation1);
     // Interaction at contact 2 (ball-ceiling)
-    SP::Relation relation2(new LagrangianLinearTIR(H2, E2));
-    SP::Interaction inter2(new Interaction(nslaw, relation2));
+    auto relation2 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H2, E2);
+    auto inter2 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation2);
     // --------------------------------
     // --- NonSmoothDynamicalSystem ---
     // --------------------------------
+    auto bouncingBall = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
 
-    // -------------
-    // --- Model ---
-    // -------------
-
-    SP::NonSmoothDynamicalSystem bouncingBall(new NonSmoothDynamicalSystem(t0, T));
     // add the dynamical system in the non smooth dynamical system
     bouncingBall->insertDynamicalSystem(ball);
 
@@ -113,53 +110,53 @@ int main(int argc, char* argv[])
     bouncingBall->link(inter1, ball);
     bouncingBall->link(inter2, ball);
 
-    // ----------------
+    // ------------------
     // --- Simulation ---
-    // ----------------
+    // ------------------
 
     // -- (1) OneStepIntegrators --
-    SP::OneStepIntegrator OSI(new LsodarOSI());
+    auto OSI = std::make_shared<siconos::integrators::LsodarOSI>();
 
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
-    // -- (3) Non smooth problem --
-    SP::OneStepNSProblem impact(new LCP());
-    SP::OneStepNSProblem acceleration(new LCP());
+    // -- (3) one step non smooth problems
+    auto impact = std::make_shared<siconos::nonsmooth_formulations::LCP>();
+    auto acceleration = std::make_shared<siconos::nonsmooth_formulations::LCP>();
 
     // -- (4) Simulation setup with (1) (2) (3)
-    SP::EventDriven s(new EventDriven(bouncingBall, t));
+    auto s = std::make_shared<siconos::simulation::EventDriven>(bouncingBall, t);
     s->insertIntegrator(OSI);
-    s->insertNonSmoothProblem(impact, SICONOS_OSNSP_ED_IMPACT);
-    s->insertNonSmoothProblem(acceleration, SICONOS_OSNSP_ED_SMOOTH_ACC);
-    cout << "SICONOS_OSNSP_ED_IMPACT: " << SICONOS_OSNSP_ED_IMPACT << endl;
-    cout << "SICONOS_OSNSP_ED_ACCELERATION :" << SICONOS_OSNSP_ED_SMOOTH_ACC << endl;
-    // =========================== End of model definition ===========================
+    s->insertNonSmoothProblem(impact, siconos::simulation::SICONOS_OSNSP_ED_IMPACT);
+    s->insertNonSmoothProblem(acceleration, siconos::simulation::SICONOS_OSNSP_ED_SMOOTH_ACC);
 
-    // ================================= Computation =================================
+    // =========================== End of model definition
+    // ===========================
 
-    // --- Simulation initialization ---
+    // ================================= Computation
+    // =================================
+
     s->setPrintStat(true);
 
-    int N = 1850; // Number of saved points: depends on the number of events ...
+    int N = 1850;  // Number of saved points: depends on the number of events ...
     int ll = 0;
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 9;
-    SimpleMatrix dataPlot(N, outputSize);
-    SP::SiconosVector q = ball->q();        // ball position
-    SP::SiconosVector v = ball->velocity(); // ball velocity
-    SP::SiconosVector gamma; // ball acceleration
-    SP::SiconosVector f ;     // resultant force deduced from the LCP at acceleration level
-    SP::SiconosVector p ;       // resultant force deduced from the LCP at velocity level
+    Matrix dataPlot(N, outputSize);
+    auto q = ball->q();             // ball position
+    auto v = ball->velocity();      // ball velocity
+    std::shared_ptr<Vector> gamma;  // ball acceleration
+    std::shared_ptr<Vector> f;  // resultant force deduced from the LCP at acceleration level
+    std::shared_ptr<Vector> p;  // resultant force deduced from the LCP at velocity level
 
-
-    SP::SiconosVector y1 = inter1->y(0);
-    SP::SiconosVector y2 = inter2->y(0);
+    auto y1 = inter1->y(0);
+    auto y2 = inter2->y(0);
     //   SiconosVector * y = bouncingBall->nonSmoothDynamicalSystem()->interaction(0)->y(0);
 
-    SP::EventsManager eventsManager = s->eventsManager();
+    auto eventsManager = s->eventsManager();
+
     OSI->display();
     // For the initial time step:
     // time
@@ -175,38 +172,38 @@ int main(int argc, char* argv[])
     dataPlot(0, 8) = 0.0;
 
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl << endl;
+    std::cout << "====> Start computation ... \n";
     bool nonSmooth = false;
-    unsigned int numberOfEvent = 0 ;
+    unsigned int numberOfEvent = 0;
     double k = 1;
 
-    s->setPrintStat(true);
     //    s->setTolerance(1e-10);
-    while(s->hasNextEvent())
-    {
-      s->advanceToEvent(); // run simulation from one event to the next
+    auto start = std::chrono::system_clock::now();
+    while (s->hasNextEvent()) {
+      s->advanceToEvent();  // run simulation from one event to the next
       f = ball->p(2);       // resultant force deduced from the LCP at acceleration level
-      p  = ball->p(1);
+      p = ball->p(1);
       gamma = ball->acceleration();
       y1 = inter1->y(0);
       y2 = inter2->y(0);
-      if(eventsManager->nextEvent()->getType() == 2)
+      if (eventsManager->nextEvent()->getType() == siconos::simulation::EventType::NS)
         nonSmooth = true;
 
       s->processEvents();  // process events
-      // If the treated event is non smooth, the pre-impact state has been solved in memory vectors during process.
-      if(nonSmooth)  // if the event is nonsmooth
+      // If the treated event is non smooth, the pre-impact state has been solved in memory
+      // vectors during process.
+      if (nonSmooth)  // if the event is nonsmooth
       {
-        dataPlot(k,0) = s->startingTime(); // get the time at nonsmooth event
-        dataPlot(k,1) = ball->qMemory().getSiconosVector(1)(0);
-        dataPlot(k,2) = ball->velocityMemory().getSiconosVector(1)(0);
+        dataPlot(k, 0) = s->startingTime();  // get the time at nonsmooth event
+        dataPlot(k, 1) = ball->qMemory().getSiconosVector(1)(0);
+        dataPlot(k, 2) = ball->velocityMemory().getSiconosVector(1)(0);
         k++;
         nonSmooth = false;
 
-        dataPlot(k,4) = 1;
+        dataPlot(k, 4) = 1;
         ++ll;
-        //         cout << "========================================" << endl;
-        //         cout << "Nonsmooth event" << endl;
+        //         cout << "========================================\n";
+        //         cout << "Nonsmooth event\n";
       }
       dataPlot(k, 0) = s->startingTime();
       dataPlot(k, 1) = (*q)(0);
@@ -218,10 +215,7 @@ int main(int argc, char* argv[])
       dataPlot(k, 7) = (*gamma)(0);
       dataPlot(k, 8) = (*f)(0);
 
-
-
-
-      // cout << "========================================" << endl;
+      // cout << "========================================\n";
       // cout << " time: " << s->startingTime() << endl;
       // cout << "ball position: " << (*q)(0) << endl;
       // cout << "ball velocity: " << (*v)(0) << endl;
@@ -230,28 +224,31 @@ int main(int argc, char* argv[])
       //
       k++;
       ++numberOfEvent;
-
     }
 
     // --- Output files ---
-    cout << endl;
-    cout << "===== End of Event Driven simulation. " << numberOfEvent << " events have been processed. ==== " << endl << endl;
-    cout << "Number of nonsmooth events = " << ll << endl;
-    cout << "====> Output file writing ..." << endl << endl;
-    dataPlot.resize(k, outputSize);
-    ioMatrix::write("BouncingBallED-TwoContacts.dat", "ascii", dataPlot, "noDim");
+    auto end = std::chrono::system_clock::now();
+    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "===== End of Event Driven simulation. \n";
+    std::cout << numberOfEvent << " events have been processed. ==== \n";
+    std::cout << numberOfEvent - ll << " events are of time--discretization type  ==== \n";
+    std::cout << ll << " events are of nonsmooth type  ==== \n\n";
+    std::cout << "\nComputation time : " << elapsed << " ms\n";
 
-    double error=0.0, eps=1e-12;
-    if((error=ioMatrix::compareRefFile(dataPlot, "BouncingBallED-TwoContacts.ref",
-                                       eps)) >= 0.0
-        && error > eps)
+    dataPlot.resize(k, outputSize);
+    siconos::algebra::io::write("BouncingBallED-TwoContacts.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
+
+    double error = 0.0, eps = 1e-12;
+    if ((error = siconos::algebra::io::compareRefFile(
+             dataPlot, "BouncingBallED-TwoContacts.ref", eps)) > eps)
       return 1;
 
   }
 
-  catch(...)
-  {
-    Siconos::exception::process();
+  catch (...) {
+    siconos::exception::process();
     return 1;
   }
 }

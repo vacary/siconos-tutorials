@@ -14,7 +14,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 //-----------------------------------------------------------------------
 //
 //  DiodeBridge  : sample of an electrical circuit involving :
@@ -45,43 +45,42 @@
 //    y and lambda (derived from Kirchhoff laws)
 //
 //-----------------------------------------------------------------------
-#include "SiconosKernel.hpp"
+#include <SiconosKernel.hpp>
 #include <chrono>
+#include <string>
 
-using namespace std;
-int main(int argc, char* argv[])
-{
+using Matrix = siconos::algebra::SimpleMatrix;
+using Vector = siconos::algebra::SiconosVector;
 
+int main(int argc, char* argv[]) {
   double t0 = 0.0;
-  double T = 5.0e-3;        // Total simulation time
-  std::string h_step = std::string("1.0e-6");  // Time step
-  double Lvalue = 1e-2;   // inductance
-  double Cvalue = 1e-6;   // capacitance
-  double Rvalue = 1e3;    // resistance
-  double Vinit = 10.0;    // initial voltage
-  string Modeltitle = "DiodeBridge";
+  double T = 5.0e-3;                    // Total simulation time
+  auto h_step = std::string("1.0e-6");  // Time step
+  double Lvalue = 1e-2;                 // inductance
+  double Cvalue = 1e-6;                 // capacitance
+  double Rvalue = 1e3;                  // resistance
+  double Vinit = 10.0;                  // initial voltage
+  std::string Modeltitle = "DiodeBridge";
 
-  std::chrono::time_point<std::chrono::system_clock> start, end;
-  start = std::chrono::system_clock::now();
-  try
-  {
+  auto start = std::chrono::system_clock::now();
+  try {
     // --- Dynamical system specification ---
-    SP::SiconosVector init_state(new SiconosVector(2));
+    auto init_state = std::make_shared<Vector>(2);
     init_state->setValue(0, Vinit);
 
-    SP::SimpleMatrix LS_A(new SimpleMatrix(2, 2));
+    auto LS_A = std::make_shared<Matrix>(2, 2);
     LS_A->setValue(0, 1, -1.0 / Cvalue);
     LS_A->setValue(1, 0, 1.0 / Lvalue);
 
-    SP::FirstOrderLinearDS LSDiodeBridge(new FirstOrderLinearDS(init_state,
-                                         LS_A));
+    auto LSDiodeBridge =
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_state, LS_A);
 
     // --- Interaction between linear system and non smooth system ---
-    SP::SimpleMatrix Int_C(new SimpleMatrix(4, 2));
+    auto Int_C = std::make_shared<Matrix>(4, 2);
     (*Int_C)(2, 0) = -1.0;
     (*Int_C)(3, 0) = 1.0;
 
-    SP::SimpleMatrix Int_D(new SimpleMatrix(4, 4));
+    auto Int_D = std::make_shared<Matrix>(4, 4);
     (*Int_D)(0, 0) = 1.0 / Rvalue;
     (*Int_D)(0, 1) = 1.0 / Rvalue;
     (*Int_D)(0, 2) = -1.0;
@@ -91,19 +90,21 @@ int main(int argc, char* argv[])
     (*Int_D)(2, 0) = 1.0;
     (*Int_D)(3, 1) = 1.0;
 
-    SP::SimpleMatrix Int_B(new SimpleMatrix(2, 4));
-    (*Int_B)(0, 2) = -1.0 / Cvalue ;
+    auto Int_B = std::make_shared<Matrix>(2, 4);
+    (*Int_B)(0, 2) = -1.0 / Cvalue;
     (*Int_B)(0, 3) = 1.0 / Cvalue;
 
-    SP::FirstOrderLinearTIR LTIRDiodeBridge(new FirstOrderLinearTIR(Int_C, Int_B));
+    auto LTIRDiodeBridge =
+        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(Int_C, Int_B);
     LTIRDiodeBridge->setDPtr(Int_D);
 
-    SP::NonSmoothLaw nslaw(new ComplementarityConditionNSL(4));
+    auto nslaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(4);
 
-    SP::Interaction InterDiodeBridge(new Interaction(nslaw, LTIRDiodeBridge));
+    auto InterDiodeBridge =
+        std::make_shared<siconos::modeling::Interaction>(nslaw, LTIRDiodeBridge);
 
     // --- Model creation ---
-    SP::NonSmoothDynamicalSystem DiodeBridge(new NonSmoothDynamicalSystem(t0, T));
+    auto DiodeBridge = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
     DiodeBridge->setTitle(Modeltitle);
     // add the dynamical system in the non smooth dynamical system
     DiodeBridge->insertDynamicalSystem(LSDiodeBridge);
@@ -114,33 +115,31 @@ int main(int argc, char* argv[])
     // --- Simulation ---
     // ------------------
 
-
     // -- (1) OneStepIntegrators --
     double theta = 0.5;
-    SP::EulerMoreauOSI aOSI(new EulerMoreauOSI(theta));
+    auto aOSI = std::make_shared<siconos::integrators::EulerMoreauOSI>(theta);
 
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation aTiDisc(new TimeDiscretisation(t0, h_step));
+    auto aTiDisc = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h_step);
 
     // -- (3) Non smooth problem
-    SP::LCP aLCP(new LCP());
+    auto aLCP = std::make_shared<siconos::nonsmooth_formulations::LCP>();
 
     // -- (4) Simulation setup with (1) (2) (3)
-    SP::TimeStepping aTS(new TimeStepping(DiodeBridge, aTiDisc, aOSI, aLCP));
-
-
+    auto aTS =
+        std::make_shared<siconos::simulation::TimeStepping>(DiodeBridge, aTiDisc, aOSI, aLCP);
 
     int k = 0;
     double h = aTS->timeStep();
-    int N = ceil((T - t0) / h); // Number of time steps
+    int N = ceil((T - t0) / h);  // Number of time steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    SimpleMatrix dataPlot(N, 8);
+    Matrix dataPlot(N, 8);
 
-    SP::SiconosVector x = LSDiodeBridge->x();
-    SP::SiconosVector y = InterDiodeBridge->y(0);
-    SP::SiconosVector lambda = InterDiodeBridge->lambda(0);
+    auto x = LSDiodeBridge->x();
+    auto y = InterDiodeBridge->y(0);
+    auto lambda = InterDiodeBridge->lambda(0);
 
     // For the initial time step:
     // time
@@ -167,12 +166,10 @@ int main(int argc, char* argv[])
     // resistor current
     dataPlot(k, 7) = (*y)(0) + (*lambda)(2);
 
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
+    auto start = std::chrono::system_clock::now();
 
     // --- Time loop  ---
-    for(k = 1 ; k < N ; ++k)
-    {
+    for (k = 1; k < N; ++k) {
       // solve ...
       aTS->computeOneStep();
       //  aLCP->display();
@@ -202,34 +199,29 @@ int main(int argc, char* argv[])
       dataPlot(k, 7) = (*y)(0) + (*lambda)(2);
 
       aTS->nextStep();
-
     }
 
-
     // --- elapsed time computing ---
-    cout << "time = " << endl;
-    end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
-                  (end-start).count();
-    cout << "Computation time : " << elapsed << " ms" << endl;
-
+    std::cout << "time = \n";
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "Computation time : " << elapsed << " ms\n";
 
     // Number of time iterations
-    cout << "Number of iterations done: " << k << endl;
+    std::cout << "Number of iterations done: " << k << "\n";
 
     // dataPlot (ascii) output
-    ioMatrix::write("DiodeBridge.dat", "ascii", dataPlot, "noDim");
+    siconos::algebra::io::write("DiodeBridge.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
 
-    double error=0.0, eps=1e-12;
-    if((error=ioMatrix::compareRefFile(dataPlot, "DiodeBridge.ref", eps)) >= 0.0
-        && error > eps)
+    double error = 0.0, eps = 1e-12;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "DiodeBridge.ref", eps)) > eps)
       return 1;
 
   }
   // --- Exceptions handling ---
-  catch(...)
-  {
-    Siconos::exception::process();
+  catch (...) {
+    siconos::exception::process();
     return 1;
   }
 }

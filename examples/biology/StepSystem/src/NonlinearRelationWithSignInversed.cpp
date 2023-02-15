@@ -3,23 +3,18 @@
 
 #include "NonlinearRelationWithSignInversed.hpp"
 
-//#include "const.h"
-//#define SICONOS_DEBUG
-
-NonlinearRelationWithSignInversed::NonlinearRelationWithSignInversed():
-  FirstOrderType2R()
-{
-}
+// #include "const.h"
+// #define SICONOS_DEBUG
 
 /*y = h(X)*/
-void NonlinearRelationWithSignInversed::computeh(double t, const BlockVector& x, const SiconosVector& lambda, SiconosVector& y)
-{
-
-
+void user_defined::NonlinearRelationWithSignInversed::computeh(
+    double t, const siconos::algebra::BlockVector& x,
+    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SiconosVector& y) {
 #ifdef SICONOS_DEBUG
-  std::cout << "******** NonlinearRelationWithSignInversed::computeh computeh at " << t << std::endl;
+  std::cout
+      << "******** user_defined::NonlinearRelationWithSignInversed::computeh computeh at " << t
+      << std::endl;
 #endif
-
 
   y.setValue(0, x(0) - 4);
   y.setValue(1, x(1) - 4);
@@ -32,40 +27,44 @@ void NonlinearRelationWithSignInversed::computeh(double t, const BlockVector& x,
 }
 
 /*g=g(lambda)*/
-void NonlinearRelationWithSignInversed::computeg(double t, const SiconosVector& lambda, BlockVector& r)
-{
-
+void user_defined::NonlinearRelationWithSignInversed::computeg(
+    double t, const siconos::algebra::SiconosVector& lambda,
+    siconos::algebra::BlockVector& r) {
 #ifdef SICONOS_DEBUG
-  std::cout << "*** NonlinearRelationWithSignInversed::computeg     computeg at: " << t << std::endl;
+  std::cout
+      << "*** user_defined::NonlinearRelationWithSignInversed::computeg     computeg at: " << t
+      << std::endl;
 #endif
-
 
   r.setValue(0, 10.0 * (1 + lambda(2)) * (1 - lambda(1)));
   r.setValue(1, 10.0 * (1 - lambda(0)) * (1 + lambda(3)));
 
 #ifdef SICONOS_DEBUG
-  std::cout << "NonlinearRelationWithSignInversed::computeg with lambda=" << std::endl;
+  std::cout << "user_defined::NonlinearRelationWithSignInversed::computeg with lambda="
+            << std::endl;
   lambda.display();
   std::cout << std::endl;
-  std::cout << "NonlinearRelationWithSignInversed::computeg modif g_alpha : \n";
+  std::cout << "user_defined::NonlinearRelationWithSignInversed::computeg modif g_alpha : \n";
   r.display();
   std::cout << std::endl;
 #endif
-
 }
 
-void NonlinearRelationWithSignInversed::computeJachlambda(double t, const BlockVector& x, const SiconosVector& lambda, SimpleMatrix& D)
-{
+void user_defined::NonlinearRelationWithSignInversed::computeJachlambda(
+    double t, const siconos::algebra::BlockVector& x,
+    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SimpleMatrix& D) {
   //    double *h = &(*_jachlambda)(0,0);
 #ifdef SICONOS_DEBUG
-  std::cout << "NonlinearRelationWithSignInversed::computeJachlambda " << " at " << " " << t << std::endl;
+  std::cout << "user_defined::NonlinearRelationWithSignInversed::computeJachlambda "
+            << " at "
+            << " " << t << std::endl;
 #endif
   D.zero();
-
 }
 
-void NonlinearRelationWithSignInversed::computeJachx(double t, const BlockVector& x, const SiconosVector& lambda, SimpleMatrix& C)
-{
+void user_defined::NonlinearRelationWithSignInversed::computeJachx(
+    double t, const siconos::algebra::BlockVector& x,
+    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SimpleMatrix& C) {
   C.setValue(0, 0, 1);
   C.setValue(0, 1, 0);
   C.setValue(1, 0, 0);
@@ -76,15 +75,17 @@ void NonlinearRelationWithSignInversed::computeJachx(double t, const BlockVector
   C.setValue(3, 1, 1);
 
 #ifdef SICONOS_DEBUG
-  std::cout << "NonlinearRelationWithSignInversed::computeJachx computeJachx " << " at " << " " << t << ":" << std::endl;
+  std::cout << "user_defined::NonlinearRelationWithSignInversed::computeJachx computeJachx "
+            << " at "
+            << " " << t << ":" << std::endl;
   C.display();
   std::cout << std::endl;
 #endif
-
 }
 
-void NonlinearRelationWithSignInversed::computeJacglambda(double t, const SiconosVector& lambda, SimpleMatrix& B)
-{
+void user_defined::NonlinearRelationWithSignInversed::computeJacglambda(
+    double t, const siconos::algebra::SiconosVector& lambda,
+    siconos::algebra::SimpleMatrix& B) {
   B.setValue(0, 0, 0);
   B.setValue(1, 0, -10.0 * (1 + lambda(3)));
   B.setValue(0, 1, -10.0 * (1 + lambda(2)));
@@ -95,11 +96,11 @@ void NonlinearRelationWithSignInversed::computeJacglambda(double t, const Sicono
   B.setValue(1, 3, 10.0 * (1 - lambda(0)));
 
 #ifdef SICONOS_DEBUG
-  std::cout << "NonlinearRelationWithSignInversed::computeJacgx " << " at " << " " << t << std::endl;
+  std::cout << "user_defined::NonlinearRelationWithSignInversed::computeJacgx "
+            << " at "
+            << " " << t << std::endl;
   B.display();
   std::cout << std::endl;
 #endif
-
 }
 #endif
-
