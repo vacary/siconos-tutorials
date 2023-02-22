@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,17 +44,8 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
   double _sBallRadius;
 
  public:
-  my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius){};
+  my_NewtonEulerR(double radius) : R_CLASS{}, _sBallRadius{radius}{};
 
-  virtual void computeOutput(double t, siconos::modeling::Interaction& inter,
-                             unsigned int derivativeNumber) override {
-    auto& DSlink = inter.linkToDSVariables();
-    if (derivativeNumber == 0) {
-      computeh(t, *DSlink[NewtonEulerR::q0], *inter.y(0));
-    } else {
-      R_CLASS::computeOutput(t, inter, derivativeNumber);
-    }
-  }
   void computeh(double time, const siconos::algebra::BlockVector& q0,
                 siconos::algebra::SiconosVector& y) override {
     double height = fabs(q0.getValue(0)) - _sBallRadius;
@@ -118,12 +109,7 @@ int main(int argc, char* argv[]) {
     auto ball = std::make_shared<siconos::modeling::NewtonEulerDS>(q0, v0, m, I);
 
     // -- Set external forces (weight) --
-    // auto weight= std::make_shared<Vector>(nDof));
-    // (*weight)(0) = -m * g;
-    // ball->setFExtPtr(weight);
-
     ball->setComputeFExtFunction("BouncingBallplugin", "ballFExt");
-    // ball->setComputeFExtFunction("BouncingBallplugin","ballMExt");
 
     // --------------------
     // --- Interactions ---
@@ -145,10 +131,8 @@ int main(int argc, char* argv[]) {
     //     SP::BlockMatrix HT_block(new BlockMatrix(vecMatrix2,1,1);
 
 #ifdef WITH_FC3D
-    int nslawsize = 3;
     auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, e, 0.6, 3);
 #else
-    int nslawsize = 1;
     auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
 #endif
 

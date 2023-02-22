@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
   double _sBallRadius;
 
  public:
-  my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius){};
+  my_NewtonEulerR(double radius) : R_CLASS{}, _sBallRadius{radius}{};
 
   void computeh(double time, const siconos::algebra::BlockVector& q0,
                 siconos::algebra::SiconosVector& y) override {
@@ -92,11 +92,6 @@ int main(int argc, char* argv[]) {
     // -------------------------
 
     std::cout << "====> Model loading ...\n";
-
-    auto Mass = std::make_shared<Matrix>(nDof, nDof);
-    (*Mass)(0, 0) = m;
-    (*Mass)(1, 1) = m;
-    (*Mass)(2, 2) = 2. / 5 * m * radius * radius;
 
     // -- Initial positions and velocities --
     auto q0 = std::make_shared<Vector>(qDim);

@@ -54,22 +54,22 @@ int main(int argc, char* argv[])
 
     cout << "====> Model loading ..." << endl << endl;
 
-    SP::SiconosMatrix Mass(new SimpleMatrix(nDof, nDof));
+    auto Mass= std::make_shared<Matrix>(nDof, nDof));
     (*Mass)(0, 0) = m;
     (*Mass)(1, 1) = m;
     (*Mass)(2, 2) = 3. / 5 * m * R * R;
 
     // -- Initial positions and velocities --
-    SP::SiconosVector q0(new SiconosVector(nDof));
-    SP::SiconosVector v0(new SiconosVector(nDof));
+    auto q0= std::make_shared<Vector>(nDof));
+    auto v0= std::make_shared<Vector>(nDof));
     (*q0)(0) = position_init;
     (*v0)(0) = velocity_init;
 
     // -- The dynamical system --
-    SP::LagrangianLinearTIDS ball(new LagrangianLinearTIDS(q0, v0, Mass));
+    auto ball= std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, Mass));
 
     // -- Set external forces (weight) --
-    SP::SiconosVector weight(new SiconosVector(nDof));
+    auto weight= std::make_shared<Vector>(nDof));
     (*weight)(0) = -m * g;
     ball->setFExtPtr(weight);
 
@@ -77,13 +77,13 @@ int main(int argc, char* argv[])
 
 
     // -- Initial positions and velocities --
-    SP::SiconosVector q02(new SiconosVector(nDof));
-    SP::SiconosVector v02(new SiconosVector(nDof));
+    auto q02= std::make_shared<Vector>(nDof));
+    auto v02= std::make_shared<Vector>(nDof));
     (*q02)(0) = 0.0;
     (*v02)(0) = - velocity_init;
 
     // -- The dynamical system --
-    SP::LagrangianLinearTIDS movingplane(new LagrangianLinearTIDS(q02, v02, Mass));
+    auto movingplane= std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q02, v02, Mass));
 
     // -- Set external forces (weight) --
     movingplane->setFExtPtr(weight);
@@ -91,12 +91,12 @@ int main(int argc, char* argv[])
     SP::IndexInt bdindex(new IndexInt(1));
     (*bdindex)[0] = 0;
 
-    // SP::SiconosVector bdPrescribedVelocity(new SiconosVector(1));
+    // auto bdPrescribedVelocity= std::make_shared<Vector>(1));
     // bdPrescribedVelocity->setValue(0,0.5);
-    // SP::BoundaryCondition bd (new BoundaryCondition(bdindex,bdPrescribedVelocity));
+    // auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(bdindex,bdPrescribedVelocity));
 
 
-    SP::BoundaryCondition bd(new BoundaryCondition(bdindex));
+    auto bd= std::make_shared<siconos::modeling::BoundaryCondition>(bdindex));
     bd->setComputePrescribedVelocityFunction("BallOnMovingPlanePlugin", "prescribedvelocity");
 
 
@@ -113,19 +113,19 @@ int main(int argc, char* argv[])
 
     // Interaction ball-plane
     //
-    SP::SimpleMatrix H(new SimpleMatrix(1, 2 * nDof));
+    auto H= std::make_shared<Matrix>(1, 2 * nDof));
     (*H)(0, 0) = 1.0;
     (*H)(0, 3) = -1.0;
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-    SP::Relation relation(new LagrangianLinearTIR(H));
+    auto nslaw= std::make_shared<siconos::modeling::NewtonImpactNSL>(e));
+    auto relation= std::make_shared<siconos::modeling::LagrangianLinearTIR>(H));
 
-    SP::Interaction inter(new Interaction(nslaw, relation));
+    auto inter= std::make_shared<siconos::modeling::Interaction>(nslaw, relation));
 
     // -------------
     // --- Model ---
     // -------------
-    SP::NonSmoothDynamicalSystem bouncingBall(new NonSmoothDynamicalSystem(t0, T));
+    auto bouncingBall= std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T));
 
     // add the dynamical system in the non smooth dynamical system
     bouncingBall->insertDynamicalSystem(ball);
@@ -141,16 +141,16 @@ int main(int argc, char* argv[])
     // ------------------
 
     // -- (1) OneStepIntegrators --
-    SP::MoreauJeanOSI OSI(new MoreauJeanOSI(theta));
+    autoOSI= std::make_shared<siconos::integrators::MoreauJeanOSI>(theta));
 
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t= std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h));
 
     // -- (3) one step non smooth problem
-    SP::OneStepNSProblem osnspb(new LCP());
+    auto osnspb= std::make_shared<siconos::nonsmooth_formulations::LCP>();
 
     // -- (4) Simulation setup with (1) (2) (3)
-    SP::TimeStepping s(new TimeStepping(bouncingBall, t, OSI, osnspb));
+    auto s= std::make_shared<siconos::simulation::TimeStepping>(bouncingBall, t, OSI, osnspb));
 
     // =========================== End of model definition ===========================
 
@@ -164,16 +164,16 @@ int main(int argc, char* argv[])
     unsigned int outputSize = 12;
     SimpleMatrix dataPlot(N+1, outputSize);
 
-    SP::SiconosVector q = ball->q();
-    SP::SiconosVector v = ball->velocity();
-    SP::SiconosVector p = ball->p(1);
-    SP::SiconosVector qplane = movingplane->q();
-    SP::SiconosVector vplane = movingplane->velocity();
-    SP::SiconosVector pplane = movingplane->p(1);
-    SP::SiconosVector lambda = inter->lambda(1);
-    SP::SiconosVector y = inter->y(0);
+    auto q = ball->q();
+    auto v = ball->velocity();
+    auto p = ball->p(1);
+    auto qplane = movingplane->q();
+    auto vplane = movingplane->velocity();
+    auto pplane = movingplane->p(1);
+    auto lambda = inter->lambda(1);
+    auto y = inter->y(0);
 
-    SP::SiconosVector reaction = movingplane->reactionToBoundaryConditions();
+    auto reaction = movingplane->reactionToBoundaryConditions();
 
     dataPlot(0, 0) = bouncingBall->t0();
     dataPlot(0, 1) = (*q)(0);
@@ -221,17 +221,17 @@ int main(int argc, char* argv[])
       k++;
     }
     cout << endl << "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation Time " << endl;;
+    cout << "Computation Time \n";;
     end = std::chrono::system_clock::now();
     int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
                   (end-start).count();
-    cout << "Computation time : " << elapsed << " ms" << endl;
+    cout << "Computation time : " << elapsed << " ms\n";
     // --- Output files ---
-    cout << "====> Output file writing ..." << endl;
+    cout << "====> Output file writing ...\n";
     ioMatrix::write("result.dat", "ascii", dataPlot, "noDim");
 
     double error=0.0, eps=1e-12;
-    if((error=ioMatrix::compareRefFile(dataPlot, "BallOnMovingPlane.ref", eps)) >= 0.0
+    if((error=siconos::algebra::io::compareRefFile(dataPlot, "BallOnMovingPlane.ref", eps)) >= 0.0
         && error > eps)
       return 1;
 
@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
 
   catch(...)
   {
-    Siconos::exception::process();
+    siconos::exception::process();
     return 1;
   }
 

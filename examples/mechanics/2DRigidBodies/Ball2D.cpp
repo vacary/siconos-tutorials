@@ -14,7 +14,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 /*!\file BouncingBallTS.cpp
   \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
@@ -24,64 +24,60 @@
   Direct description of the model.
   Simulation with a Time-Stepping scheme.
 */
-#include <chrono>
+#include <Contact2dR.hpp>
+#include <RigidBody2dDS.hpp>
 #include <SiconosBodies.hpp>
 #include <SiconosKernel.hpp>
-
-#include <RigidBody2dDS.hpp>
-#include "Contact2dR.hpp"
+#include <chrono>
 
 using namespace std;
+using Matrix = siconos::algebra::SimpleMatrix;
+using Vector = siconos::algebra::SiconosVector;
 
-int main(int argc, char* argv[])
-{
-  try
-  {
-
+int main(int argc, char* argv[]) {
+  try {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 3;           // degrees of freedom for the ball
-    double t0 = 0;                   // initial computation time
-    double T = 10;                  // final computation time
-    double h = 0.005;                // time step
-    double position_init = 1.0;      // initial position for lowest bead.
-    double velocity_init = 0.0;      // initial velocity for lowest bead.
-    double theta = 0.5;              // theta for MoreauJeanOSI integrator
-    double R = 0.5; // Ball radius
-    double m = 1; // Ball mass
-    double g = 9.81; // Gravity
+    unsigned int nDof = 3;       // degrees of freedom for the ball
+    double t0 = 0;               // initial computation time
+    double T = 10;               // final computation time
+    double h = 0.005;            // time step
+    double position_init = 1.0;  // initial position for lowest bead.
+    double velocity_init = 0.0;  // initial velocity for lowest bead.
+    double theta = 0.5;          // theta for MoreauJeanOSI integrator
+    double R = 0.5;              // Ball radius
+    double m = 1;                // Ball mass
+    double g = 9.81;             // Gravity
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
 
-    cout << "====> Model loading ..." <<  endl;
+    cout << "====> Model loading ..." << endl;
 
-    SP::SiconosMatrix Mass(new SimpleMatrix(nDof, nDof));
+    auto Mass = std::make_shared<Matrix>(nDof, nDof);
     (*Mass)(0, 0) = m;
     (*Mass)(1, 1) = m;
     (*Mass)(2, 2) = 2. / 5 * m * R * R;
 
     // -- Initial positions and velocities --
-    SP::SiconosVector q0(new SiconosVector(nDof));
-    SP::SiconosVector v0(new SiconosVector(nDof));
+    auto q0 = std::make_shared<Vector>(nDof);
+    auto v0 = std::make_shared<Vector>(nDof);
     (*q0)(0) = position_init;
     (*v0)(0) = velocity_init;
 
     // -- The dynamical system --
-    SP::RigidBody2dDS ball(new RigidBody2dDS(q0, v0, Mass));
+    auto ball = std::make_shared<siconos::collision::RigidBody2dDS>(q0, v0, Mass);
 
-    SP::SiconosVector q01(new SiconosVector(nDof));
-    SP::SiconosVector v01(new SiconosVector(nDof));
-    (*q01)(0) = position_init+2*R+0.1;
+    auto q01 = std::make_shared<Vector>(nDof);
+    auto v01 = std::make_shared<Vector>(nDof);
+    (*q01)(0) = position_init + 2 * R + 0.1;
     (*v01)(0) = velocity_init;
 
-
-
-    SP::RigidBody2dDS ball1(new RigidBody2dDS(q01, v01, Mass));
+    auto ball1 = std::make_shared<siconos::collision::RigidBody2dDS>(q01, v01, Mass);
 
     // -- Set external forces (weight) --
-    SP::SiconosVector weight(new SiconosVector(nDof));
+    auto weight = std::make_shared<Vector>(nDof);
     (*weight)(0) = -m * g;
     ball->setFExtPtr(weight);
     ball1->setFExtPtr(weight);
@@ -94,24 +90,24 @@ int main(int argc, char* argv[])
 
     // // Interaction ball-floor
     // //
-    // SP::SimpleMatrix H(new SimpleMatrix(1, nDof));
+    // auto H= std::make_shared<Matrix>(1, nDof);
     // (*H)(0, 0) = 1.0;
-    // SP::Relation relation(new LagrangianLinearTIR(H));
+    // auto relation= std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactFrictionNSL(e,0.0,0.1,2));
+    auto nslaw = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, 0.0, 0.1, 2);
 
-    SP::Contact2dR relation(new Contact2dR());
+    auto relation = std::make_shared<siconos::collision::Contact2dR>();
 
-    SP::Interaction inter(new Interaction(nslaw, relation));
+    auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
-    SP::Contact2dR relation1(new Contact2dR());
+    auto relation1 = std::make_shared<siconos::collision::Contact2dR>();
 
-    SP::Interaction inter1(new Interaction(nslaw, relation1));
+    auto inter1 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation1);
 
     // -------------
     // --- Model ---
     // -------------
-    SP::NonSmoothDynamicalSystem bouncingBall(new NonSmoothDynamicalSystem(t0, T));
+    auto bouncingBall = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
 
     // add the dynamical system in the non smooth dynamical system
     bouncingBall->insertDynamicalSystem(ball);
@@ -121,45 +117,41 @@ int main(int argc, char* argv[])
     bouncingBall->link(inter, ball);
     bouncingBall->link(inter1, ball1, ball);
 
-
     // ------------------
     // --- Simulation ---
     // ------------------
 
     // -- (1) OneStepIntegrators --
-    SP::MoreauJeanOSI OSI(new MoreauJeanOSI(theta));
-
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
 
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
     // -- (3) one step non smooth problem
-    SP::OneStepNSProblem osnspb(new FrictionContact(2));
+    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::FrictionContact>(2);
 
     // -- (4) Simulation setup with (1) (2) (3)
-    SP::TimeStepping s(new TimeStepping(bouncingBall, t, OSI, osnspb));
+    auto s = std::make_shared<siconos::simulation::TimeStepping>(bouncingBall, t, OSI, osnspb);
 
     // =========================== End of model definition ===========================
 
     // ================================= Computation =================================
 
-
-    int N = ceil((T - t0) / h)+1; // Number of time steps
+    int N = ceil((T - t0) / h) + 1;  // Number of time steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 9;
-    SimpleMatrix dataPlot(N + 1, outputSize);
+    Matrix dataPlot(N + 1, outputSize);
 
-    SP::SiconosVector q = ball->q();
-    SP::SiconosVector v = ball->velocity();
-    SP::SiconosVector p = ball->p(1);
-    SP::SiconosVector lambda = inter->lambda(1);
-    SP::SiconosVector q1 = ball1->q();
-    SP::SiconosVector v1 = ball->velocity();
-    SP::SiconosVector p1 = ball->p(1);
-    SP::SiconosVector lambda1 = inter1->lambda(1);
-
+    auto q = ball->q();
+    auto v = ball->velocity();
+    auto p = ball->p(1);
+    auto lambda = inter->lambda(1);
+    auto q1 = ball1->q();
+    auto v1 = ball->velocity();
+    auto p1 = ball->p(1);
+    auto lambda1 = inter1->lambda(1);
 
     dataPlot(0, 0) = bouncingBall->t0();
     dataPlot(0, 1) = (*q)(0);
@@ -171,42 +163,41 @@ int main(int argc, char* argv[])
     dataPlot(0, 7) = (*p1)(0);
     dataPlot(0, 8) = (*lambda1)(0);
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl;
+    cout << "====> Start computation ... \n";
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
 
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
 
-    SP::SiconosVector pc = relation->pc1();
-    SP::SiconosVector nnc = relation->nc();
+    auto pc = relation->pc1();
+    auto nnc = relation->nc();
 
-    SP::SiconosVector pc1 = relation1->pc1();
-    SP::SiconosVector pc2 = relation1->pc2();
-    SP::SiconosVector nnc1 = relation1->nc();
+    auto pc1 = relation1->pc1();
+    auto pc2 = relation1->pc2();
+    auto nnc1 = relation1->nc();
 
-
-
-
-    while(s->hasNextEvent())
-    {
+    while (s->hasNextEvent()) {
       // a fake contact detection
       (*pc)(0) = -R + (*q)(0);
       (*pc)(1) = 0.0 + (*q)(1);
       (*nnc)(0) = 1.0;
       (*nnc)(1) = 0.0;
 
-      (*pc1)(0) = -R + (*q1)(0);;
+      (*pc1)(0) = -R + (*q1)(0);
+      ;
       (*pc1)(1) = 0.0 + (*q1)(1);
 
-      (*pc2)(0) = R + (*q)(0);;
-      (*pc2)(1) = 0.0 + (*q)(1);;
+      (*pc2)(0) = R + (*q)(0);
+      ;
+      (*pc2)(1) = 0.0 + (*q)(1);
+      ;
       (*nnc1)(0) = 1.0;
       (*nnc1)(1) = 0.0;
 
       s->computeOneStep();
       // --- Get values to be plotted ---
-      dataPlot(k, 0) =  s->nextTime();
+      dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(0);
       dataPlot(k, 2) = (*v)(0);
       dataPlot(k, 3) = (*p)(0);
@@ -217,32 +208,29 @@ int main(int argc, char* argv[])
       dataPlot(k, 8) = (*lambda1)(0);
       s->nextStep();
       k++;
-
     }
-    cout  << "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation Time : "  << endl;
+    cout << "End of computation - Number of iterations done: " << k - 1 << endl;
+    cout << "Computation Time : " << endl;
     end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
-                  (end-start).count();
-    cout << "Computation time : " << elapsed << " ms" << endl;
+    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    cout << "Computation time : " << elapsed << " ms\n";
 
     // --- Output files ---
-    cout << "====> Output file writing ..." << endl;
+    cout << "====> Output file writing ...\n";
     dataPlot.resize(k, outputSize);
-    ioMatrix::write("Ball2D.dat", "ascii", dataPlot, "noDim");
-    double error=0.0, eps=1e-12;
-    if((error=ioMatrix::compareRefFile(dataPlot, "Ball2D.ref", eps)) >= 0.0
-        && error > eps)
+    siconos::algebra::io::write("Ball2D.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
+
+    double error = 0.0, eps = 1e-12;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Ball2D.ref", eps)) > eps)
       return 1;
 
+    else
+      return 0;
   }
 
-  catch(...)
-  {
-    Siconos::exception::process();
+  catch (...) {
+    siconos::exception::process();
     return 1;
   }
-
-
-
 }
