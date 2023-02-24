@@ -49,8 +49,8 @@ int main(int argc, char* argv[])
 
     cout << "bar length" << l <<  endl;
 
-    SP::SiconosMatrix SparseMass(new SimpleMatrix(nDof,nDof,Siconos::SPARSE,nDof));
-    SP::SiconosMatrix SparseStiffness(new SimpleMatrix(nDof,nDof,Siconos::SPARSE,3*nDof));
+    auto SparseMass= std::make_shared<Matrix>(nDof,nDof,Siconos::SPARSE,nDof));
+    auto SparseStiffness= std::make_shared<Matrix>(nDof,nDof,Siconos::SPARSE,3*nDof));
 
 
     SparseMass->setValue(0,0,1.0/3.0);
@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
     SparseStiffness->setValue(nDof-1,nDof-1,1.0);
 
 
-    SP::SiconosMatrix SparseDamping(new SimpleMatrix(*SparseStiffness));
+    auto SparseDamping= std::make_shared<Matrix>(*SparseStiffness));
 
 
 
@@ -94,14 +94,14 @@ int main(int argc, char* argv[])
 
 
     // -- Initial positions and velocities --
-    SP::SiconosVector q0(new SiconosVector(nDof,position_init));
-    SP::SiconosVector v0(new SiconosVector(nDof,velocity_init));
+    auto q0= std::make_shared<Vector>(nDof,position_init));
+    auto v0= std::make_shared<Vector>(nDof,velocity_init));
 
 
 
     // -- The dynamical system --
-    SP::SiconosMatrix SparseMassforDS(new SimpleMatrix(*SparseMass));
-    SP::LagrangianLinearTIDS bar(new LagrangianLinearTIDS(q0,v0,SparseMassforDS));
+    auto SparseMassforDS= std::make_shared<Matrix>(*SparseMass));
+    auto bar= std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0,v0,SparseMassforDS));
 
     // -- Set stiffness matrix (weight) --
     bar->setKPtr(SparseStiffness);
@@ -110,8 +110,8 @@ int main(int argc, char* argv[])
 
 
     // -- Set external forces (weight) --
-    //SP::SiconosVector weight(new SiconosVector(nDof,-g*rho*S/l));
-    SP::SiconosVector weight(new SiconosVector(nDof,0.0));
+    //auto weight= std::make_shared<Vector>(nDof,-g*rho*S/l));
+    auto weight= std::make_shared<Vector>(nDof,0.0));
     bar->setFExtPtr(weight);
 
     // --------------------
@@ -123,18 +123,18 @@ int main(int argc, char* argv[])
 
     // Interaction bar-floor
     //
-    SP::SimpleMatrix H(new SimpleMatrix(1,nDof));
+    auto H= std::make_shared<Matrix>(1,nDof));
     (*H)(0,0) = 1.0;
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-    SP::Relation relation(new LagrangianLinearTIR(H));
+    auto nslaw= std::make_shared<siconos::modeling::NewtonImpactNSL>(e));
+    auto relation= std::make_shared<siconos::modeling::LagrangianLinearTIR>(H));
 
-    SP::Interaction inter(new Interaction(nslaw, relation));
+    auto inter= std::make_shared<siconos::modeling::Interaction>(nslaw, relation));
 
     // -------------
     // --- Model ---
     // -------------
-    SP::NonSmoothDynamicalSystem impactingBar(new NonSmoothDynamicalSystem(t0, T));
+    auto impactingBar= std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T));
 
     // add the dynamical system in the non smooth dynamical system
     impactingBar->insertDynamicalSystem(bar);
@@ -150,22 +150,22 @@ int main(int argc, char* argv[])
     // -- (1) OneStepIntegrators --
 
 #ifdef TS_VELOCITY_LEVEL
-    SP::D1MinusLinearOSI OSI(new D1MinusLinearOSI(D1MinusLinearOSI::halfexplicit_velocity_level));
+    SP::D1MinusLinearOSI OSI= std::make_shared<siconos::integrators::D1MinusLinearOSI>(D1MinusLinearOSI::halfexplicit_velocity_level));
 #else
-    SP::D1MinusLinearOSI OSI(new D1MinusLinearOSI());
+    SP::D1MinusLinearOSI OSI= std::make_shared<siconos::integrators::D1MinusLinearOSI>());
 #endif
 
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0,h));
+    SP::TimeDiscretisation t= std::make_shared<siconos::simulation::TimeDiscretisation>(t0,h));
 
     // -- (3) one step non smooth problem
-    SP::OneStepNSProblem osnspb(new LCP());
+    auto osnspb= std::make_shared<siconos::nonsmooth_formulations::LCP>();
 
     // -- (4) Simulation setup with (1) (2) (3)
-    SP::OneStepNSProblem impact(new LCP());
-    SP::OneStepNSProblem force(new LCP());
+    auto impact= std::make_shared<siconos::nonsmooth_formulations::LCP>();
+    auto force= std::make_shared<siconos::nonsmooth_formulations::LCP>();
 
-    SP::TimeSteppingD1Minus s(new TimeSteppingD1Minus(impactingBar, t, 2));
+    SP::TimeSteppingD1Minus s= std::make_shared<siconos::simulation::TimeStepping>D1Minus(impactingBar, t, 2));
     s->insertIntegrator(OSI);
     s->insertNonSmoothProblem(impact, SICONOS_OSNSP_TS_VELOCITY);
     s->insertNonSmoothProblem(force, SICONOS_OSNSP_TS_VELOCITY + 1);
@@ -181,12 +181,12 @@ int main(int argc, char* argv[])
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 13;
     SimpleMatrix dataPlot(N,outputSize);
-    SP::SiconosVector q = bar->q();
-    SP::SiconosVector v = bar->velocity();
-    SP::SiconosVector p = bar->p(1);
-    SP::SiconosVector Lambda = inter->lambda(1);
+    auto q = bar->q();
+    auto v = bar->velocity();
+    auto p = bar->p(1);
+    auto Lambda = inter->lambda(1);
 
-    SP::SiconosVector y = inter->y(0);
+    auto y = inter->y(0);
     int k = 0;
     dataPlot(k,0) = impactingBar->t0();
     dataPlot(k,1) = (*q)(0);
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
     dataPlot(k,10) = (*v)((nDof)/2);
 
 
-    SP::SiconosVector tmp(new SiconosVector(nDof));
+    auto tmp= std::make_shared<Vector>(nDof));
 
     prod(*SparseStiffness, *q, *tmp, true);
     double potentialEnergy = inner_prod(*q,   *tmp);
@@ -277,17 +277,17 @@ int main(int argc, char* argv[])
       k++;
     }
     cout<<endl << "End of computation - Number of iterations done: "<<k-1<<endl;
-    cout << "Computation Time " << endl;;
+    cout << "Computation Time \n";;
     end = std::chrono::system_clock::now();
     int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
                   (end-start).count();
-    cout << "Computation time : " << elapsed << " ms" << endl;
+    cout << "Computation time : " << elapsed << " ms\n";
     // --- Output files ---
     cout<<"====> Output file writing ..."<<endl;
     dataPlot.resize(k, outputSize);
    
     ioMatrix::write("ImpactingBarD1MinusLinear.dat", "ascii", dataPlot,"noDim");
-    cout << " Comparison with a reference file" << endl;
+    cout << " Comparison with a reference file\n";
     SimpleMatrix dataPlotRef(dataPlot);
     dataPlotRef.zero();
     ioMatrix::read("ImpactingBarD1MinusLinear.ref", "ascii", dataPlotRef);
@@ -305,7 +305,7 @@ int main(int argc, char* argv[])
 
   catch(...)
   {
-    Siconos::exception::process();
+    siconos::exception::process();
     return 1;
   }
 

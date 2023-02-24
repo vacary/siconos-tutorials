@@ -34,7 +34,7 @@ using namespace std;
 /* Given a position of a point in the Inertial Frame and the configuration vector q of a solid
  * returns a position in the spatial frame.
  */
-void fromInertialToSpatialFrame(double *positionInInertialFrame, double *positionInSpatialFrame, SP::SiconosVector  q)
+void fromInertialToSpatialFrame(double *positionInInertialFrame, double *positionInSpatialFrame, auto  q)
 {
   double q0 = q->getValue(3);
   double q1 = q->getValue(4);
@@ -54,7 +54,7 @@ void fromInertialToSpatialFrame(double *positionInInertialFrame, double *positio
   positionInSpatialFrame[2] = quatBuff.R_component_4()+q->getValue(2);
 
 }
-void tipTrajectories(SP::SiconosVector  q, double * traj, double length)
+void tipTrajectories(auto  q, double * traj, double length)
 {
   double positionInInertialFrame[3];
   double positionInSpatialFrame[3];
@@ -122,9 +122,9 @@ int main(int argc, char* argv[])
 
     cout << "====> Model loading ..." << endl << endl;
     // -- Initial positions and velocities --
-    SP::SiconosVector q03(new SiconosVector(qDim));
-    SP::SiconosVector v03(new SiconosVector(nDim));
-    SP::SimpleMatrix I3(new SimpleMatrix(3, 3));
+    auto q03= std::make_shared<Vector>(qDim));
+    auto v03= std::make_shared<Vector>(nDim));
+    auto I3= std::make_shared<Matrix>(3, 3));
     v03->zero();
     I3->eye();
     I3->setValue(0, 0, 0.1);
@@ -142,9 +142,9 @@ int main(int argc, char* argv[])
     q03->setValue(5, V1.getValue(1)*sin(angle / 2));
     q03->setValue(6, V1.getValue(2)*sin(angle / 2));
 
-    SP::NewtonEulerDS bouncingbeam(new NewtonEulerDS(q03, v03, m, I3));
+    SP::NewtonEulerDS bouncingbeam= std::make_shared<siconos::modeling::NewtonEulerDS>(q03, v03, m, I3));
     // -- Set external forces (weight) --
-    SP::SiconosVector weight3(new SiconosVector(nDof));
+    auto weight3= std::make_shared<Vector>(nDof));
     (*weight3)(2) = -m * g;
     bouncingbeam->setFExtPtr(weight3);
     bouncingbeam->setComputeFIntFunction("SimplePlugin", "fInt_beam1");
@@ -158,33 +158,33 @@ int main(int argc, char* argv[])
 
     // Interaction with the floor
     double e = 0.9;
-    SP::SimpleMatrix H(new SimpleMatrix(1, qDim));
-    SP::SiconosVector eR(new SiconosVector(1));
+    auto H= std::make_shared<Matrix>(1, qDim));
+    auto eR= std::make_shared<Vector>(1));
     eR->setValue(0, 2.3);
     H->zero();
     (*H)(0, 2) = 1.0;
-    SP::NonSmoothLaw nslaw0(new NewtonImpactNSL(e));
-    SP::NewtonEulerR relation0(new NewtonEulerR());
+    auto nslaw0= std::make_shared<siconos::modeling::NewtonImpactNSL>(e));
+    auto relation0= std::make_shared<siconos::modeling::NewtonEulerR>();
     relation0->setJachq(H);
     relation0->setE(eR);
-    cout << "main jacQH" << endl;
+    cout << "main jacQH\n";
     relation0->jachq()->display();
 
 
 
-    SP::SiconosVector axe1(new SiconosVector(3));
+    auto axe1= std::make_shared<Vector>(3));
     axe1->zero();
     axe1->setValue(2, 1);
 
-    SP::PrismaticJointR relation4(new PrismaticJointR(axe1, false, bouncingbeam));
-    SP::NonSmoothLaw nslaw4(new EqualityConditionNSL(relation4->numberOfConstraints()));
-    SP::Interaction inter4(new Interaction(nslaw4, relation4));
-    SP::Interaction interFloor(new Interaction(nslaw0, relation0));
+    SP::PrismaticJointR relation4= std::make_shared<siconos::joints::PrismaticJointR>(axe1, false, bouncingbeam));
+    auto nslaw4= std::make_shared<siconos::modeling::EqualityConditionNSL>(relation4->numberOfConstraints()));
+    auto inter4= std::make_shared<siconos::modeling::Interaction>(nslaw4, relation4));
+    auto interFloor= std::make_shared<siconos::modeling::Interaction>(nslaw0, relation0));
 
     // -------------
     // --- Model ---
     // -------------
-    SP::NonSmoothDynamicalSystem myModel(new NonSmoothDynamicalSystem(t0, T));
+    auto myModel= std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T));
     // add the dynamical system in the non smooth dynamical system
     myModel->insertDynamicalSystem(bouncingbeam);
     // link the interaction and the dynamical system
@@ -196,16 +196,16 @@ int main(int argc, char* argv[])
 
     // -- (1) OneStepIntegrators --
 
-    SP::MoreauJeanOSI OSI3(new MoreauJeanOSI(theta));
+    autoOSI3= std::make_shared<siconos::integrators::MoreauJeanOSI>(theta));
 
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t= std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h));
 
     // -- (3) one step non smooth problem
-    SP::OneStepNSProblem osnspb(new MLCP());
+    auto osnspb= std::make_shared<siconos::nonsmooth_formulations::MLCP>();
 
     // -- (4) Simulation setup with (1) (2) (3)
-    SP::TimeStepping s(new TimeStepping(myModel, t, OSI3, osnspb));
+    auto s= std::make_shared<siconos::simulation::TimeStepping>(myModel, t, OSI3, osnspb));
     s->setNewtonTolerance(1e-4);
     s->setNewtonMaxIteration(50);
 
@@ -220,9 +220,9 @@ int main(int argc, char* argv[])
     SimpleMatrix dataPlot(N, outputSize);
     SimpleMatrix bouncingbeamPlot(2,3*N);
 
-    SP::SiconosVector q3 = bouncingbeam->q();
-    SP::SiconosVector y= interFloor->y(0);
-    SP::SiconosVector ydot= interFloor->y(1);
+    auto q3 = bouncingbeam->q();
+    auto y= interFloor->y(0);
+    auto ydot= interFloor->y(1);
 
     // --- Time loop ---
     cout << "====> Start computation ... " << endl << endl;
@@ -232,9 +232,9 @@ int main(int argc, char* argv[])
 
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
-    SP::SiconosVector yAux(new SiconosVector(3));
+    auto yAux= std::make_shared<Vector>(3));
     yAux->setValue(0, 1);
-    SP::SimpleMatrix Jaux(new SimpleMatrix(3, 3));
+    auto Jaux= std::make_shared<Matrix>(3, 3));
     Index dimIndex(2);
     Index startIndex(4);
     fprintf(pFile, "double T[%d*%d]={", N + 1, outputSize);
@@ -285,13 +285,13 @@ int main(int argc, char* argv[])
     }
     fprintf(pFile, "};");
     cout << endl << "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation Time " << endl;;
+    cout << "Computation Time \n";;
     end = std::chrono::system_clock::now();
     int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
                   (end-start).count();
-    cout << "Computation time : " << elapsed << " ms" << endl;
+    cout << "Computation time : " << elapsed << " ms\n";
     // --- Output files ---
-    cout << "====> Output file writing ..." << endl;
+    cout << "====> Output file writing ...\n";
     ioMatrix::write("NE_BouncingBeam.dat", "ascii", dataPlot, "noDim");
     ioMatrix::write("NE_BouncingBeam_beam.dat", "ascii", bouncingbeamPlot, "noDim");
 
@@ -300,7 +300,7 @@ int main(int argc, char* argv[])
 
   catch(...)
   {
-    Siconos::exception::process();
+    siconos::exception::process();
     return 1;
   }
 

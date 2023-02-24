@@ -286,7 +286,7 @@ int main(int argc, char* argv[]) {
         eps)
       return 1;
 #endif
-
+    return 0;
   }
 
   catch (...) {

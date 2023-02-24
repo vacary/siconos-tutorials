@@ -87,13 +87,6 @@ int main(int argc, char* argv[]) {
 
     // -- nslaw --
     double e = 0.9;
-
-    // // Interaction ball-floor
-    // //
-    // auto H= std::make_shared<Matrix>(1, nDof);
-    // (*H)(0, 0) = 1.0;
-    // auto relation= std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
-
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, 0.0, 0.1, 2);
 
     auto relation = std::make_shared<siconos::collision::Contact2dR>();

@@ -128,9 +128,8 @@ int main(int argc, char* argv[]) {
                               siconos::algebra::io::WriteType::nodim);
 
   double error = 0.0, eps = 1e-12;
-  if ((error = siconos::algebra::io::compareRefFile(dataPlot, "LuenbergerObserver.ref",
-                                                    eps)) >= 0.0 &&
-      error > eps)
+  if ((error = siconos::algebra::io::compareRefFile(dataPlot, "LuenbergerObserver.ref", eps)) >
+      eps)
     return 1;
   else
     return 0;

@@ -44,7 +44,7 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
   double _sBallRadius;
 
  public:
-  my_NewtonEulerR(double radius) : R_CLASS{}, _sBallRadius{radius}{};
+  my_NewtonEulerR(double radius) : R_CLASS{}, _sBallRadius{radius} {};
 
   void computeh(double time, const siconos::algebra::BlockVector& q0,
                 siconos::algebra::SiconosVector& y) override {
@@ -290,7 +290,7 @@ int main(int argc, char* argv[]) {
         eps)
       return 1;
 #endif
-
+    return 0;
   }
 
   catch (...) {

@@ -16,14 +16,6 @@
  * limitations under the License.
  */
 
-/*!\file BouncingBallTS.cpp
-  \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
-  V. Acary, F. Perignon.
-
-  A Ball bouncing on the ground.
-  Direct description of the model.
-  Simulation with a Time-Stepping scheme.
-*/
 #include <SiconosKernel.hpp>
 #include <chrono>
 

@@ -1,4 +1,3 @@
-
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
@@ -17,21 +16,20 @@
  * limitations under the License.
  */
 
-#include <SiconosKernel.hpp>
-#include <TransportCableProfil.h>
 #include <TransportCableManager.h>
 #include <TransportCableModel.h>
+#include <TransportCableProfil.h>
+
+#include <SiconosKernel.hpp>
 #include <chrono>
-#include <ioVector.hpp>
 #include <fstream>
+#include <ioVector.hpp>
 #include <string>
 
 int main()
 
 {
-
   try {
-
     // Reads model parameters from a json file
     // Mechanical params, geometry, supports positions ...
     std::string modelFile = "buckled_bouquetins.json";
@@ -49,9 +47,9 @@ int main()
 
     // -- Applies catenary equations to compute a first profile of the ropeways
     // --
-    int nb_nodes = 50;  // Catenary, number of nodes per rope span
-    double tol = 1e-10; // Tol. used in Newton-Raphson for catenary equation
-    int nmax = 20;      // Newton-Raphson, max number of iterations
+    int nb_nodes = 50;   // Catenary, number of nodes per rope span
+    double tol = 1e-10;  // Tol. used in Newton-Raphson for catenary equation
+    int nmax = 20;       // Newton-Raphson, max number of iterations
     profil->computeInitialProfil(nb_nodes, tol, nmax);
 
     // Save ropeways variables into json file
@@ -80,9 +78,9 @@ int main()
 
     // -- Fem part --
 
-    nb_nodes = 1400; // FEM number of nodes
+    nb_nodes = 1400;  // FEM number of nodes
     double eps = 0.1;
-    tol = 1e-3; // tolerance used to activate constraints
+    tol = 1e-3;  // tolerance used to activate constraints
     profil->computeFEM(nb_nodes, eps, tol);
 
     // ojson out;
@@ -92,19 +90,19 @@ int main()
 
     auto positions = ioVector::readVectorFromJson(out["q"]);
     std::cout << positions->norm2() << " " << positions->size() << std::endl;
-    
 
+    std::cout << "PAR 2 \n";
     auto manager = std::make_shared<TransportCableManager>(modelFile);
     std::string outFile = "results.json";
     ojson out2;
     json args;
     auto res = manager->computeFEM(args, outFile, out2);
-    
+
     return 0;
   }
 
   catch (...) {
-    Siconos::exception::process();
+    siconos::exception::process();
     return 1;
   }
 }

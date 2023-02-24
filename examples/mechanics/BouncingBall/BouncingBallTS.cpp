@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
       k++;
     }
     auto end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
     std::cout << "\nComputation time : " << elapsed << " ms\n";
 
@@ -167,6 +167,8 @@ int main(int argc, char *argv[]) {
     double error = 0.0, eps = 1e-12;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BouncingBallTS.ref", eps)) >= eps)
       return 1;
+
+    return 0;
   }
 
   catch (...) {

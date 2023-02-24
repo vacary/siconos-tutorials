@@ -130,15 +130,12 @@ int main(int argc, char* argv[]) {
     // ================================= Computation =================================
 
     auto eventsManager =
-        EDscheme->eventsManager();  // ponters point to the "eventsManager" object
-    auto _q =
-        simplependulum->q();  // pointer points to the position vector of the rocking block
-    auto _qdot =
-        simplependulum->velocity();  // pointer points to the velocity of the rocking block
+        EDscheme->eventsManager();            // ponters point to the "eventsManager" object
+    auto _q = simplependulum->q();            // pointer points to the position vector
+    auto _qdot = simplependulum->velocity();  // pointer points to the velocity
     simplependulum->initRhs(t0);
     simplependulum->computeRhs(t0);
-    auto _qddot =
-        simplependulum->acceleration();  // pointer points to the velocity of the rocking block
+    auto _qddot = simplependulum->acceleration();
     auto _g = inter->y(0);
     auto indexSet0 = Pendulum->topology()->indexSet(0);
     std::cout << "Size of IndexSet0: " << indexSet0->size() << endl;
@@ -164,13 +161,14 @@ int main(int argc, char* argv[]) {
     bool NSEvent = false;
     unsigned int NumberNSEvent = 0;
     unsigned int k = 0;
-    
+
     auto start = std::chrono::system_clock::now();
     while ((EDscheme->hasNextEvent()) && (k < N)) {
       // std::cout << "--> k = " << k << std::endl;
       EDscheme->advanceToEvent();  // lead the simulation run from one event to the next
       //---------- detect the statue of the current event ------------------------------------
-      if (eventsManager->nextEvent()->getType() == siconos::simulation::EventType::NS)  // the current event is non-smooth
+      if (eventsManager->nextEvent()->getType() ==
+          siconos::simulation::EventType::NS)  // the current event is non-smooth
       {
         NSEvent = true;
       };
@@ -183,8 +181,7 @@ int main(int argc, char* argv[]) {
       if (NSEvent) {
         DataPlot(k, 0) = EDscheme->startingTime();  // instant at non-smooth event
         const auto& _qMemory = simplependulum->qMemory().getSiconosVector(0);
-        const auto& _qdotMemory =
-            simplependulum->velocityMemory().getSiconosVector(0);
+        const auto& _qdotMemory = simplependulum->velocityMemory().getSiconosVector(0);
         DataPlot(k, 1) = _qMemory(0);
         DataPlot(k, 2) = _qMemory(1);
         DataPlot(k, 3) = _qdotMemory(0);
@@ -223,6 +220,7 @@ int main(int argc, char* argv[]) {
     if ((error = siconos::algebra::io::compareRefFile(
              DataPlot, "SimplePendulumED_AlphaScheme.ref", eps)) > eps)
       return 1;
+    return 0;
   }
 
   catch (...) {

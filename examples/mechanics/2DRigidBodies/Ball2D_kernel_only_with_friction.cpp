@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,6 @@
  * limitations under the License.
  */
 
-/*!\file BouncingBallTS.cpp
-  \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
-  V. Acary, F. Perignon.
-
-  A 2D Ball bouncing on the ground.
-  Direct description of the model.
-  Simulation with a Time-Stepping scheme.
-*/
 #include <SiconosKernel.hpp>
 #include <chrono>
 
