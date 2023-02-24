@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -205,8 +205,6 @@ int main(int argc, char *argv[]) {
     // Building the prismatic joint for beam3
     // input  - the first concerned DS : beam3
     //        - an axis in the spatial frame (absolute frame)
-    // auto H4= std::make_shared<Matrix>(PrismaticJointR::numberOfConstraints(), qDim);
-    // H4->zero();
     auto axe1 = std::make_shared<Vector>(3);
     axe1->zero();
     axe1->setValue(0, 1);
@@ -282,11 +280,6 @@ int main(int argc, char *argv[]) {
     int k = 0;
 
     auto start = std::chrono::system_clock::now();
-    auto yAux = std::make_shared<Vector>(3);
-    yAux->setValue(0, 1);
-    auto Jaux = std::make_shared<Matrix>(3, 3);
-    std::vector<unsigned int> dimIndex(2);
-    decltype(dimIndex) startIndex(4);
     fprintf(pFile, "double T[%d*%d]={", N + 1, outputSize);
     double beamTipTrajectories[6];
 

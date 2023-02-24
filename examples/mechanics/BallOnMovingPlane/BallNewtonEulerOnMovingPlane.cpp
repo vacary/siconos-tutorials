@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,8 +57,6 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
 
   void computeh(double time, const siconos::algebra::BlockVector& q0,
                 siconos::algebra::SiconosVector& y) override {
-    std::cout << "my_NewtonEulerR:: computeh \n";
-    std::cout << "q0.size() = " << q0.size() << "\n";
     double height = q0.getValue(0) - _sBallRadius - q0.getValue(7);
 
     y.setValue(0, height);
@@ -143,17 +141,8 @@ int main(int argc, char* argv[]) {
     // // -- Set external forces (weight) --
     movingplane->setFExtPtr(weight);
 
-    auto bdindex = std::make_shared<std::vector<unsigned int>>(1);
-    (*bdindex)[0] = 0;
-
-    // auto bdPrescribedVelocity= std::make_shared<Vector>(1));
-    // bdPrescribedVelocity->setValue(0,0.5);
-    // auto bd =
-    // std::make_shared<siconos::modeling::BoundaryCondition>(bdindex,bdPrescribedVelocity));
-
-    auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(bdindex);
+    auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(siconos::modeling::BoundaryCondition::Indices{0});
     bd->setComputePrescribedVelocityFunction("BallOnMovingPlanePlugin", "prescribedvelocity");
-
     movingplane->setBoundaryConditions(bd);
 
     // --------------------

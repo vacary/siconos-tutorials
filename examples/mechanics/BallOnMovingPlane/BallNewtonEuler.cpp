@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,19 +132,9 @@ int main(int argc, char* argv[]) {
     (*weight)(0) = -m * g;
     ball->setFExtPtr(weight);
 
-    auto bdindex = std::make_shared<std::vector<unsigned int>>(3);
-    (*bdindex)[0] = 0;
-    (*bdindex)[1] = 3;
-    (*bdindex)[2] = 5;
-
-    // auto bdPrescribedVelocity= std::make_shared<Vector>(1));
-    // bdPrescribedVelocity->setValue(0,0.5);
-    // auto bd =
-    // std::make_shared<siconos::modeling::BoundaryCondition>(bdindex,bdPrescribedVelocity));
-
-    auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(bdindex);
+    //siconos::modeling::BoundaryCondition::Indices bdindex = {0, 3, 5};
+    auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(siconos::modeling::BoundaryCondition::Indices{0, 3, 5});
     bd->setComputePrescribedVelocityFunction("BallOnMovingPlanePlugin", "prescribedvelocity3");
-
     ball->setBoundaryConditions(bd);
 
     // --------------------
@@ -252,8 +242,8 @@ int main(int argc, char* argv[]) {
 
     auto start = std::chrono::system_clock::now();
     while (s->hasNextEvent()) {
-      //std::cout << "step " << k << std::endl;
-      //       s->computeOneStep();
+      // std::cout << "step " << k << std::endl;
+      //        s->computeOneStep();
       s->advanceToEvent();
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
