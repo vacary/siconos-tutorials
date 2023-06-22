@@ -43,19 +43,17 @@
 //
 //-----------------------------------------------------------------------
 
-#include "SiconosKernel.hpp"
 #include <chrono>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "MeshUtils.hpp"
 #include "FiniteElementLinearTIDS.hpp"
-#include "SiconosAlgebraProd.hpp"
+//#include "SiconosAlgebraProd.hpp"
+#include "SiconosVector.hpp"
 
 
 using namespace std;
-//using namespace siconos::mechanics::fem::native;
-
 
 int main(int argc, char* argv[])
 {
@@ -63,18 +61,8 @@ int main(int argc, char* argv[])
     double T = 500e-1;        // Total simulation time
     double h_step = 1.0e-2;// Time step
 
-    double m = 1; // mass
-    double k = 10; // stiffness of the spring
-    double b = 1; // B matrix, trivial here
+    double sigmaMax = 100.0;
 
-    double vInit = 0.3;    // initial velocity
-    double xInit = 0.0;    // initial position
-    double sigmaInit = k*xInit;    // initial stress
-    double sigmaMax = 1.5;
-
-    double Ly= 1.0;
-    //  std::shared_ptr<Mesh> mesh = create2dMesh2x1();
-    //  std::shared_ptr<Mesh> mesh = create2dMeshnxm(50, 15 , 3., Ly);
     //string gmsh_filename = "./mesh_data/triangle_felippa.msh";
 //    string gmsh_filename = "./mesh_data/triangle_reference.msh";
 //    string gmsh_filename = "./mesh_data/triangle.msh";
@@ -91,32 +79,30 @@ int main(int argc, char* argv[])
     int boundary_condition_tag = 2;
     int applied_force_tag = 3;
 
-    //std::shared_ptr<Material> mat1 = std::make_shared<Material>(1, 8*36/5., 1/5.); // material for  triangle_felippa.msh
     double density = 7000;
     std::shared_ptr<Material> mat1 = std::make_shared<Material>(density, 1.0e3, 0.3);
     std::map<unsigned int, std::shared_ptr<Material> > materials = {{bulk_material_tag, mat1}};
 
-    std::shared_ptr<siconos::mechanics::fem::native::FiniteElementLinearTIDS> FEsolid  = std::make_shared<siconos::mechanics::fem::native::FiniteElementLinearTIDS>(mesh, materials, Siconos::SPARSE);
+    std::shared_ptr<siconos::mechanics::fem::native::FiniteElementLinearTIDS> FEsolid  = std::make_shared<siconos::mechanics::fem::native::FiniteElementLinearTIDS>(mesh, materials, siconos::algebra::UblasType::SPARSE);
     std::shared_ptr<siconos::mechanics::fem::native::FiniteElementModel> femodel = FEsolid->FEModel();
 
 
-    string Modeltitle = "SpringMass";
-
+    string Modeltitle = "2dTriangle";
     try
     {
         int nElements = (femodel->elements()).size();
         double ndofs = (mesh->vertices()).size()*mesh->dim();
-        double dim = 2*ndofs + 3*nElements;
+        unsigned dim = 2*ndofs + 3*nElements;
         // --- Dynamical system specification ---
-        SP::SiconosVector init_state(new SiconosVector(dim));
-        SP::SiconosVector Fext(new SiconosVector(dim));
+        auto init_state = std::make_shared<siconos::algebra::SiconosVector>(dim);
+        auto Fext = std::make_shared<siconos::algebra::SiconosVector>(dim);
         Fext->setValue(3, 100.0);
         Fext->setValue(9, 100.0);
-        SP::SimpleMatrix mass(new SimpleMatrix(ndofs, ndofs));
-        SP::SimpleMatrix stiffness(new SimpleMatrix(ndofs, ndofs));
-        SP::SimpleMatrix Bfem(new SimpleMatrix(3, ndofs));
+        auto mass = std::make_shared<siconos::algebra::SimpleMatrix>(ndofs, ndofs);
+        auto stiffness = std::make_shared<siconos::algebra::SimpleMatrix>(ndofs, ndofs);
+        auto Bfem = std::make_shared<siconos::algebra::SimpleMatrix>(3, ndofs);
         femodel->computeMassMatrix(mass, materials);
-        std::shared_ptr<SimpleMatrix> D = std::make_shared<SimpleMatrix>(3,3);
+        std::shared_ptr<siconos::algebra::SimpleMatrix> D = std::make_shared<siconos::algebra::SimpleMatrix>(3,3);
         double E = mat1->elasticYoungModulus();
         double nu =  mat1->poissonCoefficient();
 
@@ -133,35 +119,22 @@ int main(int argc, char* argv[])
         (*D)(2,1) = 0.0;
         (*D)(2,2) = 0.5*coef*(1.0 - 2* nu);
 
-        //    double coef = E/(1-nu*nu);
-        //    (*D)(0,0) = coef;
-        //    (*D)(0,1) = coef*nu;
-        //    (*D)(0,2) = 0.0;
-
-        //    (*D)(1,0) = (*D)(0,1);
-        //    (*D)(1,1) = (*D)(0,0);
-        //    (*D)(1,2) = 0.0;
-
-        //    (*D)(2,0) = 0.0;
-        //    (*D)(2,1) = 0.0;
-        //    (*D)(2,2) = 0.5*coef*(1.0 - nu);
-
         femodel->computeStiffnessMatrix(stiffness, materials);
 
         std::cout << "nElements:" << nElements << std::endl;
-        SP::SimpleMatrix BigB(new SimpleMatrix(3*nElements, ndofs));
-        std::shared_ptr<SimpleMatrix> DBigB = std::make_shared<SimpleMatrix>(3*nElements,ndofs);
-        std::shared_ptr<SimpleMatrix> DBfem = std::make_shared<SimpleMatrix>(3,ndofs);
+        auto BigB = std::make_shared<siconos::algebra::SimpleMatrix>(3*nElements, ndofs);
+        std::shared_ptr<siconos::algebra::SimpleMatrix> DBigB = std::make_shared<siconos::algebra::SimpleMatrix>(3*nElements,ndofs);
+        std::shared_ptr<siconos::algebra::SimpleMatrix> DBfem = std::make_shared<siconos::algebra::SimpleMatrix>(3,ndofs);
         int elem_cnt = 0;
         for(std::shared_ptr<siconos::mechanics::fem::native::FElement> fe : femodel->elements())
         {
-                    femodel->computeB_Matrix_direct(*fe, *Bfem);
+                    femodel->computeElementaryBMatrix_direct(*fe, *Bfem);
                     prod(*D, *Bfem, *DBfem, true);
                     femodel->AssembleElementary_B_Matrix(BigB,*Bfem,*fe, elem_cnt);
                     femodel->AssembleElementary_B_Matrix(DBigB,*DBfem,*fe, elem_cnt);
                     elem_cnt++;
         }
-        SP::SimpleMatrix M(new SimpleMatrix(dim, dim));
+        auto M = std::make_shared<siconos::algebra::SimpleMatrix>(dim, dim);
         for (int i=0;i<ndofs;i++){
             for (int j=0;j<ndofs;j++){
                 M->setValue(i, j, mass->getValue(i,j));
@@ -175,17 +148,13 @@ int main(int argc, char* argv[])
             M->setValue(i+2*ndofs, i+2*ndofs, 1.0);
         }
 
-        std::shared_ptr<SimpleMatrix> BT = std::make_shared<SimpleMatrix>(ndofs,3*nElements);
+        std::shared_ptr<siconos::algebra::SimpleMatrix> BT = std::make_shared<siconos::algebra::SimpleMatrix>(ndofs,3*nElements);
         BT->trans(*BigB);
-        std::shared_ptr<SimpleMatrix> BTDB = std::make_shared<SimpleMatrix>(ndofs,ndofs);
+        std::shared_ptr<siconos::algebra::SimpleMatrix> BTDB = std::make_shared<siconos::algebra::SimpleMatrix>(ndofs,ndofs);
 
         prod(*BT, *DBigB, *BTDB, true);
 
-        SP::SiconosVector velocity(new SiconosVector(ndofs));
-        SP::SiconosVector DBv(new SiconosVector(3));
-        SP::SiconosVector DBu(new SiconosVector(3));
-
-        SP::SimpleMatrix A(new SimpleMatrix(dim, dim));
+        auto A = std::make_shared<siconos::algebra::SimpleMatrix>(dim, dim);
         for (int i=0;i<ndofs;i++){
             for (int j=0;j<3*nElements;j++){
                 A->setValue(i, j+2*ndofs, -BigB->getValue(j,i));
@@ -200,20 +169,12 @@ int main(int argc, char* argv[])
             A->setValue(i+ndofs, i, 1.0);
         }
 
-        SP::FirstOrderLinearTIDS triangle(new FirstOrderLinearTIDS(init_state, A, Fext));
+        auto triangle = std::make_shared<siconos::modeling::FirstOrderLinearTIDS>(init_state, A, Fext);
         triangle->setMPtr(M);
-        triangle->display();
-        std::cout << "q and velocity from FEmodel:" << std::endl;
-        std::shared_ptr<SiconosVector> q = FEsolid->q();
-        std::shared_ptr<SiconosVector> velo = FEsolid->velocity();
-        for (int i=0;i<6;i++)
-            std::cout << (*q)(i) << std::endl;
-        std::cout << "Velocity from FEmodel:" << std::endl;
-        for (int i=0;i<6;i++)
-            std::cout << (*velo)(i) << std::endl;
+
         // --- Interaction between linear system and non smooth system ---
         int nbConstraints = 10;
-        SP::SimpleMatrix C(new SimpleMatrix(nbConstraints, dim));
+        std::shared_ptr<siconos::algebra::SimpleMatrix> C = std::make_shared<siconos::algebra::SimpleMatrix>(nbConstraints, dim);
         // Position Constraints
         C->setValue(0, ndofs, -1.0);
         C->setValue(1, ndofs, 1.0);
@@ -227,7 +188,7 @@ int main(int argc, char* argv[])
         C->setValue(8, 2*ndofs, -1.0);
         C->setValue(9, 2*ndofs, 1.0);
 
-        SP::SimpleMatrix B(new SimpleMatrix(dim, nbConstraints));
+        auto B = std::make_shared<siconos::algebra::SimpleMatrix>(dim, nbConstraints);
         B->setValue(0, 0, -1.0);
         B->setValue(0, 1, 1.0);
         B->setValue(0+1, 2, -1.0);
@@ -239,7 +200,7 @@ int main(int argc, char* argv[])
         // Stress Constraints
         B->setValue(2*ndofs, 8, -1.0);
         B->setValue(2*ndofs, 9, 1.0);
-        SP::SiconosVector e(new SiconosVector(nbConstraints));
+        auto e = std::make_shared<siconos::algebra::SiconosVector>(nbConstraints);
         e->setValue(0, 0.00001);
         e->setValue(1, 0.00001);
         e->setValue(2, 0.00001);
@@ -249,18 +210,18 @@ int main(int argc, char* argv[])
         e->setValue(6, 0.00001);
         e->setValue(7, 0.00001);
         // Stress Constraints
-        e->setValue(8, 100);
-        e->setValue(9, 100);
-        SP::FirstOrderLinearTIR LTIRspring(new FirstOrderLinearTIR(C, B));
-        LTIRspring->setePtr(e);
-        SP::NonSmoothLaw NSLaw(new ComplementarityConditionNSL(nbConstraints));
+        e->setValue(8, sigmaMax);
+        e->setValue(9, sigmaMax);
 
-        SP::Interaction InterTriangle(new Interaction(NSLaw, LTIRspring));
-        InterTriangle->display();
+        auto LTIRspring = std::make_shared<siconos::modeling::FirstOrderLinearTIR>(C,B);
+        LTIRspring->setePtr(e);
+
+        auto NSLaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(nbConstraints);
+
+        auto InterTriangle = std::make_shared<siconos::modeling::Interaction>(NSLaw, LTIRspring);
         // --- Model creation ---
-        SP::NonSmoothDynamicalSystem springDS(new NonSmoothDynamicalSystem(t0, T));
+        auto springDS = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
         springDS->setTitle(Modeltitle);
-        // add the dynamical system in the non smooth dynamical system
         springDS->insertDynamicalSystem(triangle);
 
         // link the interaction and the dynamical system
@@ -276,36 +237,25 @@ int main(int argc, char* argv[])
         // --- Simulation ---
         // ------------------
         double theta = 0.5000000000001;
-        //    double theta = 1.0;
-
         // -- (1) OneStepIntegrators --
-        SP::EulerMoreauOSI OSI(new EulerMoreauOSI(theta));
 
+        auto OSI = std::make_shared<siconos::integrators::EulerMoreauOSI>(theta);
         // -- (2) Time discretisation --
-        SP::TimeDiscretisation TiDis(new TimeDiscretisation(t0, h_step));
+        auto TiDis = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h_step);
         // --- (3) one step non smooth problem
-        SP::LCP LCP_triangle(new LCP());
-        //    SP::Relay LCP_spring(new Relay());
+        auto LCP_triangle = std::make_shared<siconos::nonsmooth_formulations::LCP>();
 
         // -- (4) Simulation setup with (1) (2) (3)
-        SP::TimeStepping springMassTS(new TimeStepping(springDS, TiDis,OSI ,LCP_triangle));
-        //    SP::TimeStepping springMassTS(new TimeStepping(springDS, TiDis));
-        //    springMassTS->insertIntegrator(OSI);
+        auto springMassTS = std::make_shared<siconos::simulation::TimeStepping>(springDS, TiDis,OSI ,LCP_triangle);
         double h = springMassTS->timeStep();
         int N = ceil((T - t0) / h); // Number of time steps
         int k = 0;
 
         // --- Get the values to be plotted ---
         // -> saved in a matrix dataPlot
-        SimpleMatrix dataPlot(N, 22);
+        siconos::algebra::SimpleMatrix dataPlot(N, 22);
 
         // For the initial time step:
-        std::cout << "q and velocity initially:" << std::endl;
-        for (int i=6;i<12;i++)
-            std::cout << (*triangle->x())(i) << std::endl;
-        std::cout << "Velocity from FEmodel:" << std::endl;
-        for (int i=0;i<6;i++)
-            std::cout << (*triangle->x())(i) << std::endl;
 
         // time
         dataPlot(k, 0) = springMassTS->nextTime();
@@ -324,7 +274,6 @@ int main(int argc, char* argv[])
         start = std::chrono::system_clock::now();
 
         // --- Time loop  ---
-        SP::SiconosVector displacement(new SiconosVector(ndofs));
         std::string filename = "triangle.state";
         FILE * foutput = fopen(filename.c_str(), "w");
         fclose(foutput);
@@ -332,11 +281,6 @@ int main(int argc, char* argv[])
         {
             // solve ...
             springMassTS->computeOneStep();
-            std::shared_ptr<SiconosVector> q = FEsolid->q();
-            std::shared_ptr<SiconosVector> velo = FEsolid->velocity();
-            for (int i=0;i<ndofs;i++)
-                displacement->setValue(i,(*triangle->x())(i+ndofs));
-            siconos::mechanics::fem::native::writePositionforSOFA(mesh,femodel, displacement, filename,  springMassTS->nextTime());
             // --- Get values to be plotted ---
             // time
             dataPlot(k, 0) = springMassTS->nextTime();
@@ -364,12 +308,7 @@ int main(int argc, char* argv[])
 
 
         // dataPlot (ascii) output
-        ioMatrix::write("plasticTriangle.dat", "ascii", dataPlot, "noDim");
-
-        //    double error=0.0, eps=1e-12;
-        //    if((error=ioMatrix::compareRefFile(dataPlot, "CircuitRLCD.ref", eps)) >= 0.0
-        //        && error > eps)
-        //      return 1;
+        siconos::algebra::io::write("plasticTriangle.dat", dataPlot,siconos::algebra::io::ASCII_OUT, siconos::algebra::io::WriteType::nodim);
 
     }
 
@@ -377,7 +316,7 @@ int main(int argc, char* argv[])
     // --- Exceptions handling ---
     catch(...)
     {
-        Siconos::exception::process();
+        siconos::exception::process();
         return 1;
     }
 }
