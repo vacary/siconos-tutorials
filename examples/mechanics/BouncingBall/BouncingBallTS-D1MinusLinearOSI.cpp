@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
 
     // -- (1) OneStepIntegrators --
     auto OSI = std::make_shared<siconos::integrators::D1MinusLinearOSI>(
-        siconos::integrators::D1MinusLinearOSI::D1MinusType::halfexplicit_acceleration_level);
+        siconos::integrators::D1MinusLinearOSI::Type::halfexplicit_acceleration_level);
 
     // -- (2) Time discretisation --
     auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
