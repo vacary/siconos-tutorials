@@ -23,11 +23,14 @@
 #include <chrono>
 #include <stdio.h>
 
+#include "FENode.hpp"
+#include "FiniteElementModel.hpp"
 #include "MeshUtils.hpp"
 #include "FiniteElementLinearTIDS.hpp"
+#include "Material.hpp"
 
 using namespace std;
-using namespace siconos::mechanics::fem::native;
+using namespace siconos::mechanics::fem;
 
 int main(int argc, char* argv[])
 {
@@ -37,9 +40,9 @@ int main(int argc, char* argv[])
 //  std::shared_ptr<Mesh> mesh = create2dMeshnxm(50, 15 , 3., Ly);
   Ly =1.0;
   //string gmsh_filename = "./mesh_data/triangle_felippa.msh";
-  //string gmsh_filename = "./mesh_data/triangle_reference.msh";
-  //string gmsh_filename = "./mesh_data/square_6.msh";
-  string gmsh_filename = "./mesh_data/square_200.msh";
+//  string gmsh_filename = "./mesh_data/triangle_reference.msh";
+  string gmsh_filename = "./mesh_data/square_6.msh";
+//  string gmsh_filename = "./mesh_data/square_200.msh";
   //string gmsh_filename = "./mesh_data/square_2720.msh";
 
   std::shared_ptr<Mesh> mesh(createMeshFromGMSH2(gmsh_filename));
@@ -61,7 +64,7 @@ int main(int argc, char* argv[])
   {
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
-    std::shared_ptr<FiniteElementLinearTIDS> FEsolid  = std::make_shared<FiniteElementLinearTIDS>(mesh, materials, Siconos::SPARSE);
+    std::shared_ptr<FiniteElementLinearTIDS> FEsolid  = std::make_shared<FiniteElementLinearTIDS>(mesh, materials, siconos::algebra::UblasType::SPARSE);
     end = std::chrono::system_clock::now();
     int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
                   (end-start).count();
@@ -76,9 +79,9 @@ int main(int argc, char* argv[])
 
     /*------------------------------------------------- Applied forces  */
 
-    std::shared_ptr<SiconosVector> nodal_forces = std::make_shared<SiconosVector>(2);
+    std::shared_ptr<siconos::algebra::SiconosVector> nodal_forces = std::make_shared<siconos::algebra::SiconosVector>(2);
     nodal_forces->zero();
-    //(*nodal_forces)(0) = 1e6;
+//    (*nodal_forces)(0) = 1e6;
     (*nodal_forces)(1) = -1e7;
     FEsolid->applyNodalForces(applied_force_tag, nodal_forces);
 
@@ -87,7 +90,7 @@ int main(int argc, char* argv[])
     /* This part should be hidden in a new BC function for a node number
      * and a dof index. */
 
-    std::shared_ptr<IndexInt> node_dof_index = std::make_shared<IndexInt>(0);
+    std::shared_ptr<std::vector<int>> node_dof_index = std::make_shared<std::vector<int>>(0);
     node_dof_index->push_back(0);
     node_dof_index->push_back(1);
 
@@ -102,30 +105,32 @@ int main(int argc, char* argv[])
     double h = 1e-05;                // time step
     double theta = 1.0;              // theta for MoreauJeanOSI integrator
 
-    std::shared_ptr<NonSmoothDynamicalSystem> solid = std::make_shared<NonSmoothDynamicalSystem>(t0, T);
-
+    std::shared_ptr<siconos::modeling::NonSmoothDynamicalSystem> solid = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
+    cout << "plop .. " << endl;
     // add the dynamical system in the non smooth dynamical system
     solid->insertDynamicalSystem(FEsolid);
 
     /*------------------------------------------------- Contact Conditions  */
     double e =0.0;
-    std::shared_ptr<NonSmoothLaw> nslaw = std::make_shared<NewtonImpactNSL>(e);
-    std::shared_ptr<SiconosVector>  initial_gap = std::make_shared<SiconosVector>(1, Ly*5e-4);
+    std::shared_ptr<siconos::modeling::NonSmoothLaw> nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
+    std::shared_ptr<siconos::algebra::SiconosVector>  initial_gap = std::make_shared<siconos::algebra::SiconosVector>(1, Ly*5e-4);
     for(std::shared_ptr<FENode> n : femodel->nodes())
     {
       if(fabs(n->y()) <= 1e-16 and fabs(n->x()) >= 1e-16)
       {
         std::cout << "contact node number : " << n->num() << " " << n->y() <<  std::endl;
         unsigned int idx_y = (*n->dofIndex())[1];
-        std::shared_ptr<SimpleMatrix> H = std::make_shared<SimpleMatrix>(1, FEsolid->dimension());
+        std::shared_ptr<siconos::algebra::SimpleMatrix> H = std::make_shared<siconos::algebra::SimpleMatrix>(1, FEsolid->dimension());
         (*H)(0, idx_y) = 1.0;
-        std::shared_ptr<NonSmoothLaw> nslaw = std::make_shared<NewtonImpactNSL>(e);
-        std::shared_ptr<Relation> relation = std::make_shared<LagrangianLinearTIR>(H, initial_gap);
-        std::shared_ptr<Interaction> inter = std::make_shared<Interaction>(nslaw, relation);
+        std::shared_ptr<siconos::modeling::NonSmoothLaw> nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
+        std::shared_ptr<siconos::modeling::Relation> relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H, initial_gap);
+        std::shared_ptr<siconos::modeling::Interaction> inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
+        solid->display();
         // link the interaction and the dynamical system
         solid->link(inter, FEsolid);
       }
     }
+    cout << "plopdsaf .. " << endl;
 
     // // link the interaction and the dynamical system
     // bouncingBall->link(inter, FEsolid);
@@ -135,43 +140,43 @@ int main(int argc, char* argv[])
     // ------------------
 
     // -- (1) OneStepIntegrators --
-    std::shared_ptr<MoreauJeanOSI> OSI = std::make_shared<MoreauJeanOSI>(theta);
+    std::shared_ptr<siconos::integrators::MoreauJeanOSI> OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
     OSI->setIsWSymmetricDefinitePositive(true);
 
 
     // -- (2) Time discretisation --
-    std::shared_ptr<TimeDiscretisation> t = std::make_shared<TimeDiscretisation>(t0, h);
+    std::shared_ptr<siconos::simulation::TimeDiscretisation> t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
     // -- (3) one step non smooth problem
-    std::shared_ptr<OneStepNSProblem> osnspb = std::make_shared<LCP>();
+    std::shared_ptr<siconos::nonsmooth_formulations::OneStepNSProblem> osnspb = std::make_shared<siconos::nonsmooth_formulations::LCP>();
 
     // -- (4) Simulation setup with (1) (2) (3)
-    std::shared_ptr<TimeStepping> s = std::make_shared<TimeStepping>(solid, t, OSI, osnspb);
+    std::shared_ptr<siconos::simulation::TimeStepping> s = std::make_shared<siconos::simulation::TimeStepping>(solid, t, OSI, osnspb);
 
     // =========================== End of model definition ===========================
 
     // ================================= Computation =================================
 
+    cout << "plosfdasfasfp .. " << endl;
 
     int N = ceil((T - t0) / h); // Number of time steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 5;
-    SimpleMatrix dataPlot(N + 1, outputSize);
+    siconos::algebra::SimpleMatrix dataPlot(N + 1, outputSize);
 
-    std::shared_ptr<SiconosVector> q = FEsolid->q();
-    std::shared_ptr<SiconosVector> v = FEsolid->velocity();
-    std::shared_ptr<SiconosVector> p = FEsolid->p(1);
-    //std::shared_ptr<SiconosVector> lambda = inter->lambda(1);
-
+    std::shared_ptr<siconos::algebra::SiconosVector> q = FEsolid->q();
+    std::shared_ptr<siconos::algebra::SiconosVector> v = FEsolid->velocity();
+    std::shared_ptr<siconos::algebra::SiconosVector> p = FEsolid->p(1);
+//    std::shared_ptr<siconos::algebra::SiconosVector> lambda = inter->lambda(1);
     dataPlot(0, 0) = solid->t0();
     dataPlot(0, 1) = (*q)(FEsolid->dimension()-1);
     dataPlot(0, 2) = (*v)(FEsolid->dimension()-1);
-    dataPlot(0, 3) = (*p)(0);
-    //dataPlot(0, 4) = (*lambda)(0);
+//    dataPlot(0, 4) = (*lambda)(0);
 
     std::string filename = prepareWriteDisplacementforPython("T3");
+    cout << "plop18 .. " << endl;
     writeDisplacementforPython(mesh, femodel, q, filename);
 
     // --- Time loop ---
@@ -181,7 +186,10 @@ int main(int argc, char* argv[])
     start = std::chrono::system_clock::now();
     while(s->hasNextEvent())
     {
+        cout << "k is ... : " << k << endl;
+
       s->computeOneStep();
+      cout << "Out compute onestep ... : "  << endl;
       //osnspb->display();
       // --- Get values to be plotted ---
       dataPlot(k, 0) =  s->nextTime();
@@ -195,7 +203,7 @@ int main(int argc, char* argv[])
       //dataPlot(k, 4) = (*lambda)(0);
       s->nextStep();
       k++;
-      progressBar((double)k/N);
+      siconos::tools::progressBar((double)k/N);
 
     }
     end = std::chrono::system_clock::now();
@@ -207,9 +215,9 @@ int main(int argc, char* argv[])
     // --- Output files ---
     cout << "====> Output file writing ..." << endl;
     dataPlot.resize(k, outputSize);
-    ioMatrix::write("T3.dat", "ascii", dataPlot, "noDim");
+    siconos::algebra::io::write("T3.dat", dataPlot, siconos::algebra::io::ASCII_OUT, siconos::algebra::io::WriteType::nodim);
     double error=0.0, eps=1e-12;
-    if((error=ioMatrix::compareRefFile(dataPlot, "T3_square_200.ref", eps)) >= 0.0
+    if((error=siconos::algebra::io::compareRefFile(dataPlot, "T3_square_200.ref", eps)) >= 0.0
         && error > eps)
       return 1;
 
@@ -222,7 +230,7 @@ int main(int argc, char* argv[])
   catch(...)
   {
     cerr << "Exception caught in T3.cpp" << endl;
-    Siconos::exception::process();
+    siconos::exception::process();
     return 1;
   }
 
