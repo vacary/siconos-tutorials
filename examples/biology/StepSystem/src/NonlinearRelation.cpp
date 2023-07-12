@@ -3,22 +3,18 @@
 
 #include "NonlinearRelation.hpp"
 
-//#include "const.h"
-
+// #include "const.h"
 
 // #define DEBUG_STDOUT
 // #define DEBUG_MESSAGES
 #include "siconos_debug.h"
 
-NonlinearRelation::NonlinearRelation():
-  FirstOrderType2R()
-{
-}
-
 /*y = h(X)*/
-void NonlinearRelation::computeh(double t, const BlockVector& x, const SiconosVector& lambda, SiconosVector& y)
-{
-  DEBUG_PRINTF("NonlinearRelation::computeh at time %e\n ", t);
+void user_defined::NonlinearRelation::computeh(double t,
+                                               const siconos::algebra::BlockVector& x,
+                                               const siconos::algebra::SiconosVector& lambda,
+                                               siconos::algebra::SiconosVector& y) {
+  DEBUG_PRINTF("user_defined::NonlinearRelation::computeh at time %e\n ", t);
   DEBUG_EXPR(x.display());
   DEBUG_EXPR(lambda.display());
   y.setValue(0, 4.0 - x(0));
@@ -29,37 +25,38 @@ void NonlinearRelation::computeh(double t, const BlockVector& x, const SiconosVe
 }
 
 /*g=g(lambda)*/
-void NonlinearRelation::computeg(double t, const SiconosVector& lambda, BlockVector& r)
-{
-  DEBUG_PRINTF("NonlinearRelation::computeg at time %e\n ", t);
+void user_defined::NonlinearRelation::computeg(double t,
+                                               const siconos::algebra::SiconosVector& lambda,
+                                               siconos::algebra::BlockVector& r) {
+  DEBUG_PRINTF("user_defined::NonlinearRelation::computeg at time %e\n ", t);
   DEBUG_EXPR(lambda.display());
 
   r.setValue(0, 40.0 * (1 - lambda(2)) * (lambda(1)));
   r.setValue(1, 40.0 * (lambda(0)) * (1 - lambda(3)));
   /*
   #ifdef SICONOS_DEBUG
-    std::cout<<"NonlinearRelation::computeg with lambda="<<std::endl;
+    std::cout<<"user_defined::NonlinearRelation::computeg with lambda="<<std::endl;
     lambda.display();
     std::cout<<std::endl;
-    std::cout<<"NonlinearRelation::computeg modif g_alpha : \n";
+    std::cout<<"user_defined::NonlinearRelation::computeg modif g_alpha : \n";
     inter.data(g_alpha)->display();
     std::cout<<std::endl;
   #endif
   */
   DEBUG_EXPR(r.display());
-
-
 }
 
-void NonlinearRelation::computeJachlambda(double t, const BlockVector& x, const SiconosVector& lambda, SimpleMatrix& D)
-{
-  DEBUG_PRINTF("NonlinearRelation::computeJachlambda at time %e\n ", t);
+void user_defined::NonlinearRelation::computeJachlambda(
+    double t, const siconos::algebra::BlockVector& x,
+    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SimpleMatrix& D) {
+  DEBUG_PRINTF("user_defined::NonlinearRelation::computeJachlambda at time %e\n ", t);
   D.zero();
 }
 
-void NonlinearRelation::computeJachx(double t, const BlockVector& x, const SiconosVector& lambda, SimpleMatrix& C)
-{
-  DEBUG_PRINTF("NonlinearRelation::computeJachx at time %e\n ", t);
+void user_defined::NonlinearRelation::computeJachx(
+    double t, const siconos::algebra::BlockVector& x,
+    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SimpleMatrix& C) {
+  DEBUG_PRINTF("user_defined::NonlinearRelation::computeJachx at time %e\n ", t);
 
   C.setValue(0, 0, -1);
   C.setValue(0, 1, 0);
@@ -70,14 +67,13 @@ void NonlinearRelation::computeJachx(double t, const BlockVector& x, const Sicon
   C.setValue(3, 0, 0);
   C.setValue(3, 1, -1);
   DEBUG_EXPR(C.display());
-
 }
 
-void NonlinearRelation::computeJacglambda(double t, const SiconosVector& lambda, SimpleMatrix& B)
-{
-  DEBUG_PRINTF("NonlinearRelation::computeJacglambda at time %e\n ", t);
+void user_defined::NonlinearRelation::computeJacglambda(
+    double t, const siconos::algebra::SiconosVector& lambda,
+    siconos::algebra::SimpleMatrix& B) {
+  DEBUG_PRINTF("user_defined::NonlinearRelation::computeJacglambda at time %e\n ", t);
   DEBUG_EXPR(lambda.display());
-
 
   B.setValue(0, 0, 0);
   B.setValue(1, 0, 40.0 * (1 - lambda(3)));
@@ -91,7 +87,5 @@ void NonlinearRelation::computeJacglambda(double t, const SiconosVector& lambda,
   B.setValue(0, 3, 0);
   B.setValue(1, 3, -40.0 * lambda(0));
   DEBUG_EXPR(B.display());
-
 }
 #endif
-

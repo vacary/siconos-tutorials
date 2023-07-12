@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
-
-// =============================== Robot arm sample (HuMAnsPa10) ===============================
+// =============================== Robot arm sample (HuMAnsPa10)
+// ===============================
 //
 // see modelRobot1.jpg for complete system view.
 //
@@ -25,33 +25,32 @@
 //
 // =============================================================================================
 
-
 #define _USE_MATH_DEFINES
-#include "SiconosKernel.hpp"
-#include <chrono>
 #include <math.h>
+
+#include <SiconosKernel.hpp>
+#include <SiconosPointers.hpp>
+#include <chrono>
 
 #define PI 3.14159265
 
+using Matrix = siconos::algebra::SimpleMatrix;
+using Vector = siconos::algebra::SiconosVector;
 using namespace std;
 
-
-int main(int argc, char* argv[])
-{
-  try
-  {
-
+int main(int argc, char* argv[]) {
+  try {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 4;           // degrees of freedom for robot arm
-    double t0 = 0;                   // initial computation time
-    double T = 30;                   // final computation time
-    double h = 1e-3;                // time step
+    unsigned int nDof = 4;  // degrees of freedom for robot arm
+    double t0 = 0;          // initial computation time
+    double T = 30;          // final computation time
+    double h = 1e-3;        // time step
     double criterion = 1e-8;
     unsigned int maxIter = 20000;
     double e = 0.0;
-    //double L = 0.0;
+    // double L = 0.0;
     int test = 0;
     int nimpact = 0;
 
@@ -63,17 +62,18 @@ int main(int argc, char* argv[])
 
     // --- DS: manipulator arm ---
 
-    // The dof are angles between ground and arm and between differents parts of the arm. (See corresponding .pdf for more details)
+    // The dof are angles between ground and arm and between differents parts of the arm. (See
+    // corresponding .pdf for more details)
 
     // Initial position (angles in radian)
-    SiconosVector q0(nDof), v0(nDof);
+    Vector q0(nDof), v0(nDof);
     q0.zero();
     v0.zero();
     q0(0) = 1.5;
     q0(1) = -0.9;
     q0(2) = 1.5;
     q0(3) = -0.9;
-    SP::SiconosVector z(new SiconosVector(nDof * 6 + 1));
+    auto z = std::make_shared<Vector>(nDof * 6 + 1);
     (*z)(0) = q0(0);
     (*z)(1) = q0(1);
     (*z)(2) = v0(0);
@@ -88,10 +88,10 @@ int main(int argc, char* argv[])
     (*z)(11) = PI;
     (*z)(12) = 0;
     (*z)(13) = -1;
-    (*z)(14) = 0;//q0(2);
-    (*z)(15) = 0;//q0(3);
-    (*z)(16) = 0;//v0(2);
-    (*z)(17) = 0;//v0(3);
+    (*z)(14) = 0;  // q0(2);
+    (*z)(15) = 0;  // q0(3);
+    (*z)(16) = 0;  // v0(2);
+    (*z)(17) = 0;  // v0(3);
     (*z)(18) = 0;
     (*z)(19) = 0;
     (*z)(20) = 0;
@@ -100,8 +100,8 @@ int main(int argc, char* argv[])
     (*z)(23) = 0;
     (*z)(24) = 0;
 
-
-    SP::LagrangianDS  arm(new LagrangianDS(createSPtrSiconosVector(q0), createSPtrSiconosVector(v0)));
+    auto arm = std::make_shared<siconos::modeling::LagrangianDS>(
+        siconos::pointers::createSPtr(q0), siconos::pointers::createSPtr(v0));
 
     // external plug-in
     arm->setComputeMassFunction("TwolinkMultiFlexPlugin", "mass");
@@ -121,21 +121,25 @@ int main(int argc, char* argv[])
     //  Both with newton impact nslaw.
     // -- relations --
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-    SP::Relation relation01(new LagrangianScleronomousR("TwolinkMultiFlexPlugin:h01", "TwolinkMultiFlexPlugin:G01"));
-    SP::Interaction inter01(new Interaction(nslaw, relation01));
-    SP::Relation relation02(new LagrangianScleronomousR("TwolinkMultiFlexPlugin:h02", "TwolinkMultiFlexPlugin:G02"));
-    SP::Interaction inter02(new Interaction(nslaw, relation02));
+    auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
+    auto relation01 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
+        "TwolinkMultiFlexPlugin:h01", "TwolinkMultiFlexPlugin:G01");
+    auto inter01 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation01);
+    auto relation02 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
+        "TwolinkMultiFlexPlugin:h02", "TwolinkMultiFlexPlugin:G02");
+    auto inter02 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation02);
 
-    SP::Relation relation31(new LagrangianScleronomousR("TwolinkMultiFlexPlugin:h31", "TwolinkMultiFlexPlugin:G31"));
-    SP::Interaction inter31(new Interaction(nslaw, relation31));
-    SP::Relation relation32(new LagrangianScleronomousR("TwolinkMultiFlexPlugin:h32", "TwolinkMultiFlexPlugin:G32"));
-    SP::Interaction inter32(new Interaction(nslaw, relation32));
+    auto relation31 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
+        "TwolinkMultiFlexPlugin:h31", "TwolinkMultiFlexPlugin:G31");
+    auto inter31 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation31);
+    auto relation32 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
+        "TwolinkMultiFlexPlugin:h32", "TwolinkMultiFlexPlugin:G32");
+    auto inter32 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation32);
     // -------------
     // --- Model ---
     // -------------
 
-    SP::NonSmoothDynamicalSystem Manipulator(new NonSmoothDynamicalSystem(t0, T));
+    auto Manipulator = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
     // add the dynamical system in the non smooth dynamical system
     Manipulator->insertDynamicalSystem(arm);
 
@@ -151,58 +155,58 @@ int main(int argc, char* argv[])
     // ----------------
 
     // -- Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
-    SP::TimeStepping s(new TimeStepping(Manipulator, t));
+    auto s = std::make_shared<siconos::simulation::TimeStepping>(Manipulator, t);
     s->setNewtonTolerance(criterion);
     s->setNewtonMaxIteration(maxIter);
     // -- OneStepIntegrators --
-    SP::OneStepIntegrator OSI(new MoreauJeanOSI(0.500001));
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(0.500001);
     s->insertIntegrator(OSI);
 
     // -- OneStepNsProblem --
-    SP::OneStepNSProblem osnspb(new LCP());
+    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::LCP>();
     s->insertNonSmoothProblem(osnspb);
 
-    cout << "=== End of model loading === " << endl;
+    cout << "=== End of model loading === \n";
 
     // =========================== End of model definition ===========================
 
     unsigned int k = 0;
-    unsigned int N = ceil((T - t0) / h); // Number of time steps
+    unsigned int N = ceil((T - t0) / h);  // Number of time steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 16;
-    SimpleMatrix dataPlot(N + 1, outputSize);
+    Matrix dataPlot(N + 1, outputSize);
     // For the initial time step:
     // time
 
-    SP::SiconosVector q = arm->q();
-    SP::SiconosVector v = arm->velocity();
-    SP::SiconosVector p = arm->p(1);
+    auto q = arm->q();
+    auto v = arm->velocity();
+    auto p = arm->p(1);
 
     // Initialization of the dicrete parameter z needs the followinf first computations
     arm->computeJacobianFIntq(t0);
     arm->computeFInt(t0);
     arm->computeJacobianFIntqDot(t0);
-    inter01->computeOutput(t0,0);
-    inter02->computeOutput(t0,0);
-    inter31->computeOutput(t0,0);
-    inter32->computeOutput(t0,0);
+    inter01->computeOutput(t0, 0);
+    inter02->computeOutput(t0, 0);
+    inter31->computeOutput(t0, 0);
+    inter32->computeOutput(t0, 0);
 
     // EventsManager * eventsManager = s->eventsManager();
 
-    dataPlot(k, 0) =  Manipulator->t0();
+    dataPlot(k, 0) = Manipulator->t0();
     dataPlot(k, 1) = (*q)(0);
     dataPlot(k, 2) = (*q)(1);
     dataPlot(k, 3) = (*inter02->y(0))(0);
     dataPlot(k, 4) = (*v)(0);
     dataPlot(k, 5) = (*v)(1);
     dataPlot(k, 6) = (*inter01->y(0))(0) - 2;
-    dataPlot(k, 7) = nimpact; //(*inter->y(1))(1);
+    dataPlot(k, 7) = nimpact;  //(*inter->y(1))(1);
     dataPlot(k, 8) = (*z)(6);
-    dataPlot(k, 9) = (*z)(4); //L
+    dataPlot(k, 9) = (*z)(4);  // L
     dataPlot(k, 10) = (*z)(18);
     dataPlot(k, 11) = test;
     dataPlot(k, 12) = (*p)(1);
@@ -212,12 +216,9 @@ int main(int argc, char* argv[])
 
     bool stop = 0;
 
-
-
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
-    while(k < N)
-    {
+    while (k < N) {
       (*z)(0) = (*q)(0);
       (*z)(1) = (*q)(1);
       (*z)(2) = (*v)(0);
@@ -230,11 +231,10 @@ int main(int argc, char* argv[])
       // get current time step
       k++;
 
-
       //      relation->computeOutput(s->nextTime());
       //  if(k==1106) stop = 1;
 
-      dataPlot(k, 0) =  s->nextTime();
+      dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(0);
       dataPlot(k, 2) = (*q)(1);
 
@@ -242,16 +242,20 @@ int main(int argc, char* argv[])
       dataPlot(k, 4) = (*v)(0);
       dataPlot(k, 5) = (*v)(1);
       dataPlot(k, 6) = (*inter01->y(0))(0) - 2;
-      dataPlot(k, 7) = nimpact; //(*inter->y(1))(1);
+      dataPlot(k, 7) = nimpact;  //(*inter->y(1))(1);
       dataPlot(k, 8) = (*z)(6);
-      if(test == 3) dataPlot(k, 9) = (*z)(4) / h;
-      else dataPlot(k, 9) = (*z)(4);
-      if(test == 5) dataPlot(k, 10) = (*z)(18) / h;
-      else dataPlot(k, 10) = (*z)(18);
+      if (test == 3)
+        dataPlot(k, 9) = (*z)(4) / h;
+      else
+        dataPlot(k, 9) = (*z)(4);
+      if (test == 5)
+        dataPlot(k, 10) = (*z)(18) / h;
+      else
+        dataPlot(k, 10) = (*z)(18);
       dataPlot(k, 11) = test;
       dataPlot(k, 13) = (*z)(14);
       dataPlot(k, 14) = (*z)(15);
-      dataPlot(k, 15) = (*z)(16); //(19)*(*z)(19);
+      dataPlot(k, 15) = (*z)(16);  //(19)*(*z)(19);
 
       s->advanceToEvent();
       dataPlot(k, 12) = (*p)(1);
@@ -263,10 +267,8 @@ int main(int argc, char* argv[])
       //    }
       s->nextStep();
 
-
       //    controller during impacts accumulation phase before the first impact
-      if((dataPlot(k - 1, 14) <= 0.1) && (test == 0) && (dataPlot(k, 13) < 0.6))
-      {
+      if ((dataPlot(k - 1, 14) <= 0.1) && (test == 0) && (dataPlot(k, 13) < 0.6)) {
         (*z)(8) = dataPlot(k, 0);
         (*z)(5) = (*z)(14);
         (*z)(10) = dataPlot(k, 3);
@@ -275,18 +277,17 @@ int main(int argc, char* argv[])
         test = 1;
       }
 
-      //controller during impacts accumulation phase after the first impact
-      if(((*z)(4) > 0) && (test == 1))
-      {
+      // controller during impacts accumulation phase after the first impact
+      if (((*z)(4) > 0) && (test == 1)) {
         (*z)(8) = dataPlot(k, 0);
         arm->setComputeFIntFunction("TwolinkMultiFlexPlugin", "U2");
         test = 2;
       }
-      if(((*z)(4) > 0) && (test == 2))
-        nimpact = nimpact + 1;
+      if (((*z)(4) > 0) && (test == 2)) nimpact = nimpact + 1;
 
       // controller during constraint-motion phase.
-      if(((*z)(4) > 0) && (test == 2) && (dataPlot(k, 7) - dataPlot(k - 3, 7) == 3))  //  && (fabs((*inter0->y(1))(1))<1e-6))
+      if (((*z)(4) > 0) && (test == 2) &&
+          (dataPlot(k, 7) - dataPlot(k - 3, 7) == 3))  //  && (fabs((*inter0->y(1))(1))<1e-6))
       {
         // L= dataPlot(k,0)-(*z)(8);
         (*z)(8) = dataPlot(k, 0);
@@ -295,25 +296,25 @@ int main(int argc, char* argv[])
         nimpact = 0;
       }
       //  controller during impacts accumulation phase after the first impact
-      if((dataPlot(k, 10) > 0) && (test == 3))
-      {
+      if ((dataPlot(k, 10) > 0) && (test == 3)) {
         arm->setComputeFIntFunction("TwolinkMultiFlexPlugin", "U4");
         test = 4;
       }
 
-      if(((*z)(18) > 0) && (test == 4))
-        nimpact = nimpact + 1;
+      if (((*z)(18) > 0) && (test == 4)) nimpact = nimpact + 1;
       // controller during constraint-motion phase.
-      if(((*z)(18) > 0) && (test == 4) && (dataPlot(k, 7) - dataPlot(k - 3, 7) == 3))  // && (fabs((*inter0->y(1))(0))<1e-6))
+      if (((*z)(18) > 0) && (test == 4) &&
+          (dataPlot(k, 7) - dataPlot(k - 3, 7) == 3))  // && (fabs((*inter0->y(1))(0))<1e-6))
       {
         (*z)(8) = dataPlot(k, 0);
         arm->setComputeFIntFunction("TwolinkMultiFlexPlugin", "U5");
         test = 5;
         nimpact = 0;
       }
-      // change of control law with a particular design of the desired trajectory that guarantee the take-off
-      if((trunc((dataPlot(k, 0) + h) / (*z)(11)) > trunc((dataPlot(k, 0)) / (*z)(11))) && (test == 5))
-      {
+      // change of control law with a particular design of the desired trajectory that
+      // guarantee the take-off
+      if ((trunc((dataPlot(k, 0) + h) / (*z)(11)) > trunc((dataPlot(k, 0)) / (*z)(11))) &&
+          (test == 5)) {
         (*z)(8) = dataPlot(k, 0) + h;
         (*z)(10) = (*z)(12);
         arm->setComputeFIntFunction("TwolinkMultiFlexPlugin", "U6");
@@ -322,36 +323,38 @@ int main(int argc, char* argv[])
       }
 
       //  controller during free-motion phase
-      if(((*z)(13) >= 0) && (test == 6))
-      {
+      if (((*z)(13) >= 0) && (test == 6)) {
         arm->setComputeFIntFunction("TwolinkMultiFlexPlugin", "U");
         test = 0;
         (*z)(13) = 0;
       }
 
-      if(stop) break;
-
+      if (stop) break;
     }
     cout << endl << "End of computation - Number of iterations done: " << k << endl;
-    cout << "Computation Time " << endl;
+    cout << "Computation Time \n";
     end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
-                  (end-start).count();
-    cout << "Computation time : " << elapsed << " ms" << endl;
+    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    cout << "Computation time : " << elapsed << " ms\n";
     // --- Output files ---
-    dataPlot.resize(k,outputSize);
-    ioMatrix::write("TwoLinkManipulator_MultiConstraintsFlexible.dat", "ascii", dataPlot, "noDim");
-    double error=0.0, eps=1e-10;
-    if((error=ioMatrix::compareRefFile(dataPlot, "TwoLinkManipulator_MultiConstraintsFlexible.ref", eps)) >= 0.0
-        && error > eps)
+
+    dataPlot.resize(k, outputSize);
+
+    siconos::algebra::io::write("TwoLinkManipulator_MultiConstraintsFlexible.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
+
+    double error = 0.0, eps = 1e-10;
+    if ((error = siconos::algebra::io::compareRefFile(
+             dataPlot, "TwoLinkManipulator_MultiConstraintsFlexible.ref", eps)) > eps)
       return 1;
+    else
+      return 0;
 
   }
 
-  catch(...)
-  {
-    Siconos::exception::process();
+  catch (...) {
+    siconos::exception::process();
     return 1;
   }
-
 }

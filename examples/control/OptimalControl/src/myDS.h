@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 /*! \file MyDSDS.h
   First Order Non Linear Dynamical Systems
@@ -23,7 +23,7 @@
 #ifndef MYDSDS_H
 #define MYDSDS_H
 
-#include "SiconosKernel.hpp"
+#include <SiconosKernel.hpp>
 
 /**  General First Order Non Linear Dynamical Systems
  *
@@ -39,8 +39,9 @@
  * where
  *    - \f$x \in R^{n} \f$ is the state.
  *    - \f$ r \in R^{n} \f$  the input due to the Non Smooth Interaction.
- *    - \f$ z \in R^{zSize}\f$ is a vector of arbitrary algebraic variables, some sort of discret state.
- *  For example, z may be used to set some perturbation parameters, or to control the system (z will be set by some actuators) or anything else.
+ *    - \f$ z \in R^{zSize}\f$ is a vector of arbitrary algebraic variables, some sort of
+ * discret state. For example, z may be used to set some perturbation parameters, or to control
+ * the system (z will be set by some actuators) or anything else.
  *
  *  with \f$ f : R^{n} \times R  \mapsto  R^{n}   \f$ .
  *  and M a nXn matrix.
@@ -53,8 +54,9 @@
  * To define a boundary Value Problem, the pointer on  a BoundaryCondition must be set.
  *
  * \f$ f(x,t) \f$ is a plug-in function, and can be computed using computeF(t).
- * Its Jacobian according to x is denoted jacobianfx, and computed thanks to computeJacobianXF(t).
- * f and jacobianfx can be plugged to external functions thanks to setComputeFFunction/setComputeJacobianXFFunction.
+ * Its Jacobian according to x is denoted jacobianfx, and computed thanks to
+ * computeJacobianXF(t). f and jacobianfx can be plugged to external functions thanks to
+ * setComputeFFunction/setComputeJacobianXFFunction.
  *
  * Right-hand side of the equation is computed thanks to computeRhs(t).
  *
@@ -73,51 +75,47 @@
  *  - M is not allocated by default. The only way to use M is setM or setMPtr.
  *
  */
-class MyDS : public FirstOrderNonLinearDS
-{
+namespace user_defined {
 
-protected :
-  SimpleMatrix * Q;
-  SimpleMatrix * K1;
-  //SimpleMatrix * K1T;
+class MyDS : public siconos::modeling::FirstOrderNonLinearDS {
+ protected:
+  std::shared_ptr<siconos::algebra::SimpleMatrix> Q{nullptr};
+  std::shared_ptr<siconos::algebra::SimpleMatrix> K1{nullptr};
+  // SimpleMatrix * K1T;
 
-public:
+ public:
   /** default constructor
    * \param the type of the system
    */
-  MyDS(SP::SiconosVector x0);
-
+  MyDS(std::shared_ptr<siconos::algebra::SiconosVector> x0);
 
   // ===== DESTRUCTOR =====
 
   /** destructor
    */
-  virtual ~MyDS();
+  virtual ~MyDS() noexcept = default;
 
   /** function to compute \f$ f: (x,t)\f$ with x different from current saved state.
    * \param double time : current time
    * \param SP::SiconosVector
    */
-  virtual void computef(double, SP::SiconosVector);
+  virtual void computef(double, std::shared_ptr<siconos::algebra::SiconosVector>);
+  ;
 
-  /** Default function to compute \f$ \nabla_x f: (x,t) \in R^{n} \times R  \mapsto  R^{n \times n} \f$ with x different from current saved state.
-   *  \param double time : current time
+  /** Default function to compute \f$ \nabla_x f: (x,t) \in R^{n} \times R  \mapsto  R^{n
+   * \times n} \f$ with x different from current saved state. \param double time : current time
    *  \param SP::SiconosVector
    */
-  virtual void computeJacobianfx(double, SP::SiconosVector v);
+  virtual void computeJacobianfx(double, std::shared_ptr<siconos::algebra::SiconosVector>);
 
   /** Default function to the right-hand side term
    *  \param double time : current time
    */
-  void alpha(double t, SP::SiconosVector xvalue, SP::SiconosVector alpha);
-  void JacobianXalpha(double t, SP::SiconosVector xvalue, SP::SiconosMatrix JacXalpha);
-
-
-
+  void alpha(double t, std::shared_ptr<siconos::algebra::SiconosVector> xvalue,
+             std::shared_ptr<siconos::algebra::SiconosVector> alpha);
+  void JacobianXalpha(double t, std::shared_ptr<siconos::algebra::SiconosVector> xvalue,
+                      std::shared_ptr<siconos::algebra::SiconosMatrix> JacXalpha);
 };
-
-TYPEDEF_SPTR(MyDS);
+}  // namespace user_defined
 
 #endif
-
-

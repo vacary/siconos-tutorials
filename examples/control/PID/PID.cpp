@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 /*!\file PID.cpp
   \brief \ref EMPID - C++ input file -
@@ -24,74 +24,76 @@
   The controlled plant is a double integrator
   */
 
-#include "SiconosKernel.hpp"
-#include "SiconosControl.hpp"
-#include "PID.hpp"
-#include "LinearSensor.hpp"
+#include <LinearSensor.hpp>
+#include <PID.hpp>
+#include <SiconosControl.hpp>
+#include <SiconosKernel.hpp>
+#include <chrono>
+#include <string>
 
 using namespace std;
+using Matrix = siconos::algebra::SimpleMatrix;
+using Vector = siconos::algebra::SiconosVector;
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   // ================= Creation of the model =======================
 
   // User-defined main parameters
-  unsigned int nDof = 2;           // degrees of freedom for the system
-  double t0 = 0;                   // initial computation time
-  double T = 100.0;                  // final computation time
-  double h = 0.05;                // time step
+  unsigned int nDof = 2;  // degrees of freedom for the system
+  double t0 = 0;          // initial computation time
+  double T = 100.0;       // final computation time
+  double h = 0.05;        // time step
   double hControl = h;
-  double position_init = 10;      // initial position for lowest bead.
-  double velocity_init = 0.0;      // initial velocity for lowest bead.
-  double xFinal = 0.0;              // final value
+  double position_init = 10;   // initial position for lowest bead.
+  double velocity_init = 0.0;  // initial velocity for lowest bead.
+  double xFinal = 0.0;         // final value
   // -------------------------
   // --- Dynamical systems ---
   // -------------------------
 
   cout << "====> Model loading ..." << endl << endl;
 
-  SP::SiconosMatrix A(new SimpleMatrix(nDof, nDof));
+  auto A = std::make_shared<Matrix>(nDof, nDof);
   A->zero();
   (*A)(0, 1) = 1.0;
 
-  SP::SimpleMatrix B(new SimpleMatrix(nDof, 1));
+  auto B = std::make_shared<Matrix>(nDof, 1);
   (*B)(1, 0) = 1;
 
-
   // -- Initial positions and velocities --
-  SP::SiconosVector x0(new SiconosVector(nDof));
+  auto x0 = std::make_shared<Vector>(nDof);
   (*x0)(0) = position_init;
   (*x0)(1) = velocity_init;
 
   // -- The dynamical system --
-  SP::FirstOrderLinearTIDS doubleIntegrator(new FirstOrderLinearTIDS(x0, A));
+  auto doubleIntegrator = std::make_shared<siconos::modeling::FirstOrderLinearTIDS>(x0, A);
 
   // -------------
   // --- Model ---
   // -------------
-  SP::ControlSimulation sim(new ControlZOHSimulation(t0, T, h));
+  auto sim = std::make_shared<siconos::control::ControlZOHSimulation>(t0, T, h);
 
   // add the dynamical system in the non smooth dynamical system
   sim->addDynamicalSystem(doubleIntegrator);
 
-// use a controlSensor
-  SP::SimpleMatrix C(new SimpleMatrix(1, 2, 0));
+  // use a controlSensor
+  auto C = std::make_shared<Matrix>(1, 2, 0);
   (*C)(0, 0) = 1;
-  SP::LinearSensor sens(new LinearSensor(doubleIntegrator, C));
+  auto sens = std::make_shared<siconos::control::LinearSensor>(doubleIntegrator, C);
   sim->addSensor(sens, hControl);
   // add the PID controller
-  SP::SiconosVector K(new SiconosVector(3, 0));
+  auto K = std::make_shared<Vector>(3, 0);
   (*K)(0) = .25;
   (*K)(1) = .125;
   (*K)(2) = 2;
-  SP::PID act(new PID(sens));
+  auto act = std::make_shared<siconos::control::PID>(sens);
   act->setB(B);
   act->setRef(xFinal);
   act->setK(K);
   act->setDeltaT(h);
   sim->addActuator(act, hControl);
 
-  cout << "=== End of model loading === " << endl;
+  cout << "=== End of model loading === \n";
   // =========================== End of model definition ===========================
 
   // ================================= Computation =================================
@@ -104,25 +106,14 @@ int main(int argc, char* argv[])
   sim->run();
 
   // --- Output files ---
-  cout << "====> Output file writing ..." << endl;
-  SimpleMatrix& dataPlot = *sim->data();
-  ioMatrix::write("result.dat", "ascii", dataPlot, "noDim");
+  cout << "====> Output file writing ...\n";
+  auto& dataPlot = *sim->data();
+  siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+                              siconos::algebra::io::WriteType::nodim);
   // Comparison with a reference file
-  SimpleMatrix dataPlotRef(dataPlot);
-  dataPlotRef.zero();
-  ioMatrix::read("result.ref", "ascii", dataPlotRef);
-
-  std::cout << (dataPlot - dataPlotRef).normInf() << std::endl;
-
-  if((dataPlot - dataPlotRef).normInf() > 1e-12)
-  {
-    std::cout << "Warning. The result is rather different from the reference file." << std::endl;
-    std::cout << (dataPlot - dataPlotRef).normInf() << std::endl;
+  double error = 0.0, eps = 1e-12;
+  if ((error = siconos::algebra::io::compareRefFile(dataPlot, "result.ref", eps)) > eps)
     return 1;
-  }
   else
-  {
     return 0;
-  }
-
 }

@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 /*!\file PrismaticTest.cpp
   \brief \ref
@@ -22,43 +22,44 @@
   Simulation with a Time-Stepping scheme.
 */
 
-#include "SiconosKernel.hpp"
-#include "KneeJointR.hpp"
-#include "PrismaticJointR.hpp"
-#include <boost/math/quaternion.hpp>
+#include <KneeJointR.hpp>
+#include <PrismaticJointR.hpp>
+#include <SiconosKernel.hpp>
 #include <chrono>
-#include <math.h>
+#include <numbers>
+
+#include "GeomTools.h"
+
+using Matrix = siconos::algebra::SimpleMatrix;
+using Vector = siconos::algebra::SiconosVector;
+
 using namespace std;
 
-int main(int argc, char* argv[])
-{
-  try
-  {
-
-
+int main(int argc, char* argv[]) {
+  try {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
     unsigned int nDof = 3;
     unsigned int qDim = 7;
     unsigned int nDim = 6;
-    double t0 = 0;                   // initial computation time
-    double h = 0.001;                // time step
+    double t0 = 0;     // initial computation time
+    double h = 0.001;  // time step
     double T = 10;
-    double theta = 1.0;              // theta for MoreauJeanOSI integrator
-    double g = 9.81; // Gravity
+    double theta = 1.0;  // theta for MoreauJeanOSI integrator
+    double g = 9.81;     // Gravity
     double m = 1.;
 
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
 
-    cout << "====> Model loading ..." << endl << endl;
+    cout << "====> Model loading ...\n";
 
     // -- Initial positions and velocities --
-    SP::SiconosVector q10(new SiconosVector(qDim));
-    SP::SiconosVector v10(new SiconosVector(nDim));
-    SP::SimpleMatrix I1(new SimpleMatrix(3, 3));
+    auto q10 = std::make_shared<Vector>(qDim);
+    auto v10 = std::make_shared<Vector>(nDim);
+    auto I1 = std::make_shared<Matrix>(3, 3);
     v10->zero();
     I1->eye();
     q10->zero();
@@ -66,8 +67,8 @@ int main(int argc, char* argv[])
     q10->setValue(1, 1);
     q10->setValue(2, 1);
 
-    double angle = M_PI / 5;
-    SiconosVector V1(3);
+    double angle = numbers::pi / 5;
+    Vector V1(3);
     V1.zero();
     V1.setValue(0, 3);
     V1.setValue(1, 2);
@@ -77,20 +78,16 @@ int main(int argc, char* argv[])
     V1.setValue(1, V1.getValue(1) / Vnorm);
     V1.setValue(2, V1.getValue(2) / Vnorm);
     q10->setValue(3, cos(angle));
-    q10->setValue(4, V1.getValue(0)*sin(angle));
-    q10->setValue(5, V1.getValue(1)*sin(angle));
-    q10->setValue(6, V1.getValue(2)*sin(angle));
+    q10->setValue(4, V1.getValue(0) * sin(angle));
+    q10->setValue(5, V1.getValue(1) * sin(angle));
+    q10->setValue(6, V1.getValue(2) * sin(angle));
 
     // -- The dynamical system --
-    SP::NewtonEulerDS beam1(new NewtonEulerDS(q10, v10, m, I1));
+    auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1);
     // -- Set external forces (weight) --
-    SP::SiconosVector weight(new SiconosVector(nDof));
+    auto weight = std::make_shared<Vector>(nDof);
     (*weight)(2) = -m * g;
     beam1->setFExtPtr(weight);
-
-
-
-
 
     // --------------------
     // --- Interactions ---
@@ -98,24 +95,25 @@ int main(int argc, char* argv[])
 
     // Interaction ball-floor
     // -- prismatic axis 0,0,1 in absolute frame: ball can only move in Z
-    SP::SiconosVector axis1(new SiconosVector(3));
+    auto axis1 = std::make_shared<Vector>(3);
     axis1->setValue(0, 0);
     axis1->setValue(1, 0);
     axis1->setValue(2, 1);
 
-    SP::PrismaticJointR relation1(new PrismaticJointR(axis1, true, beam1));
+    auto relation1 = std::make_shared<siconos::joints::PrismaticJointR>(axis1, true, beam1);
 
-    SP::SimpleMatrix H1(new SimpleMatrix(relation1->numberOfConstraints(), qDim));
+    auto H1 = std::make_shared<Matrix>(relation1->numberOfConstraints(), qDim);
     H1->zero();
     relation1->setJachq(H1);
 
-    SP::NonSmoothLaw nslaw1(new EqualityConditionNSL(relation1->numberOfConstraints()));
+    auto nslaw1 = std::make_shared<siconos::modeling::EqualityConditionNSL>(
+        relation1->numberOfConstraints());
 
-    SP::Interaction inter1(new Interaction(nslaw1, relation1));
+    auto inter1 = std::make_shared<siconos::modeling::Interaction>(nslaw1, relation1);
     // -------------
     // --- Model ---
     // -------------
-    SP::NonSmoothDynamicalSystem bouncingBall(new NonSmoothDynamicalSystem(t0, T));
+    auto bouncingBall = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
     bouncingBall->insertDynamicalSystem(beam1);
     bouncingBall->link(inter1, beam1);
 
@@ -124,15 +122,16 @@ int main(int argc, char* argv[])
     // ------------------
 
     // -- Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
     // -- OneStepIntegrators --
-    SP::MoreauJeanOSI OSI1(new MoreauJeanOSI(theta));
+    auto OSI1 = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
 
     // -- OneStepNsProblem --
-    SP::OneStepNSProblem osnspb(new Equality());
+    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::Equality>();
 
-    SP::TimeStepping s(new TimeStepping(bouncingBall, t, OSI1, osnspb));
+    auto s =
+        std::make_shared<siconos::simulation::TimeStepping>(bouncingBall, t, OSI1, osnspb);
     s->setNewtonTolerance(5e-4);
     s->setNewtonMaxIteration(50);
     // =========================== End of model definition ===========================
@@ -141,33 +140,29 @@ int main(int argc, char* argv[])
 
     // --- Simulation initialization ---
 
-    int N = 2000; // Number of time steps
+    int N = 2000;  // Number of time steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 8;
-    SimpleMatrix dataPlot(N, outputSize);
+    Matrix dataPlot(N, outputSize);
 
-    SP::SiconosVector q1 = beam1->q();
+    auto q1 = beam1->q();
     // --- Time loop ---
     cout << "====> Start computation ... " << endl << endl;
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 0;
 
-
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
-    Index dimIndex(2);
-    Index startIndex(4);
+    auto start = std::chrono::system_clock::now();
+    std::vector<unsigned int> dimIndex(2);
+    decltype(dimIndex) startIndex(4);
     int cmp = 0;
-    for(cmp = 0; cmp < N; cmp++)
-    {
+    for (cmp = 0; cmp < N; cmp++) {
       // solve ...
       s->advanceToEvent();
 
-
       // --- Get values to be plotted ---
-      dataPlot(k, 0) =  s->nextTime();
+      dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q1)(0);
       dataPlot(k, 2) = (*q1)(1);
       dataPlot(k, 3) = (*q1)(2);
@@ -180,28 +175,26 @@ int main(int argc, char* argv[])
 
       k++;
     }
-    cout << endl << "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation Time " << endl;;
-    end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
-                  (end-start).count();
-    cout << "Computation time : " << elapsed << " ms" << endl;
-    // --- Output files ---
-    cout << "====> Output file writing ..." << endl;
-    ioMatrix::write("PrismaticTest.dat", "ascii", dataPlot, "noDim");
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
+    std::cout << "\nComputation time : " << elapsed << " ms\n";
 
-    double error=0.0, eps=1e-11;
-    if((error=ioMatrix::compareRefFile(dataPlot, "PrismaticTest.ref", eps)) >= 0.0
-        && error > eps)
+    // --- Output files ---
+    std::cout << "====> Output file writing ...\n";
+    dataPlot.resize(k, outputSize);
+    siconos::algebra::io::write("PrismaticTest.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
+    double error = 0.0, eps = 1e-11;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "PrismaticTest.ref", eps)) >
+        eps)
       return 1;
 
-
+    return 0;
   }
 
-  catch(...)
-  {
-    Siconos::exception::process();
+  catch (...) {
+    siconos::exception::process();
     return 1;
   }
-
 }

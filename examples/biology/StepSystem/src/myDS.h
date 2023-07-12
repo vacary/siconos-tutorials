@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 /*! \file MyDSDS.h
  The considered dynamical system is a first order non linear system,
@@ -25,67 +25,41 @@
 #ifndef MYDSDS_H
 #define MYDSDS_H
 
-#include "SiconosKernel.hpp"
+#include <SiconosKernel.hpp>
+
+namespace user_defined {
 
 /** This class inherits from first Order linear dynamical system
  */
-class MyDS : public FirstOrderNonLinearDS
-{
-
-public:
+class MyDS : public siconos::modeling::FirstOrderNonLinearDS {
+ public:
   /** default constructor
    * \param the type of the system
    */
-  MyDS(SP::SiconosVector x0);
-
+  MyDS(std::shared_ptr<siconos::algebra::SiconosVector> x0);
 
   // ===== DESTRUCTOR =====
 
   /** destructor
    */
-  virtual ~MyDS() {};
+  virtual ~MyDS() noexcept = default;
 
   using FirstOrderNonLinearDS::computef;
-
 
   /** Default function to compute \f$ f: (x,t)\f$
    * \param double time : current time
    */
-  virtual void computef(double, SP::SiconosVector x);
+  virtual void computef(double, std::shared_ptr<siconos::algebra::SiconosVector> x) override;
 
-  /** function to compute \f$ f: (x,t)\f$ with x different from current saved state.
-   * \param double time : current time
-   * \param SP::SiconosVector
+  // using FirstOrderNonLinearDS::computeJacobianfx;
+  /** Default function to compute \f$ \nabla_x f: (x,t) \in R^{n} \times R  \mapsto  R^{n
+   * \times n} \f$ with x different from current saved state. \param double time : current time
+   *  \param auto
    */
-  //virtual void computef(double, SP::SiconosVector);
-
-  using FirstOrderNonLinearDS::computeJacobianfx;
-
-
-  /** Default function to compute \f$ \nabla_x f: (x,t) \in R^{n} \times R  \mapsto  R^{n \times n} \f$
-   *  \param double time : current time
-   */
-  //virtual void computeJacobianfx(double);
-
-  /** Default function to compute \f$ \nabla_x f: (x,t) \in R^{n} \times R  \mapsto  R^{n \times n} \f$ with x different from current saved state.
-   *  \param double time : current time
-   *  \param SP::SiconosVector
-   */
-  virtual void computeJacobianfx (double, SP::SiconosVector);
-
-  /** Default function to the right-hand side term
-   *  \param double time : current time
-   */
-  /* virtual void computeRhs(double); */
-
-  using FirstOrderNonLinearDS::resetNonSmoothPart;
-
-  virtual void resetNonSmoothPart();
+  virtual void computeJacobianfx(double,
+                                 std::shared_ptr<siconos::algebra::SiconosVector>) override;
 
 };
-
-TYPEDEF_SPTR(MyDS);
+}  // namespace user_defined
 
 #endif
-
-

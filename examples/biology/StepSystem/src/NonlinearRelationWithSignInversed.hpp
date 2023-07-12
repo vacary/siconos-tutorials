@@ -1,40 +1,46 @@
 #ifndef NONLINEARRELATIONWITHSIGNINVERSED_H
 #define NONLINEARRELATIONWITHSIGNINVERSED_H
 
-#include "SiconosKernel.hpp"
+#include <SiconosKernel.hpp>
 
-class NonlinearRelationWithSignInversed : public FirstOrderType2R
-{
-protected:
-public:
-  NonlinearRelationWithSignInversed();
-  virtual ~NonlinearRelationWithSignInversed() {};
+namespace user_defined {
+class NonlinearRelationWithSignInversed : public siconos::modeling::FirstOrderType2R {
+ protected:
+ public:
+  virtual ~NonlinearRelationWithSignInversed() noexcept = default;
 
   /** default function to compute h
    *  \param double : current time
    */
-  virtual void computeh(double t, const BlockVector& x, const SiconosVector& lambda, SiconosVector& y);
+  virtual void computeh(double t, const siconos::algebra::BlockVector& x,
+                        const siconos::algebra::SiconosVector& lambda,
+                        siconos::algebra::SiconosVector& y) override;
 
   /** default function to compute g
    *  \param double : current time
    */
-  virtual void computeg(double t, const SiconosVector& lambda, BlockVector& r);
+  virtual void computeg(double t, const siconos::algebra::SiconosVector& lambda,
+                        siconos::algebra::BlockVector& r) override;
 
   /** default function to compute jacobianH
    *  \param double : current time
    *  \param index for jacobian (0: jacobian according to x, 1 according to lambda)
    */
-  virtual void computeJachx(double t, const BlockVector& x, const SiconosVector& lambda, SimpleMatrix& C);
-  virtual void computeJachlambda(double t, const BlockVector& x, const SiconosVector& lambda, SimpleMatrix& D);
+  virtual void computeJachx(double t, const siconos::algebra::BlockVector& x,
+                            const siconos::algebra::SiconosVector& lambda,
+                            siconos::algebra::SimpleMatrix& C) override;
+  virtual void computeJachlambda(double t, const siconos::algebra::BlockVector& x,
+                                 const siconos::algebra::SiconosVector& lambda,
+                                 siconos::algebra::SimpleMatrix& D) override;
 
   /** default function to compute jacobianG according to lambda
    *  \param double : current time
-   *  \param index for jacobian: at the time only one possible jacobian => i = 0 is the default value .
+   *  \param index for jacobian: at the time only one possible jacobian => i = 0 is the default
+   * value .
    */
-  virtual void computeJacglambda(double t, const SiconosVector& lambda, SimpleMatrix& B);
-
+  virtual void computeJacglambda(double t, const siconos::algebra::SiconosVector& lambda,
+                                 siconos::algebra::SimpleMatrix& B) override;
 };
-
-TYPEDEF_SPTR(NonlinearRelationWithSignInversed);
+}  // namespace user_defined
 
 #endif
