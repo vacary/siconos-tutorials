@@ -120,7 +120,6 @@ int main(int argc, char* argv[]) {
         solid->link(inter, FEsolid);
       }
     }
-    cout << "plopdsaf .. " << endl;
 
     // // link the interaction and the dynamical system
     // bouncingBall->link(inter, FEsolid);
