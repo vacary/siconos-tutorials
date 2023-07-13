@@ -120,6 +120,7 @@ int main(int argc, char* argv[]) {
         solid->link(inter, FEsolid);
       }
     }
+    cout << "plopdsaf .. " << endl;
 
     // // link the interaction and the dynamical system
     // bouncingBall->link(inter, FEsolid);
@@ -141,13 +142,11 @@ int main(int argc, char* argv[]) {
     // -- (4) Simulation setup with (1) (2) (3)
     auto s = std::make_shared<siconos::simulation::TimeStepping>(solid, t, OSI,
                                                                  osnspb);
-
     // =========================== End of model definition
     // ===========================
 
     // ================================= Computation
     // =================================
-
     int N = ceil((T - t0) / h);  // Number of time steps
 
     // --- Get the values to be plotted ---
@@ -159,7 +158,6 @@ int main(int argc, char* argv[]) {
     auto v = FEsolid->velocity();
     auto p = FEsolid->p(1);
     // auto lambda = inter->lambda(1);
-
     dataPlot(0, 0) = solid->t0();
     dataPlot(0, 1) = (*q)(FEsolid->dimension() - 1);
     dataPlot(0, 2) = (*v)(FEsolid->dimension() - 1);
