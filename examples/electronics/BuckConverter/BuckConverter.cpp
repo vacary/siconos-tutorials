@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+//#include <SiconosBlas.h>
 #include <SiconosKernel.hpp>
 #include <exception>
 // #include <iomanip>
@@ -359,7 +360,13 @@ int main(int argc, char *argv[]) {
 
   double z_straight[NSLSIZE_BUCK];
   double w_straight[NSLSIZE_BUCK];
-
+  // Note FP: the two vars. abover were not initialized which was leading to overflow in dataPlot(:,9) computation
+  for(int i=0;i<NSLSIZE_BUCK;++i)
+    {
+      z_straight[i] = 0.;
+      w_straight[i] = 0.;
+    }
+  
   double *fPWLmat_straight;
   fPWLmat_straight = fPWLmat.getArray();
 
@@ -527,14 +534,16 @@ int main(int argc, char *argv[]) {
        << "--- cpu time in lcp solving : " << elapsedCPU_LCP << endl;
 
   // dataPlot (ascii) output
-  siconos::algebra::io::write("BuckConverter.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+  dataPlot.resize(k + 1, nbPlot);
+  siconos::algebra::io::write("BuckConverter.dat", dataPlot,
+			      siconos::algebra::io::ASCII_OUT,
                               siconos::algebra::io::WriteType::nodim);
-
-
-  std::cout << dataPlot.size(0) << " " << dataPlot.size(1) << "n";
+  
   double error = 0.0, eps = 1e-12;
-  if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BuckConverter.ref", eps)) > eps)
+  if ((error = siconos::algebra::io::compareRefFile(
+	   dataPlot, "BuckConverter.ref", eps)) > eps)
     return 1;
 
   std::cout << "End of program\n";
+  return  0;
 }

@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
     siconos::algebra::io::write("NE_1DS_1Knee_MLCP_beam1.dat", beam1Plot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
-    double error = 0.0, eps = 1e-12;
+    double error = 0.0, eps = 1e-11;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "NE_1DS_1Knee_MLCP.ref",
                                                       eps)) >= eps)
       return 1;

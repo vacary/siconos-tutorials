@@ -27,7 +27,7 @@
   the graph.
 */
 
-#include <SiconosBullet.hpp>
+#include <SiconosBulletCollisionManager.hpp>
 #include <SiconosCollision.hpp>
 #include <SiconosKernel.hpp>
 #include <chrono>

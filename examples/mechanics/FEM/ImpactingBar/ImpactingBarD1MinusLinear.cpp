@@ -35,7 +35,7 @@ using Vector = siconos::algebra::SiconosVector;
 #define TS_VELOCITY_LEVEL
 
 using namespace std;
-namespace user = user_defined_ref;  // To choose the set of parameters used in
+namespace user = user_defined;  // To choose the set of parameters used in
                                     // the current simulation
 
 int main(int argc, char* argv[]) {

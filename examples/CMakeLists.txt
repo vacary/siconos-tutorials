@@ -1,5 +1,5 @@
 # Set minimum version for cmake
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.14)
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12")
   cmake_policy(SET CMP0074 NEW)
 endif()
@@ -23,7 +23,8 @@ include(SiconosRequiredVersion)
 #
 # If siconos is not installed in a standard place, cmake searches in directories listed in CMAKE_PREFIX_PATH.
 # This variable must contains the path to siconos installation.
-# 
+#
+
 # Remark : we may also use the package registry magic to find siconos:
 # see https://cmake.org/cmake/help/git-master/manual/cmake-packages.7.html#creating-packages
 find_package(siconos  REQUIRED)
@@ -154,8 +155,11 @@ if(${mechanics_installed} GREATER -1)
     mechanics/JointsTestsWithInternalForces
     )
   list(APPEND EXAMPLES_DIRECTORIES ${mechanics_examples})
+  include(FindPythonModule)
 
-  find_python_module(pyhull REQUIRED)
+  if(HAS_PYB11_WRAPPER)
+    find_python_module(pyhull REQUIRED)
+  endif()
 
   if(SICONOS_HAS_BULLET)
     message(STATUS "add examples requiring bullet")
@@ -175,11 +179,12 @@ if(${mechanics_installed} GREATER -1)
       )
     list(APPEND EXAMPLES_DIRECTORIES ${mechanics_bullet_examples})
 
+  if(HAS_PYB11_WRAPPER)
     find_python_module(pylmgc90)
-    
-    if(NOT pylmgc90_FOUND)
-      list(APPEND EXCLUDE_PATTERN_FROM_TESTS mkspheres spheres_in_a_box)
-    endif()
+  endif()    
+  if(NOT pylmgc90_FOUND)
+    list(APPEND EXCLUDE_PATTERN_FROM_TESTS mkspheres spheres_in_a_box)
+  endif()
 
   endif()
   if(SICONOS_HAS_OCE)

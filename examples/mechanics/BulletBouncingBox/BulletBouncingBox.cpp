@@ -24,7 +24,7 @@
 
 */
 
-#include <SiconosBullet.hpp>
+#include <SiconosBulletCollisionManager.hpp>
 #include <SiconosCollision.hpp>
 #include <SiconosKernel.hpp>
 #include <chrono>
@@ -143,6 +143,7 @@ int main() {
     //    detection, we use the Bullet implementation here.
     auto collision_manager =
         std::make_shared<siconos::collision::bullet::SiconosBulletCollisionManager>();
+
 
     // -- insert a non smooth law for contactors id 0
     collision_manager->insertNonSmoothLaw(nslaw, 0, 0);

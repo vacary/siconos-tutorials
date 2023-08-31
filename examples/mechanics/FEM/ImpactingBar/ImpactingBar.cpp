@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
 #ifdef TS_COMBINED
     auto OSI = std::make_shared<siconos::integrators::MoreauJeanCombinedProjectionOSI>(theta);
 #else
-    auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(user::theta, 0.0);
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(user::theta, 0.5);
 #endif
 #endif
     // -- (2) Time discretisation --
@@ -190,7 +190,7 @@ int main(int argc, char* argv[]) {
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    unsigned int outputSize = 12;
+    unsigned int outputSize = 11;
     Matrix dataPlot(N, outputSize);
 
     auto q = bar->q();
@@ -213,12 +213,13 @@ int main(int argc, char* argv[]) {
     prod(*SparseStiffness, *q, *tmp, true);
     double potentialEnergy = inner_prod(*q, *tmp);
     prod(*SparseMass, *v, *tmp, true);
-    double impactEnergy = 0.0;
     double kineticEnergy = inner_prod(*v, *tmp);
 
     dataPlot(0, 5) = potentialEnergy;
     dataPlot(0, 6) = kineticEnergy;
-    dataPlot(0, 11) = impactEnergy;
+
+    //    std::cout <<"potentialEnergy ="<<potentialEnergy << std::endl;
+    //     std::cout <<"kineticEnergy ="<<kineticEnergy << std::endl;
 
     // --- Time loop ---
     cout << "====> Start computation ... " << endl << endl;
@@ -254,20 +255,16 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 5) = potentialEnergy;
       dataPlot(k, 6) = kineticEnergy;
 
-      double v_p_theta= theta*(*v)(0) + (1-theta) *  dataPlot(k-1,2);
-      impactEnergy = v_p_theta * (*lambda)(0);
-      dataPlot(k, 11) = impactEnergy;
+      //      std::cout << "q" << std::endl;
+      //       q->display();
+
+      //       std::cout <<"potentialEnergy ="<<potentialEnergy << std::endl;
+      //       std::cout <<"kineticEnergy ="<<kineticEnergy << std::endl;
 
       s->nextStep();
 
       k++;
     }
-    double totalImpactEnergy=0.0;
-    for (int p =0; p < k; p++)
-    {
-      totalImpactEnergy = totalImpactEnergy + dataPlot(p, 11);
-    }
-    printf("totalImpactEnergy = %e", totalImpactEnergy);
     auto end = std::chrono::system_clock::now();
     int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;

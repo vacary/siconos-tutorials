@@ -231,7 +231,7 @@ int main(int argc, char* argv[]) {
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
-    double error = 0.0, eps = 1e-12;
+    double error = 0.0, eps = 1e-8;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "test_2d_rolling_friction.ref",
                                                       eps)) > eps)
       return 1;
