@@ -22,10 +22,10 @@
 
   Slider-crank simulation with a MoreauJeanOSI-Time-Stepping scheme
 
-  see Flores/Leine/Glocker : Modeling and analysis of planar rigid multibody
-  systems with translational clearance joints based on the non-smooth dynamics
-  approach
+  see Flores/Leine/Glocker : Modeling and analysis of planar rigid multibody systems with
+  translational clearance joints based on the non-smooth dynamics approach
   */
+
 #include <SolverOptions.h>
 
 #include <SiconosKernel.hpp>
@@ -34,6 +34,7 @@
 
 using Matrix = siconos::algebra::SimpleMatrix;
 using Vector = siconos::algebra::SiconosVector;
+
 using namespace std;
 
 #define WITH_FRICTION
@@ -61,6 +62,10 @@ int main(int argc, char* argv[]) {
     double eN2 = 0.4;
     double eN3 = 0.4;
     double eN4 = 0.4;
+    // eN1 = 0.1;
+    // eN2 = 0.1;
+    // eN3 = 0.1;
+    // eN4 = 0.1;
 #ifdef WITH_FRICTION
     double eT1 = 0.;
     double eT2 = 0.;
@@ -88,15 +93,11 @@ int main(int argc, char* argv[]) {
     auto slider =
         std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, "SliderCrankPlugin:mass");
     slider->setComputeFGyrFunction("SliderCrankPlugin", "FGyr");
-    slider->setComputeJacobianFGyrqFunction("SliderCrankPlugin",
-                                            "jacobianFGyrq");
-    slider->setComputeJacobianFGyrqDotFunction("SliderCrankPlugin",
-                                               "jacobianFGyrqDot");
+    slider->setComputeJacobianFGyrqFunction("SliderCrankPlugin", "jacobianFGyrq");
+    slider->setComputeJacobianFGyrqDotFunction("SliderCrankPlugin", "jacobianFGyrqDot");
     slider->setComputeFIntFunction("SliderCrankPlugin", "FInt");
-    slider->setComputeJacobianFIntqFunction("SliderCrankPlugin",
-                                            "jacobianFIntq");
-    slider->setComputeJacobianFIntqDotFunction("SliderCrankPlugin",
-                                               "jacobianFIntqDot");
+    slider->setComputeJacobianFIntqFunction("SliderCrankPlugin", "jacobianFIntq");
+    slider->setComputeJacobianFIntqDotFunction("SliderCrankPlugin", "jacobianFIntqDot");
 
     // -------------------
     // --- Interactions---
@@ -187,11 +188,9 @@ int main(int argc, char* argv[]) {
 
     auto topo = sliderWithClearance->topology();
 
-    // =========================== End of model definition
-    // ===========================
+    // =========================== End of model definition ===========================
 
-    // ================================= Computation
-    // =================================
+    // ================================= Computation =================================
 
     int N = ceil((T - t0) / h) + 1;  // Number of time steps
 
@@ -246,7 +245,6 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 25) = 0;
     dataPlot(0, 26) = 0;
 
-
     // --- Time loop ---
     cout << "====> Start computation ... \n";
 
@@ -261,7 +259,6 @@ int main(int argc, char* argv[]) {
       // std::cout <<"Iteration k = " << k <<std::endl;
       // std::cout <<"s->nextTime() = " <<s->nextTime()  <<std::endl;
       // std::cout <<"=====================================================" <<std::endl;
-
 
       // std::cout << "=============== Step k ="<< k<< std::endl;
       s->advanceToEvent();
@@ -301,7 +298,6 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 22) = (*inter2->lambda(1))(0);                      // lambda1
       dataPlot(k, 23) = (*inter3->lambda(1))(0);                      // lambda3
       dataPlot(k, 24) = (*inter4->lambda(1))(0);                      // lambda4
-
       dataPlot(k, 25) = s->getNewtonNbIterations();
       auto indexSet1 = topo->indexSet(1);
       dataPlot(k, 26) = indexSet1->size();

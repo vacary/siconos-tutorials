@@ -177,7 +177,8 @@ int main(int argc, char *argv[]) {
     if (argc == 1) {
       // Comparison with a reference file
       double error = 0.0, eps = 1e-11;
-      if ((error = siconos::algebra::io::compareRefFile(dataPlot, "simu-reduced.1.6.ref", eps)) > eps)
+      if ((error = siconos::algebra::io::compareRefFile(dataPlot, "simu-reduced.1.6.ref",
+                                                        eps)) > eps)
         return 1;
     }
 
