@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-
 #include <SolverOptions.h>
 
 #include <SiconosKernel.hpp>
@@ -218,12 +217,14 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    siconos::algebra::io::write("FrictionOscillator.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+    siconos::algebra::io::write("FrictionOscillator.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     siconos::algebra::io::write(filename, dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
-    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "FrictionOscillator.ref", eps)) >= eps)
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "FrictionOscillator.ref",
+                                                      eps)) >= eps)
       return 1;
 
     return 0;

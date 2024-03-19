@@ -116,8 +116,10 @@ int main(int argc, char* argv[]) {
         nBeads - 1);
     std::vector<std::shared_ptr<siconos::modeling::Interaction>> interOfBeads(nBeads - 1);
     for (unsigned int i = 0; i < nBeads - 1; i++) {
-      relationOfBeads[i]= std::make_shared<siconos::modeling::LagrangianLinearTIR>(HOfBeads,bOfBeads);
-      interOfBeads[i]= std::make_shared<siconos::modeling::Interaction>(nslaw, relationOfBeads[i]);
+      relationOfBeads[i] =
+          std::make_shared<siconos::modeling::LagrangianLinearTIR>(HOfBeads, bOfBeads);
+      interOfBeads[i] =
+          std::make_shared<siconos::modeling::Interaction>(nslaw, relationOfBeads[i]);
     }
 
     // --------------------------------------

@@ -6,10 +6,7 @@ endif()
 
 project(siconos_examples CXX C)
 
-
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-
-#include(WindowsSiconosSetup) Outdated? To be reviewed
 
 set(tests_timeout 35 CACHE INTERNAL "Limit time for tests (in seconds)")
 
@@ -27,7 +24,7 @@ include(SiconosRequiredVersion)
 
 # Remark : we may also use the package registry magic to find siconos:
 # see https://cmake.org/cmake/help/git-master/manual/cmake-packages.7.html#creating-packages
-find_package(siconos  REQUIRED)
+find_package(siconos REQUIRED)
 
 # --- Search siconos package path ---
 # --> based on path to script siconos.

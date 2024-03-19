@@ -22,8 +22,9 @@
 
   Slider-crank simulation with a D1MinusLinearOSI-Time-Stepping scheme
 
-  see Flores/Leine/Glocker : Modeling and analysis of planar rigid multibody systems with
-  translational clearance joints based on the non-smooth dynamics approach
+  see Flores/Leine/Glocker : Modeling and analysis of planar rigid multibody
+  systems with translational clearance joints based on the non-smooth dynamics
+  approach
   */
 
 #include <SolverOptions.h>
@@ -94,11 +95,15 @@ int main(int argc, char* argv[]) {
     auto slider =
         std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, "SliderCrankPlugin:mass");
     slider->setComputeFGyrFunction("SliderCrankPlugin", "FGyr");
-    slider->setComputeJacobianFGyrqFunction("SliderCrankPlugin", "jacobianFGyrq");
-    slider->setComputeJacobianFGyrqDotFunction("SliderCrankPlugin", "jacobianFGyrqDot");
+    slider->setComputeJacobianFGyrqFunction("SliderCrankPlugin",
+                                            "jacobianFGyrq");
+    slider->setComputeJacobianFGyrqDotFunction("SliderCrankPlugin",
+                                               "jacobianFGyrqDot");
     slider->setComputeFIntFunction("SliderCrankPlugin", "FInt");
-    slider->setComputeJacobianFIntqFunction("SliderCrankPlugin", "jacobianFIntq");
-    slider->setComputeJacobianFIntqDotFunction("SliderCrankPlugin", "jacobianFIntqDot");
+    slider->setComputeJacobianFIntqFunction("SliderCrankPlugin",
+                                            "jacobianFIntq");
+    slider->setComputeJacobianFIntqDotFunction("SliderCrankPlugin",
+                                               "jacobianFIntqDot");
 
     // -------------------
     // --- Interactions---
@@ -154,9 +159,11 @@ int main(int argc, char* argv[]) {
     s->insertNonSmoothProblem(impact, siconos::simulation::SICONOS_OSNSP_TS_VELOCITY);
     s->insertNonSmoothProblem(force, siconos::simulation::SICONOS_OSNSP_TS_VELOCITY + 1);
 
-    // =========================== End of model definition ===========================
+    // =========================== End of model definition
+    // ===========================
 
-    // ================================= Computation =================================
+    // ================================= Computation
+    // =================================
 
     int N = ceil((T - t0) / h) + 1;  // Number of time steps
 
@@ -222,10 +229,6 @@ int main(int argc, char* argv[]) {
     // dataPlot(k, 30) = (*inter4->lambda(2))(0) ; // lambda1_{k+1}^-
 
     // not yet allocated
-    // dataPlot(k, 31) = ( inter1->lambdaMemory(2).getSiconosVector(0) )(0); // lambda1_k^+
-    // dataPlot(k, 32) = ( inter2->lambdaMemory(2).getSiconosVector(0) )(0); // lambda2_k^+
-    // dataPlot(k, 33) = ( inter3->lambdaMemory(2).getSiconosVector(0) )(0); // lambda3_k^+
-    // dataPlot(k, 34) = ( inter4->lambdaMemory(2).getSiconosVector(0) )(0); // lambda4_k^+
 
     // --- Time loop ---
     cout << "====> Start computation ... \n";

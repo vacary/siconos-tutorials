@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     (*b)(0) = height - R - .2;
 
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H,b);
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H, b);
 
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
@@ -103,10 +103,12 @@ int main(int argc, char *argv[]) {
 
     auto bfloor = std::make_shared<Vector>(1);
     (*bfloor)(0) = -R;
-    
+
     auto nslawfloor = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(1);
-    auto relationfloor = std::make_shared<siconos::modeling::LagrangianCompliantLinearTIR>(Hfloor, Kfloor, bfloor);
-    auto interfloor = std::make_shared<siconos::modeling::Interaction>(nslawfloor, relationfloor);
+    auto relationfloor = std::make_shared<siconos::modeling::LagrangianCompliantLinearTIR>(
+        Hfloor, Kfloor, bfloor);
+    auto interfloor =
+        std::make_shared<siconos::modeling::Interaction>(nslawfloor, relationfloor);
 
     // --------------------------------
     // --- NonSmoothDynamicalSystem ---
