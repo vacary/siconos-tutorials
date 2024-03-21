@@ -43,8 +43,8 @@ int main(int argc, char* argv[]) {
     double vinit = 0.0;
     char filename[50] = "simu.";
     if (argc == 1) {
-      xinit = 1.0;
-      vinit = 1.0;
+      xinit = 12.0;
+      vinit = 6.0;
       strncpy(&filename[5], "1.0.1.0.log", 7);
     } else if (argc == 3) {
       // printf("argv[0] %s\n", argv[0]);
