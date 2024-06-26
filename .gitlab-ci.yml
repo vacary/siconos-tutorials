@@ -1,32 +1,38 @@
 variables:
   # Default ctest model. Warning : overwritten if set in schedules variables (as we expect)
-  ctest_build_model: Continuous
+  CTEST_BUILD_MODEL: Continuous
   # Default behavior regarding cdash submission
-  cdash_submit: 1
+  CDASH_SUBMIT: 0
   # Name of the docker image used to run examples. Default = master.
   # Set by CI in siconos project for "triggered" examples.
-  SICONOS_DOCKER_NAME: siconos-master
-
+  SICONOS_DOCKER_NAME: siconoslab-master
+  
 
 # -- Template for examples build-test-install jobs --
 # - Pull an image (possibly from siconos-tutorials registry)
 #   named  IMAGE_NAME
 .examples-build:
-  image: $IMAGE_NAME
+  image:
+    name: $IMAGE_NAME
+    entrypoint: [""]
   stage: test
-  variables:
-    SICONOS_INSTALL_DIR: /home/install-siconos # where to find siconos binary
-    CMAKE_PREFIX_PATH: $SICONOS_INSTALL_DIR  # required by cmake to find siconos-config
   script:
+    - env
     - sh ci_gitlab/build_and_run_examples.sh
+  artifacts:
+      paths:
+        - build/
+      expire_in: 3 days 
+      reports:
+        junit: $CI_PROJECT_DIR/build-examples/test_results.xml
 
 # examples, on ubuntu20 with a standard (default)
 # Siconos installation (based on current development, master branch, version
 # Run only when a push has been done to this project.
-run-examples:ubuntu-20:
+run-examples:
   variables:
-    IMAGE_NAME: $CI_REGISTRY_IMAGE/siconos-master
-    cdash_submit: 1
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/siconoslab-master
+    CDASH_SUBMIT: 1
   extends: .examples-build
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'
@@ -38,11 +44,14 @@ run-examples:ubuntu-20:
 # - Run only when triggered from siconos project
 # - Run on a docker image corresponding to a specific branch in siconos project.
 #   (var: SICONOS_DOCKER_NAME, automatically set by CI in siconos project)
+#
+# This job runs in  multi-project pipelines only
 triggered-examples:
-  extends: .examples-build
   variables:
-    IMAGE_NAME: $CI_REGISTRY_IMAGE/$SICONOS_DOCKER_NAME
-    cdash_submit: 1
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/siconoslab-$CI_COMMIT_REF_SLUG
+    CDASH_SUBMIT: 1
+    BUILD_DIR: ${CI_PROJECT_DIR}/build-examples
+  extends: .examples-build
   rules:
     - if: '$CI_PIPELINE_SOURCE == "pipeline"'
       when: always
@@ -50,11 +59,11 @@ triggered-examples:
  
 
 # examples, with a standard (default) Siconos installation
-# with version from release 4.4 (latest)
+# with version from release 4.5 (latest)
 # Triggered manualy.
 run-examples:release:
   variables:
-    IMAGE_NAME: $CI_REGISTRY_IMAGE/siconos-release-4.4
-    cdash_submit: 1
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/siconos-release-4.5
+    CDASH_SUBMIT: 1
   extends: .examples-build
   when: manual

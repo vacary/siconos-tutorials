@@ -1,14 +1,82 @@
 #!/usr/bin/env python
 
+# import subprocess
+# command = "cd /Users/vincent/siconos; git symbolic-ref --short HEAD ; git lg -1; cd - ;"
+# ret = subprocess.run(command, capture_output=True, shell=True)
+# print(ret.stdout.decode())
+
+
 from siconos.mechanics.collision.tools import Contactor
 from siconos.mechanics.collision.convexhull import ConvexHull
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+from siconos.io.mechanics_run import MechanicsHdf5Runner, MechanicsHdf5Runner_run_options
+from siconos.mechanics.collision.bullet import SiconosBulletOptions
 import siconos.numerics as sn
 import siconos.kernel as sk
-import math, random, numpy
+import math, random
+import numpy as np
 # A collection of box stacks for stress-testing Siconos solver with
 # chains of contacts.
 
+
+Fremond=False
+
+T = 4.0
+#T = 3e-2
+h_step = 5e-4
+
+bullet_options = SiconosBulletOptions()
+bullet_options.worldScale = 1.
+bullet_options.contactBreakingThreshold = 0.04*bullet_options.worldScale
+bullet_options.perturbationIterations = 3.
+bullet_options.minimumPointsPerturbationThreshold = 3.
+bullet_options.extrapolationCoefficient = 0.5*h_step
+
+options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
+options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 1000
+options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-06
+options.iparam[sn.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 100
+
+
+
+#options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_ADMM)
+#options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 5000
+#options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-10
+#options.iparam[sn.SICONOS_FRICTION_3D_ADMM_IPARAM_SYMMETRY] = sn.SICONOS_FRICTION_3D_ADMM_FORCED_ASYMMETRY
+run_options=MechanicsHdf5Runner_run_options()
+run_options['t0']=0
+run_options['T']=T
+run_options['h']=h_step
+run_options['theta']=0.5
+
+run_options['constraints_activation_threshold']=1e-01
+run_options['activate_with_negative_relative_velocity']=True
+run_options['constraint_activation_threshold_velocity']=1e-05
+
+
+run_options['Newton_max_iter'] =5
+run_options['Newton_tolerance'] =1e-08
+
+run_options['bullet_options']=bullet_options
+run_options['solver_options']=options
+
+
+#run_options['skip_last_update_output']=True
+#run_options['skip_reset_lambdas']=True
+run_options['osns_assembly_type']= sk.REDUCED_DIRECT
+
+
+run_options['verbose']=True
+run_options['with_timer']=True
+#run_options['explode_Newton_solve']=True
+#run_options['explode_computeOneStep']=True
+#run_options['numerics_verbose']=True
+#run_options['numerics_verbose_level']=1
+#run_options['violation_verbose'] = True
+run_options['output_frequency']=1
+
+
+run_options['output_energy_work']=True
+run_options['osi_explicit_Jacobians_of_relations']=True
 
 
 #configuration = 'pyramid_wall'
@@ -16,8 +84,11 @@ configuration = 'wide_wall'
 configuration = 'wide_wall_with_buttress'
 configuration = 'tall_wall_with_buttress'
 #configuration = 'tall_wall'
+#configuration = 'one_brick'
 
-rock_velocity = [-10,0,-35.,0.5,0.1,0.1]
+rock_velocity = [-10,0,-35.,0.5,10.,0.1]
+#rock_velocity = [-10,0,-35.,0.0,0.0,0.0]
+#rock_velocity = [-0,0,-0.,0.0,0.0,0.0]
 rock_tob = 0.01
 rock_size = 5.0
 
@@ -43,14 +114,14 @@ def one_rock(io, name, cname, rock_size=0.05, density=1, trans=None, velo=None, 
                  vert(12, 13,  -1,  1, -1),
                  vert(14, 15,  -1, -1, -1) ]
 
-    scale = rock_size / max(numpy.array(vertices).max(axis=0)
-                            - numpy.array(vertices).min(axis=0))
+    scale = rock_size / max(np.array(vertices).max(axis=0)
+                            - np.array(vertices).min(axis=0))
 
     ch = ConvexHull(vertices)
     cm = ch.centroid()
 
     # correction of vertices such that 0 is the centroid
-    vertices = (numpy.array(vertices)[:] - cm[:]) * scale
+    vertices = (np.array(vertices)[:] - cm[:]) * scale
 
     ch = ConvexHull(vertices)
     cm = ch.centroid()
@@ -67,25 +138,31 @@ def one_rock(io, name, cname, rock_size=0.05, density=1, trans=None, velo=None, 
     # print('inertia:', inertia*density)
 
 
-    io.add_object(name,
-                 [Contactor(cname)],
-                 translation=trans,
-                 velocity=velo,
-                 mass=volume*density,
-                 time_of_birth=tob,
-                 inertia=inertia*density)
+    return io.add_object(name,
+                         [Contactor(cname)],
+                         translation=trans,
+                         velocity=velo,
+                         mass=volume*density,
+                         time_of_birth=tob,
+                         inertia=inertia*density)
 
 
 
+if Fremond:
+    fn='rock_protection_wall_FremondNSL.hdf5'
+else:
+    fn='rock_protection_wall_NewtonNSL.hdf5'
 
 
 
 # Creation of the hdf5 file for input/output
-with MechanicsHdf5Runner() as io:
+with MechanicsHdf5Runner(io_filename=fn) as io:
 
     width, depth, height = 1, 2, 1
-    io.add_primitive_shape('Box', 'Box', [width, depth, height])
-    io.add_primitive_shape('Half_Box', 'Box', [width, depth/2.0, height])
+
+    margin =0.01
+    io.add_primitive_shape('Box', 'Box', [width, depth, height], outsideMargin=margin)
+    io.add_primitive_shape('Half_Box', 'Box', [width, depth/2.0, height], outsideMargin=margin)
 
     k = 0
     sep = 0.01
@@ -115,7 +192,7 @@ with MechanicsHdf5Runner() as io:
         global k
         z = height/2.0
         volume= height*width*depth
-        angle = math.acos(orientation[0]/numpy.linalg.norm(orientation))
+        angle = math.acos(orientation[0]/np.linalg.norm(orientation))
         while W > 0:
             for i in range(N):
                 for j in range(M):
@@ -126,8 +203,8 @@ with MechanicsHdf5Runner() as io:
                     X_r =  x*math.cos(angle) + y* math.sin(angle)
                     Y_r = -x*math.sin(angle) + y* math.cos(angle)
 
-                    
-                    
+
+
                     io.add_object('box%03d' % k, [Contactor('Box')],
                                   translation=[X_r, Y_r, z],
                                   orientation =[math.cos(-angle/2.0),
@@ -139,7 +216,7 @@ with MechanicsHdf5Runner() as io:
             M = M - 1 if M > 1 else M
             W = W - 1
             z += height + sep
-            
+
     def make_large_stack_with_straight_side(X, Y, N, M, W, orientation=[1.0,0.0,0.0], density=1.0):
         """
         N is the depth of the wall
@@ -149,7 +226,7 @@ with MechanicsHdf5Runner() as io:
         global k
         z = height/2.0
 
-        angle = math.acos(orientation[0]/numpy.linalg.norm(orientation))
+        angle = math.acos(orientation[0]/np.linalg.norm(orientation))
         while W > 0:
             for i in range(N):
                 for j in range(M):
@@ -165,9 +242,9 @@ with MechanicsHdf5Runner() as io:
                         volume= height*width*depth
                         shape = 'Box'
                         offset=0.0
-                    
 
-                    
+
+
                     x = (i-N/2.0)*(width+sep) + X
                     y = (j-(M +  W%2 )/2.0)*(depth+sep) + Y +offset
 
@@ -175,9 +252,9 @@ with MechanicsHdf5Runner() as io:
                     X_r =  x*math.cos(angle) + y* math.sin(angle)
                     Y_r = -x*math.sin(angle) + y* math.cos(angle)
 
-                    
 
-                    
+
+
                     io.add_object('box%03d' % k, [Contactor(shape)],
                                   translation=[X_r, Y_r, z],
                                   orientation =[math.cos(-angle/2.0),
@@ -213,22 +290,26 @@ with MechanicsHdf5Runner() as io:
         make_large_stack_with_straight_side(0+buttress_offset,-1.5*depth, 1, 4, 5, orientation= [0.0,1.0, 0.0], density=2300)
         make_large_stack_with_straight_side(-5+buttress_offset,-1.5*depth, 1, 4, 5, orientation= [0.0,1.0, 0.0], density=2300)
         make_large_stack_with_straight_side(-10+buttress_offset,-1.5*depth, 1, 4, 5, orientation= [0.0,1.0, 0.0], density=2300)
-        
+    elif configuration == 'one_brick':
+        pass
+        #make_large_stack(0, 0, 1, 1, 1, density=2300)
+
     # # a big ball
     # io.add_primitive_shape('Ball', 'Sphere', [width])
     # io.add_object('Ball' % k, [Contactor('Ball')],
     #               translation=[0., 0., 0.],
     #               mass=1.0)
-    
+
 
     # a big rock
-    one_rock(io, 'rock', 'rock_shape', rock_size = rock_size,
-             density=2300,
-             trans = [30.,0. ,35.],
-             velo=rock_velocity, tob=rock_tob)
+    obj_projectile = one_rock(io, 'rock', 'rock_shape', rock_size = rock_size,
+                             density=2300,
+                             trans = [30.,0. ,35.],
+                             velo=rock_velocity, tob=rock_tob)
 
-    
-    
+    obj_projectile_id=obj_projectile.attrs['id']
+
+
     # Definition of the ground
     io.add_primitive_shape('Ground', 'Box', (50, 50, 0.1))
     io.add_object('ground', [Contactor('Ground')], [0, 0, -0.05])
@@ -250,27 +331,16 @@ with MechanicsHdf5Runner() as io:
 
     # Definition of a non smooth law. As no group ids are specified it
     # is between contactors of group id 0.
-    io.add_Newton_impact_friction_nsl('contact', mu=0.6, e=0.0)
-
-T = 6.0
-#T = 3e-2
-h_step = 5e-3
-
+    if Fremond:
+        io.add_Fremond_impact_friction_nsl('contact', mu=0.6, e=0.2)
+    else:
+        io.add_Newton_impact_friction_nsl('contact', mu=0.6, e=0.2)
 
 
-options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 1000
-options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-4
-options.iparam[sn.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 100
 
+
+run_options['time_stepping']=None
 
 # Load and run the simulation
-with MechanicsHdf5Runner(mode='r+') as io:
-    io.run(t0=0,
-           T=T,
-           h=h_step,
-           theta=0.5,
-           Newton_max_iter=1,
-           solver_options=options,
-           output_frequency=1,
-           with_timer=True)
+with MechanicsHdf5Runner(mode='r+',io_filename=fn) as io:
+    io.run(run_options)

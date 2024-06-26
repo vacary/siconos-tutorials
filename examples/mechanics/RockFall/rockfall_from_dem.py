@@ -6,7 +6,8 @@
 import numpy as np
 
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+from siconos.io.mechanics_run import MechanicsHdf5Runner, MechanicsHdf5Runner_run_options
+from siconos.mechanics.collision.bullet import SiconosBulletOptions
 
 import siconos.numerics as sn
 import siconos.kernel as sk
@@ -44,6 +45,8 @@ polyhedron_initial_orientation =   [math.cos(angle/2.0), 0.0, math.sin(angle/2.0
 polyhedron_initial_velocity = [0., 0., 0., 0., 0., 0.]
 
 rd = [math.pi/2 * random.gauss(0.5,0.2) for _ in range(16)]
+
+
 def vert(id1, id2, a, b, c):
         return (a*math.cos(rd[id1])*math.cos(rd[id2]),
                 b*math.sin(rd[id1])*math.cos(rd[id2]),
@@ -132,7 +135,44 @@ else:
     T=30.0
 
 time_step = 1e-2
+bullet_options = SiconosBulletOptions()
+# bullet_options.worldScale = .1
+bullet_options.contactBreakingThreshold = 0.4
+# bullet_options.perturbationIterations = 3.
+# bullet_options.minimumPointsPerturbationThreshold = 3.
 
+
+# Run the simulation from the inputs previously defined and add
+# results to the hdf5 file. The visualisation of the output may be done
+# with the vview command.
+options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
+options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 100
+options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-5
+
+
+run_options=MechanicsHdf5Runner_run_options()
+run_options['t0']=0
+run_options['T']=T
+run_options['h']=time_step
+
+run_options['bullet_options']=bullet_options
+run_options['solver_options']=options
+
+
+#run_options['skip_last_update_output']=True
+#run_options['skip_reset_lambdas']=True
+#run_options['osns_assembly_type']= sk.REDUCED_DIRECT
+
+
+run_options['verbose']=True
+run_options['with_timer']=True
+#run_options['explode_Newton_solve']=True
+#run_options['explode_computeOneStep']=True
+
+#run_options['violation_verbose'] = True
+run_options['output_frequency']=1
+
+run_options['time_stepping']=None
     
 with MechanicsHdf5Runner(mode='r+') as io:
 
@@ -143,17 +183,7 @@ with MechanicsHdf5Runner(mode='r+') as io:
     # are interested mostly just in the location of contacts with the
     # height field, but we are not evaluating the performance of
     # individual contacts here.
-    io.run(with_timer=False,
-           verbose=True,
-           verbose_progress=True,
-           t0=0,
-           T=T,
-           h=time_step,
-           theta=0.50001,
-           Newton_max_iter=1,
-           solver_options=options,
-           numerics_verbose=False,
-           output_frequency=10)
+    io.run(run_options)
 
 
     
@@ -162,7 +192,7 @@ with MechanicsHdf5Runner(mode='r+') as io:
     positions=data['dynamic'][:]
     # export in numpy array
     np.savetxt('positions.txt', positions)
-    #print('positions')
+    print('positions', positions)
     #print('time', 'id', ' x, y, z, q0, q1, q2, q3')
     print('positions of the polydron')
     np.set_printoptions(precision=3)
