@@ -1,6 +1,21 @@
 i=1
 my_terminal = 'aqua'
-result_file="OneParticle-BinaryCZM.dat"
+
+
+print "number of arguments: ", ARGC 
+
+if (ARGC ==0){ result_file="OneParticle-BinaryCZM.dat"	;
+print "results filename ", result_file
+} else { result_file=ARG1;
+
+print "results filename ", result_file
+}
+
+
+print "script name        : ", ARG0
+#print "first argument     : ", ARG1
+#print "third argument     : ", THIRD 
+
 #my_terminal = 'wxt'
 unset multiplot
 
@@ -45,9 +60,6 @@ plot result_file u 1:11 w l t 'beta'
 set origin 0.1,0.7
 set yrange [-1:2.0]
 plot result_file u 1:12 w l t 'applied force'
-
-
-
 
 unset multiplot
 

@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     (*H)(1, 1) = 1.0;
     (*H)(2, 2) = 1.0;
 
-    
+
     //SP::NonSmoothLaw nslaw(new BinaryCohesiveNSL(e, 0, 0, sigma_c, delta_c,3, BinaryCohesiveNSL::TRIANGLE_SHAPE));
     SP::NonSmoothLaw nslaw(new BinaryCohesiveNSL(e, 0, 0, sigma_c, delta_c,3, BinaryCohesiveNSL::DOOR_SHAPE));
     SP::Relation relation(new LagrangianLinearTIR(H));
@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
     SP::LinearOSNS osnspb(new CohesiveFrictionContact(3));
     osnspb->setAssemblyType(REDUCED_DIRECT);
     osnspb->setMStorageType(NM_SPARSE);
-    
+
     osnspb->numericsSolverOptions()->dparam[SICONOS_DPARAM_TOL] = 1e-10; // Tolerance
 
     // -- (4) Simulation setup with (1) (2) (3)
@@ -155,8 +155,8 @@ int main(int argc, char* argv[])
     dataPlot(0, idx++) = (*lambda)(1);
     dataPlot(0, idx++) = 1.0;
     dataPlot(0, idx++) = (*f)(0);
-    
-    
+
+
     // --- Time loop ---
     cout << "====> Start computation ... " << endl;
     // ==== Simulation loop - Writing without explicit event handling =====
@@ -182,10 +182,10 @@ int main(int argc, char* argv[])
       SP::BinaryCohesiveNSL nslaw_BinaryCohesiveNSL(std::dynamic_pointer_cast<BinaryCohesiveNSL>(inter->nonSmoothLaw()));
       dataPlot(k, idx++) = nslaw_BinaryCohesiveNSL->beta(*(inter));
       dataPlot(k, idx++) = (*f)(0);
-    
+
       std::cout << "    beta = " << nslaw_BinaryCohesiveNSL->beta(*(inter)) << std::endl;
       //std::cout << "   f = " <<  (*f)(0) << std::endl;
-      
+
       //getchar();
       //osnspb->display();
       s->nextStep();
@@ -201,11 +201,23 @@ int main(int argc, char* argv[])
     // --- Output files ---
     cout << "====> Output file writing ..." << endl;
     dataPlot.resize(k, outputSize);
-    ioMatrix::write("OneParticle-BinaryCZM.ref", "ascii", dataPlot);
+    //ioMatrix::write("OneParticle-BinaryCZM.ref", "ascii", dataPlot);
+    ioMatrix::write("OneParticle-BinaryCZM.dat", "ascii", dataPlot, "noDim");
     double error=0.0, eps=1e-12;
-    if((error=ioMatrix::compareRefFile(dataPlot, "OneParticle-BinaryCZM.ref", eps)) >= 0.0
+    SP::SimpleMatrix ref;
+    if((error=ioMatrix::compareRefFile(dataPlot, "OneParticle-BinaryCZM.ref", eps, Index(), &ref )) >= 0.0
         && error > eps)
-      return 1;
+      {
+	ref->display();
+	*ref = *ref - dataPlot;
+	SP::SiconosVector v  (new SiconosVector(dataPlot.size(0)));
+	dataPlot.getCol(0,*v);
+     	ref->setCol(0, *v);
+	ioMatrix::write("OneParticle-BinaryCZM-diff.dat", "ascii", *ref, "noDim");
+	return 1;
+      }
+
+
 
   }
 
