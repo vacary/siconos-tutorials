@@ -272,8 +272,7 @@ int main(int argc, char* argv[]) {
     if ((error = siconos::algebra::io::compareRefFile(dataPlotController, "RBS-Controller.ref",
                                                       eps)) > eps)
       return 1;
-    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "RBS.ref",
-                                                      eps)) > eps)
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "RBS.ref", eps)) > eps)
       return 1;
     return 0;
 

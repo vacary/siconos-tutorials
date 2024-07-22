@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 //-----------------------------------------------------------------------
+#include <SolverOptions.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -24,7 +25,6 @@
 #include <string>
 
 #include "NonlinearRelationReduced2.hpp"
-#include "SolverOptions.h"
 #include "const.h"
 #include "myDS.h"
 

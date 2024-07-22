@@ -17,6 +17,7 @@
  */
 //-----------------------------------------------------------------------
 
+#include <SolverOptions.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -26,7 +27,6 @@
 
 #include "NonlinearRelationWithSign.hpp"
 #include "NonlinearRelationWithSignInversed.hpp"
-#include "SolverOptions.h"
 #include "const.h"
 #include "myDS.h"
 
@@ -178,13 +178,11 @@ int main(int argc, char *argv[]) {
       // (*fout)<<cmp<<" "<<x->getValue(0)<<" "<<x->getValue(1)<<" "<<lambda->getValue(0)<<"
       // "<<lambda->getValue(1)<<" "<<lambda->getValue(2)<<" "<<lambda->getValue(3)<<"\n";
     }
-    std::cout << "Computational time = "
-              << "\n";
+    std::cout << "Computational time = " << "\n";
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "Computation time : " << elapsed << " ms\n";
 
-    // dataPlot.resize(cmp, outputSize);
     siconos::algebra::io::write(filename, dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 

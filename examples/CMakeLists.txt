@@ -1,6 +1,10 @@
 # Set minimum version for cmake
-cmake_minimum_required(VERSION 3.14)
-cmake_policy(SET CMP0074 NEW)
+cmake_minimum_required(VERSION 3.14) 
+
+cmake_policy(SET CMP0074 NEW) # find_package() uses <PackageName>_ROOT variables.
+cmake_policy(SET CMP0086 NEW) # UseSWIG honors SWIG_MODULE_NAME via -module flag.
+cmake_policy(SET CMP0079 NEW) # target_link_libraries() allows use with targets in other directories
+cmake_policy(SET CMP0067 NEW) # Honor language standard in try_compile() source-file signature.
 
 project(siconos_examples CXX C)
 
@@ -18,8 +22,7 @@ include(SiconosRequiredVersion)
 #
 # If siconos is not installed in a standard place, cmake searches in directories listed in CMAKE_PREFIX_PATH.
 # This variable must contains the path to siconos installation.
-#
-
+# 
 # Remark : we may also use the package registry magic to find siconos:
 # see https://cmake.org/cmake/help/git-master/manual/cmake-packages.7.html#creating-packages
 find_package(siconos REQUIRED)
@@ -48,7 +51,7 @@ if(HAS_PYTHON_WRAPPER)
   include(FindPythonModule)
   find_python_module(matplotlib)
   find_python_module(pyhull)
-  if(SICONOS_HAS_OCE)
+  if(SICONOS_HAS_OpenCASCADE)
     find_python_module(OCC REQUIRED)
   endif()
 endif()
@@ -141,7 +144,7 @@ endif()
 # === mechanics ===
 string(FIND "${installed_targets}" "mechanics" mechanics_installed )
 # mechanics with bullet? --> SICONOS_HAS_BULLET = ON
-# mechanics or mechanisms with OCE? --> SICONOS_HAS_OCE = ON
+# mechanics or mechanisms with OpenCASCADE? --> SICONOS_HAS_OpenCASCADE  = ON
 # mechanics + bullet
 if(${mechanics_installed} GREATER -1)
   message(STATUS "mechanics component found")
@@ -182,15 +185,15 @@ if(${mechanics_installed} GREATER -1)
   endif()
 
   endif()
-  if(SICONOS_HAS_OCE)
-    message(STATUS "add examples requiring oce")
-    # mechanics + oce
-    set(mechanics_oce_examples
+  if(SICONOS_HAS_OpenCASCADE) 
+    message(STATUS "add examples requiring occt")
+    # mechanics + occ
+    set(mechanics_occt_examples
       mechanics/MultiBodySystems/OCC_examples
       mechanics/MultiBodySystems/SliderCrank
       mechanics/MultiBodySystems/WatchEscapment
       )
-    list(APPEND EXAMPLES_DIRECTORIES ${mechanics_oce_examples})
+    list(APPEND EXAMPLES_DIRECTORIES ${mechanics_occt_examples})
   endif()
 endif()
 
@@ -278,15 +281,10 @@ foreach(current_dir IN LISTS EXAMPLES_DIRECTORIES)
         COMMAND ${siconos_SCRIPT} ${driver} --build-plugins --tmp-dir
         WORKING_DIRECTORY ${working_dir}
         )
-      if(SICONOS_HAS_OCE)
-        # add path to python OCC to PYTHONPATH
-        set_tests_properties(py_${test_name} PROPERTIES
-          ENVIRONMENT PYTHONPATH=${OCC_PYTHONPATH}
-          TIMEOUT ${tests_timeout})
-      else()
-        set_tests_properties(py_${test_name} PROPERTIES
-          TIMEOUT ${tests_timeout})
-      endif()
+
+      set_tests_properties(py_${test_name} PROPERTIES
+            TIMEOUT ${tests_timeout})
+
       # plugins are not build by default for python scripts, so
       # we force it with --build-plugins.
     else()

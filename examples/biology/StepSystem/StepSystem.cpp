@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 //-----------------------------------------------------------------------
+#include <SolverOptions.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -24,7 +25,6 @@
 #include <string>
 
 #include "NonlinearRelation.hpp"
-#include "SolverOptions.h"
 #include "const.h"
 #include "myDS.h"
 
@@ -178,8 +178,7 @@ int main(int argc, char *argv[]) {
       // "<<lambda->getValue(1)<<" "<<lambda->getValue(2)<<" "<<lambda->getValue(3)<<"\n";
     }
 
-    std::cout << "Computational time = "
-              << "\n";
+    std::cout << "Computational time = " << "\n";
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "Computation time : " << elapsed << " ms\n";

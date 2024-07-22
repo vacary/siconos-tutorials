@@ -260,11 +260,11 @@ int main(int argc, char* argv[]) {
     double error = 0.0, eps = 1e-12;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "DB.ref", eps)) > eps)
       return 1;
-}
+  }
 
-// --- Exceptions handling ---
-catch (...) {
-  siconos::exception::process();
-  return 1;
-}
+  // --- Exceptions handling ---
+  catch (...) {
+    siconos::exception::process();
+    return 1;
+  }
 }

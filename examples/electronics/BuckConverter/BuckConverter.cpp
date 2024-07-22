@@ -4,10 +4,8 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-//#include <SiconosBlas.h>
 #include <SiconosKernel.hpp>
 #include <exception>
-// #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -162,7 +160,8 @@ int main(int argc, char *argv[]) {
   std::cout << endl;
   std::cout << "fmodel2(x) = x < 0      ? 0     :";
   for (unsigned int i = 1; i < NBHYP; i++)
-    std::cout << "\\" << endl
+    std::cout << "\\"
+              << "\n"
               << "             x < " << limhyp[i] << " ? fmodel2_" << i << "(x) :";
 
   std::cout << "fmodel2_" << NBHYP << "(x)\n";
@@ -360,13 +359,11 @@ int main(int argc, char *argv[]) {
 
   double z_straight[NSLSIZE_BUCK];
   double w_straight[NSLSIZE_BUCK];
-  // Note FP: the two vars. abover were not initialized which was leading to overflow in dataPlot(:,9) computation
-  for(int i=0;i<NSLSIZE_BUCK;++i)
-    {
-      z_straight[i] = 0.;
-      w_straight[i] = 0.;
-    }
-  
+  for (int i = 0; i < NSLSIZE_BUCK; ++i) {
+    z_straight[i] = 0.;
+    w_straight[i] = 0.;
+  }
+
   double *fPWLmat_straight;
   fPWLmat_straight = fPWLmat.getArray();
 
@@ -507,7 +504,7 @@ int main(int argc, char *argv[]) {
       StratBuckConverter->nextStep();
 
       if ((k % (N / 100)) == 0) {
-        cerr << "-------- " << (100.0 * k) / N << " % achieved... ( " << k << " steps)\n";
+        std::cerr << "-------- " << (100.0 * k) / N << " % achieved... ( " << k << " steps)\n";
         //             cerr << "nb CPU cycles LCP = " << LCP_CPUtime << endl;
       }
     }
@@ -535,15 +532,13 @@ int main(int argc, char *argv[]) {
 
   // dataPlot (ascii) output
   dataPlot.resize(k + 1, nbPlot);
-  siconos::algebra::io::write("BuckConverter.dat", dataPlot,
-			      siconos::algebra::io::ASCII_OUT,
+  siconos::algebra::io::write("BuckConverter.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                               siconos::algebra::io::WriteType::nodim);
-  
+
   double error = 0.0, eps = 1e-12;
-  if ((error = siconos::algebra::io::compareRefFile(
-	   dataPlot, "BuckConverter.ref", eps)) > eps)
+  if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BuckConverter.ref", eps)) > eps)
     return 1;
 
   std::cout << "End of program\n";
-  return  0;
+  return 0;
 }
