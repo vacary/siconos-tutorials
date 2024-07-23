@@ -229,8 +229,7 @@ int main(int argc, char* argv[]) {
                                                       eps)) > eps)
       return 1;
     return 0;
-  }
-  catch (...) {
+  } catch (...) {
     siconos::exception::process();
     return 1;
   }

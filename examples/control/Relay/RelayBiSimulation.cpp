@@ -276,6 +276,13 @@ int main(int argc, char* argv[]) {
       return 1;
     return 0;
 
+    double error = 0.0, eps = 1e-12;
+    if ((error = ioMatrix::compareRefFile(dataPlotController, "RBS-Controller.ref", eps)) >
+        eps)
+      return 1;
+    if ((error = ioMatrix::compareRefFile(dataPlot, "RBS.ref", eps)) > eps) return 1;
+    return 0;
+
   }
 
   catch (...) {

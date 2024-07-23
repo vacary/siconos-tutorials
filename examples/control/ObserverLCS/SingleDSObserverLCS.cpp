@@ -95,8 +95,7 @@ int main(int argc, char* argv[]) {
     C(1, 3) = 1.0;
 
     auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>(
-        siconos::pointers::createSPtr(C),
-        siconos::pointers::createSPtr(B));
+        siconos::pointers::createSPtr(C), siconos::pointers::createSPtr(B));
 
     myProcessRelation->setComputeEFunction("SingleDSObserverLCSPlugin", "computeE");
 

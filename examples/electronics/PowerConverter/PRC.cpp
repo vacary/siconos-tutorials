@@ -181,7 +181,6 @@ int main(int argc, char* argv[]) {
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "PRC.ref", eps)) > eps)
       return 1;
 
-
   }
 
   // --- Exceptions handling ---

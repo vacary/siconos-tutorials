@@ -46,7 +46,7 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
   double _sBallRadius;
 
  public:
-  my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius){};
+  my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius) {};
 
   virtual void computeOutput(double t, siconos::modeling::Interaction& inter,
                              unsigned int derivativeNumber) override {
@@ -127,8 +127,7 @@ int main(int argc, char* argv[]) {
     (*v0)(3) = omega_initx;
     (*v0)(5) = omega_initz;
     // -- The dynamical system --
-    auto ball =
-        std::make_shared<siconos::modeling::NewtonEulerDS>(q0, v0, m, I);
+    auto ball = std::make_shared<siconos::modeling::NewtonEulerDS>(q0, v0, m, I);
 
     // -- Set external forces (weight) --
     auto weight = std::make_shared<Vector>(nDof);
@@ -160,21 +159,18 @@ int main(int argc, char* argv[]) {
     //     SP::BlockMatrix HT_block(new BlockMatrix(vecMatrix2,1,1));
 
 #ifdef WITH_FC3D
-    auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(
-        e, e, 0.6, 3);
+    auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, e, 0.6, 3);
 #else
     auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
 #endif
 
     auto relation0 = std::make_shared<user_defined::my_NewtonEulerR>(radius);
-    auto inter =
-        std::make_shared<siconos::modeling::Interaction>(nslaw0, relation0);
+    auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw0, relation0);
 
     // -------------
     // --- Model ---
     // -------------
-    auto bouncingBall =
-        std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
+    auto bouncingBall = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
     // add the dynamical system in the non smooth dynamical system
     bouncingBall->insertDynamicalSystem(ball);
 
@@ -184,9 +180,7 @@ int main(int argc, char* argv[]) {
 
     // -- (1) OneStepIntegrators --
 #ifdef WITH_PROJ
-    auto OSI =
-        std::make_shared<siconos::integrators::MoreauJeanDirectProjectionOSI>(
-            theta);
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanDirectProjectionOSI>(theta);
 #else
     auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
 #endif
@@ -194,24 +188,21 @@ int main(int argc, char* argv[]) {
     auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
     // -- (3) one step non smooth problem
-    auto osnspb =
-        std::make_shared<siconos::nonsmooth_formulations::GenericMechanical>();
+    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::GenericMechanical>();
 #ifdef WITH_PROJ
-    auto osnspb_pos = std::make_shared<
-        siconos::nonsmooth_formulations::MLCPProjectOnConstraints>(
-        SICONOS_MLCP_ENUM, 1.0);
+    auto osnspb_pos =
+        std::make_shared<siconos::nonsmooth_formulations::MLCPProjectOnConstraints>(
+            SICONOS_MLCP_ENUM, 1.0);
 #endif
     // -- (4) Simulation setup with (1) (2) (3)
 #ifdef WITH_PROJ
-    auto s =
-        std::make_shared<siconos::simulation::TimeSteppingDirectProjection>(
-            bouncingBall, t, OSI, osnspb, osnspb_pos);
+    auto s = std::make_shared<siconos::simulation::TimeSteppingDirectProjection>(
+        bouncingBall, t, OSI, osnspb, osnspb_pos);
     s->setProjectionMaxIteration(20);
     s->setConstraintTolUnilateral(1e-08);
     s->setConstraintTol(1e-08);
 #else
-    auto s = std::make_shared<siconos::simulation::TimeStepping>(
-        bouncingBall, t, OSI, osnspb);
+    auto s = std::make_shared<siconos::simulation::TimeStepping>(bouncingBall, t, OSI, osnspb);
 #endif
     s->setNewtonTolerance(1e-10);
     s->setNewtonMaxIteration(10);
@@ -298,9 +289,7 @@ int main(int argc, char* argv[]) {
       k++;
     }
     auto end = std::chrono::system_clock::now();
-    auto elapsed =
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-            .count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
     std::cout << "\nComputation time : " << elapsed << " ms\n";
 

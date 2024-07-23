@@ -30,23 +30,23 @@ using namespace std;
 constexpr double GGearth = 9.8100;
 
 //---------------------------------------------------
-double LengthBlock = 1.;           // Length of the rocking block
-double HeightBlock = 1.5;          // Height of the rocking block
-unsigned int Nfreedom = 3;         // Number of degrees of freedom
-unsigned int Ncontact = 2;         // Number of contacts
-double MassBlock = 1.0;            // Mass of the rocking block
-double PosXiniPointA = 0.0;        // Initial coordinate X of the point A
-double PosYiniPointA = 0.5;        // Initial coordinate Y of the point A
+double LengthBlock = 1.;                    // Length of the rocking block
+double HeightBlock = 1.5;                   // Height of the rocking block
+unsigned int Nfreedom = 3;                  // Number of degrees of freedom
+unsigned int Ncontact = 2;                  // Number of contacts
+double MassBlock = 1.0;                     // Mass of the rocking block
+double PosXiniPointA = 0.0;                 // Initial coordinate X of the point A
+double PosYiniPointA = 0.5;                 // Initial coordinate Y of the point A
 double AngleThetaIni = numbers::pi / 10.0;  // Initial angle theta of the block
-double VelXiniPointA = 0.0;        // Initial relative velocity Vx of the point A
-double VelYiniPointA = 0.0;        // Initial relative velocity Vy of the point A
-double RotVelBlockIni = 0.0;       // Initial angular velocity of the block
-double e = 0.5;                    // Restitution coefficient
-double TimeInitial = 0.0;          // Initial time of the simulation
-double TimeFinal = 2.0;            // Final time of the simulation
-double StepSize = 0.01;            // Time step size
-unsigned int NpointSave = 200;     //
-unsigned int SizeOutput = 9;       //
+double VelXiniPointA = 0.0;                 // Initial relative velocity Vx of the point A
+double VelYiniPointA = 0.0;                 // Initial relative velocity Vy of the point A
+double RotVelBlockIni = 0.0;                // Initial angular velocity of the block
+double e = 0.5;                             // Restitution coefficient
+double TimeInitial = 0.0;                   // Initial time of the simulation
+double TimeFinal = 2.0;                     // Final time of the simulation
+double StepSize = 0.01;                     // Time step size
+unsigned int NpointSave = 200;              //
+unsigned int SizeOutput = 9;                //
 double criterion = 0.05;
 unsigned int maxIter = 20000;
 //==========================================================================================================
@@ -117,13 +117,15 @@ int main(int argc, char* argv[]) {
     //              II: Declare the relation et interaction between dynamical systems
     //==================================================================================================================
     // Impact law
-    auto nslaw= std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
+    auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
     // Interaction at contact point 1
-    auto relation1= std::make_shared<siconos::modeling::LagrangianScleronomousR>("RockingBlockPlugin:h1", "RockingBlockPlugin:G1");
-    auto inter1= std::make_shared<siconos::modeling::Interaction>(nslaw, relation1);
+    auto relation1 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
+        "RockingBlockPlugin:h1", "RockingBlockPlugin:G1");
+    auto inter1 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation1);
     // Interaction at contact point 2
-    auto relation2= std::make_shared<siconos::modeling::LagrangianScleronomousR>("RockingBlockPlugin:h2", "RockingBlockPlugin:G2");
-    auto inter2= std::make_shared<siconos::modeling::Interaction>(nslaw, relation2);
+    auto relation2 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
+        "RockingBlockPlugin:h2", "RockingBlockPlugin:G2");
+    auto inter2 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation2);
     // Interactions for the whole dynamical system
     //================================================================================================================
     //            III. Create the "model" object
@@ -141,12 +143,15 @@ int main(int argc, char* argv[]) {
     auto TimeDiscret =
         std::make_shared<siconos::simulation::TimeDiscretisation>(TimeInitial, StepSize);
     // 2. Integration solver for one step
-    auto OSI= std::make_shared<siconos::integrators::MoreauJeanDirectProjectionOSI>(0.5001);
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanDirectProjectionOSI>(0.5001);
     // 3. Nonsmooth problem
     auto impact = std::make_shared<siconos::nonsmooth_formulations::LCP>();
-    auto impact_pos= std::make_shared<siconos::nonsmooth_formulations::MLCPProjectOnConstraints>(SICONOS_MLCP_ENUM);
+    auto impact_pos =
+        std::make_shared<siconos::nonsmooth_formulations::MLCPProjectOnConstraints>(
+            SICONOS_MLCP_ENUM);
     // 4. Simulation with (1), (2), (3)
-    auto TSscheme= std::make_shared<siconos::simulation::TimeSteppingDirectProjection>(RoBlockModel, TimeDiscret, OSI, impact, impact_pos, 0);
+    auto TSscheme = std::make_shared<siconos::simulation::TimeSteppingDirectProjection>(
+        RoBlockModel, TimeDiscret, OSI, impact, impact_pos, 0);
 
     //==================================================================================================================
     //                    V. Process the simulation
@@ -170,12 +175,12 @@ int main(int argc, char* argv[]) {
     DataPlot(0, 5) = (*VelBlock)(1);  // Velocity Vy
     DataPlot(0, 6) = (*VelBlock)(2);  // Angular velocity
 
-    auto tmp= std::make_shared<Vector>(Nfreedom);
+    auto tmp = std::make_shared<Vector>(Nfreedom);
     prod(*Mass, *VelBlock, *tmp, true);
     double kineticEnergy = 0.5 * inner_prod(*VelBlock, *tmp);
     DataPlot(0, 7) = kineticEnergy;
 
-    auto PosRef= std::make_shared<Vector>(Nfreedom);
+    auto PosRef = std::make_shared<Vector>(Nfreedom);
     (*PosRef)(0) = 0.0;
     (*PosRef)(1) = HeightBlock / 2.0;
     (*PosRef)(2) = 0.0;
@@ -219,8 +224,8 @@ int main(int argc, char* argv[]) {
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
-    if ((error = siconos::algebra::io::compareRefFile(
-             DataPlot, "RockingBlockTSProj.ref", eps)) > eps)
+    if ((error = siconos::algebra::io::compareRefFile(DataPlot, "RockingBlockTSProj.ref",
+                                                      eps)) > eps)
       return 1;
     return 0;
   }

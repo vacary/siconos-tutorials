@@ -251,8 +251,8 @@ int main(int argc, char* argv[]) {
                                 siconos::algebra::io::WriteType::nodim);
 
     double error = 0.0, eps = 1e-12;
-    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "ColumnOfbeadsTS-CombinedProjection.ref",
-                                                      eps)) > eps)
+    if ((error = siconos::algebra::io::compareRefFile(
+             dataPlot, "ColumnOfbeadsTS-CombinedProjection.ref", eps)) > eps)
       return 1;
     return 0;
 

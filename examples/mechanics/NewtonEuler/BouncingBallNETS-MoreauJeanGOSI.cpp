@@ -44,7 +44,7 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
   double _sBallRadius;
 
  public:
-  my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius){};
+  my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius) {};
 
   virtual void computeOutput(double t, siconos::modeling::Interaction& inter,
                              unsigned int derivativeNumber) override {

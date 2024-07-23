@@ -200,11 +200,12 @@ int main(int argc, char *argv[]) {
     // --- Output files ---
     std::cout << "====> Output file writing ...\n\n";
     dataPlot.resize(k, outputSize);
-    siconos::algebra::io::write("BouncingBallED-initialImpact.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+    siconos::algebra::io::write("BouncingBallED-initialImpact.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
-    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BouncingBallED-initialImpact.ref", eps)) >
-        eps)
+    if ((error = siconos::algebra::io::compareRefFile(
+             dataPlot, "BouncingBallED-initialImpact.ref", eps)) > eps)
       return 1;
   }
 

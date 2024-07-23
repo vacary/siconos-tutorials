@@ -154,7 +154,7 @@ int main(int argc, char* argv[]) {
 
     // -- (2) Time discretisation --
     auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
-    
+
     // -- (3) one step non smooth problem
     auto osnspb = std::make_shared<siconos::nonsmooth_formulations::RollingFrictionContact>(3);
     osnspb->numericsSolverOptions()->dparam[SICONOS_DPARAM_TOL] = 1e-12;

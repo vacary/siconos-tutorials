@@ -30,6 +30,10 @@
 using Matrix = siconos::algebra::SimpleMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
+#include <SiconosKernel.hpp>
+#include <chrono>
+
+#include "CamState.h"
 using namespace std;
 
 int main(int argc, char* argv[]) {

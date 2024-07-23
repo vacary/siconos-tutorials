@@ -143,11 +143,12 @@ int main(int argc, char* argv[]) {
     auto TimeDiscret =
         std::make_shared<siconos::simulation::TimeDiscretisation>(TimeInitial, StepSize);
     // 2. Integration solver for one step
-    auto OSI= std::make_shared<siconos::integrators::MoreauJeanOSI>(0.50001);
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(0.50001);
     // 3. Nonsmooth problem
     auto impact = std::make_shared<siconos::nonsmooth_formulations::LCP>();
     // 4. Simulation with (1), (2), (3)
-    auto TSscheme= std::make_shared<siconos::simulation::TimeStepping>(RoBlockModel, TimeDiscret);
+    auto TSscheme =
+        std::make_shared<siconos::simulation::TimeStepping>(RoBlockModel, TimeDiscret);
     TSscheme->setNewtonTolerance(criterion);
     TSscheme->setNewtonMaxIteration(maxIter);
     TSscheme->insertIntegrator(OSI);
@@ -224,8 +225,8 @@ int main(int argc, char* argv[]) {
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
-    if ((error = siconos::algebra::io::compareRefFile(DataPlot, "RockingBlockTS.ref",
-                                                      eps)) > eps)
+    if ((error = siconos::algebra::io::compareRefFile(DataPlot, "RockingBlockTS.ref", eps)) >
+        eps)
       return 1;
     return 0;
   } catch (...) {

@@ -221,8 +221,8 @@ int main(int argc, char* argv[]) {
                                 siconos::algebra::io::WriteType::nodim);
 
     double error = 0.0, eps = 1e-12;
-    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Ball2D_kernel_only_with_friction.ref",
-                                                      eps)) > eps)
+    if ((error = siconos::algebra::io::compareRefFile(
+             dataPlot, "Ball2D_kernel_only_with_friction.ref", eps)) > eps)
       return 1;
 
   }

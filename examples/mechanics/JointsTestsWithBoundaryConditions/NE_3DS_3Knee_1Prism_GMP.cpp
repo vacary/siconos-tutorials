@@ -36,6 +36,12 @@
 using Matrix = siconos::algebra::SimpleMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
+#include <KneeJointR.hpp>
+#include <PrismaticJointR.hpp>
+#include <SiconosKernel.hpp>
+#include <chrono>
+
+#include "GeomTools.h"
 using namespace std;
 
 int main(int argc, char *argv[]) {

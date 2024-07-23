@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
     osnspb->numericsSolverOptions()->dparam[SICONOS_DPARAM_TOL] = 1e-10;
 
     // -- (4) Simulation setup with (1) (2) (3)
-    auto s= std::make_shared<siconos::simulation::TimeStepping>(myModel, t, OSI1, osnspb);
+    auto s = std::make_shared<siconos::simulation::TimeStepping>(myModel, t, OSI1, osnspb);
     s->setNewtonTolerance(1e-10);
     s->setNewtonMaxIteration(4);
     // =========================== End of model definition ===========================

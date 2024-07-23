@@ -45,7 +45,7 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
   double _sBallRadius;
 
  public:
-  my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius){};
+  my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius) {};
 
   virtual void computeOutput(double t, siconos::modeling::Interaction& inter,
                              unsigned int derivativeNumber) override {
@@ -132,8 +132,9 @@ int main(int argc, char* argv[]) {
     (*weight)(0) = -m * g;
     ball->setFExtPtr(weight);
 
-    //siconos::modeling::BoundaryCondition::Indices bdindex = {0, 3, 5};
-    auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(siconos::modeling::BoundaryCondition::Indices{0, 3, 5});
+    // siconos::modeling::BoundaryCondition::Indices bdindex = {0, 3, 5};
+    auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(
+        siconos::modeling::BoundaryCondition::Indices{0, 3, 5});
     bd->setComputePrescribedVelocityFunction("BallOnMovingPlanePlugin", "prescribedvelocity3");
     ball->setBoundaryConditions(bd);
 

@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     (*v0)(0) = velocity_init;
 
     // -- The dynamical system --
-    auto ball= std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, Mass);
+    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, Mass);
     // -- Set external forces (weight) --
     auto weight = std::make_shared<Vector>(nDof);
     (*weight)(0) = -m * g;
@@ -197,8 +197,8 @@ int main(int argc, char *argv[]) {
     siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
-    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BouncingBallED-withRestingContact.ref", eps)) >
-        eps)
+    if ((error = siconos::algebra::io::compareRefFile(
+             dataPlot, "BouncingBallED-withRestingContact.ref", eps)) > eps)
       return 1;
   }
 

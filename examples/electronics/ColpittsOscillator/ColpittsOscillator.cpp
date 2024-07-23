@@ -19,8 +19,9 @@
 //
 // Colpitts Oscillator
 //-----------------------------------------------------------------------
-#include <SiconosKernel.hpp>
 #include <SolverOptions.h>
+
+#include <SiconosKernel.hpp>
 #include <chrono>
 #include <string>
 
@@ -213,8 +214,8 @@ int main(int argc, char* argv[]) {
     // double error = 0.0, eps = 1e-12;
     // if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts.ref", eps)) > eps)
     //   {
-    // 	if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts-sol2.ref", eps)) > eps)
-    // 	  return 1;
+    // 	if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts-sol2.ref", eps))
+    // > eps) 	  return 1;
     //   }
   }
   // --- Exceptions handling ---
