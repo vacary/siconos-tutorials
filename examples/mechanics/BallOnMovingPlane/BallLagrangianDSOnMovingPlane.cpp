@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,7 +86,8 @@ int main(int argc, char* argv[]) {
     // -- Set external forces (weight) --
     movingplane->setFExtPtr(weight);
 
-    auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(siconos::modeling::BoundaryCondition::Indices{0});
+    auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(
+        siconos::modeling::BoundaryCondition::Indices{0});
     bd->setComputePrescribedVelocityFunction("BallOnMovingPlanePlugin", "prescribedvelocity");
 
     movingplane->setBoundaryConditions(bd);

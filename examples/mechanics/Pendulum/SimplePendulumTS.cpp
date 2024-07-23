@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,7 +154,7 @@ int main(int argc, char* argv[]) {
     //    EventsManager eventsManager = s->eventsManager();
     // --- Time loop ---
     std::cout << "Start computation ... \n";
-    std::cout << "Number of time step" << N << "\n";
+    std::cout << "Number of time steps " << N << "\n";
     while (s->hasNextEvent()) {
       k++;
       if (!(div(k, 10000).rem)) std::cout << "Step number " << k << "\n";
@@ -178,7 +178,6 @@ int main(int argc, char* argv[]) {
     std::cout << "\nComputation time : " << elapsed << " ms\n";
 
     // --- Output files ---
-    std::cout << "====> Output file writing ...\n";
     siconos::algebra::io::write("SimplePendulumResult.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);

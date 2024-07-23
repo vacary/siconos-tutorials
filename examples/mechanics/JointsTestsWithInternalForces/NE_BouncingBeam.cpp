@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     cout << "main jacQH\n";
     relation0->jachq()->display();
 
-    auto axe1= std::make_shared<Vector>(3);
+    auto axe1 = std::make_shared<Vector>(3);
     axe1->zero();
     axe1->setValue(2, 1);
     auto relation4 =
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
     auto osnspb = std::make_shared<siconos::nonsmooth_formulations::MLCP>();
 
     // -- (4) Simulation setup with (1) (2) (3)
-    auto s= std::make_shared<siconos::simulation::TimeStepping>(myModel, t, OSI3, osnspb);
+    auto s = std::make_shared<siconos::simulation::TimeStepping>(myModel, t, OSI3, osnspb);
     s->setNewtonTolerance(1e-4);
     s->setNewtonMaxIteration(50);
 

@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ double InitAngle = numbers::pi / 3.0;  // Initial inclination angle
 double m = 1.0;                        // Mass of the pendulum
 double t0 = 0;                         // initial computation time
 double T = 10.0;                       // final computation time
-double h = 0.01;                      // time step
+double h = 0.01;                       // time step
 unsigned int N = ceil(T / h) + 1;      // Number of points to be saved
 double e = 0.9;                        // nslaw
 double _rho = 0.99;
@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
     // 1. Time discretization
     auto TimeDiscret = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
     // 2. Integration solver for one step
-    auto OSI= std::make_shared<siconos::integrators::LsodarOSI>();
+    auto OSI = std::make_shared<siconos::integrators::LsodarOSI>();
     // 3. Nonsmooth problem
     auto impact = std::make_shared<siconos::nonsmooth_formulations::LCP>();
     auto acceleration = std::make_shared<siconos::nonsmooth_formulations::LCP>();
@@ -115,7 +115,8 @@ int main(int argc, char* argv[]) {
     auto EDscheme = std::make_shared<siconos::simulation::EventDriven>(Pendulum, TimeDiscret);
     EDscheme->insertIntegrator(OSI);
     EDscheme->insertNonSmoothProblem(impact, siconos::simulation::SICONOS_OSNSP_ED_IMPACT);
-    EDscheme->insertNonSmoothProblem(acceleration, siconos::simulation::SICONOS_OSNSP_ED_SMOOTH_ACC);
+    EDscheme->insertNonSmoothProblem(acceleration,
+                                     siconos::simulation::SICONOS_OSNSP_ED_SMOOTH_ACC);
 
     // =========================== End of model definition ===========================
 
@@ -127,11 +128,9 @@ int main(int argc, char* argv[]) {
     // ================================= Computation =================================
 
     auto eventsManager =
-        EDscheme->eventsManager();  // ponters point to the "eventsManager" object
-    auto _q =
-        simplependulum->q();  // pointer points to the position vector
-    auto _qdot =
-        simplependulum->velocity();  // pointer points to the velocity
+        EDscheme->eventsManager();            // ponters point to the "eventsManager" object
+    auto _q = simplependulum->q();            // pointer points to the position vector
+    auto _qdot = simplependulum->velocity();  // pointer points to the velocity
     simplependulum->initRhs(t0);
     simplependulum->computeRhs(t0);
     auto _qddot = simplependulum->acceleration();
@@ -180,8 +179,7 @@ int main(int argc, char* argv[]) {
         DataPlot(k, 0) = EDscheme->startingTime();  // instant at non-smooth event
 
         const auto& _qMemory = simplependulum->qMemory().getSiconosVector(1);
-        const auto& _qdotMemory =
-            simplependulum->velocityMemory().getSiconosVector(1);
+        const auto& _qdotMemory = simplependulum->velocityMemory().getSiconosVector(1);
         DataPlot(k, 1) = _qMemory(0);
         DataPlot(k, 2) = _qMemory(1);
         DataPlot(k, 3) = _qdotMemory(0);
@@ -218,12 +216,12 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    siconos::algebra::io::write("SimplependulumED_Lsodar.dat", DataPlot,
+    siconos::algebra::io::write("SimplePendulumED_Lsodar.dat", DataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
-    if ((error = siconos::algebra::io::compareRefFile(
-             DataPlot, "SimplependulumED_Lsodar.ref", eps)) > eps)
+    if ((error = siconos::algebra::io::compareRefFile(DataPlot, "SimplePendulumED_Lsodar.ref",
+                                                      eps)) > eps)
       return 1;
     return 0;
   }

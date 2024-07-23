@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,10 @@
   Simulation with a Time-Stepping scheme.
 */
 
+#include <SolverOptions.h>
+
 #include <SiconosKernel.hpp>
 #include <chrono>
-
 using Matrix = siconos::algebra::SimpleMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
@@ -113,6 +114,7 @@ int main(int argc, char *argv[]) {
 
     // -- (3) one step non smooth problem
     auto osnspb = std::make_shared<siconos::nonsmooth_formulations::GlobalFrictionContact>(3);
+    osnspb->numericsSolverOptions()->dparam[0] = 1e-12;
 
     // -- (4) Simulation setup with (1) (2) (3)
     auto s = std::make_shared<siconos::simulation::TimeStepping>(bouncingBall, t, OSI, osnspb);

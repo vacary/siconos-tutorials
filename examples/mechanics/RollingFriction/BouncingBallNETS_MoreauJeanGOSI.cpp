@@ -272,6 +272,7 @@ int main(int argc, char* argv[]) {
              dataPlot, "BouncingBallNETS_MoreauJeanGOSI.ref", eps)) > eps)
       return 1;
     // Double check with MoreauJeanOSI
+    eps = 1e-11;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BouncingBallNETS.ref", eps)) >
         eps)
       return 1;

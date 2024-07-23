@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,13 @@
   Simulation with a Time-Stepping scheme.
 */
 
+#include <SolverOptions.h>
+
 #include <KneeJointR.hpp>
 #include <PrismaticJointR.hpp>
 #include <SiconosKernel.hpp>
 #include <chrono>
-#include <SolverOptions.h>
+
 #include "GeomTools.h"
 
 using Matrix = siconos::algebra::SimpleMatrix;
@@ -177,8 +179,6 @@ int main(int argc, char *argv[]) {
     // --------------------
     // --- Interactions ---
     // --------------------
-
-    // Knee relations (point equality, i.e. ball joint)
 
     auto P = std::make_shared<Vector>(3);
     P->zero();

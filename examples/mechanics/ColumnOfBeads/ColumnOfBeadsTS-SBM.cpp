@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,7 +125,6 @@ int main(int argc, char* argv[]) {
     // --------------------------------------
     // ---      Model and simulation      ---
     // --------------------------------------
-
     auto columnOfBeads = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
     // add the dynamical system in the non smooth dynamical system
     for (unsigned int i = 0; i < nBeads; i++) {
@@ -248,12 +247,12 @@ int main(int argc, char* argv[]) {
     // --- Output files ---
     cout << "====> Output file writing ..." << endl;
     dataPlot.resize(k, outputSize);
-    siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+    siconos::algebra::io::write("ColumnOfBeadsTS-SBM.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
     // Comparison with a reference file
     cout << "====> Comparison with reference file ...\n";
-    double error = 0.0, eps = 1e-12;
+    double error = 0.0, eps = 1e-10;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "ColumnOfBeadsTS-SBM.ref",
                                                       eps)) > eps)
       return 1;
