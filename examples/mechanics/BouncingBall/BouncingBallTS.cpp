@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,11 +115,9 @@ int main(int argc, char *argv[]) {
     // -- (4) Simulation setup with (1) (2) (3)
     auto s = std::make_shared<siconos::simulation::TimeStepping>(bouncingBall, t, OSI, osnspb);
 
-    // =========================== End of model definition
-    // ===========================
+    // =========================== End of model definition ===========================
 
-    // ================================= Computation
-    // =================================
+    // ================================= Computation =================================
 
     int N = ceil((T - t0) / h);  // Number of time steps
 

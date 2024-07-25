@@ -50,10 +50,10 @@ int main(int argc, char* argv[]) {
     auto ndof = user::nDof;
     double l = user::L / ndof;  // length of an element
 
-    auto SparseMass = std::make_shared<Matrix>(
-        ndof, ndof, siconos::algebra::UblasType::SPARSE, ndof);
-    auto SparseStiffness = std::make_shared<Matrix>(
-        ndof, ndof, siconos::algebra::UblasType::SPARSE, 3 * ndof);
+    auto SparseMass =
+        std::make_shared<Matrix>(ndof, ndof, siconos::algebra::UblasType::SPARSE, ndof);
+    auto SparseStiffness =
+        std::make_shared<Matrix>(ndof, ndof, siconos::algebra::UblasType::SPARSE, 3 * ndof);
 
     SparseMass->setValue(0, 0, 1.0 / 3.0);
     SparseMass->setValue(0, 1, 1.0 / 6.0);
@@ -132,7 +132,7 @@ int main(int argc, char* argv[]) {
 
     // -- (1) OneStepIntegrators --
 #ifdef TS_PROJ
-    SP::MoreauJeanDirectProjectionOSI OSI =
+    auto OSI =
         std::make_shared<siconos::integrators::MoreauJeanDirectProjectionOSI>(user::theta);
     OSI->setDeactivateYPosThreshold(1e-05);
     OSI->setDeactivateYVelThreshold(0.0);
@@ -153,11 +153,10 @@ int main(int argc, char* argv[]) {
 
     // -- (4) Simulation setup with (1) (2) (3)
 #ifdef TS_PROJ
-    SP::MLCPProjectOnConstraints position =
+    auto position =
         std::make_shared<siconos::nonsmooth_formulations::MLCPProjectOnConstraints>();
-    SP::TimeSteppingDirectProjection s =
-        std::make_shared<siconos::simulation::TimeStepping> DirectProjection(
-            impactingBar, t, OSI, osnspb, position, 0);
+    auto s = std::make_shared<siconos::simulation::TimeStepping> DirectProjection(
+        impactingBar, t, OSI, osnspb, position, 0);
     s->setProjectionMaxIteration(10);
     s->setConstraintTolUnilateral(1e-10);
     s->setConstraintTol(1e-10);
