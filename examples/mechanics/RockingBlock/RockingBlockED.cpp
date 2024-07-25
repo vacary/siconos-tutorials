@@ -54,7 +54,7 @@ unsigned int maxIter = 20000;
 //==========================================================================================================
 int main(int argc, char* argv[]) {
   //---------------------------- calculate the computation time
-  //--------------------------------------------------
+  //--------------------------------------------
   try {
     //===========================================================================================================
     //                  I: Declare the dynamical systems
@@ -102,9 +102,6 @@ int main(int argc, char* argv[]) {
     auto ForceExtern = std::make_shared<Vector>(Nfreedom);
     (*ForceExtern)(1) = -MassBlock * GGearth;
     RockingBlock->setFExtPtr(ForceExtern);
-    //
-    //----------------------------- Display variables of the dynamical
-    // system---------------------------------------
     cout << "Initial position of the rocking block:\n";
     PosIniBlock->display();
     cout << "Initial velocity of the rocking block:\n";

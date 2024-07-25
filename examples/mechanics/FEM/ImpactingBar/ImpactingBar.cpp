@@ -142,7 +142,8 @@ int main(int argc, char* argv[]) {
 #ifdef TS_COMBINED
     auto OSI = std::make_shared<siconos::integrators::MoreauJeanCombinedProjectionOSI>(theta);
 #else
-    auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(user::theta, 0.5);
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(user::theta, 0.0);
+    // OSI->setConstraintActivationThreshold(1e-05);
 #endif
 #endif
     // -- (2) Time discretisation --
@@ -155,7 +156,7 @@ int main(int argc, char* argv[]) {
 #ifdef TS_PROJ
     auto position =
         std::make_shared<siconos::nonsmooth_formulations::MLCPProjectOnConstraints>();
-    auto s = std::make_shared<siconos::simulation::TimeStepping> DirectProjection(
+    auto s = std::make_shared<siconos::simulation::TimeSteppingDirectProjection>(
         impactingBar, t, OSI, osnspb, position, 0);
     s->setProjectionMaxIteration(10);
     s->setConstraintTolUnilateral(1e-10);
@@ -167,7 +168,7 @@ int main(int argc, char* argv[]) {
         std::make_shared<siconos::nonsmooth_formulations::MLCPProjectOnConstraints>(
             SICONOS_MLCP_ENUM);
     SP::TimeSteppingCombinedProjection s =
-        std::make_shared<siconos::simulation::TimeStepping> CombinedProjection(
+        std::make_shared<siconos::simulation::TimeSteppingCombinedProjection>(
             impactingBar, t, OSI, osnspb, position, 2);
     s->setProjectionMaxIteration(500);
     s->setConstraintTolUnilateral(1e-10);
@@ -218,7 +219,7 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 11) = impactEnergy;
 
     //    std::cout <<"potentialEnergy ="<<potentialEnergy << std::endl;
-    //     std::cout <<"kineticEnergy ="<<kineticEnergy << std::endl;
+    //    std::cout <<"kineticEnergy ="<<kineticEnergy << std::endl;
 
     // --- Time loop ---
     cout << "====> Start computation ... " << endl << endl;
