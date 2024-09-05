@@ -22,7 +22,7 @@
 #include <chrono>
 #include <cmath>  // for fabs
 
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 class MyContactDetection : public siconos::simulation::InteractionManager {

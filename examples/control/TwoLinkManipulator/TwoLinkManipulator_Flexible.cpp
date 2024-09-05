@@ -37,7 +37,7 @@
 double trunc(double d) { return (d > 0) ? floor(d) : ceil(d); }
 #endif
 
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 int main(int argc, char* argv[]) {
@@ -361,7 +361,7 @@ int main(int argc, char* argv[]) {
 //     LagrangianScleronomousR("Two-linkFlexiblePlugin:h0","Two-linkFlexiblePlugin:G0");
 //     Interaction * inter = new Interaction("floor-arm", allDS,0,2, nslaw, relation);
 
-//    //  SimpleMatrix H1(2,4);
+//    //  SiconosMatrix H1(2,4);
 // //     SiconosVector b1(2);
 // //     H1.zero();
 // //     H1(0,0) =-1;
@@ -374,7 +374,7 @@ int main(int argc, char* argv[]) {
 // //     Relation * relation1 = new LagrangianLinearTIR(H1,b1);
 // //     Interaction * inter1 =  new Interaction("floor-arm2", allDS,1,2, nslaw2, relation1);
 
-// //     SimpleMatrix H2(2,4);
+// //     SiconosMatrix H2(2,4);
 // //     SiconosVector b2(2);
 // //     H2.zero();
 // //     H2(0,1) =-1;

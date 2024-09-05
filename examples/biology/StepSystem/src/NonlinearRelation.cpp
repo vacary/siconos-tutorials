@@ -48,14 +48,14 @@ void user_defined::NonlinearRelation::computeg(double t,
 
 void user_defined::NonlinearRelation::computeJachlambda(
     double t, const siconos::algebra::BlockVector& x,
-    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SimpleMatrix& D) {
+    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SiconosMatrix& D) {
   DEBUG_PRINTF("user_defined::NonlinearRelation::computeJachlambda at time %e\n ", t);
   D.zero();
 }
 
 void user_defined::NonlinearRelation::computeJachx(
     double t, const siconos::algebra::BlockVector& x,
-    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SimpleMatrix& C) {
+    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SiconosMatrix& C) {
   DEBUG_PRINTF("user_defined::NonlinearRelation::computeJachx at time %e\n ", t);
 
   C.setValue(0, 0, -1);
@@ -71,7 +71,7 @@ void user_defined::NonlinearRelation::computeJachx(
 
 void user_defined::NonlinearRelation::computeJacglambda(
     double t, const siconos::algebra::SiconosVector& lambda,
-    siconos::algebra::SimpleMatrix& B) {
+    siconos::algebra::SiconosMatrix& B) {
   DEBUG_PRINTF("user_defined::NonlinearRelation::computeJacglambda at time %e\n ", t);
   DEBUG_EXPR(lambda.display());
 

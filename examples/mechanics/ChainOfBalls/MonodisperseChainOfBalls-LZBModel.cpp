@@ -27,7 +27,7 @@
 #include <SiconosKernel.hpp>
 #include <chrono>
 
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 constexpr double PI = 3.14159265;

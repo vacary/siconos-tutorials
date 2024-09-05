@@ -34,20 +34,20 @@ void user_defined::NonlinearRelationReduced::computeg(
 
 void user_defined::NonlinearRelationReduced::computeJachlambda(
     double t, const siconos::algebra::BlockVector& x,
-    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SimpleMatrix& D) {
+    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SiconosMatrix& D) {
   D.zero();
 }
 
 void user_defined::NonlinearRelationReduced::computeJachx(
     double t, const siconos::algebra::BlockVector& x,
-    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SimpleMatrix& C) {
+    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SiconosMatrix& C) {
   C(0, 0) = 0;
   C(0, 1) = -1;
 }
 
 void user_defined::NonlinearRelationReduced::computeJacglambda(
     double t, const siconos::algebra::SiconosVector& lambda,
-    siconos::algebra::SimpleMatrix& B) {
+    siconos::algebra::SiconosMatrix& B) {
   B(0, 0) = 0.0;
   B(1, 0) = -40.0;
 }

@@ -23,7 +23,7 @@ from numpy.linalg import norm
 from siconos.kernel import LagrangianLinearTIDS, NewtonImpactNSL,\
     LagrangianLinearTIR, Interaction, NonSmoothDynamicalSystem, MoreauJeanOSI,\
     TimeDiscretisation, LCP, TimeStepping
-from siconos.kernel import SimpleMatrix, getMatrix
+from siconos.kernel import SiconosMatrix, getMatrix
 import os
 import matplotlib
 import matplotlib.pyplot as plt
@@ -143,7 +143,7 @@ while s.hasNextEvent():
 #
 # comparison with the reference file
 #
-ref = getMatrix(SimpleMatrix("BouncingBallTS.ref"))
+ref = getMatrix(SiconosMatrix("BouncingBallTS.ref"))
 
 if (norm(dataPlot - ref) > 1e-12):
     print("Warning. The result is rather different from the reference file.")

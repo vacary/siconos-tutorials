@@ -30,7 +30,7 @@
 
 #include "BallRelations.hpp"
 
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 int main(int argc, char *argv[]) {

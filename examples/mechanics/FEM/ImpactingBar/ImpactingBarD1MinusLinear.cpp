@@ -29,7 +29,7 @@
 #include "UserDefinedParameter.hpp"
 
 #define TS_VELOCITY_LEVEL
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 using namespace std;
 namespace user =

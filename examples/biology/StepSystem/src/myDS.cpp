@@ -20,7 +20,7 @@
 // #define DEBUG_MESSAGES
 #include "siconos_debug.h"
 
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 user_defined::MyDS::MyDS(std::shared_ptr<siconos::algebra::SiconosVector> x0)

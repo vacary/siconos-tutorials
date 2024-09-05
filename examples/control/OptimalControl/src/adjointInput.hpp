@@ -38,11 +38,11 @@ class adjointInput : public siconos::modeling::FirstOrderNonLinearR {
   virtual void computeJachx(double time, const siconos::algebra::BlockVector &x,
                             const siconos::algebra::SiconosVector &lambda,
                             siconos::algebra::BlockVector &z,
-                            siconos::algebra::SimpleMatrix &C) override;
+                            siconos::algebra::SiconosMatrix &C) override;
   virtual void computeJachlambda(double time, const siconos::algebra::BlockVector &x,
                                  const siconos::algebra::SiconosVector &lambda,
                                  siconos::algebra::BlockVector &z,
-                                 siconos::algebra::SimpleMatrix &C) override;
+                                 siconos::algebra::SiconosMatrix &C) override;
 
   /** default function to compute jacobianG according to lambda
    *  \param double time, Interaction& inter : current time
@@ -52,11 +52,11 @@ class adjointInput : public siconos::modeling::FirstOrderNonLinearR {
   virtual void computeJacgx(double time, const siconos::algebra::BlockVector &x,
                             const siconos::algebra::SiconosVector &lambda,
                             siconos::algebra::BlockVector &z,
-                            siconos::algebra::SimpleMatrix &K) override;
+                            siconos::algebra::SiconosMatrix &K) override;
   virtual void computeJacglambda(double time, const siconos::algebra::BlockVector &x,
                                  const siconos::algebra::SiconosVector &lambda,
                                  siconos::algebra::BlockVector &z,
-                                 siconos::algebra::SimpleMatrix &B) override;
+                                 siconos::algebra::SiconosMatrix &B) override;
 
   double source(double t);
 
@@ -64,7 +64,7 @@ class adjointInput : public siconos::modeling::FirstOrderNonLinearR {
             std::shared_ptr<siconos::algebra::SiconosVector> alpha);
 
   void JacobianXbeta(double t, const siconos::algebra::BlockVector &xvalue,
-                     std::shared_ptr<siconos::algebra::SimpleMatrix> JacbetaX);
+                     std::shared_ptr<siconos::algebra::SiconosMatrix> JacbetaX);
 };
 }  // namespace user_defined
 

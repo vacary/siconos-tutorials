@@ -86,7 +86,7 @@ class Ctrl(object):
         self.post = self.topo.getDynamicalSystem('post')
         self.y = sk.SiconosVector(5)
         self.yDoF = sk.SiconosVector(1)
-        self.jachq = sk.SimpleMatrix(1,14)
+        self.jachq = sk.SiconosMatrix(1,14)
 
     def step(self):
         q0 = sk.BlockVector(self.bar.q(), self.post.q())

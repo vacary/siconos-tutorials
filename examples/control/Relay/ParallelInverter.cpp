@@ -30,7 +30,7 @@
 #include <string>
 
 using namespace std;
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 constexpr unsigned int ndof = 4;

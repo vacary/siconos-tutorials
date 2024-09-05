@@ -22,7 +22,7 @@
 #include <string>
 
 using namespace std;
-using SimpleMatrix = siconos::algebra::SimpleMatrix;
+using SiconosMatrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 using namespace std;
 
@@ -41,34 +41,34 @@ int main(int argc, char* argv[]) {
 
     // == Creation of the NonSmoothDynamicalSystem ==
     // DynamicalSystem(s)
-    SimpleMatrix A(2, 2);  // All components of A are automatically set to 0.
+    SiconosMatrix A(2, 2);  // All components of A are automatically set to 0.
     A(0, 0) = 1.0;
     A(0, 1) = 1.0;
     A(1, 0) = 3.0;
     A(1, 1) = 1.0;
     A = 0.1 * A;
-    SimpleMatrix TildeA(ndof, ndof);  // All components of A are automatically set to 0.
+    SiconosMatrix TildeA(ndof, ndof);  // All components of A are automatically set to 0.
     TildeA(0, 0) = A(0, 0);
     TildeA(0, 1) = A(0, 1);
     TildeA(1, 0) = A(1, 0);
     TildeA(1, 1) = A(1, 1);
 
-    SimpleMatrix L(2, noutput);
+    SiconosMatrix L(2, noutput);
     L(0, 0) = 1.0;
     L(1, 0) = 1.0;
     L = 0.1 * L;
-    SimpleMatrix G(noutput, 2);
+    SiconosMatrix G(noutput, 2);
     G(0, 0) = 2.0;
     G(0, 1) = 2.0;
 
-    SimpleMatrix hatA(2, 2);
+    SiconosMatrix hatA(2, 2);
     hatA = A - prod(L, G);
     TildeA(2, 2) = hatA(0, 0);
     TildeA(2, 3) = hatA(0, 1);
     TildeA(3, 2) = hatA(1, 0);
     TildeA(3, 3) = hatA(1, 1);
 
-    SimpleMatrix LG(2, 2);
+    SiconosMatrix LG(2, 2);
     LG = prod(L, G);
     TildeA(2, 0) = LG(0, 0);
     TildeA(3, 0) = LG(1, 0);
@@ -83,12 +83,12 @@ int main(int argc, char* argv[]) {
 
     // Relations
     unsigned int ninter = 2;  // dimension of your Interaction = size of y and lambda vectors
-    SimpleMatrix B(ndof, ninter);
+    SiconosMatrix B(ndof, ninter);
     B(0, 0) = -1.0;
     B(1, 0) = 1.0;
     B(2, 1) = -1.0;
     B(3, 1) = 1.0;
-    SimpleMatrix C(ninter, ndof);
+    SiconosMatrix C(ninter, ndof);
     C(0, 0) = -1.0;
     C(0, 1) = 1.0;
     C(1, 2) = -1.0;
@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
 
     myProcessRelation->setComputeEFunction("SingleDSObserverLCSPlugin", "computeE");
 
-    SimpleMatrix D(ninter, ninter);
+    SiconosMatrix D(ninter, ninter);
     D(0, 0) = 1.0;
     D(1, 1) = 1.0;
     // myProcessRelation->setD(D);
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
     int k = 0;                                // Current step
     unsigned int N = ceil((T - t0) / h) + 1;  // Number of time steps
     unsigned int outputSize = 10;             // number of required data
-    SimpleMatrix dataPlot(N, outputSize);
+    SiconosMatrix dataPlot(N, outputSize);
     auto processLambda = myProcessInteraction->lambda(0);
 
     myProcessInteraction->computeOutput(t0, 0);

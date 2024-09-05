@@ -328,7 +328,7 @@ int main(int argc, char* argv[]) {
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 5;
-    SimpleMatrix dataPlot(N + 1, outputSize);
+    SiconosMatrix dataPlot(N + 1, outputSize);
 
     std::shared_ptr<SiconosVector> q = FEsolid->q();
     std::shared_ptr<SiconosVector> v = FEsolid->velocity();

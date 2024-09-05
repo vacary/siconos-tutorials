@@ -22,7 +22,7 @@
 #include <chrono>
 #include <numbers>  // for pi
 
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 using namespace std;

@@ -179,7 +179,7 @@ while (k < N):
 
 # comparison with reference file
 
-ref = sk.getMatrix(sk.SimpleMatrix("CircuitRLCD.ref"))
+ref = sk.getMatrix(sk.SiconosMatrix("CircuitRLCD.ref"))
 
 #assert (np.linalg.norm(dataPlot - ref) < 1e-10)
 

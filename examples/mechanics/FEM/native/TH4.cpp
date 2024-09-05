@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
       {
         std::cout << " " << n->num() ;
         unsigned int idx_z = (*n->dofIndex())[2];
-        std::shared_ptr<SimpleMatrix> H =std::make_shared<SimpleMatrix>(1, FEsolid->dimension());
+        std::shared_ptr<SiconosMatrix> H =std::make_shared<SiconosMatrix>(1, FEsolid->dimension());
         (*H)(0, idx_z) = 1.0;
         std::shared_ptr<NonSmoothLaw> nslaw = std::make_shared<NewtonImpactNSL>(e);
         std::shared_ptr<Relation> relation = std::make_shared<LagrangianLinearTIR>(H, initial_gap);
@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 5;
-    SimpleMatrix dataPlot(N + 1, outputSize);
+    SiconosMatrix dataPlot(N + 1, outputSize);
 
     std::shared_ptr<SiconosVector> q = FEsolid->q();
     std::shared_ptr<SiconosVector> fext = FEsolid->fExt();

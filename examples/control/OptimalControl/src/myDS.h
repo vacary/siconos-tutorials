@@ -79,9 +79,9 @@ namespace user_defined {
 
 class MyDS : public siconos::modeling::FirstOrderNonLinearDS {
  protected:
-  std::shared_ptr<siconos::algebra::SimpleMatrix> Q{nullptr};
-  std::shared_ptr<siconos::algebra::SimpleMatrix> K1{nullptr};
-  // SimpleMatrix * K1T;
+  std::shared_ptr<siconos::algebra::SiconosMatrix> Q{nullptr};
+  std::shared_ptr<siconos::algebra::SiconosMatrix> K1{nullptr};
+  // SiconosMatrix * K1T;
 
  public:
   /** default constructor

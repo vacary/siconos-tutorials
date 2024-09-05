@@ -131,7 +131,7 @@ plot(dataPlot[:, 0], dataPlot[:, 3])
 savefig('ismcOT2_x_u.png')
 
 # compare with the reference
-ref = getMatrix(SimpleMatrix("SMCExampleImplicitOT2-py.ref"))
+ref = getMatrix(SiconosMatrix("SMCExampleImplicitOT2-py.ref"))
 print("%19e" % norm(dataPlot - ref))
 if (norm(dataPlot - ref) > 1e-12):
     print(dataPlot - ref)

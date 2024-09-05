@@ -28,10 +28,10 @@ class NonlinearRelationWithSign : public siconos::modeling::FirstOrderType2R {
    */
   virtual void computeJachx(double t, const siconos::algebra::BlockVector& x,
                             const siconos::algebra::SiconosVector& lambda,
-                            siconos::algebra::SimpleMatrix& C) override;
+                            siconos::algebra::SiconosMatrix& C) override;
   virtual void computeJachlambda(double t, const siconos::algebra::BlockVector& x,
                                  const siconos::algebra::SiconosVector& lambda,
-                                 siconos::algebra::SimpleMatrix& D) override;
+                                 siconos::algebra::SiconosMatrix& D) override;
 
   /** default function to compute jacobianG according to lambda
    *  \param double : current time
@@ -39,7 +39,7 @@ class NonlinearRelationWithSign : public siconos::modeling::FirstOrderType2R {
    * value .
    */
   virtual void computeJacglambda(double t, const siconos::algebra::SiconosVector& lambda,
-                                 siconos::algebra::SimpleMatrix& B) override;
+                                 siconos::algebra::SiconosMatrix& B) override;
 };
 }  // namespace user_defined
 

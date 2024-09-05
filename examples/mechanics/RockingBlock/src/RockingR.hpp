@@ -21,7 +21,7 @@
 #include <BlockVector.hpp>
 #include <LagrangianScleronomousR.hpp>
 #include <SiconosVector.hpp>
-#include <SimpleMatrix.hpp>
+#include <SiconosMatrix.hpp>
 
 namespace user_defined {
 class RockingBlockR : public siconos::modeling::LagrangianScleronomousR {

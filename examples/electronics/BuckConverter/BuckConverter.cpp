@@ -20,7 +20,7 @@ using namespace std;
 #define SIZEZ_PAR 11
 #define SIZEZ_INP 2
 
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 int main(int argc, char *argv[]) {
@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
   paramVin->setValue(8, VrefSettlingTime);
   paramVin->setValue(9, AmpliGain / tauAmpli);
   paramVin->setValue(10, -VthDN / L);
-  //    SimpleMatrix* LS_T = new SimpleMatrix(SIZEX,3);
+  //    SiconosMatrix* LS_T = new SiconosMatrix(SIZEX,3);
   //    LS_T->setValue(4,1,AmpliGain/tauAmpli);
   //    LSBuckConverter->setTPtr(LS_T);
 

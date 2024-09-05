@@ -6,7 +6,7 @@
 
 void user_defined::adjointInput::initialize(siconos::modeling::Interaction &inter) {
   FirstOrderNonLinearR::initialize(inter);
-  K2 = std::make_shared<siconos::algebra::SimpleMatrix>(2, 2);
+  K2 = std::make_shared<siconos::algebra::SiconosMatrix>(2, 2);
   K2->setValue(0, 0, 0.0);
   K2->setValue(0, 1, -1.0 / 2.0);
   K2->setValue(1, 0, 1.0 / 2.0);
@@ -72,7 +72,7 @@ void user_defined::adjointInput::computeg(double t, const siconos::algebra::Bloc
 void user_defined::adjointInput::computeJachx(double t, const siconos::algebra::BlockVector &x,
                                               const siconos::algebra::SiconosVector &lambda,
                                               siconos::algebra::BlockVector &z,
-                                              siconos::algebra::SimpleMatrix &C) {
+                                              siconos::algebra::SiconosMatrix &C) {
 #ifdef SICONOS_DEBUG
   std::cout << "computeJachx "
             << " at "
@@ -82,7 +82,7 @@ void user_defined::adjointInput::computeJachx(double t, const siconos::algebra::
   auto betatmp = std::make_shared<siconos::algebra::SiconosVector>(2);
   beta(t, x, betatmp);
 
-  auto jacbetaXtmp = std::make_shared<siconos::algebra::SimpleMatrix>(2, 2);
+  auto jacbetaXtmp = std::make_shared<siconos::algebra::SiconosMatrix>(2, 2);
 
   JacobianXbeta(t, x, jacbetaXtmp);
 
@@ -103,7 +103,7 @@ void user_defined::adjointInput::computeJachx(double t, const siconos::algebra::
 void user_defined::adjointInput::computeJachlambda(
     double time, const siconos::algebra::BlockVector &x,
     const siconos::algebra::SiconosVector &lambda, siconos::algebra::BlockVector &z,
-    siconos::algebra::SimpleMatrix &D) {
+    siconos::algebra::SiconosMatrix &D) {
 #ifdef SICONOS_DEBUG
   std::cout << "computeJachlambda "
             << " at "
@@ -128,14 +128,14 @@ void user_defined::adjointInput::computeJachlambda(
 void user_defined::adjointInput::computeJacgx(double t, const siconos::algebra::BlockVector &x,
                                               const siconos::algebra::SiconosVector &lambda,
                                               siconos::algebra::BlockVector &z,
-                                              siconos::algebra::SimpleMatrix &K) {
+                                              siconos::algebra::SiconosMatrix &K) {
 #ifdef SICONOS_DEBUG
   std::cout << "computeJacgx "
             << " at "
             << " " << t << std::endl;
 #endif
 
-  auto jacbetaXtmp = std::make_shared<siconos::algebra::SimpleMatrix>(2, 2);
+  auto jacbetaXtmp = std::make_shared<siconos::algebra::SiconosMatrix>(2, 2);
 
   JacobianXbeta(t, x, jacbetaXtmp);
 
@@ -164,7 +164,7 @@ void user_defined::adjointInput::computeJacgx(double t, const siconos::algebra::
 void user_defined::adjointInput::computeJacglambda(
     double t, const siconos::algebra::BlockVector &x,
     const siconos::algebra::SiconosVector &lambda, siconos::algebra::BlockVector &z,
-    siconos::algebra::SimpleMatrix &B) {
+    siconos::algebra::SiconosMatrix &B) {
   double *g = B.getArray();
 #ifdef SICONOS_DEBUG
   std::cout << "computeJacglambda "
@@ -210,7 +210,7 @@ void user_defined::adjointInput::beta(double t, const siconos::algebra::BlockVec
 
 void user_defined::adjointInput::JacobianXbeta(
     double t, const siconos::algebra::BlockVector &xvalue,
-    std::shared_ptr<siconos::algebra::SimpleMatrix> JacXbeta) {
+    std::shared_ptr<siconos::algebra::SiconosMatrix> JacXbeta) {
   JacXbeta->setValue(0, 0, 0.0);
   JacXbeta->setValue(0, 1, -1.0 / 2.0);
   JacXbeta->setValue(1, 0, 1.0 / 2.0);

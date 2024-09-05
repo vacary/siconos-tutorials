@@ -20,7 +20,7 @@
 #include <chrono>
 
 using namespace std;
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 namespace user_defined {

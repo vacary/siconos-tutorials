@@ -29,13 +29,13 @@
 
 using namespace std;
 
-static void addElementaryStiffnessMatrix(SP::SimpleMatrix SparseStiffness, int elementNumber, int nDof, double elementLength)
+static void addElementaryStiffnessMatrix(SP::SiconosMatrix SparseStiffness, int elementNumber, int nDof, double elementLength)
 {
 
   int dofStart = elementNumber *2;
   int ndof_per_element=4;
 
-  SP::SiconosMatrix Ke(new SimpleMatrix(4,4));
+  SP::SiconosMatrix Ke(new SiconosMatrix(4,4));
   (*Ke)(0,0) = 12.;
   (*Ke)(0,1) = 6. * elementLength;
   (*Ke)(0,2) = -12.;
@@ -57,7 +57,7 @@ static void addElementaryStiffnessMatrix(SP::SimpleMatrix SparseStiffness, int e
   }
 
   //Ke->display();
-  SP::SimpleMatrix ElementStiffness(new SimpleMatrix(nDof,nDof,siconos::SPARSE,10*nDof));
+  SP::SiconosMatrix ElementStiffness(new SiconosMatrix(nDof,nDof,siconos::SPARSE,10*nDof));
   for(unsigned int i = 0; i < ndof_per_element ; i++)
   {
     for(unsigned int j = 0; j < ndof_per_element ; j++)
@@ -68,14 +68,14 @@ static void addElementaryStiffnessMatrix(SP::SimpleMatrix SparseStiffness, int e
   (*SparseStiffness) +=  (*ElementStiffness);
 }
 
-static void addElementaryMassMatrix(SP::SimpleMatrix SparseMass, int elementNumber, int nDof, double elementLength, bool lumpedMass)
+static void addElementaryMassMatrix(SP::SiconosMatrix SparseMass, int elementNumber, int nDof, double elementLength, bool lumpedMass)
 {
 
 
   int dofStart = elementNumber *2;
   int ndof_per_element=4;
 
-  SP::SiconosMatrix Me(new SimpleMatrix(4,4));
+  SP::SiconosMatrix Me(new SiconosMatrix(4,4));
 
   if (!lumpedMass)
   {
@@ -110,7 +110,7 @@ static void addElementaryMassMatrix(SP::SimpleMatrix SparseMass, int elementNumb
 
   //Me->display();
 
-  SP::SimpleMatrix ElementMass(new SimpleMatrix(nDof,nDof,siconos::SPARSE,6*nDof));
+  SP::SiconosMatrix ElementMass(new SiconosMatrix(nDof,nDof,siconos::SPARSE,6*nDof));
   for(unsigned int i = 0; i < ndof_per_element ; i++)
   {
     for(unsigned int j = 0; j < ndof_per_element ; j++)
@@ -150,8 +150,8 @@ int main(int argc, char* argv[])
     cout << "number of dof = " << nDof <<  endl;
 
 
-    SP::SimpleMatrix SparseMass(new SimpleMatrix(nDof,nDof,siconos::SPARSE,6*nDof));
-    SP::SimpleMatrix SparseStiffness(new SimpleMatrix(nDof,nDof,siconos::SPARSE,6*nDof));
+    SP::SiconosMatrix SparseMass(new SiconosMatrix(nDof,nDof,siconos::SPARSE,6*nDof));
+    SP::SiconosMatrix SparseStiffness(new SiconosMatrix(nDof,nDof,siconos::SPARSE,6*nDof));
     bool lumpedMass = false;
     for (int e = 0; e< nElement; e++)
      {
@@ -207,11 +207,11 @@ int main(int argc, char* argv[])
 
     //  Impacting ball
 
-    SP::SimpleMatrix ballMass(new SimpleMatrix(1,1,siconos::SPARSE,1));
+    SP::SiconosMatrix ballMass(new SiconosMatrix(1,1,siconos::SPARSE,1));
     double ball_mass = 1.0;
     ballMass->setValue(0, 0, ball_mass);
 
-    // SP::SimpleMatrix ballMass(new SimpleMatrix(1,1));
+    // SP::SiconosMatrix ballMass(new SiconosMatrix(1,1));
     // ballMass->setValue(0, 0, 1.);
 
     SP::SiconosVector q0_ball(new SiconosVector(1,position_init));
@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
 
     // Interaction beam-ball
     //
-    SP::SimpleMatrix H(new SimpleMatrix(1,nDof+1));
+    SP::SiconosMatrix H(new SiconosMatrix(1,nDof+1));
     (*H)(0,0) = -1.0;
     (*H)(0,nDof) = 1.0;
 
@@ -284,7 +284,7 @@ int main(int argc, char* argv[])
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 17;
-    SimpleMatrix dataPlot(N,outputSize);
+    SiconosMatrix dataPlot(N,outputSize);
 
     SP::SiconosVector q = beam->q();
     SP::SiconosVector v = beam->velocity();
@@ -439,7 +439,7 @@ int main(int argc, char* argv[])
     cout<<"====> Output file writing ..."<<endl;
     ioMatrix::write("ImpactingEBBeam.dat", "ascii", dataPlot,"noDim");
     // cout << " Comparison with a reference file" << endl;
-    // SimpleMatrix dataPlotRef(dataPlot);
+    // SiconosMatrix dataPlotRef(dataPlot);
     // dataPlotRef.zero();
     // ioMatrix::read("ImpactingBeam.ref", "ascii", dataPlotRef);
 

@@ -27,7 +27,7 @@
 #include <SiconosKernel.hpp>
 #include <chrono>
 
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 double gravity = 10.0;

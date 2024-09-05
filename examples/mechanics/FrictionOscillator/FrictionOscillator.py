@@ -32,7 +32,7 @@ from siconos.kernel import FirstOrderLinearTIDS, FirstOrderLinearDS, RelayNSL, I
 # LagrangianLinearTIDS, NewtonImpactNSL,\
 #     LagrangianLinearTIR, Interaction, NonSmoothDynamicalSystem, MoreauJeanOSI,\
 #     TimeDiscretisation, LCP, TimeStepping
-from siconos.kernel import SimpleMatrix, getMatrix
+from siconos.kernel import SiconosMatrix, getMatrix
 
 import siconos.numerics as sn
 
@@ -173,7 +173,7 @@ while s.hasNextEvent():
 #
 # comparison with the reference file (produced by the cpp version)
 #
-ref = getMatrix(SimpleMatrix("FrictionOscillator.ref"))
+ref = getMatrix(SiconosMatrix("FrictionOscillator.ref"))
 if (norm(dataPlot[0:10000,0:6] - ref[0:10000,0:6]) > 1e-12):
     print("Warning. The result is rather different from the reference file.", norm(dataPlot[0:10000,0:6] - ref[0:10000,0:6]) )
 else:

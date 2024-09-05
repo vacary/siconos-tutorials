@@ -19,9 +19,9 @@
 
 user_defined::MyDS::MyDS(std::shared_ptr<siconos::algebra::SiconosVector> x0)
     : FirstOrderNonLinearDS(x0) {
-  _jacobianfx = std::make_shared<siconos::algebra::SimpleMatrix>(1, 1);
+  _jacobianfx = std::make_shared<siconos::algebra::SiconosMatrix>(1, 1);
   _f = std::make_shared<siconos::algebra::SiconosVector>(1);
-  _M = std::make_shared<siconos::algebra::SimpleMatrix>(1, 1);
+  _M = std::make_shared<siconos::algebra::SiconosMatrix>(1, 1);
   _M->eye();
 }
 

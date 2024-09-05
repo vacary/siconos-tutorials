@@ -23,7 +23,7 @@
 #include <numbers>
 
 #include "RockingR.hpp"
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 using namespace std;

@@ -26,7 +26,7 @@
 #include <SiconosKernel.hpp>
 #include <chrono>
 #include <string>
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 using namespace std;
 
@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
     return 0;
 
   // // Comparison with a reference file
-  // SimpleMatrix dataPlotRef(dataPlot);
+  // SiconosMatrix dataPlotRef(dataPlot);
   // dataPlotRef.zero();
   // ioMatrix::read("SMCExampleImplicit.ref", "ascii", dataPlotRef);
   // std::cout << (dataPlot - dataPlotRef).normInf() << std::endl;

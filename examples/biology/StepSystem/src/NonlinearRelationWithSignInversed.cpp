@@ -52,7 +52,7 @@ void user_defined::NonlinearRelationWithSignInversed::computeg(
 
 void user_defined::NonlinearRelationWithSignInversed::computeJachlambda(
     double t, const siconos::algebra::BlockVector& x,
-    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SimpleMatrix& D) {
+    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SiconosMatrix& D) {
   //    double *h = &(*_jachlambda)(0,0);
 #ifdef SICONOS_DEBUG
   std::cout << "user_defined::NonlinearRelationWithSignInversed::computeJachlambda "
@@ -64,7 +64,7 @@ void user_defined::NonlinearRelationWithSignInversed::computeJachlambda(
 
 void user_defined::NonlinearRelationWithSignInversed::computeJachx(
     double t, const siconos::algebra::BlockVector& x,
-    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SimpleMatrix& C) {
+    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SiconosMatrix& C) {
   C.setValue(0, 0, 1);
   C.setValue(0, 1, 0);
   C.setValue(1, 0, 0);
@@ -85,7 +85,7 @@ void user_defined::NonlinearRelationWithSignInversed::computeJachx(
 
 void user_defined::NonlinearRelationWithSignInversed::computeJacglambda(
     double t, const siconos::algebra::SiconosVector& lambda,
-    siconos::algebra::SimpleMatrix& B) {
+    siconos::algebra::SiconosMatrix& B) {
   B.setValue(0, 0, 0);
   B.setValue(1, 0, -10.0 * (1 + lambda(3)));
   B.setValue(0, 1, -10.0 * (1 + lambda(2)));

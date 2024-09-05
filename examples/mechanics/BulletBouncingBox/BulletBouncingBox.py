@@ -179,10 +179,10 @@ while(simulation.hasNextEvent()):
 #
 # comparison with the reference file
 #
-from siconos.kernel import SimpleMatrix, getMatrix
+from siconos.kernel import SiconosMatrix, getMatrix
 from numpy.linalg import norm
 
-ref = getMatrix(SimpleMatrix("result.ref"))
+ref = getMatrix(SiconosMatrix("result.ref"))
 
 print("norm(dataPlot - ref) = {0}".format(norm(dataPlot - ref)))
 if (norm(dataPlot - ref) > 1e-11):

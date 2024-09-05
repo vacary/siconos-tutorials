@@ -4,7 +4,7 @@ from siconos.kernel import LagrangianLinearTIDS, NewtonImpactNSL,\
     LagrangianLinearTIR, Interaction, NonSmoothDynamicalSystem, MoreauJeanOSI,\
     TimeDiscretisation, LCP, TimeStepping
 
-from siconos.kernel import SimpleMatrix, getMatrix, SPARSE
+from siconos.kernel import SiconosMatrix, getMatrix, SPARSE
 #import numpy as np
 
 # User-defined main parameters
@@ -28,8 +28,8 @@ g = 9.81 # Gravity
 g=0.0
 
 
-M= SimpleMatrix(nDof,nDof,SPARSE,nDof)
-K= SimpleMatrix(nDof,nDof,SPARSE,nDof)
+M= SiconosMatrix(nDof,nDof,SPARSE,nDof)
+K= SiconosMatrix(nDof,nDof,SPARSE,nDof)
 K.setValue(0,0, 1.*E*S/l)
 K.setValue(0,1,-1.*E*S/l)
 M.setValue(0,0, 1/3.*rho*S*l)

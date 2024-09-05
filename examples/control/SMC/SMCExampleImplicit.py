@@ -134,6 +134,6 @@ savefig("ismc_u_freq.png")
 
 # TODO
 # compare with the reference
-#ref = getMatrix(SimpleMatrix("result.ref"))
+#ref = getMatrix(SiconosMatrix("result.ref"))
 #if (norm(dataPlot - ref[1:,:]) > 1e-12):
 #    print("Warning. The result is rather different from the reference file.")

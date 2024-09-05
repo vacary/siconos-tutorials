@@ -18,7 +18,7 @@
 # limitations under the License.
 #
 
-from siconos.kernel import FirstOrderLinearDS, getMatrix, SimpleMatrix
+from siconos.kernel import FirstOrderLinearDS, getMatrix, SiconosMatrix
 from siconos.control.simulation import ControlZOHSimulation
 from siconos.control.sensor import LinearSensor
 from siconos.control.controller import LinearSMCOT2
@@ -104,7 +104,7 @@ grid()
 savefig('ismcOT2-noCplugin.png')
 
 # compare with the reference
-ref = getMatrix(SimpleMatrix("SMCExampleImplicitOT2-py.ref"))
+ref = getMatrix(SiconosMatrix("SMCExampleImplicitOT2-py.ref"))
 print("%e" % norm(dataPlot - ref))
 if (norm(dataPlot - ref) > 1e-12):
     print(dataPlot - ref)

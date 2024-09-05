@@ -205,10 +205,10 @@ while (k < N):
     aTS.nextStep()
 
 # comparison with reference file
-from siconos.kernel import SimpleMatrix, getMatrix
+from siconos.kernel import SiconosMatrix, getMatrix
 from numpy.linalg import norm
 
-ref = getMatrix(SimpleMatrix("DiodeBridge.ref"))
+ref = getMatrix(SiconosMatrix("DiodeBridge.ref"))
 
 error = norm(dataPlot[:,0:6] - ref[:,0:6])
 print("error = " , error)

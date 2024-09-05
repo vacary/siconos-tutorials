@@ -21,14 +21,14 @@ class NonlinearRelation : public siconos::modeling::FirstOrderType2R {
   /** default function to compute jacobian of h w.r.t x and lambda */
   virtual void computeJachx(double t, const siconos::algebra::BlockVector& x,
                             const siconos::algebra::SiconosVector& lambda,
-                            siconos::algebra::SimpleMatrix& C) override;
+                            siconos::algebra::SiconosMatrix& C) override;
   virtual void computeJachlambda(double t, const siconos::algebra::BlockVector& x,
                                  const siconos::algebra::SiconosVector& lambda,
-                                 siconos::algebra::SimpleMatrix& D) override;
+                                 siconos::algebra::SiconosMatrix& D) override;
 
   /** default function to compute jacobian of g  w.r.t  lambda  */
   virtual void computeJacglambda(double t, const siconos::algebra::SiconosVector& lambda,
-                                 siconos::algebra::SimpleMatrix& B) override;
+                                 siconos::algebra::SiconosMatrix& B) override;
 };
 }  // namespace user_defined
 

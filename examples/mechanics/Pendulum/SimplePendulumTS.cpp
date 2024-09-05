@@ -27,7 +27,7 @@
 #include <SiconosKernel.hpp>
 #include <chrono>
 
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 double gravity = 10.0;
@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
 
     // -- relations --
 
-    //     SimpleMatrix H(1,2);
+    //     SiconosMatrix H(1,2);
     //     SiconosVector b(1);
     //     H.zero();
     //     H(0,0) =1.0;

@@ -46,7 +46,7 @@
 #include <chrono>
 #include <string>
 
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 int main(int argc, char *argv[]) {
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     init_state->setValue(0, Vinit);
     init_state->setValue(1, 0.0);
 
-    auto LS_A = std::make_shared<siconos::algebra::SimpleMatrix>(2, 2);
+    auto LS_A = std::make_shared<siconos::algebra::SiconosMatrix>(2, 2);
     LS_A->setValue(0, 1, -1.0 / Cvalue);
     LS_A->setValue(1, 0, 1.0 / Lvalue);
 
@@ -74,13 +74,13 @@ int main(int argc, char *argv[]) {
         std::make_shared<siconos::modeling::FirstOrderLinearTIDS>(init_state, LS_A);
 
     // --- Interaction between linear system and non smooth system ---
-    auto Int_C = std::make_shared<siconos::algebra::SimpleMatrix>(1, 2);
+    auto Int_C = std::make_shared<siconos::algebra::SiconosMatrix>(1, 2);
     Int_C->setValue(0, 0, -1.0);
 
-    auto Int_D = std::make_shared<siconos::algebra::SimpleMatrix>(1, 1);
+    auto Int_D = std::make_shared<siconos::algebra::SiconosMatrix>(1, 1);
     Int_D->setValue(0, 0, Rvalue);
 
-    auto Int_B = std::make_shared<siconos::algebra::SimpleMatrix>(2, 1);
+    auto Int_B = std::make_shared<siconos::algebra::SiconosMatrix>(2, 1);
     Int_B->setValue(0, 0, -1.0 / Cvalue);
 
     auto LTIRCircuitRLCD =

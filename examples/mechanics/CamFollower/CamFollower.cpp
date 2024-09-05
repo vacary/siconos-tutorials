@@ -27,7 +27,7 @@
 
 #include "CamState.h"
 
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 #include <SiconosKernel.hpp>

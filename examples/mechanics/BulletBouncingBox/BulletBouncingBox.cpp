@@ -31,7 +31,7 @@
 #include <iostream>
 
 #include "SolverOptions.h"
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 int main() {
@@ -233,7 +233,7 @@ int main() {
 
       // auto &DSG =
       // simulation->nonSmoothDynamicalSystem()->dynamicalSystems();
-      // std::weak_ptr<SimpleMatrix>
+      // std::weak_ptr<SiconosMatrix>
       // work; //{nullptr};
       // // auto
       // work{nullptr};

@@ -17,7 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from siconos.kernel import FirstOrderLinearDS, getMatrix, SimpleMatrix
+from siconos.kernel import FirstOrderLinearDS, getMatrix, SiconosMatrix
 from siconos.control.simulation import ControlZOHSimulation
 from siconos.control.sensor import LinearSensor
 from siconos.control.controller import LinearSMCOT2
@@ -107,6 +107,6 @@ savefig('ismcOT2_sigma_u')
 
 # TODO
 # compare with the reference
-ref = getMatrix(SimpleMatrix("SMCExampleImplicitOT2-py.ref"))
+ref = getMatrix(SiconosMatrix("SMCExampleImplicitOT2-py.ref"))
 if (norm(dataPlot - ref) > 1e-12):
     print("Warning. The result is rather different from the reference file.")

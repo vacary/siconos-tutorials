@@ -26,7 +26,7 @@
 #include <SiconosKernel.hpp>
 #include <chrono>
 
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 // #define WITH_PROJ

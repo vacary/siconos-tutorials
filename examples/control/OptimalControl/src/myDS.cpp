@@ -22,14 +22,14 @@
 
 user_defined::MyDS::MyDS(std::shared_ptr<siconos::algebra::SiconosVector> x0)
     : FirstOrderNonLinearDS(x0) {
-  _jacobianfx = std::make_shared<siconos::algebra::SimpleMatrix>(4, 4);
+  _jacobianfx = std::make_shared<siconos::algebra::SiconosMatrix>(4, 4);
   _f = std::make_shared<siconos::algebra::SiconosVector>(4);
-  _M = std::make_shared<siconos::algebra::SimpleMatrix>(4, 4);
+  _M = std::make_shared<siconos::algebra::SiconosMatrix>(4, 4);
   _M->eye();
 
-  Q = std::make_shared<siconos::algebra::SimpleMatrix>(2, 2);
+  Q = std::make_shared<siconos::algebra::SiconosMatrix>(2, 2);
   Q->eye();
-  K1 = std::make_shared<siconos::algebra::SimpleMatrix>(2, 2);
+  K1 = std::make_shared<siconos::algebra::SiconosMatrix>(2, 2);
   K1->setValue(0, 0, 0.0);
   K1->setValue(0, 1, 1.0 / 2.0);
   K1->setValue(1, 0, -1.0 / 2.0);
@@ -64,7 +64,7 @@ void user_defined::MyDS::computef(double t,
 
 void user_defined::MyDS::computeJacobianfx(
     double t, std::shared_ptr<siconos::algebra::SiconosVector> state) {
-  auto jacXalpha = std::make_shared<siconos::algebra::SimpleMatrix>(2, 2);
+  auto jacXalpha = std::make_shared<siconos::algebra::SiconosMatrix>(2, 2);
 
   JacobianXalpha(t, state, jacXalpha);
 

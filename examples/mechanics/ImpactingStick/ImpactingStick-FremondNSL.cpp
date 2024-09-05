@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
 
     cout << "====> Model loading ..." <<  endl;
 
-    SP::SiconosMatrix Mass(new SimpleMatrix(nDof, nDof));
+    SP::SiconosMatrix Mass(new SiconosMatrix(nDof, nDof));
     (*Mass)(0, 0) = m;
     (*Mass)(1, 1) = m;
     (*Mass)(2, 2) = inertia;
@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 22;
-    SimpleMatrix dataPlot(N + 1, outputSize);
+    SiconosMatrix dataPlot(N + 1, outputSize);
 
     SiconosVector& q = *stick->q();
     SiconosVector& v = *stick->velocity();

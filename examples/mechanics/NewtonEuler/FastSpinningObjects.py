@@ -325,7 +325,7 @@ np.savetxt("result-py.dat", dataPlot)
 #
 # comparison with the reference file
 #
-from siconos.kernel import SimpleMatrix, getMatrix
+from siconos.kernel import SiconosMatrix, getMatrix
 
 #
 # plots

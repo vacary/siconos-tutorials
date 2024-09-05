@@ -27,7 +27,7 @@
 #include "elecRelation.h"
 #include "myDS.h"
 
-using Matrix = siconos::algebra::SimpleMatrix;
+using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 using namespace std;
@@ -75,8 +75,8 @@ int main() {
   solverName = &solverEnum;
 
   int dimX = 1;
-  // SimpleMatrix * M = 0;
-  // SimpleMatrix * A = 0;
+  // SiconosMatrix * M = 0;
+  // SiconosMatrix * A = 0;
   // SiconosVector* As = 0;
   // SiconosVector* mti = 0;
 
@@ -90,9 +90,9 @@ int main() {
   auto aDS = std::make_shared<user_defined::MyDS>(xti);
 
   //******BUILD THE RELATION
-  // SimpleMatrix* C = 0;
-  // SimpleMatrix* D = 0;
-  // SimpleMatrix* B = 0;
+  // SiconosMatrix* C = 0;
+  // SiconosMatrix* D = 0;
+  // SiconosMatrix* B = 0;
   auto aR = std::make_shared<user_defined::elecRelation>();
 
   //*****BUILD THE NSLAW

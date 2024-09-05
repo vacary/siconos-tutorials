@@ -51,7 +51,7 @@ void user_defined::NonlinearRelationWithSign::computeg(
 
 void user_defined::NonlinearRelationWithSign::computeJachx(
     double t, const siconos::algebra::BlockVector& x,
-    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SimpleMatrix& C) {
+    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SiconosMatrix& C) {
   C.setValue(0, 0, -1);
   C.setValue(0, 1, 0);
   C.setValue(1, 0, 0);
@@ -72,13 +72,13 @@ void user_defined::NonlinearRelationWithSign::computeJachx(
 
 void user_defined::NonlinearRelationWithSign::computeJachlambda(
     double t, const siconos::algebra::BlockVector& x,
-    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SimpleMatrix& D) {
+    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SiconosMatrix& D) {
   D.zero();
 }
 
 void user_defined::NonlinearRelationWithSign::computeJacglambda(
     double t, const siconos::algebra::SiconosVector& lambda,
-    siconos::algebra::SimpleMatrix& B) {
+    siconos::algebra::SiconosMatrix& B) {
   //  double *g = &(*Jacglambda)(0,0);
   B.setValue(0, 0, 0);
   B.setValue(1, 0, 10.0 * (1 - lambda(3)));
