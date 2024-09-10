@@ -3,7 +3,7 @@
 # Siconos is a program dedicated to modeling, simulation and control
 # of non smooth dynamical systems.
 #
-# Copyright 2021 INRIA.
+# Copyright 2024 INRIA.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,16 +18,20 @@
 # limitations under the License.
 #
 #
-
-from numpy.linalg import norm
-from siconos.kernel import LagrangianLinearTIDS, NewtonImpactNSL,\
-    LagrangianLinearTIR, Interaction, NonSmoothDynamicalSystem, MoreauJeanOSI,\
-    TimeDiscretisation, LCP, TimeStepping
-from siconos.kernel import SiconosMatrix, getMatrix
-import os
+import siconos.modeling as sm
+import siconos.integrators
+import siconos.simulation
+import siconos.nonsmooth_formulations
+import siconos.input
 import matplotlib
+import os
 import matplotlib.pyplot as plt
-from numpy import eye, zeros
+import numpy as np
+havedisplay = "DISPLAY" in os.environ
+
+if not havedisplay:
+    matplotlib.use('Agg')
+
 
 t0 = 0       # start time
 T = 10       # end time
@@ -41,32 +45,26 @@ theta = 0.5  # theta scheme
 #
 # dynamical system
 #
-x = [1, 0, 0]    # initial position
-v = [0, 0, 0]    # initial velocity
-mass = eye(3)  # mass matrix
+ndof = 3
+initial_position = np.array([1, 0, 0], dtype=np.float64)
+initial_velocity = np.array([0, 0, 0], dtype=np.float64)
+mass = np.eye(ndof, dtype=np.float64, order='F')
 mass[2, 2] = 2. / 5 * r * r
 
-# the dynamical system
-ball = LagrangianLinearTIDS(x, v, mass)
-
+ball = sm.LagrangianLinearTIDS(initial_position, initial_velocity, mass)
 # set external forces with a plugin
 ball.setComputeFExtFunction('BallPlugin', 'ballFExt')
 
 #
-# Interactions
-#
+# Interaction ball-floor
+H = np.array([[1, 0, 0]], dtype=np.float64, order='F')
 
-# ball-floor
-H = [[1, 0, 0]]
+nslaw = sm.NewtonImpactNSL(e)
+relation = sm.LagrangianLinearTIR(H)
+inter = sm.Interaction(nslaw, relation)
 
-nslaw = NewtonImpactNSL(e)
-relation = LagrangianLinearTIR(H)
-inter = Interaction(nslaw, relation)
-
-#
-# Model
-#
-bouncingBall = NonSmoothDynamicalSystem(t0, T)
+# NSDS
+bouncingBall = sm.NonSmoothDynamicalSystem(t0, T)
 
 # add the dynamical system to the non smooth dynamical system
 bouncingBall.insertDynamicalSystem(ball)
@@ -74,30 +72,21 @@ bouncingBall.insertDynamicalSystem(ball)
 # link the interaction and the dynamical system
 bouncingBall.link(inter, ball)
 
-
 #
 # Simulation
 #
 
 # (1) OneStepIntegrators
-OSI = MoreauJeanOSI(theta)
+OSI = siconos.integrators.MoreauJeanOSI(theta)
 
 # (2) Time discretisation --
-t = TimeDiscretisation(t0, h)
+t = siconos.simulation.TimeDiscretisation(t0, h)
 
 # (3) one step non smooth problem
-osnspb = LCP()
+osnspb = siconos.nonsmooth_formulations.LCP()
 
 # (4) Simulation setup with (1) (2) (3)
-s = TimeStepping(bouncingBall, t, OSI, osnspb)
-
-
-# end of model definition
-
-#
-# computation
-#
-
+s = siconos.simulation.TimeStepping(bouncingBall,t, OSI, osnspb)
 
 # the number of time steps
 N = int((T - t0) / h)
@@ -105,7 +94,7 @@ N = int((T - t0) / h)
 # Get the values to be plotted
 # ->saved in a matrix dataPlot
 
-dataPlot = zeros((N+1, 5))
+dataPlot = np.zeros((N+1, 5))
 
 #
 # numpy pointers on dense Siconos vectors
@@ -113,7 +102,7 @@ dataPlot = zeros((N+1, 5))
 q = ball.q()
 v = ball.velocity()
 p = ball.p(1)
-lambda_ = inter.lambda_(1)
+lambda_ = inter.lambda_python(1)
 
 
 #
@@ -143,19 +132,16 @@ while s.hasNextEvent():
 #
 # comparison with the reference file
 #
-ref = getMatrix(SiconosMatrix("BouncingBallTS.ref"))
-
-if (norm(dataPlot - ref) > 1e-12):
+ref = siconos.input.readMatrixFromFile("BouncingBallTS.ref")
+error = np.linalg.norm(dataPlot - ref)
+print("Error:", error)
+if  error > 1e-12:
     print("Warning. The result is rather different from the reference file.")
-    print(norm(dataPlot - ref))
+    raise ValueError("Results are different from reference.")
 
 #
 # plots
 #
-havedisplay = "DISPLAY" in os.environ
-if not havedisplay:
-    matplotlib.use('Agg')
-
 plt.subplot(411)
 plt.title('position')
 plt.plot(dataPlot[:, 0], dataPlot[:, 1])

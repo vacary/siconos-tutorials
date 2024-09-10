@@ -354,8 +354,8 @@ int main(int argc, char *argv[]) {
   double *b_straight;
   double *zpar_straight;
 
-  b_straight = LSBuckConverter->b()->getArray();
-  zpar_straight = LSBuckConverter->z()->getArray();
+  b_straight = LSBuckConverter->b()->data();
+  zpar_straight = LSBuckConverter->z()->data();
 
   double z_straight[NSLSIZE_BUCK];
   double w_straight[NSLSIZE_BUCK];
@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
   }
 
   double *fPWLmat_straight;
-  fPWLmat_straight = fPWLmat.getArray();
+  fPWLmat_straight = fPWLmat.data();
 
   Vector LambdaP(2 * NBHYP), LambdaN(2 * NBHYP);
 
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
   auto x = LSBuckConverter->x();
   auto y = InterBuckConverter_buck->y(0);
   auto lambda = InterBuckConverter_buck->lambda(0);
-  double *lambda_array = lambda->getArray();
+  double *lambda_array = lambda->data();
 
   // For the initial time step:
 

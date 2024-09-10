@@ -688,7 +688,7 @@ void BodiesViewer::drawSelectedQGLShape(const QGLShape& fig)
     {};
     }
     glColor3f(1., 0., 0.);
-    dFe = hypot3(ask<ForFExt>(*ds)->getArray());
+    dFe = hypot3(ask<ForFExt>(*ds)->data());
     Cal = log(dFe);
 
     drawArrow(GETX(ds), GETY(ds), GETZ(ds),

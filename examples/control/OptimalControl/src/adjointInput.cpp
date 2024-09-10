@@ -165,7 +165,7 @@ void user_defined::adjointInput::computeJacglambda(
     double t, const siconos::algebra::BlockVector &x,
     const siconos::algebra::SiconosVector &lambda, siconos::algebra::BlockVector &z,
     siconos::algebra::SiconosMatrix &B) {
-  double *g = B.getArray();
+  double *g = B.data();
 #ifdef SICONOS_DEBUG
   std::cout << "computeJacglambda "
             << " at "

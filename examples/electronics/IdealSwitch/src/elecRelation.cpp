@@ -75,7 +75,7 @@ void user_defined::elecRelation::computeg(double t,
 void user_defined::elecRelation::computeJachx(double t, const siconos::algebra::BlockVector& x,
                                               const siconos::algebra::SiconosVector& lambda,
                                               siconos::algebra::SiconosMatrix& C) {
-  double* h = C.getArray();
+  double* h = C.data();
 #ifdef SICONOS_DEBUG
   std::cout << "computeJachx "
             << " at "
@@ -102,7 +102,7 @@ void user_defined::elecRelation::computeJachx(double t, const siconos::algebra::
 void user_defined::elecRelation::computeJachlambda(
     double t, const siconos::algebra::BlockVector& x,
     const siconos::algebra::SiconosVector& lambda, siconos::algebra::SiconosMatrix& D) {
-  double* h = D.getArray();
+  double* h = D.data();
 #ifdef SICONOS_DEBUG
   std::cout << "computeJachlambda "
             << " at "
@@ -214,7 +214,7 @@ void user_defined::elecRelation::computeJachlambda(
 void user_defined::elecRelation::computeJacglambda(
     double time, const siconos::algebra::SiconosVector& lambda,
     siconos::algebra::SiconosMatrix& B) {
-  double* g = B.getArray();
+  double* g = B.data();
 #ifdef SICONOS_DEBUG
   std::cout << "computeJacglambda "
             << " at "
