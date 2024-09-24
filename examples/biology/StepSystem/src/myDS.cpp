@@ -36,7 +36,7 @@ user_defined::MyDS::MyDS(std::shared_ptr<siconos::algebra::SiconosVector> x0)
 
 void user_defined::MyDS::computef(double t,
                                   std::shared_ptr<siconos::algebra::SiconosVector> x) {
-  // SP::SiconosVector x=x();
+  // std::shared_ptr<siconos::algebra::SiconosVector> x=x();
   _f->setValue(0, -4.5 * x->getValue(0));
   _f->setValue(1, -1.5 * x->getValue(1));
   DEBUG_PRINT("MyDS::computeF");

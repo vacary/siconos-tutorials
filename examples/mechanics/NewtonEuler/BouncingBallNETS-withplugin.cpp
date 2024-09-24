@@ -123,12 +123,12 @@ int main(int argc, char* argv[]) {
 
     //     vector<auto> vecMatrix1;
     //     vecMatrix1.push_back(H);
-    //     SP::BlockMatrix H_block(new BlockMatrix(vecMatrix1,1,1);
+    //     auto H_block(new BlockMatrix(vecMatrix1,1,1);
 
     //     auto HT= std::make_shared<Matrix>(1,nDim);
     //     vector<auto> vecMatrix2;
     //     vecMatrix2.push_back(HT);
-    //     SP::BlockMatrix HT_block(new BlockMatrix(vecMatrix2,1,1);
+    //     auto HT_block(new BlockMatrix(vecMatrix2,1,1);
 
 #ifdef WITH_FC3D
     auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, e, 0.6, 3);

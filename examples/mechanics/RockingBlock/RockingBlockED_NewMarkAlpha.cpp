@@ -107,10 +107,10 @@ int main(int argc, char* argv[]) {
     auto RockingBlock = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
         PosIniBlock, VelIniBlock, Mass);
     // 5. Set the external force
-    auto ForceExtern = std::make_shared<Vector>(Nfreedom);
-    (*ForceExtern)(1) = -MassBlock * GGearth;
-    RockingBlock->setFExtPtr(ForceExtern);
-    std::vector<double> zparams = {LengthBlock, HeightBlock};
+    Vector ForceExtern{Nfreedom};
+    ForceExtern.setZero();
+    ForceExtern(1) = -MassBlock * GGearth;
+    RockingBlock->setConstantFExt(ForceExtern);    std::vector<double> zparams = {LengthBlock, HeightBlock};
     auto zz = std::make_shared<Vector>(zparams);
     RockingBlock->setzPtr(zz);
 

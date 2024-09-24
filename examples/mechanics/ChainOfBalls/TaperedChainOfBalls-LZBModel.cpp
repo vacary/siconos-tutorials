@@ -162,9 +162,13 @@ int main(int argc, char* argv[]) {
       auto ball =
           std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0Ball, v0Ball, MassBall);
       // -- Set external forces (weight1) --
-      auto FextBall = std::make_shared<Vector>(nDofBall);
-      (*FextBall)(0) = -_massBall * g;
-      ball->setFExtPtr(FextBall);
+
+      Vector FextBall{nDofBall};
+      FextBall.setZero();
+      FextBall(0) = -_massBall * g;
+      ball->setConstantFExt(FextBall);
+
+
       //
       VecOfallDS.push_back(ball);
       BallChain->insertDynamicalSystem(ball);

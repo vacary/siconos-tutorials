@@ -93,8 +93,8 @@ class Ctrl(object):
 
         print('applying spring-damper forces', force1, force2)
 
-        self.ds1.setFExtPtr(force1)
-        self.ds2.setFExtPtr(force2)
+        self.ds1.setConstantFExt(force1)
+        self.ds2.setConstantFExt(force2)
 
 options = sk.solver_options_create(sn.SICONOS_GENERIC_MECHANICAL_NSGS)
 options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 1000

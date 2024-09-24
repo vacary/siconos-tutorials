@@ -31,7 +31,7 @@ v0 = np.zeros(sico.nbdof)
 
 block = kernel.LagrangianLinearTIDS(sico.pos,v0,sico.Mass.full())
 F = sico.RHS + sico.K0
-block.setFExtPtr(F)
+block.setConstantFExt(F)
 block.setKPtr(sico.Stiff.full())
 
 # =======================================

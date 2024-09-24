@@ -77,10 +77,10 @@ int main(int argc, char* argv[]) {
     auto ball1 = std::make_shared<siconos::collision::RigidBody2dDS>(q01, v01, Mass);
 
     // -- Set external forces (weight) --
-    auto weight = std::make_shared<Vector>(nDof);
-    (*weight)(0) = -m * g;
-    ball->setFExtPtr(weight);
-    ball1->setFExtPtr(weight);
+    Vector weight{nDof};
+    weight(0) = -m * g;
+    ball->setConstantFExt(weight);
+    ball1->setFExt(weight);
     // --------------------
     // --- Interactions ---
     // --------------------

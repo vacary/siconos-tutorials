@@ -76,9 +76,10 @@ int main(int argc, char* argv[]) {
     ball->setK(*K);
 
     // -- Set external forces (weight) --
-    auto weight = std::make_shared<Vector>(nDof);
-    (*weight)(0) = -m * g;
-    ball->setFExtPtr(weight);
+    Vector weight{nDof};
+    weight.setZero();
+    weight(0) = -m * g;
+    ball->setConstantFExt(weight);
 
     // --------------------
     // --- Interactions ---

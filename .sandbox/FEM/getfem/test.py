@@ -29,7 +29,7 @@ weight = np.zeros(ndof)
 weight[0:ndof-1:3] = -m*g
 
 block = kernel.LagrangianLinearTIDS(q0,v0,Mass)
-block.setFExtPtr(weight)
+block.setConstantFExt(weight)
 block.setKPtr(K)
 
 diminter = 4

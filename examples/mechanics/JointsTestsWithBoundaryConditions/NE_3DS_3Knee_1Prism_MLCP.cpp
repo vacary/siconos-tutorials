@@ -100,9 +100,10 @@ int main(int argc, char *argv[]) {
     // -- The dynamical system --
     auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1);
     // -- Set external forces (weight) --
-    auto weight = std::make_shared<Vector>(nDof);
-    (*weight)(2) = -m * g;
-    beam1->setFExtPtr(weight);
+    Vector weight{nDof};
+    weight.setZero();
+    weight(2) = -m * g;
+    beam1->etConstantFExt(weight);
 
     // second DS
     auto q02 = std::make_shared<Vector>(qDim);
@@ -127,9 +128,7 @@ int main(int argc, char *argv[]) {
 
     auto beam2 = std::make_shared<siconos::modeling::NewtonEulerDS>(q02, v02, m, I2);
     // -- Set external forces (weight) --
-    auto weight2 = std::make_shared<Vector>(nDof);
-    (*weight2)(2) = -m * g;
-    beam2->setFExtPtr(weight2);
+     beam2->etConstantFExt(weight);
 
     auto q03 = std::make_shared<Vector>(qDim);
     auto v03 = std::make_shared<Vector>(nDim);
@@ -152,9 +151,7 @@ int main(int argc, char *argv[]) {
 
     auto beam3 = std::make_shared<siconos::modeling::NewtonEulerDS>(q03, v03, m, I3);
     // -- Set external forces (weight) --
-    auto weight3 = std::make_shared<Vector>(nDof);
-    (*weight3)(2) = -m * g;
-    beam3->setFExtPtr(weight3);
+     beam3->etConstantFExt(weight);
     // --------------------
     // --- Interactions ---
     // --------------------

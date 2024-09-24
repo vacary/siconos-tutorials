@@ -130,20 +130,20 @@ int compute_WeiestrassDiscretization(double h)
         // -------------------------
 
         vector<double> x0 = {x10, x20};
-        SP::SiconosVector init(new SiconosVector(x0));
+        std::shared_ptr<siconos::algebra::SiconosVector> init(new SiconosVector(x0));
 
         /* LinearTIDS with no inputs */
-        SP::SiconosMatrix A( new SimpleMatrix(dimX,dimX) ); 
+        std::shared_ptr<siconos::algebra::SiconosMatrix> A( new SimpleMatrix(dimX,dimX) ); 
         (*A)(0,0) = -2.0;
-        SP::FirstOrderLinearTIDS dyn(new FirstOrderLinearTIDS(init,A));
-        SP::SimpleMatrix M(new SimpleMatrix(dimX,dimX));
+        auto dyn(new FirstOrderLinearTIDS(init,A));
+        auto M(new SimpleMatrix(dimX,dimX));
         (*M)(0,0) = 1.0;
         (*M)(1,1) = 1.0;
 
         // -----------------------------
         // --- Siconos Model Entity ---
         // ----------------------------
-        SP::NonSmoothDynamicalSystem switch_dae(new NonSmoothDynamicalSystem(t0, T));
+        auto switch_dae(new NonSmoothDynamicalSystem(t0, T));
 
         // add the dynamical system in the non smooth dynamical system
         switch_dae->insertDynamicalSystem(dyn);
@@ -151,27 +151,27 @@ int compute_WeiestrassDiscretization(double h)
         // -------------------------
         // --- MLCP Relation ---
         // -------------------------
-        SP::SimpleMatrix C( new SimpleMatrix(dimLambda+dimZ,dimX) );
+        auto C( new SimpleMatrix(dimLambda+dimZ,dimX) );
         (*C)(0,1) = 0.0;  (*C)(0,1) = 1.0; 
         (*C)(1,0) = 2.0;  (*C)(1,1) = 1.0;
         (*C)(2,0) = -1.0; (*C)(2,1) = 3.0;
 
-        SP::SimpleMatrix D( new SimpleMatrix(dimLambda+dimZ,dimLambda+dimZ) );
+        auto D( new SimpleMatrix(dimLambda+dimZ,dimLambda+dimZ) );
         (*D)(0,0) = 0.0;  (*D)(0,1) = 1.0;  (*D)(0,2) = -2.0;
         (*D)(1,0) = -1.0; (*D)(1,1) = 2.0;  (*D)(1,2) = -1.0;
         (*D)(2,0) = 2.0;  (*D)(2,1) = 0.0;  (*D)(2,2) = 1.0;
 
-        SP::SimpleMatrix B( new SimpleMatrix(dimX,dimLambda+dimZ) );
+        auto B( new SimpleMatrix(dimX,dimLambda+dimZ) );
         (*B)(0,0) = 0.0; (*B)(0,1) = 2.0; (*B)(0,2) = -1.0;
         (*B)(1,0) = 1.0; (*B)(1,1) = 0.0; (*B)(1,2) = 0.0;
 
-        SP::FirstOrderLinearTIR relationMLCP(new FirstOrderLinearTIR(C, B) );
+        auto relationMLCP(new FirstOrderLinearTIR(C, B) );
         relationMLCP->setDPtr(D);
 
         // NonSmooth law: MCP
-        SP::NonSmoothLaw nslawMLCP(new MixedComplementarityConditionNSL(dimLambda,dimZ));
+        auto nslawMLCP(new MixedComplementarityConditionNSL(dimLambda,dimZ));
         // interaction 
-        SP::Interaction interMLCP(new Interaction(nslawMLCP, relationMLCP));
+        auto interMLCP(new Interaction(nslawMLCP, relationMLCP));
         // link the interaction and the dynamical system
         switch_dae->link(interMLCP, dyn);
 
@@ -182,18 +182,18 @@ int compute_WeiestrassDiscretization(double h)
         // -- (1) OneStepIntegrators --
         double thetaOSI = 0.0;
         double gammaOSI = 1.0;
-        SP::EulerMoreauOSI osi(new EulerMoreauOSI(thetaOSI,gammaOSI));
+        auto osi(new EulerMoreauOSI(thetaOSI,gammaOSI));
 
 
         // -- (2) Time discretisation --
-        SP::TimeDiscretisation td(new TimeDiscretisation(t0, h));
+        auto td(new TimeDiscretisation(t0, h));
 
         // -- (3) one step non smooth problem
-        SP::MLCP osnspb(new MLCP());
+        auto osnspb(new MLCP());
         // osnspb->setNumericsVerboseMode(true);
         
         // -- (4) Simulation setup with (1) (2) (3)
-        SP::TimeStepping s(new TimeStepping(switch_dae, td, osi, osnspb));
+        auto s(new TimeStepping(switch_dae, td, osi, osnspb));
 
         int N = ceil((T - t0) / h)+1; // Number of time steps
 
@@ -207,8 +207,8 @@ int compute_WeiestrassDiscretization(double h)
         vector<double> lambda0 = {z0, lambda10, lambda20};
         SiconosVector initLambda = SiconosVector(lambda0); // Numerically computed
         interMLCP->setLambda(0, initLambda);
-        SP::SiconosVector x = dyn->x();
-        SP::SiconosVector lambdaLCP = interMLCP->lambda(0);
+        std::shared_ptr<siconos::algebra::SiconosVector> x = dyn->x();
+        std::shared_ptr<siconos::algebra::SiconosVector> lambdaLCP = interMLCP->lambda(0);
 
         dataPlot(0, 0) = switch_dae->t0();
         dataPlot(0, 1) = (*x)(0);   // x1(t)
@@ -298,25 +298,25 @@ double compute_error2ref(double h, SimpleMatrix* reference, SolverOptions * opti
         double dlambda2 = 0.0; // d(lambda1)/dt at previous step   
 
         // Tested variable for convergence: (x1,x2)
-        SP::SiconosVector x_prev(new SiconosVector(2)); 
+        std::shared_ptr<siconos::algebra::SiconosVector> x_prev(new SiconosVector(2)); 
         x_prev->setValue(0, x10);
         x_prev->setValue(1, -B31*lambda10 -B32*lambda20);        
-        SP::SiconosVector x(new SiconosVector(2)); 
+        std::shared_ptr<siconos::algebra::SiconosVector> x(new SiconosVector(2)); 
         x->setValue(0, 0.0);
         x->setValue(1, 0.0);
 
         // difference in between current pwl at t approx and reference
-        SP::SiconosVector x_diff(new SiconosVector(2));
+        std::shared_ptr<siconos::algebra::SiconosVector> x_diff(new SiconosVector(2));
         x_diff->setValue(0,0.0);
         x_diff->setValue(1,0.0);
         
         // direction of pwl approx
-        SP::SiconosVector a(new SiconosVector(2));
+        std::shared_ptr<siconos::algebra::SiconosVector> a(new SiconosVector(2));
         a->setValue(0,0.0);
         a->setValue(1,0.0);
         
         // offset of pwl approx
-        SP::SiconosVector b(new SiconosVector(2));
+        std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector(2));
         b->setValue(0,0.0);
         b->setValue(1,0.0);
 
@@ -418,13 +418,13 @@ double compute_error_weiestrass2ref(double h, SimpleMatrix* reference)
         // --- Dynamical systems ---
         // ------------------------- 
         vector<double> x0 = {x10, x20};
-        SP::SiconosVector init(new SiconosVector(x0));
+        std::shared_ptr<siconos::algebra::SiconosVector> init(new SiconosVector(x0));
 
         /* LinearTIDS with no inputs */
-        SP::SiconosMatrix A( new SimpleMatrix(dimX,dimX) ); 
+        std::shared_ptr<siconos::algebra::SiconosMatrix> A( new SimpleMatrix(dimX,dimX) ); 
         (*A)(0,0) = -2.0;
-        SP::FirstOrderLinearTIDS dyn(new FirstOrderLinearTIDS(init,A));
-        SP::SimpleMatrix M(new SimpleMatrix(dimX,dimX));
+        auto dyn(new FirstOrderLinearTIDS(init,A));
+        auto M(new SimpleMatrix(dimX,dimX));
         (*M)(0,0) = 1.0;
         (*M)(1,1) = 1.0;
         dyn->setMPtr(M);
@@ -432,7 +432,7 @@ double compute_error_weiestrass2ref(double h, SimpleMatrix* reference)
         // -----------------------------
         // --- Siconos Model Entity ---
         // ----------------------------
-        SP::NonSmoothDynamicalSystem switch_dae(new NonSmoothDynamicalSystem(t0, T));
+        auto switch_dae(new NonSmoothDynamicalSystem(t0, T));
 
         // add the dynamical system in the non smooth dynamical system
         switch_dae->insertDynamicalSystem(dyn);
@@ -440,27 +440,27 @@ double compute_error_weiestrass2ref(double h, SimpleMatrix* reference)
         // -------------------------
         // --- MLCP Relation ---
         // -------------------------
-        SP::SimpleMatrix C( new SimpleMatrix(dimLambda+dimZ,dimX) );
+        auto C( new SimpleMatrix(dimLambda+dimZ,dimX) );
         (*C)(0,1) = 0.0;  (*C)(0,1) = 1.0; 
         (*C)(1,0) = 2.0;  (*C)(1,1) = 1.0;
         (*C)(2,0) = -1.0; (*C)(2,1) = 3.0;
 
-        SP::SimpleMatrix D( new SimpleMatrix(dimLambda+dimZ,dimLambda+dimZ) );
+        auto D( new SimpleMatrix(dimLambda+dimZ,dimLambda+dimZ) );
         (*D)(0,0) = 0.0;  (*D)(0,1) = 1.0;  (*D)(0,2) = -2.0;
         (*D)(1,0) = -1.0; (*D)(1,1) = 2.0;  (*D)(1,2) = -1.0;
         (*D)(2,0) = 2.0;  (*D)(2,1) = 0.0;  (*D)(2,2) = 1.0;
 
-        SP::SimpleMatrix B( new SimpleMatrix(dimX,dimLambda+dimZ) );
+        auto B( new SimpleMatrix(dimX,dimLambda+dimZ) );
         (*B)(0,0) = 0.0; (*B)(0,1) = 2.0; (*B)(0,2) = -1.0;
         (*B)(1,0) = 1.0; (*B)(1,1) = 0.0; (*B)(1,2) = 0.0;
 
-        SP::FirstOrderLinearTIR relationMLCP(new FirstOrderLinearTIR(C, B) );
+        auto relationMLCP(new FirstOrderLinearTIR(C, B) );
         relationMLCP->setDPtr(D);
 
         // NonSmooth law: MCP
-        SP::NonSmoothLaw nslawMLCP(new MixedComplementarityConditionNSL(dimLambda,dimZ));
+        auto nslawMLCP(new MixedComplementarityConditionNSL(dimLambda,dimZ));
         // interaction 
-        SP::Interaction interMLCP(new Interaction(nslawMLCP, relationMLCP));
+        auto interMLCP(new Interaction(nslawMLCP, relationMLCP));
         // link the interaction and the dynamical system
         switch_dae->link(interMLCP, dyn);
 
@@ -471,37 +471,37 @@ double compute_error_weiestrass2ref(double h, SimpleMatrix* reference)
         // -- (1) OneStepIntegrators --
         double thetaOSI = 0.0;
         double gammaOSI = 1.0;
-        SP::EulerMoreauOSI osi(new EulerMoreauOSI(thetaOSI,gammaOSI));
+        auto osi(new EulerMoreauOSI(thetaOSI,gammaOSI));
 
 
         // -- (2) Time discretisation --
-        SP::TimeDiscretisation td(new TimeDiscretisation(t0, h));
+        auto td(new TimeDiscretisation(t0, h));
 
         // -- (3) one step non smooth problem
-        SP::MLCP osnspb(new MLCP());
+        auto osnspb(new MLCP());
         // osnspb->setNumericsVerboseMode(true);
         
         // -- (4) Simulation setup with (1) (2) (3)
-        SP::TimeStepping s(new TimeStepping(switch_dae, td, osi, osnspb));
+        auto s(new TimeStepping(switch_dae, td, osi, osnspb));
         size_t N = ceil((T - t0) / h)+1; // Number of time steps
-        SP::SiconosVector x = dyn->x();
-        SP::SiconosVector lambda = interMLCP->lambda(0);
+        std::shared_ptr<siconos::algebra::SiconosVector> x = dyn->x();
+        std::shared_ptr<siconos::algebra::SiconosVector> lambda = interMLCP->lambda(0);
 
         // ==== Simulation loop - Writing without explicit event handling =====
 
-        SP::SiconosVector x_prev(new SiconosVector(2));
+        std::shared_ptr<siconos::algebra::SiconosVector> x_prev(new SiconosVector(2));
         x_prev->setValue(0,x10);
         x_prev->setValue(1,x20);
 
-        SP::SiconosVector x_diff(new SiconosVector(2));
+        std::shared_ptr<siconos::algebra::SiconosVector> x_diff(new SiconosVector(2));
         x_diff->setValue(0,0.0);
         x_diff->setValue(1,0.0);
         
-        SP::SiconosVector a(new SiconosVector(2));
+        std::shared_ptr<siconos::algebra::SiconosVector> a(new SiconosVector(2));
         a->setValue(0,0.0);
         a->setValue(1,0.0);
         
-        SP::SiconosVector b(new SiconosVector(2));
+        std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector(2));
         b->setValue(0,0.0);
         b->setValue(1,0.0);
 

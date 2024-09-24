@@ -73,7 +73,7 @@ body.contactors().push_back(SiconosContactor(box1))
 
 # set external forces
 weight = [0, 0, -body.scalarMass() * g]
-body.setFExtPtr(weight)
+body.setConstantFExt(weight)
 
 #
 # Model

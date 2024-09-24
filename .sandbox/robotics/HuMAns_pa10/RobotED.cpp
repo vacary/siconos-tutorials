@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
     q0(0) = 0.05;
     q0(1) = 0.05;
 
-    SP::LagrangianDS arm(new LagrangianDS(q0, v0));
+    auto arm(new LagrangianDS(q0, v0));
 
     // external plug-in
     arm->setComputeMassFunction("RobotPlugin", "mass");
@@ -83,10 +83,10 @@ int main(int argc, char* argv[])
     // -- relations --
 
     // => arm-floor relation
-    SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
+    auto nslaw(new NewtonImpactNSL(e));
     string G = "RobotPlugin:G2";
-    SP::Relation relation(new LagrangianScleronomousR("RobotPlugin:h2", G));
-    SP::Interaction inter(new Interaction(nslaw, relation));
+    auto relation(new LagrangianScleronomousR("RobotPlugin:h2", G));
+    auto inter(new Interaction(nslaw, relation));
 
     // => angular stops
 
@@ -122,14 +122,14 @@ int main(int argc, char* argv[])
     b(2) = lim1;
     b(3) = lim1;
 
-    SP::NonSmoothLaw nslaw2(new NewtonImpactNSL(e2));
-    SP::Relation relation2(new LagrangianLinearTIR(H, b));
-    SP::Interaction inter2(new Interaction(nslaw2, relation2));
+    auto nslaw2(new NewtonImpactNSL(e2));
+    auto relation2(new LagrangianLinearTIR(H, b));
+    auto inter2(new Interaction(nslaw2, relation2));
     // -------------
     // --- Model ---
     // -------------
 
-    SP::Model Robot(new Model(t0, T));
+    auto Robot(new Model(t0, T));
     Robot->nonSmoothDynamicalSystem()->insertDynamicalSystem(arm);
     
     Robot->nonSmoothDynamicalSystem()->link(inter1, arm);
@@ -139,12 +139,12 @@ int main(int argc, char* argv[])
     // ----------------
 
     // -- Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t(new TimeDiscretisation(t0, h));
 
-    SP::EventDriven s(new EventDriven(t));
+    auto s(new EventDriven(t));
 
     // -- OneStepIntegrators --
-    SP::LsodarOSI OSI(new LsodarOSI(arm));
+    auto OSI(new LsodarOSI(arm));
     s->insertIntegrator(OSI);
     // -- OneStepNsProblem --
     IntParameters iparam(5);
@@ -152,9 +152,9 @@ int main(int argc, char* argv[])
     DoubleParameters dparam(5);
     dparam[0] =  0.005; // Tolerance
     string solverName = "PGS" ;
-    SP::NonSmoothSolver mySolver(new NonSmoothSolver(solverName, iparam, dparam));
-    SP::OneStepNSProblem impact(new LCP(mySolver));
-    SP::OneStepNSProblem acceleration(new LCP(mySolver));
+    auto mySolver(new NonSmoothSolver(solverName, iparam, dparam));
+    auto impact(new LCP(mySolver));
+    auto acceleration(new LCP(mySolver));
     s->insertNonSmoothProblem(impact, SICONOS_OSNSP_ED_IMPACT);
     s->insertNonSmoothProblem(acceleration, SICONOS_OSNSP_ED_ACCELERATION);
     Robot->setSimulation(s);
@@ -179,15 +179,15 @@ int main(int argc, char* argv[])
     // For the initial time step:
     // time
 
-    SP::SiconosVector q = arm->q();
-    SP::SiconosVector vel = arm->velocity();
-    SP::SiconosVector y = inter->y(0);
-    SP::SiconosVector yDot = inter->y(1);
+    std::shared_ptr<siconos::algebra::SiconosVector> q = arm->q();
+    std::shared_ptr<siconos::algebra::SiconosVector> vel = arm->velocity();
+    std::shared_ptr<siconos::algebra::SiconosVector> y = inter->y(0);
+    std::shared_ptr<siconos::algebra::SiconosVector> yDot = inter->y(1);
     // When a non-smooth event occurs, pre-impact values are saved in memory vectors at pos. 1:
     const SiconosVector& qMem = arm->getQMemoryPtr().getSiconosVector(1);
     const SiconosVector& velMem = arm->getVelocityMemoryPtr().getSiconosVector(1);
-    SP::SiconosVector yMem = inter->getYOldPtr(0);
-    SP::SiconosVector yDotMem = inter->getYOldPtr(1);
+    std::shared_ptr<siconos::algebra::SiconosVector> yMem = inter->getYOldPtr(0);
+    std::shared_ptr<siconos::algebra::SiconosVector> yDotMem = inter->getYOldPtr(1);
 
     dataPlot(k, 0) =  Robot->t0();
     dataPlot(k, 1) = (*q)(0);
@@ -207,7 +207,7 @@ int main(int argc, char* argv[])
     boostTimer.restart();
 
     unsigned int numberOfEvent = 0 ;
-    SP::EventsManager eventsManager = s->eventsManager();
+    auto eventsManager = s->eventsManager();
     bool nonSmooth = false;
     while (s->hasNextEvent())
     {

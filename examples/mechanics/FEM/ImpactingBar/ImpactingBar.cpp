@@ -93,9 +93,9 @@ int main(int argc, char* argv[]) {
     bar->setKPtr(SparseStiffness);
 
     // -- Set external forces (weight) --
-    // auto weight= std::make_shared<Vector>(ndof,-g*rho*S/l);
-    auto weight = std::make_shared<Vector>(ndof, 0.0);
-    bar->setFExtPtr(weight);
+    Vector weight{nDof};
+    weight.setZero();
+    bar->setConstantFExt(weight);
 
     // --------------------
     // --- Interactions ---
@@ -167,9 +167,8 @@ int main(int argc, char* argv[]) {
     auto position =
         std::make_shared<siconos::nonsmooth_formulations::MLCPProjectOnConstraints>(
             SICONOS_MLCP_ENUM);
-    SP::TimeSteppingCombinedProjection s =
-        std::make_shared<siconos::simulation::TimeSteppingCombinedProjection>(
-            impactingBar, t, OSI, osnspb, position, 2);
+    auto s = std::make_shared<siconos::simulation::TimeSteppingCombinedProjection>(
+        impactingBar, t, OSI, osnspb, position, 2);
     s->setProjectionMaxIteration(500);
     s->setConstraintTolUnilateral(1e-10);
     s->setConstraintTol(1e-10);

@@ -54,9 +54,9 @@ int main(int argc, char* argv[])
         cout << "====> Model definition ..." <<  endl;
 
 
-        SP::SiconosVector init(new SiconosVector({x1_0, x2_0, z_0}));
+        std::shared_ptr<siconos::algebra::SiconosVector> init(new SiconosVector({x1_0, x2_0, z_0}));
 
-        SP::SiconosMatrix A( new SimpleMatrix(dimX,dimX) ); 
+        std::shared_ptr<siconos::algebra::SiconosMatrix> A( new SimpleMatrix(dimX,dimX) ); 
         double B0 = 0.1;
         double B1 = 0.9;
         A->setRow(0,SiconosVector({0.0, 0.0, B0}));
@@ -66,20 +66,20 @@ int main(int argc, char* argv[])
         cout << "matrix A: " << endl;
         A->display();
 
-        SP::SimpleMatrix E(new SimpleMatrix(dimX,dimX));
+        auto E(new SimpleMatrix(dimX,dimX));
         (*E)(0,0) = 1.0;
         (*E)(1,1) = 1.0;
 
         cout << "matrix E: " << endl;
         E->display();
 
-        SP::SiconosVector b(new SiconosVector({1.0, 0.0, 0.0}));
+        std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector({1.0, 0.0, 0.0}));
 
         cout << "vector b: " << endl;
         b->display();
 
         // Siconos smooth dynamical system
-        SP::FirstOrderLinearTIDS dyn(new FirstOrderLinearTIDS(init,A));
+        auto dyn(new FirstOrderLinearTIDS(init,A));
         dyn->setbPtr(b);
         dyn->setMPtr(E);
 
@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
         // -------------------------
 
         // Relation LCP lhs
-        SP::FirstOrderR relation(new FirstOrderNonLinearR() );
+        auto relation(new FirstOrderNonLinearR() );
 
         //Plugin for output function h(x,lambda)
         relation->setComputehFunction("NLRelation_Plugin","Computeh");
@@ -106,15 +106,15 @@ int main(int argc, char* argv[])
         relation->setComputeJacglambdaFunction("NLRelation_Plugin","ComputeJlg");
 
         // NonSmooth law: relay on [-1,1] rhs
-        SP::NonSmoothLaw nslaw(new RelayNSL(dimLambda, -1.0, 1.0));
+        auto nslaw(new RelayNSL(dimLambda, -1.0, 1.0));
 
         // interaction -y in relay[-1,1]
-        SP::Interaction inter(new Interaction(nslaw, relation));
+        auto inter(new Interaction(nslaw, relation));
 
         // -----------------------------
         // --- Siconos Model Entity ---
         // ----------------------------
-        SP::NonSmoothDynamicalSystem switch_dae(new NonSmoothDynamicalSystem(t0, T));
+        auto switch_dae(new NonSmoothDynamicalSystem(t0, T));
 
         // add the dynamical system in the non smooth dynamical system
         switch_dae->insertDynamicalSystem(dyn);
@@ -129,20 +129,20 @@ int main(int argc, char* argv[])
         // -- (1) OneStepIntegrators --
         double theta = 1.0;
         double gamma = 1.0;
-        SP::EulerMoreauOSI osi(new EulerMoreauOSI(theta,gamma));
+        auto osi(new EulerMoreauOSI(theta,gamma));
 
 
         // -- (2) Time discretisation --
-        SP::TimeDiscretisation td(new TimeDiscretisation(t0, h));
+        auto td(new TimeDiscretisation(t0, h));
 
         // -- (3) one step non smooth problem
-        SP::Relay osnspb(new Relay());
+        auto osnspb(new Relay());
 
         // osnspb->setNumericsVerboseMode(true);
         
 
         // -- (4) Simulation setup with (1) (2) (3)
-        SP::TimeStepping s(new TimeStepping(switch_dae, td, osi, osnspb));
+        auto s(new TimeStepping(switch_dae, td, osi, osnspb));
         
         
         // Non linear flags set to true
@@ -162,8 +162,8 @@ int main(int argc, char* argv[])
         unsigned int outputSize = 7;
         SimpleMatrix dataPlot(N + 1, outputSize);
 
-        SP::SiconosVector x = dyn->x();
-        SP::SiconosVector lambda = inter->lambda(0);
+        std::shared_ptr<siconos::algebra::SiconosVector> x = dyn->x();
+        std::shared_ptr<siconos::algebra::SiconosVector> lambda = inter->lambda(0);
 
         dataPlot(0, 0) = switch_dae->t0();
         dataPlot(0, 1) = (*x)(0);

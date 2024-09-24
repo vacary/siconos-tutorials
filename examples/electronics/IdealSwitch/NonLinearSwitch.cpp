@@ -147,7 +147,7 @@ int main() {
        << aN->topology()->hasChanged() << "\n";
 
   //*****BUILD THE STEP INTEGRATOR
-  //  SP::NonSmoothSolver  mySolver( new
+  //  au  mySolver( new
   //  NonSmoothSolver((*solverName),iparam,dparam,floatWorkingMem,intWorkingMem);
 
   //**** BUILD THE STEP NS PROBLEM

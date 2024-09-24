@@ -58,7 +58,7 @@ bar.setKPtr(K)
 #bar.display()
 
 weight = np.full((nDof),-g*rho*S/l)
-bar.setFExtPtr(weight)
+bar.setConstantFExt(weight)
 
 e=0.0
 

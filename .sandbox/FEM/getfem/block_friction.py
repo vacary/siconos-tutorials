@@ -176,7 +176,7 @@ fillH(pidbot,sico,mfu.nbdof(),BOTTOM)
 v0 = np.zeros(sico.nbdof)
 block = kernel.LagrangianLinearTIDS(sico.initial_displacement,v0,sico.Mass)
 # set fExt and K
-block.setFExtPtr(sico.RHS)
+block.setConstantFExt(sico.RHS)
 block.setKPtr(sico.Stiff)
 
 # =======================================

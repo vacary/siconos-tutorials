@@ -60,13 +60,13 @@ int main(int argc, char* argv[])
         cout << "====> Model definition ..." <<  endl;
 
 
-        SP::SiconosVector init(new SiconosVector({tswitch, omega1_init, omega2_init}));
+        std::shared_ptr<siconos::algebra::SiconosVector> init(new SiconosVector({tswitch, omega1_init, omega2_init}));
 
-        SP::SiconosMatrix A(new SimpleMatrix( ZeroMat(dimX,dimX) )); 
-        SP::SiconosVector b(new SiconosVector({-1.0,T1/J1,T2/J2}));
+        std::shared_ptr<siconos::algebra::SiconosMatrix> A(new SimpleMatrix( ZeroMat(dimX,dimX) )); 
+        std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector({-1.0,T1/J1,T2/J2}));
 
         // Siconos smooth dynamical system
-        SP::FirstOrderLinearTIDS dyn(new FirstOrderLinearTIDS(init,A,b));
+        auto dyn(new FirstOrderLinearTIDS(init,A,b));
 
         // -------------------------
         // --- Complemetary Relation ---
@@ -75,37 +75,37 @@ int main(int argc, char* argv[])
         // -------------------------
 
         // Jacobian of y wrt x
-        SP::SimpleMatrix C(new SimpleMatrix(dimLambda,dimX));
+        auto C(new SimpleMatrix(dimLambda,dimX));
         (*C)(0,0) = 1.0;
         (*C)(1,1) = 1.0;
         (*C)(1,2) = -1.0;
 
         // Jacobian of y wrt lambda
-        SP::SimpleMatrix D(new SimpleMatrix(dimLambda,dimLambda));
+        auto D(new SimpleMatrix(dimLambda,dimLambda));
         (*D)(1,2) = 1.0;
         (*D)(2,0) = 2.0;
         (*D)(2,1) = -1.0;
 
         // Jacobian of r wrt lambda
-        SP::SimpleMatrix B(new SimpleMatrix(dimX,dimLambda));
+        auto B(new SimpleMatrix(dimX,dimLambda));
         (*B)(0,0) = 1.0/alpha;
         B->setRow(1,SiconosVector({ -1.0/J1, 1.0/J1, 0.0}));
         B->setRow(2,SiconosVector({ 1.0/J2, -1.0/J2, 0.0}));
 
         // Relation LCP lhs
-        SP::FirstOrderLinearTIR relation(new FirstOrderLinearTIR(C,B));
+        auto relation(new FirstOrderLinearTIR(C,B));
         relation->setDPtr(D);
 
         // NonSmooth law LCP rhs
-        SP::NonSmoothLaw nslaw(new ComplementarityConditionNSL(dimLambda));
+        auto nslaw(new ComplementarityConditionNSL(dimLambda));
 
         // interaction: complete LCP
-        SP::Interaction inter(new Interaction(nslaw, relation));
+        auto inter(new Interaction(nslaw, relation));
 
         // -----------------------------
         // --- Siconos Model Entity ---
         // ----------------------------
-        SP::NonSmoothDynamicalSystem clutch(new NonSmoothDynamicalSystem(t0, T));
+        auto clutch(new NonSmoothDynamicalSystem(t0, T));
 
         // add the dynamical system in the non smooth dynamical system
         clutch->insertDynamicalSystem(dyn);
@@ -120,17 +120,17 @@ int main(int argc, char* argv[])
         // -- (1) OneStepIntegrators --
         double theta = 1.0;
         double gamma = 1.0;
-        SP::EulerMoreauOSI osi(new EulerMoreauOSI(theta,gamma));
+        auto osi(new EulerMoreauOSI(theta,gamma));
 
 
         // -- (2) Time discretisation --
-        SP::TimeDiscretisation td(new TimeDiscretisation(t0, h));
+        auto td(new TimeDiscretisation(t0, h));
 
         // -- (3) one step non smooth problem
-        SP::OneStepNSProblem osnspb(new LCP());
+        auto osnspb(new LCP());
 
         // -- (4) Simulation setup with (1) (2) (3)
-        SP::TimeStepping s(new TimeStepping(clutch, td, osi, osnspb));
+        auto s(new TimeStepping(clutch, td, osi, osnspb));
 
         // =========================== End of model definition ===========================
         cout <<  "====> ... End of Model definition" <<  endl;
@@ -143,8 +143,8 @@ int main(int argc, char* argv[])
         unsigned int outputSize = 7;
         SimpleMatrix dataPlot(N + 1, outputSize);
 
-        SP::SiconosVector x = dyn->x();
-        SP::SiconosVector lambda = inter->lambda(0);
+        std::shared_ptr<siconos::algebra::SiconosVector> x = dyn->x();
+        std::shared_ptr<siconos::algebra::SiconosVector> lambda = inter->lambda(0);
 
         dataPlot(0, 0) = clutch->t0();
         dataPlot(0, 1) = (*x)(0);

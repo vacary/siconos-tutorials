@@ -154,25 +154,25 @@ double compute_error2ref(double h, SimpleMatrix* reference, SolverOptions * opti
         u2k = 1e-4*cos(10*(t0+h*0));
 
         // Tested variables for convergence: (x1,x2)
-        SP::SiconosVector x_prev(new SiconosVector(2)); 
+        std::shared_ptr<siconos::algebra::SiconosVector> x_prev(new SiconosVector(2)); 
         x_prev->setValue(0, x10); //x10
         x_prev->setValue(1, B3*lambda10 - u2k);      //x20  
-        SP::SiconosVector x(new SiconosVector(2)); 
+        std::shared_ptr<siconos::algebra::SiconosVector> x(new SiconosVector(2)); 
         x->setValue(0, 0.0);
         x->setValue(1, 0.0);
 
         // difference in between current pwl at t approx and reference
-        SP::SiconosVector x_diff(new SiconosVector(2));
+        std::shared_ptr<siconos::algebra::SiconosVector> x_diff(new SiconosVector(2));
         x_diff->setValue(0,0.0);
         x_diff->setValue(1,0.0);
         
         // direction of pwl approx
-        SP::SiconosVector a(new SiconosVector(2));
+        std::shared_ptr<siconos::algebra::SiconosVector> a(new SiconosVector(2));
         a->setValue(0,0.0);
         a->setValue(1,0.0);
         
         // offset of pwl approx
-        SP::SiconosVector b(new SiconosVector(2));
+        std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector(2));
         b->setValue(0,0.0);
         b->setValue(1,0.0);
 

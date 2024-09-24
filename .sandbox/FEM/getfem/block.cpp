@@ -21,28 +21,29 @@ int main(int argc, char* argv[])
 
     cout << "====> Model loading ..." << endl << endl;
 
-    SP::SiconosMatrix Mass(new SimpleMatrix(ndof, ndof));
+    std::shared_ptr<siconos::algebra::SiconosMatrix> Mass(new SimpleMatrix(ndof, ndof));
     for (int i = 0; i < ndof; ++i)
       (*Mass)(i, i) = m;
 
-    SP::SiconosMatrix K(new SimpleMatrix(*Mass));
+    std::shared_ptr<siconos::algebra::SiconosMatrix> K(new SimpleMatrix(*Mass));
     // -- Initial positions and velocities --
-    SP::SiconosVector q0(new SiconosVector(ndof));
-    SP::SiconosVector v0(new SiconosVector(ndof));
+    std::shared_ptr<siconos::algebra::SiconosVector> q0(new SiconosVector(ndof));
+    std::shared_ptr<siconos::algebra::SiconosVector> v0(new SiconosVector(ndof));
     //(*q0)(0) = position_init;
     //(*v0)(0) = velocity_init;
 
     // -- The dynamical system --
-    SP::LagrangianLinearTIDS ball(new LagrangianLinearTIDS(q0, v0, Mass));
+    auto ball(new LagrangianLinearTIDS(q0, v0, Mass));
 
 
     // -- Set external forces (weight) --
-    SP::SiconosVector weight(new SiconosVector(ndof));
-    (*weight)(0) = -m * g;
-    for (int i = 2; i < ndof; i = i + 3)
-      (*weight)(i) = -m * g;
 
-    ball->setFExtPtr(weight);
+    siconos::algebra::siconosVector weight(ndof};
+    weight(0) = -m * g;
+    for (int i = 2; i < ndof; i = i + 3)
+      weight(i) = -m * g;
+
+    ball->setConstantFExt(weight);
     ball->setKPtr(K);
 
     // -- nslaw --
@@ -53,12 +54,12 @@ int main(int argc, char* argv[])
 
     int diminter = 4;
 
-    SP::SiconosMatrix H(new SimpleMatrix(4, ndof));
+    std::shared_ptr<siconos::algebra::SiconosMatrix> H(new SimpleMatrix(4, ndof));
     (*H)(0, 2) = 1.0;
     (*H)(1, 5) = 1.0;
     (*H)(2, 8) = 1.0;
     (*H)(3, 11) = 1.0;
-    SP::SiconosVector b(new SiconosVector(4));
+    std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector(4));
     (*b)(0) = 3.0;
     (*b)(1) = 3.0;
     (*b)(2) = 3.0;
@@ -66,15 +67,15 @@ int main(int argc, char* argv[])
 
 
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-    SP::Relation relation(new LagrangianLinearTIR(H, b));
+    auto nslaw(new NewtonImpactNSL(e));
+    auto relation(new LagrangianLinearTIR(H, b));
 
-    SP::Interaction inter(new Interaction(diminter, nslaw, relation));
+    auto inter(new Interaction(diminter, nslaw, relation));
 
     // -------------
     // --- Model ---
     // -------------
-    SP::Model bouncingBall(new Model(t0, T));
+    auto bouncingBall(new Model(t0, T));
 
     // add the dynamical system in the non smooth dynamical system
     bouncingBall->nonSmoothDynamicalSystem()->insertDynamicalSystem(ball);
@@ -88,16 +89,16 @@ int main(int argc, char* argv[])
     // ------------------
 
     // -- (1) OneStepIntegrators --
-    SP::MoreauJeanOSI OSI(new MoreauJeanOSI(ball, theta));
+    auto OSI(new MoreauJeanOSI(ball, theta));
 
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t(new TimeDiscretisation(t0, h));
 
     // -- (3) one step non smooth problem
-    SP::OneStepNSProblem osnspb(new LCP());
+    auto osnspb(new LCP());
 
     // -- (4) Simulation setup with (1) (2) (3)
-    SP::TimeStepping s(new TimeStepping(t, OSI, osnspb));
+    auto s(new TimeStepping(t, OSI, osnspb));
     bouncingBall->setSimulation(s);
     // =========================== End of model definition ===========================
 
@@ -118,10 +119,10 @@ int main(int argc, char* argv[])
     unsigned int outputSize = 5;
     SimpleMatrix dataPlot(N + 1, outputSize);
 
-    SP::SiconosVector q = ball->q();
-    SP::SiconosVector v = ball->velocity();
-    SP::SiconosVector p = ball->p(1);
-    SP::SiconosVector lambda = inter->lambda(1);
+    std::shared_ptr<siconos::algebra::SiconosVector> q = ball->q();
+    std::shared_ptr<siconos::algebra::SiconosVector> v = ball->velocity();
+    std::shared_ptr<siconos::algebra::SiconosVector> p = ball->p(1);
+    std::shared_ptr<siconos::algebra::SiconosVector> lambda = inter->lambda(1);
 
     dataPlot(0, 0) = bouncingBall->t0();
     dataPlot(0, 1) = (*q)(0);

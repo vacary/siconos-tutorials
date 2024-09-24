@@ -73,14 +73,16 @@ int withLevel(unsigned int mylevel) {
     }
 
     // -- The dynamical system --
-    auto weight = std::make_shared<Vector>(nDof);
-    (*weight)(0) = -m * g;
+
+    Vector weight{nDof};
+    weight.setZero();
+    weight(0) = -m * g;
 
     std::vector<std::shared_ptr<siconos::modeling::LagrangianLinearTIDS>> beads(nBeads);
     for (unsigned int i = 0; i < nBeads; i++) {
       beads[i] = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0[i], v0[i], Mass);
       // -- Set external forces (weight) --
-      beads[i]->setFExtPtr(weight);
+      beads[i]->setConstantFExt(weight);
     }
 
     // --------------------

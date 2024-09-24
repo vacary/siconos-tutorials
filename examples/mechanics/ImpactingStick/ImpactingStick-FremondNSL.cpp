@@ -59,14 +59,14 @@ int main(int argc, char* argv[])
 
     cout << "====> Model loading ..." <<  endl;
 
-    SP::SiconosMatrix Mass(new SiconosMatrix(nDof, nDof));
+    std::shared_ptr<siconos::algebra::SiconosMatrix> Mass(new SiconosMatrix(nDof, nDof));
     (*Mass)(0, 0) = m;
     (*Mass)(1, 1) = m;
     (*Mass)(2, 2) = inertia;
 
     // -- Initial positions and velocities --
-    SP::SiconosVector q0(new SiconosVector(nDof));
-    SP::SiconosVector v0(new SiconosVector(nDof));
+    std::shared_ptr<siconos::algebra::SiconosVector> q0(new SiconosVector(nDof));
+    std::shared_ptr<siconos::algebra::SiconosVector> v0(new SiconosVector(nDof));
     (*q0)(0) = 0.5 * l * sin(initial_angle);
     (*q0)(1) = 0.5 * l * cos(initial_angle)+0.01;
     (*q0)(2) = initial_angle;
@@ -77,14 +77,16 @@ int main(int argc, char* argv[])
     (*v0)(2) = 0.1;
     
     // -- The dynamical system --
-    SP::LagrangianDS stick(new LagrangianDS(q0, v0, Mass));
+    auto stick(new LagrangianDS(q0, v0, Mass));
 
 
     
     // -- Set external forces (weight) --
-    SP::SiconosVector weight(new SiconosVector(nDof));
-    (*weight)(1) = -m * g;
-    stick->setFExtPtr(weight);
+    Vector weight{nDof};
+    weight.setZero();
+    weight(1) = -m * g;
+    stick->etConstantFExt(weight);
+
 
     // --------------------
     // --- Interactions ---
@@ -96,16 +98,16 @@ int main(int argc, char* argv[])
     // Interaction stick-floor
     //
 
-    SP::NonSmoothLaw nslaw(new FremondImpactFrictionNSL(e,0.0,mu,2));
+    auto nslaw(new FremondImpactFrictionNSL(e,0.0,mu,2));
 
-    SP::Relation relation(new LagrangianScleronomousR("ImpactingStickPlugin:h1", "ImpactingStickPlugin:G1"));
+    auto relation(new LagrangianScleronomousR("ImpactingStickPlugin:h1", "ImpactingStickPlugin:G1"));
 
-    SP::Interaction inter(new Interaction(nslaw, relation));
+    auto inter(new Interaction(nslaw, relation));
 
     // -------------
     // --- Model ---
     // -------------
-    SP::NonSmoothDynamicalSystem bouncingStick(new NonSmoothDynamicalSystem(t0, T));
+    auto bouncingStick(new NonSmoothDynamicalSystem(t0, T));
 
     // add the dynamical system in the non smooth dynamical system
     bouncingStick->insertDynamicalSystem(stick);
@@ -118,21 +120,21 @@ int main(int argc, char* argv[])
     // ------------------
 
     // -- (1) OneStepIntegrators --
-    SP::MoreauJeanOSI OSI(new MoreauJeanOSI(theta));
+    auto OSI(new MoreauJeanOSI(theta));
  
 
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t(new TimeDiscretisation(t0, h));
 
     // -- (3) one step non smooth problem
-    SP::FrictionContact osnspb(new FrictionContact(2));
+    auto osnspb(new FrictionContact(2));
     osnspb->setMStorageType(NM_SPARSE);
     osnspb->setAssemblyType(REDUCED_DIRECT);
     osnspb->numericsSolverOptions()->iparam[SICONOS_IPARAM_MAX_ITER] = 10000;
     osnspb->numericsSolverOptions()->dparam[SICONOS_DPARAM_TOL] = 1e-10;
     
     // -- (4) Simulation setup with (1) (2) (3)
-    SP::TimeStepping s(new TimeStepping(bouncingStick, t, OSI, osnspb));
+    auto s(new TimeStepping(bouncingStick, t, OSI, osnspb));
 
     //s->setNewtonOptions(SICONOS_TS_LINEAR);
     //OSI->setGamma(3/2.0);
@@ -232,7 +234,7 @@ int main(int argc, char* argv[])
       dataPlot(k, 19) = kinetic_energy;
       dataPlot(k, 20) = potential_energy;
 
-      SP::SiconosMatrix wf = OSI->computeWorkForces();
+      std::shared_ptr<siconos::algebra::SiconosMatrix> wf = OSI->computeWorkForces();
       dataPlot(k, 21) = (*wf)(0,1) + dataPlot(k-1, 21);
       
       // if (lambda(0) >0)

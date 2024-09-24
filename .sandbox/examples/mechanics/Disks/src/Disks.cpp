@@ -79,10 +79,10 @@ double DC(double t)
 void Disks::init()
 {
 
-  SP::TimeDiscretisation timedisc_;
-  SP::TimeStepping sim;
-  SP::FrictionContact osnspb_;
-  SP::NonSmoothDynamicalSystem nsds;
+  auto timedisc_;
+  auto sim;
+  auto osnspb_;
+  auto nsds;
 
   // User-defined main parameters
 
@@ -156,7 +156,7 @@ void Disks::init()
     /* set center positions */
     for (unsigned int i = 0 ; i < _plans->size(0); ++i)
     {
-      SP::DiskPlanR tmpr;
+      auto tmpr;
       tmpr.reset(new DiskPlanR(1, (*_plans)(i, 0), (*_plans)(i, 1), (*_plans)(i, 2),
                                (*_plans)(i, 3), (*_plans)(i, 4), (*_plans)(i, 5)));
       (*_plans)(i, 3) = tmpr->getXCenter();
@@ -173,11 +173,11 @@ void Disks::init()
 
 
 
-    SP::SiconosMatrix Disks;
+    std::shared_ptr<siconos::algebra::SiconosMatrix> Disks;
     Disks.reset(new SimpleMatrix("disks.dat", true));
 
     // -- OneStepIntegrators --
-    SP::OneStepIntegrator osi;
+    auto osi;
     osi.reset(new MoreauJeanOSI(theta));
 
     // -- Model --
@@ -195,8 +195,8 @@ void Disks::init()
       R = Disks->getValue(i, 2);
       m = Disks->getValue(i, 3);
 
-      SP::SiconosVector qTmp;
-      SP::SiconosVector vTmp;
+      std::shared_ptr<siconos::algebra::SiconosVector> qTmp;
+      std::shared_ptr<siconos::algebra::SiconosVector> vTmp;
 
       qTmp.reset(new SiconosVector(NDOF));
       vTmp.reset(new SiconosVector(NDOF));
@@ -204,18 +204,17 @@ void Disks::init()
       (*qTmp)(0) = (*Disks)(i, 0);
       (*qTmp)(1) = (*Disks)(i, 1);
 
-      SP::LagrangianDS body;
+      std::shared_ptr<siconos::modeling::LagrangianDS> body;
       if (R > 0)
         body.reset(new Disk(R, m, qTmp, vTmp));
       else
         body.reset(new Circle(-R, m, qTmp, vTmp));
 
       // -- Set external forces (weight) --
-      SP::SiconosVector FExt;
-      FExt.reset(new SiconosVector(NDOF));
-      FExt->zero();
-      FExt->setValue(1, -m * g);
-      body->setFExtPtr(FExt);
+      siconos::algebra::SiconosVector FExt{NDOF};
+      FExt.setZero();
+      FExt(1) = -m * g;
+      body->setConstanrFExt(FExt);
 
       // add the dynamical system to the one step integrator
       sim->associate(osi, body);
@@ -259,7 +258,7 @@ void Disks::init()
 
     std::cout << "====> Simulation initialisation ..." << std::endl << std::endl;
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactFrictionNSL(0, 0, 0.3, 2));
+    auto nslaw(new NewtonImpactFrictionNSL(0, 0, 0.3, 2));
 
     _playground.reset(new SpaceFilter(3, 6, _plans, _moving_plans));
 

@@ -198,7 +198,7 @@ def object_id(obj):
 def apply_gravity(body):
     g = constants.g
     weight = [0, 0, - body.scalarMass() * g]
-    body.setFExtPtr(weight)
+    body.setConstantFExt(weight)
 
 
 def group(h, name, must_exist=True):
@@ -760,7 +760,7 @@ class MechanicsHdf5Runner(siconos.io.mechanics_hdf5.MechanicsHdf5):
     def apply_gravity(self, body):
         g = constants.g / self._gravity_scale
         weight = [0, 0, - body.scalarMass() * g]
-        body.setFExtPtr(weight)
+        body.setConstantFExt(weight)
 
     def import_nonsmooth_law(self, name):
         if self._interman is not None:

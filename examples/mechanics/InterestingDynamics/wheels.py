@@ -88,7 +88,7 @@ class roll(object):
         self.wheel_torque.setValue(1, ang_force)
 
         # Same force and torque to all wheels
-        [w.setFExtPtr(self.wheel_force) for w in self.wheels]
+        [w.setConstantFExt(self.wheel_force) for w in self.wheels]
         [w.setMExtPtr(self.wheel_torque) for w in self.wheels]
     def step(self):
         pass

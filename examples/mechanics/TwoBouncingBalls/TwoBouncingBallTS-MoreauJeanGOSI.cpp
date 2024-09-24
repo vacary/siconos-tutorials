@@ -83,13 +83,15 @@ int main(int argc, char* argv[]) {
     auto ball2 = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0_2, v0_2, Mass2);
 
     // -- Set external forces (weight) --
-    auto weight = std::make_shared<Vector>(nDof);
-    (*weight)(0) = -m1 * g;
-    ball1->setFExtPtr(weight);
+    Vector weight{nDof};
+    weight.setZero();
+    weight(0) = -m1 * g;
+    ball1->setConstantFExt(weight);
 
-    auto weight2 = std::make_shared<Vector>(nDof);
-    (*weight2)(0) = -m2 * g;
-    ball2->setFExtPtr(weight2);
+    Vector weight2{nDof};
+    weight2.setZero();
+    weight2(0) = -m2 * g;
+    ball2->setConstantFExt(weight2);
 
     // --------------------
     // --- Interactions ---

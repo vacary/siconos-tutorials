@@ -53,7 +53,14 @@ mass[2, 2] = 2. / 5 * r * r
 
 ball = sm.LagrangianLinearTIDS(initial_position, initial_velocity, mass)
 # set external forces with a plugin
-ball.setComputeFExtFunction('BallPlugin', 'ballFExt')
+
+
+def external_forces(time, fext):
+    fext[:] = 0.
+    fext[0] = -m * g
+    #print("call external_force ...")
+
+ball.setComputeFExtFunction(external_forces)
 
 #
 # Interaction ball-floor

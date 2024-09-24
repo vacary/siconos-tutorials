@@ -78,7 +78,7 @@ def apply_gravity(body):
     g = 9.81
     weight = [body.scalarMass() * g * math.sin(angle), 0.,
               - body.scalarMass() * g * math.cos(angle)]
-    body.setFExtPtr(weight)  # scalMass() dans quel bibli ?
+    body.setConstantFExt(weight)  # scalMass() dans quel bibli ?
 
     
 

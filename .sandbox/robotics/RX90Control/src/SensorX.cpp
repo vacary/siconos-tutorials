@@ -29,7 +29,7 @@ using namespace SensorFactory;
 SensorX::SensorX(): Sensor()
 {}
 
-SensorX::SensorX(int name, SP::TimeDiscretisation t): Sensor(name, t)
+SensorX::SensorX(int name, std::shared_ptr<siconos::simulation::TimeDiscretisation> t): Sensor(name, t)
 {}
 
 SensorX::~SensorX()

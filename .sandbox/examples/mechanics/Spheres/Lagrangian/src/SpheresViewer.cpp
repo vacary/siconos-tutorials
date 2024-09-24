@@ -39,8 +39,8 @@ void SpheresViewer::draw()
 
   char qs[6];
 
-  SP::Interaction interaction;
-  SP::Relation relation;
+  std::shared_ptr<siconos::modeling::Interaction> interaction;
+  std::shared_ptr<siconos::modeling::Relation> relation;
 
   for (unsigned int i = 0; i < GETNDS(Siconos_); i++)
   {

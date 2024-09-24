@@ -337,7 +337,7 @@ body.setKPtr(K)
 
 applied_force = np.zeros(n_dof)
 applied_force[n_dof-1]=1.
-body.setFExtPtr(applied_force)
+body.setConstantFExt(applied_force)
 
 # -------------
 # --- Model ---

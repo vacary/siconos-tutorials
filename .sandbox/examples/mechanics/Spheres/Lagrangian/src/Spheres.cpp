@@ -44,9 +44,9 @@ void localCheckSolverOuput(int, Simulation*)
 // ================= Creation of the model =======================
 void Spheres::init()
 {
-  SP::TimeDiscretisation timedisc_;
-  SP::FrictionContact osnspb_;
-  SP::NonSmoothDynamicalSystem nsds;
+  std::shared_ptr<siconos::simulation::TimeDiscretisation> timedisc_;
+  std::shared_ptr<siconos::nonsmooth_formulations::FrictionContact> osnspb_;
+  std::shared_ptr<siconos::modeling::NonSmoothDynamicalSystem> nsds;
 
   // User-defined main parameters
 
@@ -80,11 +80,11 @@ void Spheres::init()
 
     _plans.reset(new SimpleMatrix("plans.dat", true));
 
-    SP::SiconosMatrix Spheres;
+    std::shared_ptr<siconos::algebra::SiconosMatrix> Spheres;
     Spheres.reset(new SimpleMatrix("spheres.dat", true));
 
     // -- OneStepIntegrators --
-    SP::OneStepIntegrator osi;
+    std::shared_ptr<siconos::integrators::OneStepIntegrator> osi;
     osi.reset(new MoreauJeanOSI(theta));
 
     // -- Time discretisation --
@@ -101,8 +101,8 @@ void Spheres::init()
       R = Spheres->getValue(i, 3);
       m = Spheres->getValue(i, 4);
 
-      SP::SiconosVector qTmp;
-      SP::SiconosVector vTmp;
+      std::shared_ptr<siconos::algebra::SiconosVector> qTmp;
+      std::shared_ptr<siconos::algebra::SiconosVector> vTmp;
 
       qTmp.reset(new SiconosVector(NDOF));
       vTmp.reset(new SiconosVector(NDOF));
@@ -125,15 +125,14 @@ void Spheres::init()
       (*vTmp)(5) = 0;
 
 
-      SP::LagrangianDS body;
+      std::shared_ptr<siconos::modeling::LagrangianDS> body;
       body.reset(new SphereLDS(R, m, std11::shared_ptr<SiconosVector>(qTmp), std11::shared_ptr<SiconosVector>(vTmp)));
 
       // -- Set external forces (weight) --
-      SP::SiconosVector FExt;
-      FExt.reset(new SiconosVector(NDOF));
-      FExt->zero();
-      FExt->setValue(2, -m * g);
-      body->setFExtPtr(FExt);
+      siconos::algebra::SiconosVector FExt{NDOF};
+      FExt.setZero();
+      FExt(2) = - m * g;
+      body->setConstantFExt(FExt);
 
       // associate the dynamical system with the one step integrator
       _sim->associate(osi, body);
@@ -172,7 +171,7 @@ void Spheres::init()
 
     std::cout << "====> Simulation initialisation ..." << std::endl << std::endl;
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactFrictionNSL(0, 0, 0.8, 3));
+    auto nslaw(new NewtonImpactFrictionNSL(0, 0, 0.8, 3));
 
     _playground.reset(new SpaceFilter(3, 6, _plans, _moving_plans));
 

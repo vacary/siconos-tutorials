@@ -90,9 +90,10 @@ int main(int argc, char *argv[]) {
 
     auto bouncingbeam = std::make_shared<siconos::modeling::NewtonEulerDS>(q03, v03, m, I3);
     // -- Set external forces (weight) --
-    auto weight3 = std::make_shared<Vector>(nDof);
-    (*weight3)(2) = -m * g;
-    bouncingbeam->setFExtPtr(weight3);
+    Vector weight{nDof};
+    weight.setZero();
+    weight(2) = -m * g;
+    bouncingbeam->etConstantFExt(weight);
 
     // --------------------
     // --- Interactions ---

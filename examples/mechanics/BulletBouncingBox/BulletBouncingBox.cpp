@@ -84,10 +84,10 @@ int main() {
         std::make_shared<siconos::collision::SiconosContactor>(box1));
 
     // -- Set external forces (weight) --
-    auto FExt = std::make_shared<Vector>(3);
-    FExt->zero();
-    FExt->setValue(2, -g * body->scalarMass());
-    body->setFExtPtr(FExt);
+    Vector FExt{3};
+    FExt.setZero();
+    FExt(2) = -g * body->scalarMass();
+    body->setConstantFExt(FExt);
 
     // -- Add the dynamical system in the non smooth dynamical system
     model->insertDynamicalSystem(body);
@@ -97,7 +97,7 @@ int main() {
     // -- Create a Z-offset of -0.5 for the ground so that contact is at zero.
     auto groundOffset = std::make_shared<Vector>(7);
     (*groundOffset)(2) = -.5;  // translation 0,0,-0.5
-    (*groundOffset)(3) = 1;     // orientation 1,0,0,0
+    (*groundOffset)(3) = 1;    // orientation 1,0,0,0
 
     // ------------------
     // --- Simulation ---
@@ -143,7 +143,6 @@ int main() {
     //    detection, we use the Bullet implementation here.
     auto collision_manager =
         std::make_shared<siconos::collision::bullet::SiconosBulletCollisionManager>();
-
 
     // -- insert a non smooth law for contactors id 0
     collision_manager->insertNonSmoothLaw(nslaw, 0, 0);

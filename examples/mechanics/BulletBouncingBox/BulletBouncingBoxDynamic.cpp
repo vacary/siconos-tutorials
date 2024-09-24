@@ -60,10 +60,10 @@ auto makeBox(float g, float pos, float vel) {
   body->contactors()->push_back(std::make_shared<siconos::collision::SiconosContactor>(box1));
 
   // -- Set external forces (weight) --
-  auto FExt = std::make_shared<Vector>(3);
-  FExt->zero();
-  FExt->setValue(2, -g * body->scalarMass());
-  body->setFExtPtr(FExt);
+  Vector FExt{nDof};
+  FExt.setZero();
+  FExt(2) = -g * body->scalarMass();
+  body->setConstantFExt(FExt);
 
   return body;
 }

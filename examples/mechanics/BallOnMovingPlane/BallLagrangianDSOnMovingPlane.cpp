@@ -68,9 +68,10 @@ int main(int argc, char* argv[]) {
     auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, Mass);
 
     // -- Set external forces (weight) --
-    auto weight = std::make_shared<Vector>(nDof);
-    (*weight)(0) = -m * g;
-    ball->setFExtPtr(weight);
+    Vector weight{nDof};
+    weight.setZero();
+    weight(0) = -m * g;
+    ball->setConstantFExt(weight);
 
     // -- Moving Plane --
 
@@ -84,7 +85,7 @@ int main(int argc, char* argv[]) {
     auto movingplane = std::make_shared<siconos::modeling::LagrangianDS>(q02, v02, Mass);
 
     // -- Set external forces (weight) --
-    movingplane->setFExtPtr(weight);
+    movingplane->setConstantFExt(weight);
 
     auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(
         siconos::modeling::BoundaryCondition::Indices{0});

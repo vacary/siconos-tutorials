@@ -102,9 +102,10 @@ int main(int argc, char *argv[]) {
     // -- The dynamical system --
     auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1);
     // -- Set external forces (weight) --
-    auto weight = std::make_shared<Vector>(nDof);
-    (*weight)(2) = -m * g;
-    beam1->setFExtPtr(weight);
+    Vector weight{nDof};
+    weight.setZero();
+    weight(2) = -m * g;
+    beam1->etConstantFExt(weight);
 
     // -------------
     // --- Model ---

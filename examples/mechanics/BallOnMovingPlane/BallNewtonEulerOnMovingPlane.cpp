@@ -123,9 +123,9 @@ int main(int argc, char* argv[]) {
     auto ball = std::make_shared<siconos::modeling::NewtonEulerDS>(q0, v0, m, I);
 
     // -- Set external forces (weight) --
-    auto weight = std::make_shared<Vector>(nDof);
-    (*weight)(0) = -m * g;
-    ball->setFExtPtr(weight);
+    Vector weight{nDof};
+    weight(0) = -m * g;
+    ball->setConstantFExt(weight);
 
     // -- Moving Plane --
 
@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) {
     auto movingplane = std::make_shared<siconos::modeling::NewtonEulerDS>(q02, v02, m, I);
 
     // // -- Set external forces (weight) --
-    movingplane->setFExtPtr(weight);
+    movingplane->setConstantFExt(weight);
 
     auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(siconos::modeling::BoundaryCondition::Indices{0});
     bd->setComputePrescribedVelocityFunction("BallOnMovingPlanePlugin", "prescribedvelocity");
@@ -157,12 +157,12 @@ int main(int argc, char* argv[]) {
 
     //     vector<auto> vecMatrix1;
     //     vecMatrix1.push_back(H);
-    //     SP::BlockMatrix H_block(new BlockMatrix(vecMatrix1,1,1));
+    //     auto H_block(new BlockMatrix(vecMatrix1,1,1));
 
     //     auto HT= std::make_shared<Matrix>(1,nDim));
     //     vector<auto> vecMatrix2;
     //     vecMatrix2.push_back(HT);
-    //     SP::BlockMatrix HT_block(new BlockMatrix(vecMatrix2,1,1));
+    //     auto HT_block(new BlockMatrix(vecMatrix2,1,1));
 
 #ifdef WITH_FC3D
     auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, e, 0.6, 3);

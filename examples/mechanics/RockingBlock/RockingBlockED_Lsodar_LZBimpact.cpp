@@ -106,9 +106,10 @@ int main(int argc, char* argv[]) {
     auto RockingBlock = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
         PosIniBlock, VelIniBlock, Mass);
     // 5. Set the external force
-    auto ForceExtern = std::make_shared<Vector>(Nfreedom);
-    (*ForceExtern)(1) = -MassBlock * GGearth;
-    RockingBlock->setFExtPtr(ForceExtern);
+    Vector ForceExtern{Nfreedom};
+    ForceExtern.setZero();
+    ForceExtern(1) = -MassBlock * GGearth;
+    RockingBlock->setConstantFExt(ForceExtern);
     std::vector<double> zparams = {LengthBlock, HeightBlock};
     auto zz = std::make_shared<Vector>(zparams);
     RockingBlock->setzPtr(zz);
@@ -191,7 +192,7 @@ int main(int argc, char* argv[]) {
     //==================================================================================================================
     // -------------------------------- Simulation initialization
     // ------------------------------------------------------
-    // SP::LsodarOSI lsodar = std::static_pointer_cast<LsodarOSI>(OSI);
+    // auto lsodar = std::static_pointer_cast<LsodarOSI>(OSI);
     // lsodar->setMinMaxStepSizes(1.0e-3,1.0e-3);
     // lsodar->setTol(1,1.0e-3,1.0e-6);
     // lsodar->setMaxOrder(2, 2);

@@ -101,9 +101,9 @@ int main(int argc, char* argv[]) {
     bar->setCPtr(SparseDamping);
 
     // -- Set external forces (weight) --
-    // auto weight= std::make_shared<Vector>(ndof,-g*rho*S/l);
-    auto weight = std::make_shared<Vector>(ndof, 0.0);
-    bar->setFExtPtr(weight);
+    Vector weight{nDof};
+    weight.setZero();
+    bar->setConstantFExt(weight);
 
     // --------------------
     // --- Interactions ---

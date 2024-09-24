@@ -77,10 +77,10 @@ int main(int argc, char* argv[]) {
     auto zz = std::make_shared<Vector>(zparams);
     simplependulum->setzPtr(zz);
 
-    auto ForceExtern = std::make_shared<Vector>(nDof);
-    (*ForceExtern)(0) = 0.0;
-    (*ForceExtern)(1) = m * gravity;
-    simplependulum->setFExtPtr(ForceExtern);
+    Vector ForceExtern{nDof};
+    ForceExtern.setZero();
+    ForceExtern(1) = m * gravity;
+    simplependulum->setConstantFExt(ForceExtern);
 
     // -------------------
     // --- Interactions---
@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
 
     // =========================== End of model definition ===========================
 
-    // SP::LsodarOSI lsodar = std::static_pointer_cast<LsodarOSI>(OSI);
+    // auto lsodar = std::static_pointer_cast<LsodarOSI>(OSI);
     // lsodar->setMinMaxStepSizes(9.5e-4,1.0e-3);
     // lsodar->setTol(1,1.0e-3,1.0e-6);
     // lsodar->setMaxOrder(2, 2);

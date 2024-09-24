@@ -244,7 +244,7 @@ int main(int argc, char* argv[]) {
 
     // double theta = 0.500001;
 
-    // SP::Moreau OSI(new Moreau(fourbar, theta);
+    // auto OSI(new Moreau(fourbar, theta);
     // s->insertIntegrator(OSI);
 
     // -- OneStepNsProblem --//

@@ -128,9 +128,9 @@ int main(int argc, char* argv[]) {
     auto ball = std::make_shared<siconos::modeling::NewtonEulerDS>(q0, v0, m, I);
 
     // -- Set external forces (weight) --
-    auto weight = std::make_shared<Vector>(nDof);
-    (*weight)(0) = -m * g;
-    ball->setFExtPtr(weight);
+    Vector weight{nDof};
+    weight(0) = -m * g;
+    ball->setConstantFExt(weight);
 
     // siconos::modeling::BoundaryCondition::Indices bdindex = {0, 3, 5};
     auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(

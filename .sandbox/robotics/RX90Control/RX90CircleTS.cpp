@@ -61,8 +61,8 @@ int main(int argc, char* argv[])
     // The dof are angles between ground and arm and between differents parts of the arm. (See corresponding .pdf for more details)
 
     // Initial position (angles in radian)
-    SP::SiconosVector q0(new SiconosVector(nDof));
-    SP::SiconosVector v0(new SiconosVector(nDof));
+    std::shared_ptr<siconos::algebra::SiconosVector> q0(new SiconosVector(nDof));
+    std::shared_ptr<siconos::algebra::SiconosVector> v0(new SiconosVector(nDof));
     q0->zero();
     v0->zero();
     (*q0)(1) = PI / 3;
@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
     (*v0)(5) = -0.34;
 
 
-    SP::LagrangianDS arm(new LagrangianDS(q0, v0, "RX90Plugin:mass"));
+    auto arm(new LagrangianDS(q0, v0, "RX90Plugin:mass"));
 
     // external plug-in
     //    arm->setComputeMassFunction("RX90Plugin","mass");
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     arm->setComputeJacobianFIntqDotFunction("RX90Plugin", "jacobFintQ");
 
     // creating Z parameter computed in Actuators and used in FInt
-    SP::SiconosVector torques(new SiconosVector(nDof));
+    std::shared_ptr<siconos::algebra::SiconosVector> torques(new SiconosVector(nDof));
     torques->zero();
     arm->setzPtr(torques);
 
@@ -98,13 +98,13 @@ int main(int argc, char* argv[])
 
     // -- relations --
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
+    auto nslaw(new NewtonImpactNSL(e));
 
-    std::vector<SP::SiconosMatrix> Hvector(12);
-    std::vector<SP::SiconosVector> bvector(12);
+    std::vector<std::shared_ptr<siconos::algebra::SiconosMatrix>> Hvector(12);
+    std::vector<std::shared_ptr<siconos::algebra::SiconosVector>> bvector(12);
 
 
-    SP::SiconosVector b(new SiconosVector(12));
+    std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector(12));
     for (unsigned int i = 0; i < nDof; i++)
     {
       Hvector[2 * i].reset(new SimpleMatrix(1, 6));
@@ -129,13 +129,13 @@ int main(int argc, char* argv[])
     (*b)(9) = (*b)(8);
     (*b)(10) = PI * 270.0 / 180.0;
     (*b)(11) = (*b)(10);
-    std::vector<SP::Relation> relationVector(12);
-    std::vector<SP::Interaction> interactionVector(12);
+    std::vector<std::shared_ptr<siconos::modeling::Relation>> relationVector(12);
+    std::vector<std::shared_ptr<siconos::modeling::Interaction>> interactionVector(12);
     // -------------
     // --- Model ---
     // -------------
 
-    SP::Model RX90(new Model(t0, T));
+    auto RX90(new Model(t0, T));
     RX90->nonSmoothDynamicalSystem()->insertDynamicalSystem(arm);
 
     for (unsigned int i = 0; i < 2 * nDof; i++)
@@ -154,13 +154,13 @@ int main(int argc, char* argv[])
     // ----------------
 
     // -- Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t(new TimeDiscretisation(t0, h));
 
     // -- Actuation (ici?) --
     //le premier evenement doit etre un evenement doit etre un evenement
     //de calcul, et pas de Actuators, ni sensors, c'est pourquoi le pas
     //de temps de la simu (h = 5e-3) est plus petit que le retard (6e-3)
-    SP::TimeDiscretisation Sampling(new TimeDiscretisation(t0, 2 * h));
+    auto Sampling(new TimeDiscretisation(t0, 2 * h));
 
     unsigned int N = (unsigned int)((T - t0) / h + 1);
 
@@ -171,22 +171,22 @@ int main(int argc, char* argv[])
       (*tmp)[i] = t0 + (i - 1) * 2 * h + 6e-3;
     (*tmp)[tmp->size() - 1] = T;
 
-    SP::TimeDiscretisation delay(new TimeDiscretisation(*tmp));
+    auto delay(new TimeDiscretisation(*tmp));
 
     //Creation du control et ajout du Sensor et Actuator
-    SP::ControlManager control(new ControlManager(RX90));
+    auto control(new ControlManager(RX90));
     control->addSensor(2, Sampling);
     control->addActuator(2, delay);
     (*(control->getActuators().begin()))->addSensorPtr(*((control->getSensors()).begin()));
 
-    SP::TimeStepping s(new TimeStepping(t));
+    auto s(new TimeStepping(t));
 
     // -- OneStepIntegrators --
-    SP::OneStepIntegrator OSI(new MoreauJeanOSI(arm, 0.5));
+    auto OSI(new MoreauJeanOSI(arm, 0.5));
     s->insertIntegrator(OSI);
 
     // -- OneStepNsProblem --
-    SP::OneStepNSProblem osnsp(new LCP(SICONOS_LCP_LEMKE));
+    auto osnsp(new LCP(SICONOS_LCP_LEMKE));
     s->insertNonSmoothProblem(osnsp);
 
     cout << "=== End of model loading === " << endl;
@@ -209,9 +209,9 @@ int main(int argc, char* argv[])
     unsigned int outputSize = 13;
     SimpleMatrix dataPlot(N + 1, outputSize);
     // For the initial time step:
-    SP::SiconosVector q = arm->q();
-    SP::SiconosVector v = arm->velocity();
-    SP::EventsManager eventsManager = s->eventsManager();
+    std::shared_ptr<siconos::algebra::SiconosVector> q = arm->q();
+    std::shared_ptr<siconos::algebra::SiconosVector> v = arm->velocity();
+    auto eventsManager = s->eventsManager();
 
     dataPlot(k, 0) =  RX90->t0();
     dataPlot(k, 1) = (*q)(0);

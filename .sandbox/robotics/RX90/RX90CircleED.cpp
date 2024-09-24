@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
     v0(3) = 0.59;
     v0(5) = -0.34;
 
-    SP::LagrangianDS arm(new LagrangianDS(q0, v0, "RX90Plugin:mass"));
+    auto arm(new LagrangianDS(q0, v0, "RX90Plugin:mass"));
 
     // external plug-in
     arm->setComputeFGyrFunction("RX90Plugin", "FGyr");
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 
     // -- relations --
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
+    auto nslaw(new NewtonImpactNSL(e));
 
     SimpleMatrix H(12, 6);
     SiconosVector b(12);
@@ -110,8 +110,8 @@ int main(int argc, char* argv[])
     b(9) = b(8);
     b(10) = PI * 270.0 / 180.0;
     b(11) = b(10);
-    SP::Relation relation(new LagrangianLinearTIR(H, b));
-    SP::Interaction inter(new Interaction(12, nslaw, relation));
+    auto relation(new LagrangianLinearTIR(H, b));
+    auto inter(new Interaction(12, nslaw, relation));
 
     allInteractions.insert(inter);
 
@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
     // --- Model ---
     // -------------
 
-    SP::Model RX90(new Model(t0, T));
+    auto RX90(new Model(t0, T));
     RX90->nonSmoothDynamicalSystem()->insertDynamicalSystem(arm);
     RX90->nonSmoothDynamicalSystem()->link(inter, arm);
     
@@ -128,22 +128,22 @@ int main(int argc, char* argv[])
     // ----------------
 
     // -- Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t(new TimeDiscretisation(t0, h));
 
-    SP::EventDriven s(new EventDriven(t));
+    auto s(new EventDriven(t));
 
     // -- OneStepIntegrators --
-    SP::OneStepIntegrator OSI(new LsodarOSI(arm));
+    auto OSI(new LsodarOSI(arm));
 
     IntParameters iparam(5);
     iparam[0] = 1000; // Max number of iteration
     DoubleParameters dparam(5);
     dparam[0] = 1e-15; // Tolerance
     string solverName = "Lemke" ;
-    SP::NonSmoothSolver mySolver(new NonSmoothSolver(solverName, iparam, dparam));
+    auto mySolver(new NonSmoothSolver(solverName, iparam, dparam));
     // -- OneStepNsProblem --
-    SP::OneStepNSProblem impact(new LCP(mySolver));
-    SP::OneStepNSProblem acceleration(new LCP(mySolver));
+    auto impact(new LCP(mySolver));
+    auto acceleration(new LCP(mySolver));
     s->insertNonSmoothProblem(impact, SICONOS_OSNSP_ED_IMPACT);
     s->insertNonSmoothProblem(acceleration, SICONOS_OSNSP_ED_ACCELERATION);
     RX90->setSimulation(s);
@@ -168,9 +168,9 @@ int main(int argc, char* argv[])
     SimpleMatrix dataPlot(N + 1, outputSize);
     // For the initial time step:
 
-    SP::SiconosVector q = arm->q();
-    SP::SiconosVector v = arm->velocity();
-    SP::EventsManager eventsManager = s->eventsManager();
+    std::shared_ptr<siconos::algebra::SiconosVector> q = arm->q();
+    std::shared_ptr<siconos::algebra::SiconosVector> v = arm->velocity();
+    auto eventsManager = s->eventsManager();
 
     dataPlot(k, 0) =  RX90->t0();
     dataPlot(k, 1) = (*q)(0);

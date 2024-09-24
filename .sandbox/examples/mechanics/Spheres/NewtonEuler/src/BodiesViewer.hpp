@@ -88,7 +88,7 @@ struct ForNdof : public Question<unsigned int>
 };
 
 
-struct ForFExt : public Question<SP::SiconosVector>
+struct ForFExt : public Question<std::shared_ptr<siconos::algebra::SiconosVector>>
 {
   using SiconosVisitor::visit;
 
@@ -101,7 +101,7 @@ struct ForFExt : public Question<SP::SiconosVector>
 };
 
 
-struct ForPosition : public Question<SP::SiconosVector>
+struct ForPosition : public Question<std::shared_ptr<siconos::algebra::SiconosVector>>
 {
   using SiconosVisitor::visit;
 
@@ -138,7 +138,7 @@ struct ForMassValue : public Question<double>
   ANSWER(NewtonEulerDS, scalarMass());
 };
 
-struct ForJachq : public Question<SP::SiconosMatrix>
+struct ForJachq : public Question<std::shared_ptr<siconos::algebra::SiconosMatrix>>
 {
   using SiconosVisitor::visit;
 
@@ -155,7 +155,7 @@ struct ForJachq : public Question<SP::SiconosMatrix>
   ANSWER(ContactR, jachq());
 };
 
-struct ForContactForce : public Question<SP::SiconosVector>
+struct ForContactForce : public Question<std::shared_ptr<siconos::algebra::SiconosVector>>
 {
   using SiconosVisitor::visit;
 
@@ -218,7 +218,7 @@ class QGLShape
 public:
 
   /* construction from a LagrangianDS */
-  QGLShape(SHAPE f, SP::DynamicalSystem D, const qglviewer::Frame* ref)
+  QGLShape(SHAPE f, std::shared_ptr<siconos::modeling::DynamicalSystem> D, const qglviewer::Frame* ref)
   {
     assert(D);
 
@@ -236,7 +236,7 @@ public:
   ~QGLShape() {};
 
   /* pointer to DS */
-  SP::DynamicalSystem DS() const
+  std::shared_ptr<siconos::modeling::DynamicalSystem> DS() const
   {
     return DS_;
   };
@@ -274,13 +274,13 @@ public:
     case Type::NewtonEulerDS :
     {
       std11::static_pointer_cast<NewtonEulerDS>(DS())
-      ->setFExtPtr(std11::static_pointer_cast<SiconosVector>(savedFExt_));
+      ->setConstantFext(Eigen::Ref<siconos::algebra::SiconosVector>(*savedFExt_));
       break;
     }
     case Type::LagrangianDS :
     {
       std11::static_pointer_cast<LagrangianDS>(DS())
-      ->setFExtPtr(std11::static_pointer_cast<SiconosVector>(savedFExt_));
+      ->setConstantFext(Eigen::Ref<siconos::algebra::SiconosVector>(*savedFExt_));
       break;
     };
     default:
@@ -308,11 +308,11 @@ protected:
   int id_;
   bool selected_;
   bool saved_;
-  SP::SiconosVector savedFExt_;
+  std::shared_ptr<siconos::algebra::SiconosVector> savedFExt_;
   boost::shared_ptr<qglviewer::ManipulatedFrame> frame_;
 
   SHAPE figure_;
-  SP::DynamicalSystem DS_;
+  std::shared_ptr<siconos::modeling::DynamicalSystem> DS_;
   int positionSize_;
 
   Type::Siconos type_;
@@ -357,7 +357,7 @@ public:
 
   virtual void drawQGLShape(const QGLShape&);
   virtual void drawSelectedQGLShape(const QGLShape&);
-  void insertQGLShape(SHAPE, SP::DynamicalSystem);
+  void insertQGLShape(SHAPE, std::shared_ptr<siconos::modeling::DynamicalSystem>);
 
 
 protected :
@@ -373,11 +373,11 @@ protected :
   virtual QString helpString() const;
   boost::shared_ptr<qglviewer::WorldConstraint> constraint_;
 
-  SP::SiconosBodies Siconos_;
+  std::shared_ptr<siconos::collision::native::SiconosBodies> Siconos_;
 
   qglviewer::Frame* referenceFrame_;
 
-  std::vector<SP::QGLShape>  shapes_;
+  std::vector<std::shared_ptr<QGLShape>>  shapes_;
 
   void print(float x, float y, const char *s, int size);
 

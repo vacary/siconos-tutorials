@@ -14,7 +14,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 /*!\file Spheres.cpp
 
@@ -24,47 +24,44 @@
 */
 
 // Siconos
-#include <SiconosBodies.hpp>
-#include <SiconosKernel.hpp>
-#include <SphereNEDS.hpp>
-#include <SphereNEDSPlanR.hpp>
-#include <TimeStepping.hpp>
 #include <FrictionContact.hpp>
 #include <MoreauJeanOSI.hpp>
 #include <NewtonImpactFrictionNSL.hpp>
-
+#include <SiconosBodies.hpp>
+#include <SiconosKernel.hpp>
 #include <SpaceFilter.hpp>
+#include <SphereNEDS.hpp>
+#include <SphereNEDSPlanR.hpp>
+#include <TimeStepping.hpp>
 
-//#include <Siconos/io/SiconosRestart.hpp>
-//#include <Siconos/io/SiconosVTKOutput.hpp>
+// #include <Siconos/io/SiconosRestart.hpp>
+// #include <Siconos/io/SiconosVTKOutput.hpp>
 #include "Spheres.hpp"
 
 using namespace std;
 
 /* do nothing if solver does not converge */
-void localCheckSolverOuput(int, Simulation*)
-{};
-//#define WITH_GENERIC_SOLVER
+void localCheckSolverOuput(int, Simulation*) {};
+// #define WITH_GENERIC_SOLVER
 
 // ================= Creation of the model =======================
-void Spheres::init()
-{
-  SP::TimeDiscretisation timedisc_;
+void Spheres::init() {
+  std::shared_ptr<siconos::simulation::TimeDiscretisation> timedisc_;
 #ifdef WITH_GENERIC_SOLVER
-  SP::GenericMechanical osnspb_;
+  std::shared_ptr<siconos::nonsmooth_formulations::GenericMechanical> osnspb_;
 #else
-  SP::FrictionContact osnspb_;
+  std::shared_ptr<siconos::nonsmooth_formulations::FrictionContact> osnspb_;
 #endif
   // User-defined main parameters
 
-  double t0 = 0;                   // initial computation time
+  double t0 = 0;  // initial computation time
 
   double T = std::numeric_limits<double>::infinity();
 
-  double h = 0.005;                // time step
+  double h = 0.005;  // time step
   double g = 9.81;
 
-  double theta = 0.5;              // theta for MoreauJeanOSI integrator
+  double theta = 0.5;  // theta for MoreauJeanOSI integrator
 
   std::string solverName = "NSGS";
 
@@ -75,31 +72,28 @@ void Spheres::init()
   double R;
   double m;
 
-  try
-  {
-
+  try {
     // ------------
     // --- Init ---
     // ------------
     _plans.reset(new SimpleMatrix("plans.dat", true));
 
-    SP::SiconosMatrix Spheres;
+    std::shared_ptr<siconos::algebra::SiconosMatrix> Spheres;
     Spheres.reset(new SimpleMatrix("spheres.dat", true));
 
     // -- OneStepIntegrators --
-    SP::OneStepIntegrator osi;
+    std::shared_ptr<siconos::integrators::OneStepIntegrator> osi;
     osi.reset(new MoreauJeanOSI(theta));
 
     // -- Model --
-    SP::NonSmoothDynamicalSystem nsds(new NonSmoothDynamicalSystem(t0, T));
+    auto nsds(new NonSmoothDynamicalSystem(t0, T));
 
-    for (unsigned int i = 0; i < Spheres->size(0); i++)
-    {
+    for (unsigned int i = 0; i < Spheres->size(0); i++) {
       R = Spheres->getValue(i, 3);
       m = Spheres->getValue(i, 4);
 
-      SP::SiconosVector qTmp;
-      SP::SiconosVector vTmp;
+      std::shared_ptr<siconos::algebra::SiconosVector> qTmp;
+      std::shared_ptr<siconos::algebra::SiconosVector> vTmp;
 
       qTmp.reset(new SiconosVector(7));
       vTmp.reset(new SiconosVector(6));
@@ -115,20 +109,18 @@ void Spheres::init()
       (*qTmp)(5) = 0.;
       (*qTmp)(6) = 0.;
 
-      SP::SimpleMatrix IMat(new SimpleMatrix(3, 3));
+      auto IMat(new SimpleMatrix(3, 3));
       (*IMat)(0, 0) = (*IMat)(1, 1) = (*IMat)(2, 2) = m * R * R * 2. / 5.;
 
-      SP::NewtonEulerDS body;
-      body.reset(new SphereNEDS(R, m, IMat, boost::shared_ptr<SiconosVector>(qTmp),
-                                boost::shared_ptr<SiconosVector>(vTmp)));
+      auto body(new SphereNEDS(R, m, IMat, boost::shared_ptr<SiconosVector>(qTmp),
+                               boost::shared_ptr<SiconosVector>(vTmp)));
 
       // -- Set external forces (weight) --
-      SP::SiconosVector FExt;
-      FExt.reset(new SiconosVector(6)); //
-      FExt->zero();
-      //if (i)
-      FExt->setValue(2, -m * g);
-      body->setFExtPtr(FExt);
+      siconos::algebra::SiconosVector FExt{6};
+      FExt.setZero();
+      // if (i)
+      FExt(2) = -m * g;
+      body->setConstantFExtPtr(FExt);
 
       // add the dynamical system in the non smooth dynamical system
       nsds->insertDynamicalSystem(body);
@@ -146,21 +138,20 @@ void Spheres::init()
     osnspb_.reset(new GenericMechanical(SICONOS_FRICTION_3D_ONECONTACT_QUARTIC));
 #else
     osnspb_.reset(new FrictionContact(3));
-    osnspb_->numericsSolverOptions()->iparam[0] = 1000; // Max number of
+    osnspb_->numericsSolverOptions()->iparam[0] = 1000;  // Max number of
     // iterations
-    osnspb_->numericsSolverOptions()->iparam[1] = 20; // compute error
+    osnspb_->numericsSolverOptions()->iparam[1] = 20;  // compute error
     // iterations
 
-    osnspb_->numericsSolverOptions()->iparam[4] = 2; // projection
+    osnspb_->numericsSolverOptions()->iparam[4] = 2;  // projection
 
-    osnspb_->numericsSolverOptions()->dparam[0] = 1e-7; // Tolerance
-    osnspb_->numericsSolverOptions()->dparam[2] = 1e-7; // Local tolerance
+    osnspb_->numericsSolverOptions()->dparam[0] = 1e-7;  // Tolerance
+    osnspb_->numericsSolverOptions()->dparam[2] = 1e-7;  // Local tolerance
 
-
-    osnspb_->setMaxSize(16384);       // max number of interactions
-    osnspb_->setMStorageType(1);      // Sparse storage
-    osnspb_->setNumericsVerboseMode(0); // 0 silent, 1 verbose
-    osnspb_->setKeepLambdaAndYState(true); // inject previous solution
+    osnspb_->setMaxSize(16384);             // max number of interactions
+    osnspb_->setMStorageType(1);            // Sparse storage
+    osnspb_->setNumericsVerboseMode(0);     // 0 silent, 1 verbose
+    osnspb_->setKeepLambdaAndYState(true);  // inject previous solution
 #endif
     _sim.reset(new TimeStepping(nsds, timedisc_, osi, osnspb_));
     //     simulation_->setCheckSolverFunction(localCheckSolverOuput);
@@ -169,7 +160,7 @@ void Spheres::init()
 
     std::cout << "====> Simulation initialisation ..." << std::endl << std::endl;
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactFrictionNSL(0.0, 0.0, 0.6, 3));
+    auto nslaw(new NewtonImpactFrictionNSL(0.0, 0.0, 0.6, 3));
 
     _playground.reset(new SpaceFilter(3, 6, _plans, _moving_plans));
 
@@ -178,42 +169,30 @@ void Spheres::init()
     _sim->insertInteractionManager(_playground);
   }
 
-  catch (SiconosException e)
-  {
+  catch (SiconosException e) {
     std::cout << e.report() << std::endl;
     exit(1);
-  }
-  catch (...)
-  {
+  } catch (...) {
     std::cout << "Exception caught in Spheres::init()" << std::endl;
     exit(1);
   }
 }
 
-
-void Spheres::compute()
-{
-
-  try
-  {
+void Spheres::compute() {
+  try {
     simulation()->advanceToEvent();
     simulation()->processEvents();
     //    output.update();
     //    output.write();
   }
 
-  catch (SiconosException e)
-  {
+  catch (SiconosException e) {
     std::cout << e.report() << std::endl;
-  }
-  catch (...)
-  {
+  } catch (...) {
     std::cout << "Exception caught in SiconosBodies::compute()" << std::endl;
   }
 }
 
-
 // =========================== End of model definition ===========================
 
 // ================================= Computation =================================
-

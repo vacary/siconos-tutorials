@@ -69,9 +69,10 @@ int main(int argc, char *argv[]) {
     auto ball = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, Mass);
 
     // -- Set external forces (weight) --
-    auto weight = std::make_shared<Vector>(nDof);
-    (*weight)(0) = -m * g;
-    ball->setFExtPtr(weight);
+    Vector weight{nDof};
+    weight.setZero();
+    weight(0) = -m * g;
+    ball->setConstantFExt(weight);
 
     // --------------------
     // --- Interactions ---
