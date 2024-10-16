@@ -54,3 +54,9 @@ SICONOS_EXPORT void OneParticleFExt(double time, unsigned int sizeOfq, double *f
     fExt[i] = 0.0;
   fExt[0] =  OneParticleFextFunction(time);
 }
+SICONOS_EXPORT void OneParticleFExtTangent(double time, unsigned int sizeOfq, double *fExt, unsigned int sizeZ, double* z)
+{
+  for(unsigned int i = 0; i < sizeOfq; i++)
+    fExt[i] = 0.0;
+  fExt[1] =  OneParticleFextFunction(time);
+}
