@@ -1,8 +1,7 @@
-
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,32 +23,33 @@
   detection.
 
 */
-#include "SolverOptions.h"
-#include <RigidBodyDS.hpp>
-#include <SiconosBodies.hpp>
+
 #include <SiconosBulletCollisionManager.hpp>
+#include <SiconosCollision.hpp>
 #include <SiconosKernel.hpp>
 #include <chrono>
+#include <iostream>
 
-int main()
-{
+#include "SolverOptions.h"
+using Matrix = siconos::algebra::SimpleMatrix;
+using Vector = siconos::algebra::SiconosVector;
 
+int main() {
   // User-defined main parameters
-  double t0 = 0;               // initial computation time
-  double T = 20.0;             // end of computation time
-  double h = 0.005;            // time step
-  double position_init = 10.0; // initial position
-  double velocity_init = 0.0;  // initial velocity
+  double t0 = 0;                // initial computation time
+  double T = 20.0;              // end of computation time
+  double h = 0.005;             // time step
+  double position_init = 10.0;  // initial position
+  double velocity_init = 0.0;   // initial velocity
 
   double g = 9.81;
-  double theta = 0.5; // theta for MoreauJeanOSI integrator
+  double theta = 0.5;  // theta for MoreauJeanOSI integrator
 
   // -----------------------------------------
   // --- Dynamical systems && interactions ---
   // -----------------------------------------
 
   try {
-
     // ------------
     // --- Init ---
     // ------------
@@ -57,18 +57,16 @@ int main()
     std::cout << "====> Model loading ..." << std::endl << std::endl;
 
     // -- OneStepIntegrators --
-    //    SP::OneStepIntegrator osi;
-    // osi.reset(new MoreauJeanOSI(theta));
-    auto osi = std::make_shared<MoreauJeanOSI>(theta);
+    auto osi = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
     // -- Model --
-    SP::NonSmoothDynamicalSystem model(new NonSmoothDynamicalSystem(t0, T));
+    auto model = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
 
     // -- Shape: cube with all dimensions=1.0
-    SP::SiconosBox box1(std::make_shared<SiconosBox>(1.0, 1.0, 1.0));
+    auto box1 = std::make_shared<siconos::collision::SiconosBox>(1., 1., 1.);
 
     // -- Initial position and velocity
-    SP::SiconosVector q0(std::make_shared<SiconosVector>(7));
-    SP::SiconosVector v0(std::make_shared<SiconosVector>(6));
+    auto q0 = std::make_shared<Vector>(7);
+    auto v0 = std::make_shared<Vector>(6);
     v0->zero();
     q0->zero();
 
@@ -77,15 +75,16 @@ int main()
     (*v0)(2) = velocity_init;
 
     // -- The dynamical system --
-    SP::RigidBodyDS body(std::make_shared<RigidBodyDS>(q0, v0, 1.0));
+    auto body = std::make_shared<siconos::collision::RigidBodyDS>(q0, v0, 1.0);
 
     // -- add the box to the body's set of contactactors
     // -- by default, the contactor id is 0 with no position offset,
     //    see SiconosContactor.hpp for how to change these.
-    body->contactors()->push_back(std::make_shared<SiconosContactor>(box1));
+    body->contactors()->push_back(
+        std::make_shared<siconos::collision::SiconosContactor>(box1));
 
     // -- Set external forces (weight) --
-    SP::SiconosVector FExt(std::make_shared<SiconosVector>(3));
+    auto FExt = std::make_shared<Vector>(3);
     FExt->zero();
     FExt->setValue(2, -g * body->scalarMass());
     body->setFExtPtr(FExt);
@@ -93,22 +92,22 @@ int main()
     // -- Add the dynamical system in the non smooth dynamical system
     model->insertDynamicalSystem(body);
 
-    SP::SiconosPlane ground(std::make_shared<SiconosPlane>());
+    auto ground = std::make_shared<siconos::collision::SiconosPlane>();
 
     // -- Create a Z-offset of -0.5 for the ground so that contact is at zero.
-    SP::SiconosVector groundOffset(std::make_shared<SiconosVector>(7));
-    (*groundOffset)(2) = -0.5; // translation 0,0,-0.5
-    (*groundOffset)(3) = 1;    // orientation 1,0,0,0
+    auto groundOffset = std::make_shared<Vector>(7);
+    (*groundOffset)(2) = -.5;  // translation 0,0,-0.5
+    (*groundOffset)(3) = 1;     // orientation 1,0,0,0
 
     // ------------------
     // --- Simulation ---
     // ------------------
 
     // -- Time discretisation --
-    SP::TimeDiscretisation timedisc(new TimeDiscretisation(t0, h));
+    auto timedisc = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
     // -- OneStepNsProblem --
-    SP::FrictionContact osnspb(new FrictionContact(3));
+    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::FrictionContact>(3);
 
     // -- Some configuration
 
@@ -118,33 +117,33 @@ int main()
     // Tolerance
     osnspb->numericsSolverOptions()->dparam[SICONOS_DPARAM_TOL] = 1e-5;
 
-    osnspb->setMaxSize(16384); // max number of interactions
+    osnspb->setMaxSize(16384);  // max number of interactions
 
-    osnspb->setMStorageType(NM_SPARSE_BLOCK); // Sparse storage
+    osnspb->setMStorageType(NM_SPARSE_BLOCK);  // Sparse storage
 
-    osnspb->setNumericsVerboseMode(0); // 0 silent, 1 verbose
+    osnspb->setNumericsVerboseMode(0);  // 0 silent, 1 verbose
 
-    osnspb->setKeepLambdaAndYState(true); // inject previous solution
+    osnspb->setKeepLambdaAndYState(true);  // inject previous solution
 
     // --- Simulation initialization ---
 
-    std::cout << "====> Simulation initialisation ..." << std::endl
-              << std::endl;
+    std::cout << "====> Simulation initialisation ..." << std::endl << std::endl;
 
-    int N = ceil((T - t0) / h); // Number of time steps
+    int N = ceil((T - t0) / h);  // Number of time steps
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactFrictionNSL(0.8, 0., 0.0, 3));
+    auto nslaw = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(0.8, 0., 0.0, 3);
 
     // some options for the Bullet collision manager:
     // -- defaults are okay, see SiconosBulletCollisionManager.hpp
     // -- in particular we want to leave multipoint iterations enabled
     //    to allow Bullet to collect more points for plane-plane collisions.
-    SiconosBulletOptions options;
+    // std::shared_ptr<siconos::collision::bullet::SiconosBulletOptions> options;
 
     // -- The collision manager performs broadphase collision
     //    detection, we use the Bullet implementation here.
-    SP::SiconosBulletCollisionManager collision_manager(
-        std::make_shared<SiconosBulletCollisionManager>(options));
+    auto collision_manager =
+        std::make_shared<siconos::collision::bullet::SiconosBulletCollisionManager>();
+
 
     // -- insert a non smooth law for contactors id 0
     collision_manager->insertNonSmoothLaw(nslaw, 0, 0);
@@ -156,14 +155,13 @@ int main()
     //    equivalently it could be applied to the SiconosContactor inside the
     //    set, this is a design choice allowing for re-use for more complex
     //    compound contactor sets.
-    SP::SiconosContactorSet staticCtrSet(
-        std::make_shared<SiconosContactorSet>());
-    staticCtrSet->push_back(std::make_shared<SiconosContactor>(ground));
+    auto staticCtrSet = std::make_shared<siconos::collision::SiconosContactorSet>();
+    staticCtrSet->push_back(std::make_shared<siconos::collision::SiconosContactor>(ground));
     collision_manager->addStaticBody(staticCtrSet, groundOffset);
 
     // -- MoreauJeanOSI Time Stepping with Bullet collision manager as
     // -- the interaction manager.
-    SP::TimeStepping simulation(new TimeStepping(model, timedisc));
+    auto simulation = std::make_shared<siconos::simulation::TimeStepping>(model, timedisc);
     simulation->insertInteractionManager(collision_manager);
 
     simulation->insertIntegrator(osi);
@@ -174,11 +172,11 @@ int main()
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 4;
-    SimpleMatrix dataPlot(N + 1, outputSize);
+    Matrix dataPlot(N + 1, outputSize);
     dataPlot.zero();
 
-    SP::SiconosVector q = body->q();
-    SP::SiconosVector v = body->velocity();
+    auto q = body->q();
+    auto v = body->velocity();
 
     dataPlot(0, 0) = model->t0();
     dataPlot(0, 1) = (*q)(2);
@@ -186,13 +184,11 @@ int main()
 
     // --- Time loop ---
 
-    std::cout << "====> Start computation ... " << std::endl << std::endl;
+    std::cout << "====> Start computation ... \n";
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
 
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
-
+    auto start = std::chrono::system_clock::now();
     while (simulation->hasNextEvent()) {
       // while (k < 2) {
 
@@ -207,24 +203,22 @@ int main()
       // If broadphase collision detection shows some contacts then we may
       // display contact forces.
       if ((collision_manager->statistics().new_interactions_created +
-           collision_manager->statistics().existing_interactions_processed) >
-          0) {
+           collision_manager->statistics().existing_interactions_processed) > 0) {
         // we *must* have an indexSet0, filled by Bullet broadphase collision
         // detection and an indexSet1, filled by TimeStepping::updateIndexSet
         // with the help of Bullet getDistance() function.
         if (model->topology()->numberOfIndexSet() == 2) {
-          SP::InteractionsGraph index1 = simulation->indexSet(1);
+          auto index1 = simulation->indexSet(1);
 
           // This is the narrow phase contact detection : if
           // TimeStepping::updateIndexSet has filled indexSet1 then we
           // have some contact forces to display
           if (index1->size() > 0) {
-
             // Four contact points for a cube with a side facing the
             // ground. Note : changing Bullet margin for collision
             // detection may lead this assertion to be false.
             if (index1->size() == 4) {
-              InteractionsGraph::VIterator iur = index1->begin();
+              auto iur = index1->begin();
 
               // different version of bullet may not gives the same
               // contact points! So we only keep the summation.
@@ -241,7 +235,7 @@ int main()
       // simulation->nonSmoothDynamicalSystem()->dynamicalSystems();
       // std::weak_ptr<SimpleMatrix>
       // work; //{nullptr};
-      // // SP::SimpleMatrix
+      // // auto
       // work{nullptr};
       // DynamicalSystemsGraph::VIterator
       // dsi, dsend; for
@@ -269,38 +263,28 @@ int main()
       // static_pointer_cast<MoreauJeanOSI>(osi)->Winverse(sods,
       // true);
       simulation->nextStep();
-      progressBar((double)k / N);
+      siconos::tools::progressBar((double)k / N);
       k++;
     }
 
-    std::cout << std::endl
-              << "End of computation - Number of iterations done: " << k - 1
-              << std::endl;
-    std::cout << "Computation Time " << std::endl;
-    end = std::chrono::system_clock::now();
-    auto elapsed =
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-            .count();
-    std::cout << "Computation time : " << elapsed << " ms" << std::endl;
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "\nEnd of computation - Number of iterations done: " << k - 1 << "\n";
+    std::cout << "Computation time : " << elapsed << " ms\n";
     // --- Output files ---
-    std::cout << "====> Output file writing ..." << std::endl;
-    dataPlot.resize(k, outputSize);
-    ioMatrix::write("result.dat", "ascii", dataPlot, "noDim");
+    std::cout << "====> Output file writing ...\n";
+    siconos::algebra::io::write("BouncingBox.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
 
     double error = 0.0, eps = 1e-12;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BouncingBox.ref", eps)) > eps)
+      return 1;
 
-    if ((error = ioMatrix::compareRefFile(dataPlot, "result.ref", eps)) >=
-            0.0 &&
-        error > eps)
-      // return 1;
-      std::cout << "Warning the results "
-                   "differs from the "
-                   "reference file "
-                << std::endl;
+    return 0;
   }
 
   catch (...) {
-    Siconos::exception::process();
+    siconos::exception::process();
     return 1;
   }
 

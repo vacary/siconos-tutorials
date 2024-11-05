@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,64 +14,65 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 //-----------------------------------------------------------------------
 //
 // Colpitts Oscillator
 //-----------------------------------------------------------------------
-#include "SiconosKernel.hpp"
+#include <SolverOptions.h>
+
+#include <SiconosKernel.hpp>
 #include <chrono>
-#include "SolverOptions.h"
+#include <string>
 
-using namespace std;
-int main(int argc, char* argv[])
-{
+using Matrix = siconos::algebra::SimpleMatrix;
+using Vector = siconos::algebra::SiconosVector;
 
+int main(int argc, char* argv[]) {
   double t0 = 0.0;
   double T = 100.0;        // Total simulation time
   double h_step = 1.0e-3;  // Time step
-  double L = 0.1;   // inductance
-  double C1 = 2.0;   // capacitance
-  double C2 = 0.8;   // capacitance
-  double Rc = 10.0;    // resistance
-  double Re = 20.0;    // resistance
+  double L = 0.1;          // inductance
+  double C1 = 2.0;         // capacitance
+  double C2 = 0.8;         // capacitance
+  double Rc = 10.0;        // resistance
+  double Re = 20.0;        // resistance
   // double Rb = 0.5;    // resistance
   double alphaF = 0.99;
   double alphaR = 0.015;
   double VCC = 10;
   double VEE = 20;
-  string Modeltitle = "Colpitts";
+  std::string Modeltitle = "Colpitts";
 
-  try
-  {
+  try {
     // --- Dynamical system specification ---
-    SP::SiconosVector init_state(new SiconosVector(3,0.0));
-//    init_state->setValue(1,-1.0);
-    SP::SimpleMatrix LS_A(new SimpleMatrix(3, 3));
+    auto init_state = std::make_shared<Vector>(3, 0.0);
+    //    init_state->setValue(1,-1.0);
+    auto LS_A = std::make_shared<Matrix>(3, 3);
 
-    LS_A->setValue(0, 0, -1.0 / (Rc*C1));
-    LS_A->setValue(1, 0, -1.0 / (Rc*C2));
-    LS_A->setValue(2, 0, -1.0/L);
+    LS_A->setValue(0, 0, -1.0 / (Rc * C1));
+    LS_A->setValue(1, 0, -1.0 / (Rc * C2));
+    LS_A->setValue(2, 0, -1.0 / L);
 
-    LS_A->setValue(0, 1, 1.0 /C1 *(-1.0/Rc));
-    LS_A->setValue(1, 1, -1.0 /C2 *(1.0/Rc +1.0/Re));
-    LS_A->setValue(2, 1, -1.0/L);
+    LS_A->setValue(0, 1, 1.0 / C1 * (-1.0 / Rc));
+    LS_A->setValue(1, 1, -1.0 / C2 * (1.0 / Rc + 1.0 / Re));
+    LS_A->setValue(2, 1, -1.0 / L);
 
     LS_A->setValue(0, 2, 1.0 / (C1));
     LS_A->setValue(1, 2, 1.0 / (C2));
     LS_A->setValue(2, 2, 0.0);
 
-    SP::SiconosVector LS_b(new SiconosVector(3));
+    auto LS_b = std::make_shared<Vector>(3);
 
-    LS_b->setValue(0,VCC/(Rc*C1));
-    LS_b->setValue(1,1.0/C2*(VCC/Rc-VEE/Re));
-    LS_b->setValue(2,VCC/L);
+    LS_b->setValue(0, VCC / (Rc * C1));
+    LS_b->setValue(1, 1.0 / C2 * (VCC / Rc - VEE / Re));
+    LS_b->setValue(2, VCC / L);
 
-
-    SP::FirstOrderLinearDS LSCollpitts(new FirstOrderLinearDS(init_state,LS_A,LS_b));
+    auto LSCollpitts =
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_state, LS_A, LS_b);
 
     // --- Interaction between linear system and non smooth system ---
-    SP::SimpleMatrix Int_C(new SimpleMatrix(2, 3));
+    auto Int_C = std::make_shared<Matrix>(2, 3);
 
     (*Int_C)(0, 0) = 1.0;
     (*Int_C)(1, 0) = 0.0;
@@ -82,34 +83,35 @@ int main(int argc, char* argv[])
     (*Int_C)(0, 2) = 0.0;
     (*Int_C)(1, 2) = 0.0;
 
-    //SP::SiconosMatrix Int_D(new SimpleMatrix(2, 2,0.0));
-    // (*Int_D)(0, 0) = 1.0 / Rvalue;
-    // (*Int_D)(0, 1) = 1.0 / Rvalue;
-    // (*Int_D)(0, 2) = -1.0;
-    // (*Int_D)(1, 0) = 1.0 / Rvalue;
-    // (*Int_D)(1, 1) = 1.0 / Rvalue;
-    // (*Int_D)(1, 3) = -1.0;
-    // (*Int_D)(2, 0) = 1.0;
-    // (*Int_D)(3, 1) = 1.0;
+    // auto Int_D= std::make_shared<Matrix>(2, 2,0.0);
+    //  (*Int_D)(0, 0) = 1.0 / Rvalue;
+    //  (*Int_D)(0, 1) = 1.0 / Rvalue;
+    //  (*Int_D)(0, 2) = -1.0;
+    //  (*Int_D)(1, 0) = 1.0 / Rvalue;
+    //  (*Int_D)(1, 1) = 1.0 / Rvalue;
+    //  (*Int_D)(1, 3) = -1.0;
+    //  (*Int_D)(2, 0) = 1.0;
+    //  (*Int_D)(3, 1) = 1.0;
 
-    SP::SimpleMatrix Int_B(new SimpleMatrix(3, 2));
-    (*Int_B)(0, 0) = 1.0 /C1 ;
-    (*Int_B)(1, 0) = (1.0-alphaR) / C2;
+    auto Int_B = std::make_shared<Matrix>(3, 2);
+    (*Int_B)(0, 0) = 1.0 / C1;
+    (*Int_B)(1, 0) = (1.0 - alphaR) / C2;
     (*Int_B)(2, 0) = 0.0;
-    (*Int_B)(0, 1) = -alphaF / C1 ;
-    (*Int_B)(1, 1) = (1.0-alphaF) / C2;
+    (*Int_B)(0, 1) = -alphaF / C1;
+    (*Int_B)(1, 1) = (1.0 - alphaF) / C2;
     (*Int_B)(2, 1) = 0.0;
 
+    auto LTIRCollpitts =
+        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(Int_C, Int_B);
+    // LTIRCollpitts->setDPtr(Int_D);
 
-    SP::FirstOrderLinearTIR LTIRCollpitts(new FirstOrderLinearTIR(Int_C, Int_B));
-    //LTIRCollpitts->setDPtr(Int_D);
+    auto nslaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(2);
 
-    SP::NonSmoothLaw nslaw(new ComplementarityConditionNSL(2));
-
-    SP::Interaction InterCollpitts(new Interaction(nslaw, LTIRCollpitts));
+    auto InterCollpitts =
+        std::make_shared<siconos::modeling::Interaction>(nslaw, LTIRCollpitts);
 
     // --- Model creation ---
-    SP::NonSmoothDynamicalSystem Collpitts(new NonSmoothDynamicalSystem(t0, T));
+    auto Collpitts = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
     Collpitts->setTitle(Modeltitle);
     // add the dynamical system in the non smooth dynamical system
     Collpitts->insertDynamicalSystem(LSCollpitts);
@@ -120,39 +122,41 @@ int main(int argc, char* argv[])
     // --- Simulation ---
     // ------------------
 
-
     // -- (1) OneStepIntegrators --
     double theta = 0.5;
-    SP::EulerMoreauOSI aOSI(new EulerMoreauOSI(theta));
+    auto aOSI = std::make_shared<siconos::integrators::EulerMoreauOSI>(theta);
 
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation aTiDisc(new TimeDiscretisation(t0, h_step));
+    auto aTiDisc = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h_step);
 
     // -- (3) Non smooth problem
 
-    SP::LCP aLCP(new LCP(SICONOS_LCP_LEMKE));
-    aLCP->numericsSolverOptions()->dparam[0]=1e-08;
+    auto aLCP = std::make_shared<siconos::nonsmooth_formulations::LCP>(SICONOS_LCP_LEMKE);
+    aLCP->numericsSolverOptions()->dparam[0] = 1e-08;
 
-    // SP::LCP aLCP(new LCP(SICONOS_LCP_ENUM));
-    // aLCP->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_MULTIPLE_SOLUTIONS]=1;  // Multiple solutions 0 or 1
-    // aLCP->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_SEED]=4;  // choice of seeds for multiple solutions
-    //aLCP->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_USE_DGELS]=1;  // LS for enum
-    //aLCP->setNumericsVerboseMode(1);
+    // auto aLCP= std::make_shared<siconos::nonsmooth_formulations::LCP>(SICONOS_LCP_ENUM);
+    // aLCP->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_MULTIPLE_SOLUTIONS]=1;  //
+    // Multiple solutions 0 or 1
+    // aLCP->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_SEED]=4;  // choice of
+    // seeds for multiple solutions
+    // aLCP->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_USE_DGELS]=1;  // LS for
+    // enum aLCP->setNumericsVerboseMode(1);
 
     // -- (4) Simulation setup with (1) (2) (3)
-    SP::TimeStepping aTS(new TimeStepping(Collpitts, aTiDisc, aOSI, aLCP));
+    auto aTS =
+        std::make_shared<siconos::simulation::TimeStepping>(Collpitts, aTiDisc, aOSI, aLCP);
 
     int k = 0;
     double h = aTS->timeStep();
-    int N = ceil((T - t0) / h); // Number of time steps
+    int N = ceil((T - t0) / h);  // Number of time steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    SimpleMatrix dataPlot(N, 8);
+    Matrix dataPlot(N, 8);
 
-    SP::SiconosVector x = LSCollpitts->x();
-    SP::SiconosVector y = InterCollpitts->y(0);
-    SP::SiconosVector lambda = InterCollpitts->lambda(0);
+    auto x = LSCollpitts->x();
+    auto y = InterCollpitts->y(0);
+    auto lambda = InterCollpitts->lambda(0);
 
     // For the initial time step:
     // time
@@ -168,19 +172,16 @@ int main(int argc, char* argv[])
     dataPlot(k, 6) = (*lambda)(0);
     dataPlot(k, 7) = (*lambda)(1);
 
-
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
     // --- Time loop  ---
-    for(k = 1 ; k < N ; ++k)
-    {
+    for (k = 1; k < N; ++k) {
       // solve ...
       aTS->computeOneStep();
       //  aLCP->display();
       // --- Get values to be plotted ---
       // time
       dataPlot(k, 0) = aTS->nextTime();
-
 
       dataPlot(k, 1) = (*x)(0);
       dataPlot(k, 2) = (*x)(1);
@@ -192,42 +193,34 @@ int main(int argc, char* argv[])
       dataPlot(k, 6) = (*lambda)(0);
       dataPlot(k, 7) = (*lambda)(1);
 
-
       aTS->nextStep();
-
     }
 
-
     // --- elapsed time computing ---
-    cout << ""  << endl;
-    cout << "time = " << endl;
+    std::cout << ""
+              << "\n";
+    std::cout << "time = \n";
     end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
-                  (end-start).count();
-    cout << "Computation time : " << elapsed << " ms" << endl;
-
+    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "Computation time : " << elapsed << " ms\n";
 
     // Number of time iterations
-    cout << "Number of iterations done: " << k << endl;
+    std::cout << "Number of iterations done: " << k << "\n";
 
     // dataPlot (ascii) output
-    ioMatrix::write("Colpitts.dat", "ascii", dataPlot,"noDim");
+    siconos::algebra::io::write("Colpitts.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
 
-
-    double error=0.0, eps=1e-12;
-    // if ((error=ioMatrix::compareRefFile(dataPlot, "Colpitts.ref", eps)) >= 0.0
-    //     && error > eps)
-    // {
-    //   if ((error=ioMatrix::compareRefFile(dataPlot, "Colpitts-sol2.ref", eps)) >= 0.0
-    //       && error > eps)
-    //     return 1;
-    // }
-
+    // double error = 0.0, eps = 1e-12;
+    // if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts.ref", eps)) > eps)
+    //   {
+    // 	if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts-sol2.ref", eps))
+    // > eps) 	  return 1;
+    //   }
   }
   // --- Exceptions handling ---
-  catch(...)
-  {
-    Siconos::exception::process();
+  catch (...) {
+    siconos::exception::process();
     return 1;
   }
 }

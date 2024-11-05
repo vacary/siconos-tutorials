@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 /*!\file
   C++ input file, D1MinusLinearOSI-Time-Stepping version
@@ -25,71 +25,74 @@
   Simulation with a D1MinusLinearOSI-Time-Stepping scheme.
   */
 
-#include "SiconosKernel.hpp"
+#include <SiconosKernel.hpp>
 #include <chrono>
-using namespace std;
 
-int main(int argc, char* argv[])
-{
-  try
-  {
+using Matrix = siconos::algebra::SimpleMatrix;
+using Vector = siconos::algebra::SiconosVector;
+
+int main(int argc, char *argv[]) {
+  try {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 3;           // degrees of freedom for the ball
-    double t0 = 0;                   // initial computation time
-    double T = 10.;                  // final computation time
-    double h = 5e-4;                 // time step
-    double hplot = 0.005;            // plot step size (larger than time step)
-    double position_init = 1.0;      // initial position for lowest bead.
-    double velocity_init = 0.0;      // initial velocity for lowest bead.
-    double R = 0.1;                  // Ball radius
-    double m = 1;                    // Ball mass
-    double g = 9.81;                 // Gravity
+    unsigned int nDof = 3;       // degrees of freedom for the ball
+    double t0 = 0;               // initial computation time
+    double T = 10.;              // final computation time
+    double h = 5e-4;             // time step
+    double hplot = 0.005;        // plot step size (larger than time step)
+    double position_init = 1.0;  // initial position for lowest bead.
+    double velocity_init = 0.0;  // initial velocity for lowest bead.
+    double R = 0.1;              // Ball radius
+    double m = 1;                // Ball mass
+    double g = 9.81;             // Gravity
 
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
-    cout << "====> Model loading ..." << endl << endl;
 
-    SP::SiconosMatrix Mass(new SimpleMatrix(nDof, nDof));
+    std::cout << "====> Model loading ...\n";
+
+    auto Mass = std::make_shared<Matrix>(nDof, nDof);
     (*Mass)(0, 0) = m;
     (*Mass)(1, 1) = m;
     (*Mass)(2, 2) = 2. / 5 * m * R * R;
 
     // -- Initial positions and velocities --
-    SP::SiconosVector q0(new SiconosVector(nDof));
-    SP::SiconosVector v0(new SiconosVector(nDof));
+    auto q0 = std::make_shared<Vector>(nDof);
+    auto v0 = std::make_shared<Vector>(nDof);
     (*q0)(0) = position_init;
     (*v0)(0) = velocity_init;
 
     // -- The dynamical system --
-    SP::LagrangianLinearTIDS ball(new LagrangianLinearTIDS(q0, v0, Mass));
+    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, Mass);
 
     // -- Set external forces (weight) --
-    SP::SiconosVector weight(new SiconosVector(nDof));
+    auto weight = std::make_shared<Vector>(nDof);
     (*weight)(0) = -m * g;
     ball->setFExtPtr(weight);
 
     // --------------------
     // --- Interactions ---
     // --------------------
+
     // -- nslaw --
     double e = 0.9;
 
     // Interaction ball-floor
-    SP::SimpleMatrix H(new SimpleMatrix(1, nDof));
+    //
+    auto H = std::make_shared<Matrix>(1, nDof);
     (*H)(0, 0) = 1.0;
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-    SP::Relation relation(new LagrangianLinearTIR(H));
+    auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
 
-    SP::Interaction inter(new Interaction(nslaw, relation));
+    auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
-    // -------------
-    // --- Model ---
-    // -------------
-    SP::NonSmoothDynamicalSystem bouncingBall(new NonSmoothDynamicalSystem(t0, T));
+    // --------------------------------
+    // --- NonSmoothDynamicalSystem ---
+    // --------------------------------
+    auto bouncingBall = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
 
     // add the dynamical system in the non smooth dynamical system
     bouncingBall->insertDynamicalSystem(ball);
@@ -100,69 +103,71 @@ int main(int argc, char* argv[])
     // ------------------
     // --- Simulation ---
     // ------------------
+
     // -- (1) OneStepIntegrators --
-    SP::D1MinusLinearOSI OSI(new D1MinusLinearOSI());
+    auto OSI = std::make_shared<siconos::integrators::D1MinusLinearOSI>(
+        siconos::integrators::D1MinusLinearOSI::Type::halfexplicit_acceleration_level);
 
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
-    // -- (3) One step non smooth problem
-    SP::OneStepNSProblem impact(new LCP()); // impulse right limit right side
-    SP::OneStepNSProblem force(new LCP()); // contact force right limit left side
+    // -- (3) One step non smooth problems
+    auto impact =
+        std::make_shared<siconos::nonsmooth_formulations::LCP>();  // impulse right limit
+                                                                   // right side
+    auto force =
+        std::make_shared<siconos::nonsmooth_formulations::LCP>();  // contact force right
+                                                                   // limit left side
 
     // -- (4) Simulation setup with (1) (2) (3)
-    SP::TimeSteppingD1Minus s(new TimeSteppingD1Minus(bouncingBall,t, 2));
+    auto s = std::make_shared<siconos::simulation::TimeSteppingD1Minus>(bouncingBall, t, 2);
     s->insertIntegrator(OSI);
-    s->insertNonSmoothProblem(impact, SICONOS_OSNSP_TS_VELOCITY);
-    s->insertNonSmoothProblem(force, SICONOS_OSNSP_TS_VELOCITY + 1);
+    s->insertNonSmoothProblem(impact, siconos::simulation::SICONOS_OSNSP_TS_VELOCITY);
+    s->insertNonSmoothProblem(force, siconos::simulation::SICONOS_OSNSP_TS_VELOCITY + 1);
     // =========================== End of model definition ===========================
 
     // ================================= Computation =================================
 
     // --- Simulation initialization ---
 
-    int N = ceil((T - t0) / h); // Number of time steps
+    int N = ceil((T - t0) / h);  // Number of time steps
     // int Nplot = (int)((T - t0) / hplot); // Number of plot steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 7;
-    SimpleMatrix dataPlot(N + 10, outputSize);
+    Matrix dataPlot(N + 10, outputSize);
 
-    SP::SiconosVector q = ball->q();
-    SP::SiconosVector v = ball->velocity();
-    SP::SiconosVector p = ball->p(1);
-    SP::SiconosVector lambda;
-    SP::SiconosVector p2;
-    SP::SiconosVector lambda2;
+    auto q = ball->q();
+    auto v = ball->velocity();
+    auto p = ball->p(1);
+    std::shared_ptr<Vector> lambda;
+    std::shared_ptr<Vector> p2;
+    std::shared_ptr<Vector> lambda2;
 
     dataPlot(0, 0) = bouncingBall->t0();
     dataPlot(0, 1) = (*q)(0);
     dataPlot(0, 2) = (*v)(0);
     dataPlot(0, 3) = (*p)(0);
-    dataPlot(0, 4) = 0.0;
-    dataPlot(0, 5) = 0.0;
-    dataPlot(0, 6) = 0.0;
+    dataPlot(0, 4) = 0;
+    dataPlot(0, 5) = 0;
+    dataPlot(0, 6) = 0;
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl << endl;
-
+    std::cout << "====> Start computation ... \n";
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
-    while(s->hasNextEvent())
-    {
+    auto start = std::chrono::system_clock::now();
+    while (s->hasNextEvent()) {
       s->advanceToEvent();
+      // ball->display();
       p2 = ball->p(2);
       lambda2 = inter->lambda(2);
       lambda = inter->lambda(1);
-      // ball->display();
       // --- Get values to be plotted ---
       //  if (fmod(s->nextTime(), hplot) < h)
       {
-
-        //std::cout << "k=" << k <<std::endl;
-        dataPlot(k, 0) =  s->nextTime();
+        // std::cout << "k=" << k <<std::endl;
+        dataPlot(k, 0) = s->nextTime();
         dataPlot(k, 1) = (*q)(0);
         dataPlot(k, 2) = (*v)(0);
         dataPlot(k, 3) = (*p)(0);
@@ -173,33 +178,26 @@ int main(int argc, char* argv[])
       }
 
       s->processEvents();
-      progressBar((double)k/N);
+      siconos::tools::progressBar((double)k / N);
     }
+    auto end = std::chrono::system_clock::now();
+    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
+    std::cout << "\nComputation time : " << elapsed << " ms\n";
 
-    end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
-                  (end-start).count();
-    cout << endl <<  "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation time : " << elapsed << " ms" << endl;
-
-    cout << "====> Output file writing ..." << endl;
+    // --- Output files ---
+    std::cout << "====> Output file writing ...\n";
     dataPlot.resize(k, outputSize);
-    ioMatrix::write("result_tdg.dat", "ascii", dataPlot, "noDim");
-
-    double error=0.0, eps=1e-12;
-    if((error=ioMatrix::compareRefFile(dataPlot, "BouncingBallTS-D1MinusLinearOSI.ref",
-                                       eps)) >= 0.0
-        && error > eps)
+    siconos::algebra::io::write("result_tdg.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
+    double error = 0.0, eps = 1e-12;
+    if ((error = siconos::algebra::io::compareRefFile(
+             dataPlot, "BouncingBallTS-D1MinusLinearOSI.ref", eps)) >= eps)
       return 1;
-
-
-
-
   }
 
-  catch(...)
-  {
-    Siconos::exception::process();
+  catch (...) {
+    siconos::exception::process();
     return 1;
   }
 }

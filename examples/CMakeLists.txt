@@ -1,15 +1,14 @@
 # Set minimum version for cmake
-cmake_minimum_required(VERSION 3.7)
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12")
-  cmake_policy(SET CMP0074 NEW)
-endif()
+cmake_minimum_required(VERSION 3.14) 
+
+cmake_policy(SET CMP0074 NEW) # find_package() uses <PackageName>_ROOT variables.
+cmake_policy(SET CMP0086 NEW) # UseSWIG honors SWIG_MODULE_NAME via -module flag.
+cmake_policy(SET CMP0079 NEW) # target_link_libraries() allows use with targets in other directories
+cmake_policy(SET CMP0067 NEW) # Honor language standard in try_compile() source-file signature.
 
 project(siconos_examples CXX C)
 
-
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-
-#include(WindowsSiconosSetup) Outdated? To be reviewed
 
 set(tests_timeout 35 CACHE INTERNAL "Limit time for tests (in seconds)")
 
@@ -26,7 +25,7 @@ include(SiconosRequiredVersion)
 # 
 # Remark : we may also use the package registry magic to find siconos:
 # see https://cmake.org/cmake/help/git-master/manual/cmake-packages.7.html#creating-packages
-find_package(siconos  REQUIRED)
+find_package(siconos REQUIRED)
 
 # --- Search siconos package path ---
 # --> based on path to script siconos.
@@ -52,7 +51,7 @@ if(HAS_PYTHON_WRAPPER)
   include(FindPythonModule)
   find_python_module(matplotlib)
   find_python_module(pyhull)
-  if(SICONOS_HAS_OCE)
+  if(SICONOS_HAS_OpenCASCADE)
     find_python_module(OCC REQUIRED)
   endif()
 endif()
@@ -145,7 +144,7 @@ endif()
 # === mechanics ===
 string(FIND "${installed_targets}" "mechanics" mechanics_installed )
 # mechanics with bullet? --> SICONOS_HAS_BULLET = ON
-# mechanics or mechanisms with OCE? --> SICONOS_HAS_OCE = ON
+# mechanics or mechanisms with OpenCASCADE? --> SICONOS_HAS_OpenCASCADE  = ON
 # mechanics + bullet
 if(${mechanics_installed} GREATER -1)
   message(STATUS "mechanics component found")
@@ -154,8 +153,11 @@ if(${mechanics_installed} GREATER -1)
     mechanics/JointsTestsWithInternalForces
     )
   list(APPEND EXAMPLES_DIRECTORIES ${mechanics_examples})
+  include(FindPythonModule)
 
-  find_python_module(pyhull REQUIRED)
+  if(HAS_PYB11_WRAPPER)
+    find_python_module(pyhull REQUIRED)
+  endif()
 
   if(SICONOS_HAS_BULLET)
     message(STATUS "add examples requiring bullet")
@@ -175,22 +177,23 @@ if(${mechanics_installed} GREATER -1)
       )
     list(APPEND EXAMPLES_DIRECTORIES ${mechanics_bullet_examples})
 
+  if(HAS_PYB11_WRAPPER)
     find_python_module(pylmgc90)
-    
-    if(NOT pylmgc90_FOUND)
-      list(APPEND EXCLUDE_PATTERN_FROM_TESTS mkspheres spheres_in_a_box)
-    endif()
+  endif()    
+  if(NOT pylmgc90_FOUND)
+    list(APPEND EXCLUDE_PATTERN_FROM_TESTS mkspheres spheres_in_a_box)
+  endif()
 
   endif()
-  if(SICONOS_HAS_OCE)
-    message(STATUS "add examples requiring oce")
-    # mechanics + oce
-    set(mechanics_oce_examples
+  if(SICONOS_HAS_OpenCASCADE) 
+    message(STATUS "add examples requiring occt")
+    # mechanics + occ
+    set(mechanics_occt_examples
       mechanics/MultiBodySystems/OCC_examples
       mechanics/MultiBodySystems/SliderCrank
       mechanics/MultiBodySystems/WatchEscapment
       )
-    list(APPEND EXAMPLES_DIRECTORIES ${mechanics_oce_examples})
+    list(APPEND EXAMPLES_DIRECTORIES ${mechanics_occt_examples})
   endif()
 endif()
 
@@ -278,15 +281,10 @@ foreach(current_dir IN LISTS EXAMPLES_DIRECTORIES)
         COMMAND ${siconos_SCRIPT} ${driver} --build-plugins --tmp-dir
         WORKING_DIRECTORY ${working_dir}
         )
-      if(SICONOS_HAS_OCE)
-        # add path to python OCC to PYTHONPATH
-        set_tests_properties(py_${test_name} PROPERTIES
-          ENVIRONMENT PYTHONPATH=${OCC_PYTHONPATH}
-          TIMEOUT ${tests_timeout})
-      else()
-        set_tests_properties(py_${test_name} PROPERTIES
-          TIMEOUT ${tests_timeout})
-      endif()
+
+      set_tests_properties(py_${test_name} PROPERTIES
+            TIMEOUT ${tests_timeout})
+
       # plugins are not build by default for python scripts, so
       # we force it with --build-plugins.
     else()

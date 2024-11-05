@@ -5,19 +5,13 @@
 
 #include "circuit.h"
 
-elecRelation::elecRelation():
-  FirstOrderType2R()
-{
-}
+user_defined::elecRelation::elecRelation() : siconos::modeling::FirstOrderType2R() {}
 
-
-
-double elecRelation::source(double t)
-{
+double user_defined::elecRelation::source(double t) {
   double daux = 0;
 #ifdef CLSC_CIRCUIT
   double numT = t / sT;
-  int aux = (int) floor(numT);
+  int aux = (int)floor(numT);
   daux = sE_plus - ((sE_plus - sE_moins) / sT) * t + (sE_plus - sE_moins) * aux;
 #ifdef SICONOS_DEBUG
   std::cout << "source(" << t << ")=" << daux << std::endl;
@@ -25,7 +19,7 @@ double elecRelation::source(double t)
   return daux;
 
 #else
-  daux =  sin(sW * t);
+  daux = sin(sW * t);
 #ifdef SICONOS_DEBUG
   std::cout << "source(" << t << ")=" << daux << std::endl;
 #endif
@@ -34,10 +28,9 @@ double elecRelation::source(double t)
 }
 
 /*y = h(X,lambda)*/
-void elecRelation::computeh(double t, const BlockVector& x, const SiconosVector& lambda, SiconosVector& y)
-{
-
-
+void user_defined::elecRelation::computeh(double t, const siconos::algebra::BlockVector& x,
+                                          const siconos::algebra::SiconosVector& lambda,
+                                          siconos::algebra::SiconosVector& y) {
 #ifdef CLSC_CIRCUIT
   y(0) = lambda(4) - source(t);
   y(1) = x(0) - (lambda(3)) / sR;
@@ -49,18 +42,16 @@ void elecRelation::computeh(double t, const BlockVector& x, const SiconosVector&
   y(7) = sR2 - lambda(8) - sR1d;
   y(8) = -lambda(2) + lambda(7);
 #else
-  y(0) = - lambda(0) + source(t);
-  y(1) = -lambda(0) + x(0) + (lambda(3) + sR1)* lambda(1);
+  y(0) = -lambda(0) + source(t);
+  y(1) = -lambda(0) + x(0) + (lambda(3) + sR1) * lambda(1);
   y(2) = sR2 - lambda(3) - sR1;
   y(3) = lambda(0) + lambda(2);
 #endif
-
 }
 
-
-
-void elecRelation::computeg(double t, const SiconosVector& lambda, BlockVector& r)
-{
+void user_defined::elecRelation::computeg(double t,
+                                          const siconos::algebra::SiconosVector& lambda,
+                                          siconos::algebra::BlockVector& r) {
 #ifdef SICONOS_DEBUG
   std::cout << "************      computeg at: " << t << std::endl;
 #endif
@@ -81,12 +72,14 @@ void elecRelation::computeg(double t, const SiconosVector& lambda, BlockVector& 
  *  \param double : current time
  *  \param index for jacobian (0: jacobian according to x, 1 according to lambda)
  */
-void elecRelation::computeJachx(double t, const BlockVector& x, const SiconosVector& lambda, SimpleMatrix& C)
-{
-
+void user_defined::elecRelation::computeJachx(double t, const siconos::algebra::BlockVector& x,
+                                              const siconos::algebra::SiconosVector& lambda,
+                                              siconos::algebra::SimpleMatrix& C) {
   double* h = C.getArray();
 #ifdef SICONOS_DEBUG
-  std::cout << "computeJachx " << " at " << " " << t << std::endl;
+  std::cout << "computeJachx "
+            << " at "
+            << " " << t << std::endl;
 #endif
 
 #ifdef CLSC_CIRCUIT
@@ -105,14 +98,15 @@ void elecRelation::computeJachx(double t, const BlockVector& x, const SiconosVec
   h[2] = 0;
   h[3] = 0;
 #endif
-
 }
-void elecRelation::computeJachlambda(double t, const BlockVector& x, const SiconosVector& lambda, SimpleMatrix& D)
-{
-
+void user_defined::elecRelation::computeJachlambda(
+    double t, const siconos::algebra::BlockVector& x,
+    const siconos::algebra::SiconosVector& lambda, siconos::algebra::SimpleMatrix& D) {
   double* h = D.getArray();
 #ifdef SICONOS_DEBUG
-  std::cout << "computeJachlambda " << " at " << " " << t << std::endl;
+  std::cout << "computeJachlambda "
+            << " at "
+            << " " << t << std::endl;
 #endif
 
 #ifdef CLSC_CIRCUIT
@@ -215,15 +209,16 @@ void elecRelation::computeJachlambda(double t, const BlockVector& x, const Sicon
   h[11] = 1;
   h[15] = 0;
 #endif
-
 }
 
-void elecRelation::computeJacglambda(double time, const SiconosVector& lambda, SimpleMatrix& B)
-{
-
-  double *g = B.getArray();
+void user_defined::elecRelation::computeJacglambda(
+    double time, const siconos::algebra::SiconosVector& lambda,
+    siconos::algebra::SimpleMatrix& B) {
+  double* g = B.getArray();
 #ifdef SICONOS_DEBUG
-  std::cout << "computeJacglambda " << " at " << " " << t << std::endl;
+  std::cout << "computeJacglambda "
+            << " at "
+            << " " << t << std::endl;
 #endif
 #ifdef CLSC_CIRCUIT
   g[0] = 0;
@@ -242,4 +237,5 @@ void elecRelation::computeJacglambda(double time, const SiconosVector& lambda, S
   g[3] = 0;
 #endif
 }
+
 #endif

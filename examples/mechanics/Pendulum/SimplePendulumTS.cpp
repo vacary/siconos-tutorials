@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
-
+ */
 
 // =============================== Double Pendulum Example ===============================
 //
@@ -25,35 +24,28 @@
 //
 // =============================================================================================
 
+#include <SiconosKernel.hpp>
 #include <chrono>
-#include "SiconosKernel.hpp"
-#include <stdlib.h>
-using namespace std;
 
+using Matrix = siconos::algebra::SimpleMatrix;
+using Vector = siconos::algebra::SiconosVector;
 
 double gravity = 10.0;
 double m1 = 1.0;
-double l1 = 1.0 ;
+double l1 = 1.0;
 
-
-
-
-
-int main(int argc, char* argv[])
-{
-  try
-  {
-
+int main(int argc, char* argv[]) {
+  try {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 1;           // degrees of freedom for robot arm
-    double t0 = 0;                   // initial computation time
-    double T = 50.0;                   // final computation time
-    double h = 0.0005;                // time step
+    unsigned int nDof = 1;  // degrees of freedom for robot arm
+    double t0 = 0;          // initial computation time
+    double T = 50.0;        // final computation time
+    double h = 0.0005;      // time step
     double criterion = 0.00005;
     unsigned int maxIter = 2000;
-    double e = 0.9;                  // nslaw
+    double e = 0.9;  // nslaw
 
     // -> mind to set the initial conditions below.
 
@@ -66,34 +58,31 @@ int main(int argc, char* argv[])
     // --- DS: Double Pendulum ---
 
     // Initial position (angles in radian)
-    SP::SiconosVector q0(new SiconosVector(nDof));
-    SP::SiconosVector v0(new SiconosVector(nDof));
+    auto q0 = std::make_shared<Vector>(nDof);
+    auto v0 = std::make_shared<Vector>(nDof);
     (*q0).zero();
     (*v0).zero();
     (*q0)(0) = 1;
 
-    SP::LagrangianDS simplependulum(new LagrangianDS(q0, v0));
+    auto simplependulum = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
 
-    SP::SimpleMatrix Mass(new SimpleMatrix(nDof, nDof));
+    auto Mass = std::make_shared<Matrix>(nDof, nDof);
     (*Mass)(0, 0) = m1 * l1;
     simplependulum->setMassPtr(Mass);
 
-
     // external plug-in
-    //simplependulum->setComputeMassFunction("SimplePendulumPlugin","mass");
-
+    // simplependulum->setComputeMassFunction("SimplePendulumPlugin","mass");
 
     simplependulum->setComputeFIntFunction("SimplePendulumPlugin", "FInt");
-    simplependulum->setComputeJacobianFIntqDotFunction("SimplePendulumPlugin", "jacobianVFInt");
+    simplependulum->setComputeJacobianFIntqDotFunction("SimplePendulumPlugin",
+                                                       "jacobianVFInt");
     simplependulum->setComputeJacobianFIntqFunction("SimplePendulumPlugin", "jacobianFIntq");
 
     // -------------------
     // --- Interactions---
     // -------------------
 
-
     // -- relations --
-
 
     //     SimpleMatrix H(1,2);
     //     SiconosVector b(1);
@@ -103,22 +92,21 @@ int main(int argc, char* argv[])
 
     //     b(0) = 0.0;
 
-
-    //     NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-    //     Relation relation(new LagrangianLinearTIR(H,b));
+    //     NonSmoothLaw nslaw= std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
+    //     Relation relation= std::make_shared<siconos::modeling::LagrangianLinearTIR>(H,b);
     //     Interaction inter =  new Interaction("floor-mass1", allDS,1,1, nslaw, relation);)
 
-
-    string G = "SimplePendulumPlugin:G0";
-    SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-    SP::Relation relation(new LagrangianScleronomousR("SimplePendulumPlugin:h0", G));
-    SP::Interaction inter(new Interaction(nslaw, relation));
+    std::string G = "SimplePendulumPlugin:G0";
+    auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
+    auto relation = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
+        "SimplePendulumPlugin:h0", G);
+    auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
     // -------------
     // --- Model ---
     // -------------
 
-    SP::NonSmoothDynamicalSystem Pendulum(new NonSmoothDynamicalSystem(t0, T));
+    auto Pendulum = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
     Pendulum->insertDynamicalSystem(simplependulum);
     Pendulum->link(inter, simplependulum);
 
@@ -127,81 +115,81 @@ int main(int argc, char* argv[])
     // ----------------
 
     // -- Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
-    SP::TimeStepping s(new TimeStepping(Pendulum, t));
+    auto s = std::make_shared<siconos::simulation::TimeStepping>(Pendulum, t);
     s->setNewtonTolerance(criterion);
     s->setNewtonMaxIteration(maxIter);
 
     // -- OneStepIntegrators --
 
-    //double theta=0.500001;
+    // double theta=0.500001;
     double theta = 0.500001;
 
-    SP::OneStepIntegrator OSI(new MoreauJeanOSI(theta));
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
     s->insertIntegrator(OSI);
 
-    SP::OneStepNSProblem osnspb(new LCP());
+    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::LCP>();
     s->insertNonSmoothProblem(osnspb);
-    cout << "=== End of model loading === " << endl;
+    std::cout << "=== End of model loading === \n";
 
     // --- Simulation initialization ---
     int k = 0;
     int N = ceil((T - t0) / h);
-    cout << "Number of time step" << N << endl;
+    std::cout << "Number of time step   " << N << "\n";
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 11;
-    SimpleMatrix dataPlot(N + 1, outputSize);
+    Matrix dataPlot(N + 1, outputSize);
     // For the initial time step:
     // time
-    dataPlot(k, 0) =  Pendulum->t0();
+    dataPlot(k, 0) = Pendulum->t0();
     dataPlot(k, 1) = (*simplependulum->q())(0);
     dataPlot(k, 2) = (*simplependulum->velocity())(0);
-    dataPlot(k, 3) =  l1 * sin((*simplependulum->q())(0));
+    dataPlot(k, 3) = l1 * sin((*simplependulum->q())(0));
     dataPlot(k, 4) = -l1 * cos((*simplependulum->q())(0));
-    dataPlot(k, 5) =  l1 * cos((*simplependulum->q())(0)) * ((*simplependulum->velocity())(0));
+    dataPlot(k, 5) = l1 * cos((*simplependulum->q())(0)) * ((*simplependulum->velocity())(0));
     // --- Compute elapsed time ---
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
+    auto start = std::chrono::system_clock::now();
     //    EventsManager eventsManager = s->eventsManager();
     // --- Time loop ---
-    cout << "Start computation ... " << endl;
-    cout << "Number of time step" << N << "\n";
-    while(s->hasNextEvent())
-    {
+    std::cout << "Start computation ... \n";
+    std::cout << "Number of time steps " << N << "\n";
+    while (s->hasNextEvent()) {
       k++;
-      if(!(div(k, 10000).rem))  cout << "Step number " << k << "\n";
+      if (!(div(k, 10000).rem)) std::cout << "Step number " << k << "\n";
 
       // Solve problem
       s->advanceToEvent();
       // Data Output
-      dataPlot(k, 0) =  s->nextTime();
+      dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*simplependulum->q())(0);
       dataPlot(k, 2) = (*simplependulum->velocity())(0);
-      dataPlot(k, 3) =  l1 * sin((*simplependulum->q())(0));
+      dataPlot(k, 3) = l1 * sin((*simplependulum->q())(0));
       dataPlot(k, 4) = -l1 * cos((*simplependulum->q())(0));
-      dataPlot(k, 5) =  l1 * cos((*simplependulum->q())(0)) * ((*simplependulum->velocity())(0));
+      dataPlot(k, 5) =
+          l1 * cos((*simplependulum->q())(0)) * ((*simplependulum->velocity())(0));
       s->nextStep();
-      progressBar((double)k/N);
+      siconos::tools::progressBar((double)k / N);
     }
-
-    end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
-                  (end-start).count();
-    cout << endl <<  "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation time : " << elapsed << " ms" << endl;
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
+    std::cout << "\nComputation time : " << elapsed << " ms\n";
 
     // --- Output files ---
-
-    // --- Output files ---
-    ioMatrix::write("SimplePendulumResult.dat", "ascii", dataPlot, "noDim");
-
+    siconos::algebra::io::write("SimplePendulumResult.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
+    double error = 0.0, eps = 1e-12;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "SimplePendulumResult.ref",
+                                                      eps)) > eps)
+      return 1;
+    return 0;
   }
 
-  catch(...)
-  {
-    Siconos::exception::process();
+  catch (...) {
+    siconos::exception::process();
     return 1;
   }
 }

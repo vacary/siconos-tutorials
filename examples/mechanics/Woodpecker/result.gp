@@ -1,13 +1,12 @@
-!set term post eps color solid
-!set output "woodpecker.eps"
-set  term X11
-
-set term tikz standalone monochrome  size 5in,5in font '\small\sf'
-set output "woodpecker.tex"
-
+#set term post eps color solid
+#set output "woodpecker.eps"
+#set  term X11
+# set term tikz standalone monochrome  size 5in,5in font '\small\sf'
+# set output "woodpecker.tex"
 
 
-!tail -n 100000 result.dat > result-gp.dat
+
+!tail -n 100000 Woodpecker.dat > result-gp.dat
 
 
 

@@ -1,1 +1,2 @@
-FROM gricad-registry.univ-grenoble-alpes.fr/nonsmooth/siconos-tutorials/siconoslab-release-4.4
+FROM gricad-registry.univ-grenoble-alpes.fr/nonsmooth/siconos-tutorials/siconoslab-occ-master
+

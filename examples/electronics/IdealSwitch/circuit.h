@@ -3,7 +3,7 @@
 
 #define CLSC_CIRCUIT
 
-//#define SICONOS_DEBUG
+// #define SICONOS_DEBUG
 
 #ifdef CLSC_CIRCUIT
 /*
@@ -12,20 +12,22 @@
  *
  */
 
-static double sR = 1;
-static double sR1s = 0.001;
-static double sR1d = 0.001;
-static double sR2 = 1000;
-static double sL = 200e-6;
-static double sT = 20e-6;
-static double sStep = 0.1e-6;
-static double sE_plus = 7.5;
-static double sE_moins = -2.5;
-static double sTf = 10 * sT;
-static int sNSLawSize = 9;
-static int sN = 4;
-static int sM = 5;
-static double sAmpli = 100.0;
+namespace user_defined {
+
+constexpr double sR = 1;
+constexpr double sR1s = 0.001;
+constexpr double sR1d = 0.001;
+constexpr double sR2 = 1000;
+constexpr double sL = 200e-6;
+constexpr double sT = 20e-6;
+constexpr double sStep = 0.1e-6;
+constexpr double sE_plus = 7.5;
+constexpr double sE_moins = -2.5;
+constexpr double sTf = 10 * sT;
+constexpr int sNSLawSize = 9;
+constexpr int sN = 4;
+constexpr int sM = 5;
+constexpr double sAmpli = 100.0;
 
 #else
 /*    V1     /      V2
@@ -58,20 +60,18 @@ static double sAmpli = 100.0;
  *
  *
  */
-static int sNSLawSize = 4;
-static int sN = 2;
-static int sM = 2;
+constexpr int sNSLawSize = 4;
+constexpr int sN = 2;
+constexpr int sM = 2;
 
-static double sR1 = 1;
-static double sR2 = 1000;
-static double sC = 1e-2;
-static double sW = 1000;
-static double sTf = 0.07;
-static double sStep = 0.00001;
-
-
+constexpr double sR1 = 1;
+constexpr double sR2 = 1000;
+constexpr double sC = 1e-2;
+constexpr double sW = 1000;
+constexpr double sTf = 0.07;
+constexpr double sStep = 0.00001;
 
 #endif
-
+}
 
 #endif
