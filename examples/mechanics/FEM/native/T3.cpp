@@ -62,33 +62,12 @@ int main(int argc, char* argv[]) {
         materials = {{bulk_material_tag, mat1}};
 
     auto start = std::chrono::system_clock::now();
-    auto FEsolid =
-        std::make_shared<siconos::mechanics::fem::FiniteElementLinearTIDS>(
+    auto FEsolid = std::make_shared<siconos::mechanics::fem::FiniteElementLinearTIDS>(
             mesh, materials, siconos::algebra::UblasType::SPARSE);
     auto end = std::chrono::system_clock::now();
-    auto elapsed =
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-            .count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "Assembly time : " << elapsed << " ms\n";
 
-            //std::shared_ptr<Material> mat1 = std::make_shared<Material>(1, 8*36/5., 1/5.); // material for  triangle_felippa.msh
-    double density = 7800.;
-    std::shared_ptr<Material> mat1 = std::make_shared<Material>(density, 210e9, 1/3.);
-    std::map<unsigned int, std::shared_ptr<Material> > materials = {{bulk_material_tag, mat1}};
-
-
-
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
-    std::shared_ptr<FiniteElementLinearTIDS> FEsolid  = std::make_shared<FiniteElementLinearTIDS>(mesh, materials, siconos::algebra::UblasType::SPARSE);
-    end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
-                  (end-start).count();
-    cout << "Assembly time : " << elapsed << " ms" << endl;
-    std::cout << " " << std::endl;
-    //FEsolid->display(true);
-
-    std::shared_ptr<FiniteElementModel> femodel = FEsolid->FEModel();
     auto femodel = FEsolid->FEModel();
     // FEsolid->K()->display();
 
@@ -130,7 +109,7 @@ int main(int argc, char* argv[]) {
     solid->insertDynamicalSystem(FEsolid);
 
     /*------------------------------------------------- Contact Conditions  */
-    double e =0.0;    
+    double e =0.0;
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
     auto initial_gap = std::make_shared<Vector>(1, Ly * 5e-4);
     for (auto& n : femodel->nodes()) {
@@ -141,7 +120,6 @@ int main(int argc, char* argv[]) {
         auto idx_y = (*n->dofIndex())[1];
         auto H = std::make_shared<Matrix>(1, FEsolid->dimension());
         (*H)(0, idx_y) = 1.0;
-        auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
         auto relation =
             std::make_shared<siconos::modeling::LagrangianLinearTIR>(
                 H, initial_gap);
