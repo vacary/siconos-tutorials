@@ -54,7 +54,8 @@ mass[2, 2] = 2. / 5 * r * r
 ball = sm.LagrangianLinearTIDS(initial_position, initial_velocity, mass)
 # set external forces
 weight_np = np.array([-m * g, 0, 0], dtype=np.float64)
-ball.setConstantFExt(weight_np)
+
+ball.setConstantFext(weight_np)
 
 #
 # Interaction ball-floor

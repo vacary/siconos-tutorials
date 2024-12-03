@@ -71,15 +71,15 @@ int main(int argc, char *argv[]) {
     auto q03 = std::make_shared<Vector>(qDim);
     auto v03 = std::make_shared<Vector>(nDim);
     auto I3 = std::make_shared<Matrix>(3, 3);
-    v03->zero();
-    I3->eye();
+    v03->setZero();
+    I3->setIdentity();
     I3->setValue(0, 0, 0.1);
-    q03->zero();
+    q03->setZero();
     (*q03)(2) = -L1 * sqrt(2.0) - L1 / 2;
 
     double angle = M_PI / 2;
     Vector V1(3);
-    V1.zero();
+    V1.setZero();
     V1.setValue(0, 0);
     V1.setValue(1, 1);
     V1.setValue(2, 0);
@@ -107,17 +107,17 @@ int main(int argc, char *argv[]) {
     auto H = std::make_shared<Matrix>(1, qDim);
     auto eR = std::make_shared<Vector>(1);
     eR->setValue(0, 2.3);
-    H->zero();
+    H->setZero();
     (*H)(0, 2) = 1.0;
     auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
     auto relation0 = std::make_shared<siconos::modeling::NewtonEulerR>();
     relation0->setJachq(H);
     relation0->setE(eR);
     cout << "main jacQH\n";
-    relation0->jachq()->display();
+    relation0->jacobianhOver_q()->display();
 
     auto axe1 = std::make_shared<Vector>(3);
-    axe1->zero();
+    axe1->setZero();
     axe1->setValue(2, 1);
     auto relation4 =
         std::make_shared<siconos::joints::PrismaticJointR>(axe1, false, bouncingbeam);

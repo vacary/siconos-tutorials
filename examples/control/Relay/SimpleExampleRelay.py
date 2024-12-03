@@ -45,7 +45,7 @@ process = sk.FirstOrderLinearDS(x0, A)
 
 myNslaw = sk.RelayNSL(2)
 myProcessRelation = sk.FirstOrderLinearR(C, B)
-#myProcessRelation.setDPtr(D)
+#myProcessRelation.setConstantD(D)
 
 myProcessInteraction = sk.Interaction(myNslaw,
                                    myProcessRelation)

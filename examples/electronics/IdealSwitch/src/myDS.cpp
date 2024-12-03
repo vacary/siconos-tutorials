@@ -19,10 +19,10 @@
 
 user_defined::MyDS::MyDS(std::shared_ptr<siconos::algebra::SiconosVector> x0)
     : FirstOrderNonLinearDS(x0) {
-  _jacobianfx = std::make_shared<siconos::algebra::SiconosMatrix>(1, 1);
+  jacobianfVectorOver_x_ = std::make_shared<siconos::algebra::SiconosMatrix>(1, 1);
   _f = std::make_shared<siconos::algebra::SiconosVector>(1);
   _M = std::make_shared<siconos::algebra::SiconosMatrix>(1, 1);
-  _M->eye();
+  _M->setIdentity();
 }
 
 void user_defined::MyDS::computeF(double t) { _f->setValue(0, 0); }
@@ -30,12 +30,11 @@ void user_defined::MyDS::computeF(double, std::shared_ptr<siconos::algebra::Sico
   _f->setValue(0, 0);
 }
 
-void user_defined::MyDS::computeJacobianfx(double t) { _jacobianfx->setValue(0, 0, 0); }
 
-void user_defined::MyDS::computeJacobianfx(
-    double t, std::shared_ptr<siconos::algebra::SiconosVector> v) {
-  _jacobianfx->setValue(0, 0, 0);
+void user_defined::MyDS::computeJacobianfOver_x(
+    const Eigen::Ref<siconos::algebra::SiconosVector> &state, double time) {
+  jacobianfVectorOver_x_->setValue(0, 0, 0);
 }
 
 void user_defined::MyDS::computeRhs(double t) { ; }
-void user_defined::MyDS::resetNonSmoothPart(unsigned int level) { _r->zero(); }
+void user_defined::MyDS::resetNonSmoothPart(unsigned int level) { _r->setZero(); }

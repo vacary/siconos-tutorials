@@ -95,12 +95,12 @@ struct ForFExt : public Question<std::shared_ptr<siconos::algebra::SiconosVector
 {
   using SiconosVisitor::visit;
 
-  ANSWER(Disk, fExt());
-  ANSWER(Circle, fExt());
-  ANSWER(SphereLDS, fExt());
-  ANSWER(SphereNEDS, fExt());
-  ANSWER(RigidBodyDS, fExt());
-  ANSWER(NewtonEulerDS, fExt());
+  ANSWER(Disk, fext());
+  ANSWER(Circle, fext());
+  ANSWER(SphereLDS, fext());
+  ANSWER(SphereNEDS, fext());
+  ANSWER(RigidBodyDS, fext());
+  ANSWER(NewtonEulerDS, fext());
 };
 
 

@@ -49,7 +49,7 @@ D = zeros((2,2))
 # dynamical systems
 process = FirstOrderLinearDS(x0, A)
 myProcessRelation = FirstOrderLinearTIR(C,B)
-myProcessRelation.setDPtr(D)
+myProcessRelation.setConstantD(*D)
 
 myNslaw = RelayNSL(2)
 myNslaw.display()

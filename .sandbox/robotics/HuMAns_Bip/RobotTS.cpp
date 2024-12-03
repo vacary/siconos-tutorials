@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
     //The linear contraint corresponding to joints limits (hq+b>0)
     SimpleMatrix H(30, 21);
     SiconosVector b(30);
-    H.zero();
+    H.setZero();
     H(0, 0) = -1;
     H(1, 0) = 1;
     b(0) = 0.21;

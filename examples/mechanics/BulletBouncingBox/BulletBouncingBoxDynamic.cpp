@@ -42,14 +42,14 @@ auto makeBox(float g, float pos, float vel) {
   auto box1 = std::make_shared<siconos::collision::SiconosBox>(1.0, 1.0, 1.0);
 
   // -- Initial position and velocity
-  auto q0(std::make_shared<Vector>(7));
-  auto v0(std::make_shared<Vector>(6));
-  v0->zero();
-  q0->zero();
+  siconos::algebra::SiconosVector q0{7};
+  siconos::algebra::SiconosVector v0{6};
+  q0.setZero();
+  v0.setZero();
 
-  (*q0)(2) = pos;
-  (*q0)(3) = 1.0;
-  (*v0)(2) = vel;
+ q0(2) = pos;
+ q0(3) = 1.0;
+  v0(2) = vel;
 
   // -- The dynamical system --
   auto body = std::make_shared<siconos::collision::RigidBodyDS>(q0, v0, 1.0);
@@ -63,7 +63,7 @@ auto makeBox(float g, float pos, float vel) {
   Vector FExt{nDof};
   FExt.setZero();
   FExt(2) = -g * body->scalarMass();
-  body->setConstantFExt(FExt);
+  body->setConstantFext(FExt);
 
   return body;
 }
@@ -183,7 +183,7 @@ int main() {
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 4;
     Matrix dataPlot(N + 1, outputSize);
-    dataPlot.zero();
+    dataPlot.setZero();
 
     auto q = body->q();
     auto v = body->velocity();

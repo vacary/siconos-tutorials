@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
     (*A)(1, 1) = 1.0;
     auto x0 = std::make_shared<Vector>(ndof);
     (*x0)(0) = Vinit;
-    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(x0, A);
+    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, *A);
     process->setComputebFunction("ObserverLCSPlugin", "uProcess");
 
     // Second System, the observer:
@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
     (*hatA)(1, 1) = -1.0;
 
     auto obsX0 = std::make_shared<Vector>(ndof);
-    auto observer = std::make_shared<siconos::modeling::FirstOrderLinearDS>(obsX0, hatA);
+    auto observer = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*obsX0, *hatA);
     observer->setComputebFunction("ObserverLCSPlugin", "uObserver");
     //    SiconosVector z= std::make_shared<Vector>(1);
     observer->setzPtr(process->x());
@@ -115,14 +115,14 @@ int main(int argc, char* argv[]) {
     auto D = std::make_shared<Matrix>(ninter, ninter);
     (*D)(0, 0) = 1.0;
 
-    myProcessRelation->setDPtr(D);
+    myProcessRelation->setConstantD(*D);
     myProcessRelation->setComputeEFunction("ObserverLCSPlugin", "computeE");
 
     // Second relation, related to the observer
     // haty = C hatX + D hatLambda + E
     // hatR = B hatLambda
     auto myObserverRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>(C, B);
-    myObserverRelation->setDPtr(D);
+    myObserverRelation->setConstantD(*D);
     myObserverRelation->setComputeEFunction("ObserverLCSPlugin", "computeE");
 
     // NonSmoothLaw

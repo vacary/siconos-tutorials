@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
     LS_A->setValue(1, 0, 1.0 / Lvalue);
 
     auto LSDiodeBridge =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_state, LS_A);
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state, *LS_A);
 
     // --- Interaction between linear system and non smooth system ---
     auto Int_C = std::make_shared<Matrix>(4, 2);
@@ -91,8 +91,8 @@ int main(int argc, char* argv[]) {
     (*Int_B)(0, 3) = 1.0 / Cvalue;
 
     auto LTIRDiodeBridge =
-        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(Int_C, Int_B);
-    LTIRDiodeBridge->setDPtr(Int_D);
+        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*Int_C, *Int_B);
+    LTIRDiodeBridge->setConstantD(*Int_D);
 
     auto nslaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(4);
 
@@ -179,9 +179,9 @@ int main(int argc, char* argv[]) {
 
     auto tmp = std::make_shared<Vector>(2);
 
-    prod(1 / 2.0, *LS_P, *x, *tmp, true);
+    *tmp = 0.5 * *LS_P * *x;
 
-    dataPlot(k, 7) = inner_prod(*x, *tmp);
+    dataPlot(k, 7) = x->dot(tmp);
 
     dataPlot(k, 8) = 0.0;
 
@@ -217,14 +217,13 @@ int main(int argc, char* argv[]) {
 
       // diode F1 current
       dataPlot(k, 6) = (*lambda)(2);
+      *tmp = 0.5 * *LS_P * *x;
 
-      prod(1 / 2.0, *LS_P, *x, *tmp, true);
-      dataPlot(k, 7) = inner_prod(*x, *tmp);
-
-      prod(*LS_Q, *xlambda, *tmp6, true);
+      dataPlot(k, 7) = x->dot(tmp);
+      *tmp6 = *LS_Q * *xlambda;
       *tmp6 *= 1 / 2.0 * h;
       *tmp6bis = *xlambda;
-      dataPlot(k, 8) = inner_prod(*tmp6bis, *tmp6) + dataPlot(k - 1, 8);
+      dataPlot(k, 8) = tmp6bis->dot(*tmp6) + dataPlot(k - 1, 8);
 
       dataPlot(k, 9) = dataPlot(k, 7) + dataPlot(k, 8);
 

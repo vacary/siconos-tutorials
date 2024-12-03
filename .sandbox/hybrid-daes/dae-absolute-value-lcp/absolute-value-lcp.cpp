@@ -14,10 +14,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 /*!\file clutchFrictionEngaging.cpp
- 
+
   Engaging of a clutch modeled using a friction coefficient.
   Simulation with a Time-Stepping scheme.
 */
@@ -27,216 +27,208 @@
 
 using namespace std;
 
-int main(int argc, char* argv[])
-{
-    try
-    {
+int main(int argc, char* argv[]) {
+  try {
+    // ================= Creation of the model =======================
 
-        // ================= Creation of the model =======================
+    // User-defined main parameters
+    unsigned int dimX = 3;       // Dimension of the system state variables
+    unsigned int dimLambda = 1;  // Dimension of the system lambda variables
 
-        // User-defined main parameters
-        unsigned int dimX       = 3;    // Dimension of the system state variables
-        unsigned int dimLambda  = 1;    // Dimension of the system lambda variables
+    double t0 = 0.0;  // initial computation time
+    double T = 0.15;  // final computation time
+    // double T     = 10.0;            // final computation time
 
-        double t0       = 0.0;          // initial computation time
-        double T        = 0.15;         // final computation time 
-        //double T     = 10.0;            // final computation time 
+    double h = 0.05;  // time step
 
-        double h        =  0.05;        // time step
+    double x1_0 = 0.0;  // initial condition in state variable x1
+    double x2_0 = 1.0;  // initial condition in state variable x2
+    double z_0 = 0;     // initial condition in algebraic variable z
 
-        double x1_0     = 0.0;         // initial condition in state variable x1
-        double x2_0     = 1.0;          // initial condition in state variable x2
-        double z_0      = 0;            // initial condition in algebraic variable z
+    // -------------------------
+    // --- Dynamical systems ---
+    // -------------------------
+    cout << "###### DAE with absolute value constraint #####" << endl;
+    cout << "====> Model definition ..." << endl;
 
+    std::shared_ptr<siconos::algebra::SiconosVector> init(
+        new SiconosVector({x1_0, x2_0, z_0}));
 
-        // -------------------------
-        // --- Dynamical systems ---
-        // -------------------------
-        cout << "###### DAE with absolute value constraint #####" <<  endl;  
-        cout << "====> Model definition ..." <<  endl;
+    std::shared_ptr<siconos::algebra::SiconosMatrix> A(new SimpleMatrix(dimX, dimX));
+    // *** sliding
+    // double B0 = 0.0;
+    // double B1 = 1.0;
+    // should have slide or jump (multiple solutions)
+    double B0 = -1.0;
+    double B1 = 0.5;
+    A->row(0) = SiconosVector({0.0, 0.0, B0});
+    A->row(1) = SiconosVector({0.0, 0.0, B1});
+    A->row(2) = SiconosVector({1.0, -1.0, 0.0});
 
+    cout << "matrix A: " << endl;
+    A->display();
 
-        std::shared_ptr<siconos::algebra::SiconosVector> init(new SiconosVector({x1_0, x2_0, z_0}));
+    auto E(new SimpleMatrix(dimX, dimX));
+    (*E)(0, 0) = 1.0;
+    (*E)(1, 1) = 1.0;
 
-        std::shared_ptr<siconos::algebra::SiconosMatrix> A( new SimpleMatrix(dimX,dimX) ); 
-        // *** sliding
-        // double B0 = 0.0;
-        // double B1 = 1.0;
-        // should have slide or jump (multiple solutions)
-        double B0 = -1.0;
-        double B1 = 0.5;
-        A->setRow(0,SiconosVector({0.0, 0.0, B0}));
-        A->setRow(1,SiconosVector({0.0, 0.0, B1}));
-        A->setRow(2,SiconosVector({1.0, -1.0, 0.0}));
+    cout << "matrix E: " << endl;
+    E->display();
 
-        cout << "matrix A: " << endl;
-        A->display();
+    std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector({1.0, 0.0, 1.0}));
 
-        auto E(new SimpleMatrix(dimX,dimX));
-        (*E)(0,0) = 1.0;
-        (*E)(1,1) = 1.0;
+    cout << "vector b: " << endl;
+    b->display();
 
-        cout << "matrix E: " << endl;
-        E->display();
+    // Siconos smooth dynamical system
 
-        std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector({1.0, 0.0, 1.0}));
+    auto dyn = std::make_shared<FirstOrderLinearDS>(*init, *A, *b);
+    dyn->setConstantMMatrix(E);
 
-        cout << "vector b: " << endl;
-        b->display();
+    // -------------------------
+    // --- LCP Relation ---
+    // -------------------------
 
-        // Siconos smooth dynamical system
-        auto dyn(new FirstOrderLinearTIDS(init,A));
-        dyn->setbPtr(b);
-        dyn->setMPtr(E);
+    // IDE complains when smartpoint is std::shared_ptr<siconos::algebra::SiconosMatrix> why ?
+    // not virtual ?
+    auto C(new SimpleMatrix(dimLambda, dimX));
+    (*C)(0, 0) = 2.0;
 
-        // -------------------------
-        // --- LCP Relation ---
-        // -------------------------
+    auto D(new SimpleMatrix(dimLambda, dimLambda));
+    (*D)(0, 0) = 1.0;
 
+    auto R(new SimpleMatrix(dimX, dimLambda));
+    (*R)(2, 0) = 1.0;
 
-        // IDE complains when smartpoint is std::shared_ptr<siconos::algebra::SiconosMatrix> why ? not virtual ?
-        auto C( new SimpleMatrix(dimLambda,dimX) );
-        (*C)(0,0) = 2.0;
+    // std::shared_ptr<siconos::algebra::SiconosVector> e(new SiconosVector({0.0}));
 
-        auto D( new SimpleMatrix(dimLambda,dimLambda) );
-        (*D)(0,0) = 1.0;
+    // Relation LCP lhs
+    auto relation(new FirstOrderLinearTIR(C, R));
+    relation->setConstantD(*D);
 
-        auto R( new SimpleMatrix(dimX,dimLambda) );
-        (*R)(2,0) = 1.0;
+    // NonSmooth law: LCP
+    auto nslaw(new ComplementarityConditionNSL(dimLambda));
 
-        //std::shared_ptr<siconos::algebra::SiconosVector> e(new SiconosVector({0.0}));
+    // interaction
+    auto inter(new Interaction(nslaw, relation));
 
-        // Relation LCP lhs
-        auto relation(new FirstOrderLinearTIR(C, R) );
-        relation->setDPtr(D);
+    // -----------------------------
+    // --- Siconos Model Entity ---
+    // ----------------------------
+    auto switch_dae(new NonSmoothDynamicalSystem(t0, T));
 
-        // NonSmooth law: LCP
-        auto nslaw(new ComplementarityConditionNSL(dimLambda));
+    // add the dynamical system in the non smooth dynamical system
+    switch_dae->insertDynamicalSystem(dyn);
 
-        // interaction 
-        auto inter(new Interaction(nslaw, relation));
+    // link the interaction and the dynamical system
+    switch_dae->link(inter, dyn);
 
-        // -----------------------------
-        // --- Siconos Model Entity ---
-        // ----------------------------
-        auto switch_dae(new NonSmoothDynamicalSystem(t0, T));
+    // -----------------------------
+    // --- Simulation Definition ---
+    // -----------------------------
 
-        // add the dynamical system in the non smooth dynamical system
-        switch_dae->insertDynamicalSystem(dyn);
+    // -- (1) OneStepIntegrators --
+    double theta = 1.0;
+    double gamma = 1.0;
+    auto osi(new EulerMoreauOSI(theta, gamma));
 
-        // link the interaction and the dynamical system
-        switch_dae->link(inter, dyn);
+    // -- (2) Time discretisation --
+    auto td(new TimeDiscretisation(t0, h));
 
-        // -----------------------------
-        // --- Simulation Definition ---
-        // -----------------------------
+    // -- (3) one step non smooth problem
+    auto osnspb(new LCP(SICONOS_LCP_ENUM));
+    // auto osnspb(new LCP());
+    osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_MULTIPLE_SOLUTIONS] =
+        1;  // 1 for multiple solutions,
+            // 0 else .
+    // osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_USE_DGELS] = 0; // 1 if
+    // useDGELS
+    osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_SKIP_TRIVIAL] =
+        SICONOS_LCP_SKIP_TRIVIAL_YES;
+    osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_SEED] = 1;  // SEED
+    // osnspb->setNumericsVerboseMode(true);
 
-        // -- (1) OneStepIntegrators --
-        double theta = 1.0;
-        double gamma = 1.0;
-        auto osi(new EulerMoreauOSI(theta,gamma));
+    // -- (4) Simulation setup with (1) (2) (3)
+    auto s(new TimeStepping(switch_dae, td, osi, osnspb));
 
+    // s->setResetAllLambda(false);
 
-        // -- (2) Time discretisation --
-        auto td(new TimeDiscretisation(t0, h));
+    // =========================== End of model definition ===========================
+    cout << "====> ... End of Model definition" << endl;
+    //   // ================================= Computation =================================
 
-        // -- (3) one step non smooth problem
-        auto osnspb(new LCP(SICONOS_LCP_ENUM));
-        // auto osnspb(new LCP());
-        osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_MULTIPLE_SOLUTIONS] = 1; // 1 for multiple solutions,
-                                                                                         // 0 else .
-        // osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_USE_DGELS] = 0; // 1 if useDGELS 
-        osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_SKIP_TRIVIAL] = SICONOS_LCP_SKIP_TRIVIAL_YES;
-        osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_SEED] = 1; // SEED
-        // osnspb->setNumericsVerboseMode(true);
-        
-        
-        // -- (4) Simulation setup with (1) (2) (3)
-        auto s(new TimeStepping(switch_dae, td, osi, osnspb));
+    int N = ceil((T - t0) / h) + 1;  // Number of time steps
 
-        // s->setResetAllLambda(false);
+    // --- Get the values to be plotted ---
+    // -> saved in a matrix dataPlot
+    unsigned int outputSize = 7;
+    SimpleMatrix dataPlot(N + 1, outputSize);
 
-        // =========================== End of model definition ===========================
-        cout <<  "====> ... End of Model definition" <<  endl;
-        //   // ================================= Computation =================================
+    std::shared_ptr<siconos::algebra::SiconosVector> x = dyn->x();
+    std::shared_ptr<siconos::algebra::SiconosVector> lambda = inter->lambda(0);
 
-        int N = ceil((T - t0) / h)+1; // Number of time steps
+    dataPlot(0, 0) = switch_dae->t0();
+    dataPlot(0, 1) = (*x)(0);  // x1
+    dataPlot(0, 2) = (*x)(1);  // x2
+    dataPlot(0, 3) = (*x)(2);  // z
+    dataPlot(0, 4) = (*lambda)(0);
+    dataPlot(0, 5) = 0.0;  // M[0,0] at t= 0 initialized at 0.0
+    dataPlot(0, 6) = 0.0;  // q[0] at t= 0 initialized at 0.0
+    // --- Time loop ---
+    cout << "====> Start computation ... " << endl;
+    // ==== Simulation loop - Writing without explicit event handling =====
+    int k = 1;
+    boost::progress_display show_progress(N);
+    boost::timer time;
+    time.restart();
 
-        // --- Get the values to be plotted ---
-        // -> saved in a matrix dataPlot
-        unsigned int outputSize = 7;
-        SimpleMatrix dataPlot(N + 1, outputSize);
+    // element M[0,0] of the matrix M (normaly of size 1) s.t. y = M*lambda+q
+    double M_00;
+    // element q[0] of the vector q (normaly of size 1) s.t. y = M*lambda+q
+    double q_0;
 
-        std::shared_ptr<siconos::algebra::SiconosVector> x = dyn->x();
-        std::shared_ptr<siconos::algebra::SiconosVector> lambda = inter->lambda(0);
+    while (s->hasNextEvent()) {
+      s->computeOneStep();
+      // osnspb->display();
 
-        dataPlot(0, 0) = switch_dae->t0();
-        dataPlot(0, 1) = (*x)(0);   // x1
-        dataPlot(0, 2) = (*x)(1);   // x2
-        dataPlot(0, 3) = (*x)(2);   // z
-        dataPlot(0, 4) = (*lambda)(0);
-        dataPlot(0, 5) = 0.0;       // M[0,0] at t= 0 initialized at 0.0
-        dataPlot(0, 6) = 0.0;       // q[0] at t= 0 initialized at 0.0
-        // --- Time loop ---
-        cout << "====> Start computation ... " << endl;
-        // ==== Simulation loop - Writing without explicit event handling =====
-        int k = 1;
-        boost::progress_display show_progress(N);
-        boost::timer time;
-        time.restart();
+      cout << "# of solutions: "
+           << osnspb->numericsSolverOptions()
+                  ->iparam[SICONOS_LCP_IPARAM_ENUM_NUMBER_OF_SOLUTIONS]
+           << endl;  // Number of solutions
 
-        // element M[0,0] of the matrix M (normaly of size 1) s.t. y = M*lambda+q
-        double M_00;
-         // element q[0] of the vector q (normaly of size 1) s.t. y = M*lambda+q
-        double q_0;
+      M_00 = osnspb->M()->defaultMatrix()->getValue(0, 0);
+      q_0 = osnspb->q()->getValue(0);
+      // --- Get values to be plotted ---
+      dataPlot(k, 0) = s->nextTime();
+      dataPlot(k, 1) = (*x)(0);
+      dataPlot(k, 2) = (*x)(1);
+      dataPlot(k, 3) = (*x)(2);
+      dataPlot(k, 4) = (*lambda)(0);
+      dataPlot(k, 5) = M_00;
+      dataPlot(k, 6) = q_0;
+      cout << "sigma = h*z = " << h * dataPlot(k, 3) << endl;  // value \sigma_z
+      cout << "x1 = " << dataPlot(k, 1) << endl;               // position in x1
 
-        while (s->hasNextEvent())
-        {
-            
-            s->computeOneStep();
-            // osnspb->display();
-
-            cout << "# of solutions: " 
-                 << osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_NUMBER_OF_SOLUTIONS] << endl; // Number of solutions
-
-            M_00 = osnspb->M()->defaultMatrix()->getValue(0,0);
-            q_0  = osnspb->q()->getValue(0);
-            // --- Get values to be plotted ---
-            dataPlot(k, 0) =  s->nextTime();
-            dataPlot(k, 1) = (*x)(0);
-            dataPlot(k, 2) = (*x)(1);
-            dataPlot(k, 3) = (*x)(2);
-            dataPlot(k, 4) = (*lambda)(0);
-            dataPlot(k, 5) = M_00;
-            dataPlot(k, 6) = q_0;
-            cout << "sigma = h*z = " << h*dataPlot(k, 3) << endl; // value \sigma_z
-            cout << "x1 = " << dataPlot(k, 1) << endl; // position in x1
-
-            s->nextStep();
-            ++show_progress;
-            k++;
-
-        }
-        cout  << "End of computation - Number of iterations done: " << k - 1 << endl;
-        cout << "Computation Time " << time.elapsed()  << endl;
-
-        // --- Output files ---
-        cout << "====> Output file writing ..." << endl;
-        dataPlot.resize(k, outputSize);
-        ioMatrix::write("result_absolute-value-lcp.dat", "ascii", dataPlot, "noDim");
+      s->nextStep();
+      ++show_progress;
+      k++;
     }
+    cout << "End of computation - Number of iterations done: " << k - 1 << endl;
+    cout << "Computation Time " << time.elapsed() << endl;
 
-    catch (SiconosException& e)    
-    {
+    // --- Output files ---
+    cout << "====> Output file writing ..." << endl;
+    dataPlot.resize(k, outputSize);
+    ioMatrix::write("result_absolute-value-lcp.dat", "ascii", dataPlot, "noDim");
+  }
+
+  catch (SiconosException& e) {
     cerr << e.report() << endl;
     return 1;
-    }
+  }
 
-    catch (...) 
-    {
+  catch (...) {
     cerr << "Exception caught in absolute-value-lcp.cpp" << endl;
     return 1;
-    }
-
-
+  }
 }

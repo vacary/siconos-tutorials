@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
   cout << "====> Model loading ..." << endl << endl;
 
   auto A = std::make_shared<Matrix>(nDof, nDof);
-  A->zero();
+  A->setZero();
   (*A)(0, 1) = 1;
   (*A)(1, 0) = -1;
 
@@ -67,8 +67,8 @@ int main(int argc, char* argv[]) {
   (*x0)(1) = velocity_init;
 
   // -- The dynamical system --
-  auto doubleIntegrator = std::make_shared<siconos::modeling::FirstOrderLinearTIDS>(x0, A);
-
+  auto doubleIntegrator = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
+  doubleIntegrator->setConstantA(*A);
   // -------------
   // --- Model ---
   // -------------
@@ -90,10 +90,11 @@ int main(int argc, char* argv[]) {
   auto L = std::make_shared<Matrix>(2, 1);
   (*L)(0, 0) = -7.5125146;
   (*L)(1, 0) = -50.04168751;
-  auto xHat0= std::make_shared<Vector>(2);
+  auto xHat0 = std::make_shared<Vector>(2);
   (*xHat0)(0) = position_init;
   (*xHat0)(1) = -5;
-  auto obs = std::make_shared<siconos::control::SlidingReducedOrderObserver>(sens, *xHat0, C, L);
+  auto obs =
+      std::make_shared<siconos::control::SlidingReducedOrderObserver>(sens, *xHat0, C, L);
   sim->addObserver(obs, hControl);
   // add the PID controller
   auto K = std::make_shared<Vector>(3, 0);
@@ -129,8 +130,8 @@ int main(int argc, char* argv[]) {
                               siconos::algebra::io::ASCII_OUT,
                               siconos::algebra::io::WriteType::nodim);
   double error = 0.0, eps = 1e-12;
-  if ((error = siconos::algebra::io::compareRefFile(dataPlot, "SlidingReducedOrderObserver.ref",
-                                                    eps)) >= 0.0 &&
+  if ((error = siconos::algebra::io::compareRefFile(
+           dataPlot, "SlidingReducedOrderObserver.ref", eps)) >= 0.0 &&
       error > eps)
     return 1;
   else

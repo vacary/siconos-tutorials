@@ -46,7 +46,8 @@ int main(int argc, char* argv[]) {
 
   try {
     // --- Dynamical system specification ---
-    auto init_state = std::make_shared<Vector>(3, 0.0);
+    auto init_state = std::make_shared<Vector>(3);
+    init_state->setZero();
     //    init_state->setValue(1,-1.0);
     auto LS_A = std::make_shared<Matrix>(3, 3);
 
@@ -69,7 +70,7 @@ int main(int argc, char* argv[]) {
     LS_b->setValue(2, VCC / L);
 
     auto LSCollpitts =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_state, LS_A, LS_b);
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state, *LS_A, LS_b);
 
     // --- Interaction between linear system and non smooth system ---
     auto Int_C = std::make_shared<Matrix>(2, 3);
@@ -102,8 +103,8 @@ int main(int argc, char* argv[]) {
     (*Int_B)(2, 1) = 0.0;
 
     auto LTIRCollpitts =
-        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(Int_C, Int_B);
-    // LTIRCollpitts->setDPtr(Int_D);
+        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*Int_C, *Int_B);
+    // LTIRCollpitts->setConstantD(*Int_D);
 
     auto nslaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(2);
 
@@ -197,9 +198,6 @@ int main(int argc, char* argv[]) {
     }
 
     // --- elapsed time computing ---
-    std::cout << ""
-              << "\n";
-    std::cout << "time = \n";
     end = std::chrono::system_clock::now();
     int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "Computation time : " << elapsed << " ms\n";
@@ -211,12 +209,15 @@ int main(int argc, char* argv[]) {
     siconos::algebra::io::write("Colpitts.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
-    // double error = 0.0, eps = 1e-12;
+    double error = 0.0, eps = 1e-12;
     // if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts.ref", eps)) > eps)
-    //   {
-    // 	if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts-sol2.ref", eps))
-    // > eps) 	  return 1;
-    //   }
+    // {
+    //   if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts-sol2.ref", eps))
+    //   >
+    //       eps)
+    //     return 1;
+    // }
+    // return 0;
   }
   // --- Exceptions handling ---
   catch (...) {

@@ -54,7 +54,7 @@ void user_defined::adjointInput::computeg(double t, const siconos::algebra::Bloc
   P->setValue(0, x(2));
   P->setValue(1, x(3));
 
-  prod(*K2, *P, *K2P, true);
+  *K2P = *K2 **P;
 
   auto betatmp = std::make_shared<siconos::algebra::SiconosVector>(2);
   beta(t, x, betatmp);
@@ -177,7 +177,7 @@ void user_defined::adjointInput::computeJacglambda(
   P->setValue(0, x(2));
   P->setValue(1, x(3));
 
-  prod(*K2, *P, *K2P, true);
+  *K2P = *K2 **P;
 
   auto betatmp = std::make_shared<siconos::algebra::SiconosVector>(2);
   beta(t, x, betatmp);

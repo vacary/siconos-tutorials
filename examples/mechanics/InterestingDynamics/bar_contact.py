@@ -109,7 +109,7 @@ import scipy.constants as constants
 def apply_forces(body):
   g = constants.g / gravity_scale
   weight = [0, 0, - body.scalarMass() * g]
-  body.setConstantFExt(weight)
+  body.setConstantFext(weight)
 
 
 # Create solver options

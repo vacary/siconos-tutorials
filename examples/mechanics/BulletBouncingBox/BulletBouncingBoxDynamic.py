@@ -70,7 +70,7 @@ def makeBox(pos=position_init, vel=velocity_init):
 
     # set external forces
     weight = [0, 0, -body.scalarMass() * g]
-    body.setConstantFExt(weight)
+    body.setConstantFext(weight)
 
     # Add the shape, wrapped in a SiconosContactor, to the body's
     # contactor set.
@@ -83,7 +83,7 @@ body = makeBox()
 
 # set external forces
 weight = [0, 0, -body.scalarMass() * g]
-body.setConstantFExt(weight)
+body.setConstantFext(weight)
 
 #
 # Model

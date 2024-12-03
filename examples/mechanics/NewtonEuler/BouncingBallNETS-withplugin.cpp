@@ -49,8 +49,6 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
   void computeh(double time, const siconos::algebra::BlockVector& q0,
                 siconos::algebra::SiconosVector& y) override {
     double height = fabs(q0.getValue(0)) - _sBallRadius;
-    // std::cout <<"my_NewtonEulerR:: computeh _jachq" << std:: endl;
-    // _jachq->display();
     y.setValue(0, height);
     _Nc->setValue(0, 1);
     _Nc->setValue(1, 0);
@@ -92,24 +90,23 @@ int main(int argc, char* argv[]) {
     std::cout << "====> Model loading ...\n";
 
     // -- Initial positions and velocities --
-    auto q0 = std::make_shared<Vector>(qDim);
-    auto v0 = std::make_shared<Vector>(nDim);
-    auto I = std::make_shared<Matrix>(3, 3);
-    v0->zero();
-    q0->zero();
-    I->eye();
-    (*q0)(0) = position_init;
+    siconos::algebra::SiconosVector q0{qDim};
+    siconos::algebra::SiconosVector v0{nDim};
+    q0.setZero();
+    v0.setZero();
+    Matrix I = Eigen::MatrixXd::Identity(3, 3);
+   q0(0) = position_init;
     /*initial quaternion equal to (1,0,0,0)*/
-    (*q0)(3) = 1.0;
+   q0(3) = 1.0;
 
-    (*v0)(0) = velocity_init;
-    (*v0)(3) = omega_initx;
-    (*v0)(5) = omega_initz;
+    v0(0) = velocity_init;
+    v0(3) = omega_initx;
+    v0(5) = omega_initz;
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::NewtonEulerDS>(q0, v0, m, I);
 
     // -- Set external forces (weight) --
-    ball->setComputeFExtFunction("BouncingBallplugin", "ballFExt");
+    ball->setComputeFextFunction("BouncingBallplugin", "ballFExt");
 
     // --------------------
     // --- Interactions ---
@@ -139,7 +136,7 @@ int main(int argc, char* argv[]) {
     //     Version with NewtonEulerR()
     //
     //     auto H= std::make_shared<Matrix>(nslawsize,qDim);
-    //     H->zero();
+    //     H->setZero();
     //     (*H)(0,0) = 1.0;
     // #ifdef WITH_FC3D
     //     (*H)(1,1) = 1.0;
@@ -151,7 +148,7 @@ int main(int argc, char* argv[]) {
     //     //    relation0->setJacQH(H_block);
     //     //    relation0->setJacQHT(HT_block);
     //     //cout<<"main jacQH"<<endl;
-    //     //relation0->jachq()->display();
+    //     //relation0->jacobianhOver_q()->display();
 
     // Version with my_NewtonEulerR()
     auto relation0 = std::make_shared<my_NewtonEulerR>(radius);

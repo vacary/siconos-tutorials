@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
     (*LS_A)(3, 2) = 1.0 / Cfvalue;
     (*LS_A)(3, 3) = -1.0 / (Rvalue * Cfvalue);
 
-    auto LSPRC = std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_state, LS_A);
+    auto LSPRC = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state, *LS_A);
 
     // Lrvalue is required in the plug-in, thus we set z[0] = 100.0/ Lrvalue.
     auto z = std::make_shared<Vector>(1);
@@ -91,8 +91,8 @@ int main(int argc, char* argv[]) {
     (*Int_B)(1, 1) = 1.0 / Crvalue;
     (*Int_B)(2, 2) = 1.0 / Lfvalue;
     (*Int_B)(2, 3) = 1.0 / Lfvalue;
-    auto LTIRPRC = std::make_shared<siconos::modeling::FirstOrderLinearTIR>(Int_C, Int_B);
-    LTIRPRC->setDPtr(Int_D);
+    auto LTIRPRC = std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*Int_C, *Int_B);
+    LTIRPRC->setConstantD(*Int_D);
 
     // -> Non-smooth law
     auto nslaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(4);

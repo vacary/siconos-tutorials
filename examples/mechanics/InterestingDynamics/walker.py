@@ -110,7 +110,7 @@ def my_forces(body):
     force = weight
     if body.number() == bar1_id:
         force = weight + push # + twist
-    body.setConstantFExt(force)
+    body.setConstantFext(force)
 
 # Run the simulation from the inputs previously defined and add
 # results to the hdf5 file. The visualisation of the output may be done

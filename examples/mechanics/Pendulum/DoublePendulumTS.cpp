@@ -59,23 +59,25 @@ int main(int argc, char* argv[]) {
     // --- DS: Double Pendulum ---
 
     // Initial position (angles in radian)
-    auto q0 = std::make_shared<Vector>(nDof);
-    auto v0 = std::make_shared<Vector>(nDof);
+    Vector q0{nDof};
+    q0.setZero();
+    Vector v0{nDof};
+    v0.setZero();
 
-    q0->zero();
-    v0->zero();
 
-    // (*q0)(0) = 1.5;
-    // (*q0)(1) = 1.5;
+
+
+    //q0(0) = 1.5;
+    //q0(1) = 1.5;
 
     // for sympy plugins uncomment below (relative parametrization)
     // Note, we have the relation :
-    // absolute[(*q0)(0)] + relative[(*q0)(1)] = absolute[(*q0)(1)]
-    // (*q0)(0) = 0.1;
-    // (*q0)(1) = 0.1;
+    // absolute[q0(0)(0)] + relative[q0(0)(1)] = absolute[q0(0)(1)]
+    //q0(0) = 0.1;
+    //q0(1) = 0.1;
 
-    (*q0)(0) = 0.1;
-    (*q0)(1) = 0.2;
+   q0(0) = 0.1;
+   q0(1) = 0.2;
 
     /*REGULAR PLUGINS - uncomment to use*/
     auto doublependulum =

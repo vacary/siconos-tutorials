@@ -66,10 +66,10 @@ int main(int argc, char* argv[]) {
     (*x0)(0) = Vinit;
     (*x0)(1) = -Vinit;
 
-    auto processDS = std::make_shared<siconos::modeling::FirstOrderLinearDS>(x0, A);
+    auto processDS = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, *A);
     processDS->setComputebFunction("plugins", "computeB");
 
-    auto controllerDS = std::make_shared<siconos::modeling::FirstOrderLinearDS>(x0, A);
+    auto controllerDS = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, *A);
 
     // --------------------
     // --- Interactions ---
@@ -99,11 +99,11 @@ int main(int argc, char* argv[]) {
 
     //     auto myProcessRelation=
     //     std::make_shared<siconos::modeling::FirstOrderLinearR>(C,B);
-    //     myProcessRelation->setDPtr(D);
+    //     myProcessRelation->setConstantD(*D);
     // myProcessRelation->setComputeEFunction("ObserverLCSPlugin","computeE");
 
     auto myControllerRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>(C, B);
-    myControllerRelation->setDPtr(D);
+    myControllerRelation->setConstantD(*D);
 
     // NonSmoothLaw
     unsigned int nslawSize = 2;
@@ -222,7 +222,7 @@ int main(int argc, char* argv[]) {
       controllerSimulation->computeOneStep();
 
       //  input of the controller in the process thanks to z and sampledControl
-      prod(1.0, *B, *lambda, *sampledControl, true);
+      *sampledControl = *B * *lambda;
 
       while (processSimulation->hasNextEvent() &&
              processSimulation->nextTime() < controllerSimulation->nextTime()) {

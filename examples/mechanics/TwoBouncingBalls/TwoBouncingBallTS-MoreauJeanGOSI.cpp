@@ -68,10 +68,13 @@ int main(int argc, char* argv[]) {
     (*Mass2)(2, 2) = 2. / 5 * m2 * R * R;
 
     // -- Initial positions and velocities --
-    auto q0 = std::make_shared<Vector>(nDof);
-    auto v0 = std::make_shared<Vector>(nDof);
-    (*q0)(0) = position_init;
-    (*v0)(0) = velocity_init;
+    Vector q0{nDof};
+    q0.setZero();
+    q0(0) = position_init;
+    Vector v0{nDof};
+    v0.setZero();
+    v0(0) = velocity_init;
+
 
     auto q0_2 = std::make_shared<Vector>(nDof);
     auto v0_2 = std::make_shared<Vector>(nDof);
@@ -79,19 +82,19 @@ int main(int argc, char* argv[]) {
     (*v0_2)(0) = velocity_init;
 
     // -- The dynamical system --
-    auto ball1 = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, Mass);
+    auto ball1 = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
     auto ball2 = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0_2, v0_2, Mass2);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
     weight(0) = -m1 * g;
-    ball1->setConstantFExt(weight);
+    ball1->setConstantFext(weight);
 
     Vector weight2{nDof};
     weight2.setZero();
     weight2(0) = -m2 * g;
-    ball2->setConstantFExt(weight2);
+    ball2->setConstantFext(weight2);
 
     // --------------------
     // --- Interactions ---
@@ -108,7 +111,7 @@ int main(int argc, char* argv[]) {
     (*H)(2, 2) = 1.0;
 
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, e, 0.6, 3);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H);
 
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
@@ -127,7 +130,7 @@ int main(int argc, char* argv[]) {
     (*b_bb)(1) = 0.0;
     (*b_bb)(2) = 0.0;
 
-    auto relation_bb = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H_bb, b_bb);
+    auto relation_bb = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H_bb, *b_bb);
 
     auto inter_bb = std::make_shared<siconos::modeling::Interaction>(nslaw, relation_bb);
 

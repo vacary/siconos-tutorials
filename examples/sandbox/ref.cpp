@@ -29,10 +29,12 @@
 #include <SiconosKernel.hpp>
 #include <chrono>
 
+#include "testClass.hpp"
+
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-void example() {
+auto example() {
   siconos::algebra::SiconosVector q0{7}, q01{7}, velocity0{6};
 
   siconos::algebra::SiconosMatrix inertia{3, 3};
@@ -45,7 +47,7 @@ void example() {
   inertia(1, 1) = 2;
   inertia(2, 2) = 3;
 
-  auto ds = std::make_shared<siconos::modeling::NewtonEulerDS>(q0, velocity0, mass, inertia);
+  return std::make_shared<siconos::modeling::NewtonEulerDS>(q0, velocity0, mass, inertia);
 
   // auto mass_func = [](Eigen::Ref<siconos::algebra::MapVectorType> pos, double time,
   //                     Eigen::Ref<siconos::algebra::MapType> result) {
@@ -55,6 +57,76 @@ void example() {
   //   result(2, 2) = 3.;
   // };
 }
+
+// void testfunc(const Eigen::Ref<Vector> vin) {
+//   auto temp = vin;
+//   temp(0) += 3;
+//   vin(2) += 2;
+//   std::cout << " aaaaaaaa " << temp << " \n";
+// }
+
+void computeMgyr(const Eigen::Ref<siconos::algebra::SiconosVector>& twist,
+                 const Eigen::Ref<siconos::algebra::SiconosMatrix>& inertiaMatrix,
+                 Eigen::Ref<siconos::algebra::SiconosVector> result) {
+  auto omega = twist.tail<3>();
+  auto inertia = inertiaMatrix.block<3, 3>(3, 3);
+  result = omega.cross(inertia * omega);
+}
+
+siconos::algebra::SiconosVector setup(int size) {
+  Vector vec0{size};
+
+  for (auto& v : vec0) v = 4;
+  return vec0;  // RVO
+}
+
+void test_var() {
+  std::cout << "Start test_var ... \n";
+  auto vec0 = setup(3);
+  ClassA myclass(vec0, vec0);
+
+  auto var2 = myclass.var_read();  // read-only - var2 is a Map
+  for (auto& v : var2) {
+    assert(v == 4);
+  }
+
+  var2(2) == 14;
+  assert((*myclass.var())(2) == 4);
+
+  // pointer access - var is a shared_ptr
+  auto var = myclass.var();
+
+  for (auto& v : *var) {
+    assert(v == 4);
+  }
+
+  (*var)(2) = 128;
+  assert((*myclass.var())(2) == 128);
+
+  std::cout << "End test_var ... \n";
+}
+
+void test_vector1() {
+  std::cout << "Start test_vector1 ... \n";
+  auto vec0 = setup(3);
+  ClassA myclass(vec0, vec0);
+
+  auto var2 = myclass.vector1();  // Map, read-only
+  for (auto& v : var2) {
+    assert(v == 4);
+  }
+
+  std::cout << myclass.vector1() << "\n";
+  ;
+
+  var2(2) == 14;  // Forbidden
+  std::cout << myclass.vector1() << "\n";
+
+  std::cout << "End test_vector1 ... \n";
+}
+
+
+
 
 int main(int argc, char* argv[]) {
   try {
@@ -69,7 +141,7 @@ int main(int argc, char* argv[]) {
     //          Vector q0{ndof};
     // auto q0 = std::make_shared<Vector>(ndof);
     // q0->setZero();
-    //(*q0)(0) = 1.2;
+    // q0(0)(0) = 1.2;
 
     Vector q0{ndof};
     q0.setZero();
@@ -90,11 +162,11 @@ int main(int argc, char* argv[]) {
     // Vector fext{ndof};
     // fext.setZero();
     // fext(1) = 112.2;
-    // ball->setConstantVectorName2(fext);
+    // ball->setConstantVector2(fext);
 
-    // //ball->vectorName2()->display();
-    // ball->computeVectorName2(0.4);
-    // //ball->vectorName2()->display();
+    // //ball->vector2()->display();
+    // ball->computeVector2(0.4);
+    // //ball->vector2()->display();
 
     // //ball->display();
 
@@ -107,120 +179,300 @@ int main(int argc, char* argv[]) {
       //  siconos::tools::print("call plugin", result);
     };
 
-    auto ball2 = std::make_shared<siconos::internal::devel_model::ClassA>(q0);
+    // auto ball2 = std::make_shared<siconos::internal::devel_model::ClassA>(q0);
 
-    std::cout << (*ball2->vectorName1())(0) << " " << (*ball2->vectorName3())(0) << "\n";
+    // std::cout << (*ball2->vector1())(0) << " " << (*ball2->vector3())(0) << "\n";
 
-    ball2->computeVectorName2(0.);
-    if (ball2->hasVectorName2()) {
-      ball2->vectorName2()->display();
-    }
-
-    //    ball2->display();
-    ball2->setComputeVectorName2Function(myforces);
-    // //ball2->display();
-    // //ball2->vectorName2()->display();
-    ball2->computeVectorName2(0.);
-    // //ball2->vectorName2()->display();
-    ball2->computeVectorName2(1.);
-    ball2->vectorName2()->display();
-    if (ball2->hasVectorName2()) {
-      ball2->vectorName2()->display();
-
-      auto res = 3 * ball2->vectorName2_view();
-      std::cout << res << "\n";
-    }
-    ball2->vectorName2()->display();
-
-    /// ----- with vectorNameDirect -----
-
-    ball2->computeVectorNameDirect(0.);
-    // if (ball2->hasVectorNameDirect()) {
-    //   ball2->vectorNameDirect()->display();
+    // ball2->computeVector2(0.);
+    // if (ball2->hasVector2()) {
+    //   ball2->vector2()->display();
     // }
 
-    //    ball2->display();
-    ball2->setComputeVectorNameDirectFunction(myforces);
-    // //ball2->display();
-    // //ball2->vectorNameDirect()->display();
-    ball2->computeVectorNameDirect(0.);
-    // //ball2->vectorNameDirect()->display();
-    ball2->computeVectorNameDirect(1.);
-    // ball2->vectorNameDirect()->display();
-    if (ball2->hasVectorNameDirect()) {
-      //   //   ball2->vectorNameDirect()->display();
+    // //    ball2->display();
+    // ball2->setComputeVector2Function(myforces);
+    // // //ball2->display();
+    // // //ball2->vector2()->display();
+    // ball2->computeVector2(0.);
+    // // //ball2->vector2()->display();
+    // ball2->computeVector2(1.);
+    // ball2->vector2()->display();
+    // if (ball2->hasVector2()) {
+    //   ball2->vector2()->display();
 
-      auto res = 3 * ball2->vectorNameDirect_view();
-      std::cout << res << "\n";
+    //   auto res = 3 * ball2->vector2_view();
+    //   std::cout << res << "\n";
+    // }
+    // ball2->vector2()->display();
+
+    // /// ----- with vectorDirect -----
+
+    // ball2->computeVectorDirect(0.);
+    // // if (ball2->hasVectorDirect()) {
+    // //   ball2->vectorDirect()->display();
+    // // }
+
+    // //    ball2->display();
+    // ball2->setComputeVectorDirectFunction(myforces);
+    // // //ball2->display();
+    // // //ball2->vectorDirect()->display();
+    // ball2->computeVectorDirect(0.);
+    // // //ball2->vectorDirect()->display();
+    // ball2->computeVectorDirect(1.);
+    // // ball2->vectorDirect()->display();
+    // if (ball2->hasVectorDirect()) {
+    //   //   //   ball2->vectorDirect()->display();
+
+    //   auto res = 3 * ball2->vectorDirect_view();
+    //   std::cout << res << "\n";
     }
-    // // ball2->vectorNameDirect()->display();
+    // // ball2->vectorDirect()->display();
     ////  --------------------------------
 
-    /// ----- with vectorNameSpan -----
-    // -- Set external forces (weight) --
-    auto myforces_span = [m, g](double time, std::span<double> result) {
-      int i = 0;
-      for (auto& v : result) v = time * i++;
+    // /// ----- with vectorSpan -----
+    // // -- Set external forces (weight) --
+    // auto myforces_span = [m, g](double time, std::span<double> result) {
+    //   int i = 0;
+    //   for (auto& v : result) v = time * i++;
 
-      result[1] = 12;
-      //  siconos::tools::print("call plugin", result);
-    };
+    //   result[1] = 12;
+    //   //  siconos::tools::print("call plugin", result);
+    // };
 
-    ball2->computeVectorNameSpan(0.);
-    if (ball2->hasVectorNameSpan()) {
-      ball2->vectorNameSpan()->display();
+    // ball2->computeVectorSpan(0.);
+    // if (ball2->hasVectorSpan()) {
+    //   ball2->vectorSpan()->display();
+    // }
+
+    // //    ball2->display();
+    // ball2->setComputeVectorSpanFunction(myforces_span);
+    // // //ball2->display();
+    // // //ball2->vectorSpan()->display();
+    // ball2->computeVectorSpan(0.);
+    // // //ball2->vectorSpan()->display();
+    // ball2->computeVectorSpan(1.);
+    // ball2->vectorSpan()->display();
+    // if (ball2->hasVectorSpan()) {
+    //   ball2->vectorSpan()->display();
+
+    //   auto res = 3 * ball2->vectorSpan_view();
+    //   std::cout << res << "\n";
+    // }
+    // ball2->vectorSpan()->display();
+    // ////  --------------------------------
+
+    // siconos::algebra::SiconosMatrix mass{ndof, ndof};
+    // mass.setZero();
+    // mass(1, 2) = -m * g;
+    // mass(0, 1) = 12;
+
+    // // mass(3,4) = 12; // ça marche avec ndof = 3, pourquoi ????
+
+    // ball2->setConstantMatrix1(mass);
+
+    // ball2->matrix1()->display();
+
+    // auto mass_func = [m, g](Eigen::Ref<siconos::algebra::MapVectorType> pos, double time,
+    //                         Eigen::Ref<siconos::algebra::MapType> result) {
+    //   int i = 0;
+    //   // for (auto& v : result) v = time * i++;
+
+    //   //      result << 1, 2, 3, 4;
+
+    //   result(2, 2) = -m * g;
+
+    //   //  siconos::tools::print("call plugin", result);
+    // };
+
+    // ball2->setComputeMatrix1Function(mass_func);
+    // ball2->matrix1()->display();
+
+    // Vector pos{ndof};
+    // pos.setZero();
+    // pos(1) = 8;
+    // ball2->computeMatrix1(1., pos);
+    // ball2->matrix1()->display();
+
+    // example();
+
+    // // int size = 700000000;
+    // int size = 3;
+    // Vector vec0{size};
+
+    for (auto& v : vec0) v = 4;
+    // Vector vec01{size};
+
+    // for (auto& v : vec01) v = 4;
+
+    // auto vec1 = std::make_shared<Vector>(size);
+    // for (auto& v : *vec1) v = 4;
+
+    // Cas const& pour param1
+    // OK :
+    // ClassA myclass{Eigen::Ref<Vector>(vec01), vec0};
+    // ClassA myclass{*vec1, vec0};
+    // ClassA myclass{Eigen::Ref<Vector>(*vec1), vec0};
+    // NON
+
+    // Cas const& pour param1, & pour param2
+    // OK :
+
+    // NON
+    // ClassA myclass{vec01, vec0};
+    // ClassA myclass{vec01, Eigen::Ref<Vector>{vec0}};
+    // ClassA myclass{vec01, *vec1};
+    // ClassA myclass{vec01, Eigen::Ref<Vector>(*vec1)};
+
+    // OK
+    // Eigen::Ref<Vector> param2_ref(vec0);
+    // ClassA myclass{vec01, param2_ref};
+    // Eigen::Ref<Vector> param2_ref(*vec1);
+    // ClassA myclass{vec01, param2_ref};
+
+    // Cas std (ni const ni &, juste Eigen::Ref) et avec un seul param pour constr
+    // Ok :
+    // //    ClassA myclass{vec0, vec0};
+    // ClassA myclass{Eigen::Ref<Vector>(vec0)};
+    // ClassA myclass{*vec1};
+    // Non :
+
+    // std::cout << "And the winner is ...\n"
+    //           << (*myclass.vector1())(1) << " " << vec0(1) << " " << (*vec1)(1) << " "
+    //           << (*myclass.constvector1())(1) << " " << vec01(1) << "\n";
+
+    // vec0(1) = 14;
+    // (*vec1)(1) = 14;
+    // vec01(1) = 38;
+    // std::cout << "And the winner is ...\n"
+    //           << (*myclass.vector1())(1) << " " << vec0(1) << " " << (*vec1)(1) << " "
+    //           << (*myclass.constvector1())(1) << " " << vec01(1) << "\n";
+
+    // myclass.update(127, 39);
+    // std::cout << "And the winner is ...\n"
+    //           << (*myclass.vector1())(1) << " " << vec0(1) << " " << (*vec1)(1) << " "
+    //           << (*myclass.constvector1())(1) << " " << vec01(1) << "\n";
+
+    ClassA myclassa{vec0, vec0};
+    // auto T = myclassa.T_view();
+
+    // // // auto val = T(1) + T(2);
+
+    // std::cout << " ################# \n";
+
+    // std::cout << T(12) << " " << T(23) << "\n";
+
+    // auto T2 = T.dot(T);
+
+    // myclassa.reset();
+
+    // std::cout << T(1) << " " << vec0(1) << " " << myclassa.vector1()(1) << "\n";
+
+    // myclassa.update(48);
+
+    // std::cout << T(1) << " " << vec0(1) << " " << myclassa.vector1()(1) << "\n";
+    // vec0(1) = 123;
+    // std::cout << T(1) << " " << vec0(1) << " " << myclassa.vector1()(1) << "\n";
+
+    // testfunc(v0);
+
+    siconos::algebra::SiconosMatrix toto{3, 6};
+    for (auto i = 0; i < toto.rows(); i++)
+      for (auto j = 0; j < toto.rows(); j++) toto(i, j) = i + j;
+
+    siconos::algebra::SiconosVector q{6};
+    q << 1, 2, 3, 4, 5, 6;
+
+    Eigen::Map<const siconos::algebra::SiconosVector3> qvect(q.data() +
+                                                             4);  // view onto  q4, 5, 6
+
+    std::cout << toto << "\n";
+
+    for (unsigned int j = 1; j < 2; j++) {
+      Eigen::Map<Eigen::Vector3d> mcol(toto.col(j).data());
+      // auto t = 2 * qvect.cross(mcol);
+      mcol += qvect.cross(2 * qvect.cross(mcol));
+
+      // m.col(j) = mcol;
     }
+    std::cout << toto << "\n";
 
-    //    ball2->display();
-    ball2->setComputeVectorNameSpanFunction(myforces_span);
-    // //ball2->display();
-    // //ball2->vectorNameSpan()->display();
-    ball2->computeVectorNameSpan(0.);
-    // //ball2->vectorNameSpan()->display();
-    ball2->computeVectorNameSpan(1.);
-    ball2->vectorNameSpan()->display();
-    if (ball2->hasVectorNameSpan()) {
-      ball2->vectorNameSpan()->display();
+    using SiconosDiagonalMatrix = Eigen::DiagonalMatrix<double_t, Eigen::Dynamic>;
+    using DiagonalMatrixMapType = Eigen::Map<SiconosDiagonalMatrix>;
+    using ConstDiagonalMatrixMapType = Eigen::Map<const SiconosDiagonalMatrix>;
 
-      auto res = 3 * ball2->vectorNameSpan_view();
-      std::cout << res << "\n";
-    }
-    ball2->vectorNameSpan()->display();
-    ////  --------------------------------
+    SiconosDiagonalMatrix diagmat{q};
 
-    siconos::algebra::SiconosMatrix mass{ndof, ndof};
-    mass.setZero();
-    mass(1, 2) = -m * g;
-    mass(0, 1) = 12;
+    std::cout << " STATATATA " << diagmat.diagonal() << "\n";
 
-    // mass(3,4) = 12; // ça marche avec ndof = 3, pourquoi ????
+    std::shared_ptr<siconos::algebra::MapVectorType> stiffnessMatrix_view;
+    stiffnessMatrix_view = std::make_shared<siconos::algebra::MapVectorType>(
+        diagmat.diagonal().data(), diagmat.diagonal().size());
 
-    ball2->setConstantMatrixName(mass);
+    std::cout << *stiffnessMatrix_view << "\n";
 
-    ball2->matrixName()->display();
+    diagmat.diagonal()(2) = 112;
+    std::cout << diagmat.diagonal() << "\n";
+    std::cout << *stiffnessMatrix_view << "\n";
 
-    auto mass_func = [m, g](Eigen::Ref<siconos::algebra::MapVectorType> pos, double time,
-                            Eigen::Ref<siconos::algebra::MapType> result) {
-      int i = 0;
-      // for (auto& v : result) v = time * i++;
+    (*stiffnessMatrix_view)(3) = 128;
+    std::cout << diagmat.diagonal() << "\n";
+    std::cout << *stiffnessMatrix_view << "\n";
+    // auto truc = 2 * T;
+    // std::cout << truc << "\n";
 
-//      result << 1, 2, 3, 4;
+    std::cout << q << "\n";
 
-      result(2, 2) = -m * g;
+    Eigen::VectorXd x(3);
+    Eigen::VectorXd y(3);
 
-      //  siconos::tools::print("call plugin", result);
-    };
+    x << 1.0, 2.0, 3.0;
+    y << 4.0, 5.0, 6.0;
 
-    ball2->setComputeMatrixNameFunction(mass_func);
-    ball2->matrixName()->display();
+    // Produit élément par élément
+    auto w1 = x.array() * y.array();
 
-    Vector pos{ndof};
-    pos.setZero();
-    pos(1) = 8;
-    ball2->computeMatrixName(1., pos);
-    ball2->matrixName()->display();
+    auto w = stiffnessMatrix_view->array() * q.array();
+    // Afficher le résultat
+    std::cout << "Produit élément par élément (w) :\n" << w << std::endl;
 
-    example();
+    Matrix inertiaMatrix{6, 6};
+    for (auto i = 0; i < inertiaMatrix.rows(); i++)
+      for (auto j = 0; j < inertiaMatrix.rows(); j++) inertiaMatrix(i, j) = i + j;
+
+    Vector result{3};
+    result.setZero();
+    computeMgyr(q, inertiaMatrix, result);
+
+    std::cout << "I" << inertiaMatrix << "\n";
+    std::cout << "q" << q << "\n";
+    std::cout << "res" << result << "\n";
+
+    // Définir deux vecteurs
+    Vector v1(3);
+    Vector v2(2);
+
+    v1 << 1, 2, 3;  // Initialisation de v1
+    v2 << 4, 5;     // Initialisation de v2
+
+    // Créer une matrice A
+    Matrix A(5, 5);
+    A << 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+        1;  // Matrice identité 5x5
+
+    // // Créer des maps pour éviter des copies
+    // Eigen::Map<Vector> xx(v1.data(), v1.size() + v2.size()); // La map représente le
+    // vecteur concaténé
+
+    // // Combiner les deux vecteurs en utilisant Map
+    // xx.head(v1.size()) = v1;        // Mettre v1 dans les premières entrées
+    // xx.tail(v2.size()) = v2;        // Mettre v2 dans les dernières entrées
+
+    // // Résultat dans y
+    // Vector yy = A * xx; // Multiplication
+
+    // std::cout << "y:\n" << yy << std::endl;
+
+    test_var();
+    test_vector1();
 
     return 0;
 

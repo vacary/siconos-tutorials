@@ -63,8 +63,7 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
     std::cout << "my_NewtonEulerR:: computeh \n";
     std::cout << "q0.size() = " << q0.size() << "\n";
     double height = q0.getValue(0) - _sBallRadius - q0.getValue(7);
-    // std::cout <<"my_NewtonEulerR:: computeh _jachq" << std:: endl;
-    // _jachq->display();
+
 
     y.setValue(0, height);
     _Nc->setValue(0, 1);
@@ -112,27 +111,26 @@ int main(int argc, char* argv[]) {
     std::cout << "====> Model loading ...\n";
 
     // -- Initial positions and velocities --
-    auto q0 = std::make_shared<Vector>(qDim);
-    auto v0 = std::make_shared<Vector>(nDim);
-    auto I = std::make_shared<Matrix>(3, 3);
-    v0->zero();
-    q0->zero();
+    siconos::algebra::SiconosVector q0{qDim};
+    siconos::algebra::SiconosVector v0{nDim};
+    q0.setZero();
+    v0.setZero();
+    Matrix I = Eigen::MatrixXd::Identity(3, 3);
 
-    I->eye();
-    (*q0)(0) = position_init;
+   q0(0) = position_init;
     /*initial quaternion equal to (1,0,0,0)*/
-    (*q0)(3) = 1.0;
+   q0(3) = 1.0;
 
-    (*v0)(0) = velocity_init;
-    (*v0)(3) = omega_initx;
-    (*v0)(5) = omega_initz;
+    v0(0) = velocity_init;
+    v0(3) = omega_initx;
+    v0(5) = omega_initz;
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::NewtonEulerDS>(q0, v0, m, I);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight(0) = -m * g;
-    ball->setConstantFExt(weight);
+    ball->setConstantFext(weight);
 
     auto bc = std::make_shared<siconos::modeling::HarmonicBC>(
         siconos::modeling::BoundaryCondition::Indices{0, 3, 5}, 2.0, 1.0,

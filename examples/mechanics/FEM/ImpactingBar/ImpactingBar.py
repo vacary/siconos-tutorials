@@ -54,11 +54,11 @@ q0 = np.full((nDof), position_init)
 v0 = np.full((nDof), velocity_init)
 
 bar = LagrangianLinearTIDS(q0,v0,M)
-bar.setKPtr(K)
+bar.setStiffnessMatrix(K)
 #bar.display()
 
 weight = np.full((nDof),-g*rho*S/l)
-bar.setConstantFExt(weight)
+bar.setConstantFext(weight)
 
 e=0.0
 

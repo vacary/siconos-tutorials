@@ -126,7 +126,7 @@ void Disks::init()
       double C2 = P2C;
 
       _plans.reset(new SimpleMatrix(6, 6));
-      _plans->zero();
+      _plans->setZero();
       (*_plans)(0, 0) = 0;
       (*_plans)(0, 1) = 1;
       (*_plans)(0, 2) = -GROUND;
@@ -200,7 +200,7 @@ void Disks::init()
 
       qTmp.reset(new SiconosVector(NDOF));
       vTmp.reset(new SiconosVector(NDOF));
-      vTmp->zero();
+      vTmp->setZero();
       (*qTmp)(0) = (*Disks)(i, 0);
       (*qTmp)(1) = (*Disks)(i, 1);
 

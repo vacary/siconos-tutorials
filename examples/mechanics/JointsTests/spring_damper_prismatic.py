@@ -82,8 +82,8 @@ class Ctrl(object):
 
         # Get the velocity of each body projected onto the DoF and
         # calculate their difference (damping force)
-        vel1 = self.joint1.projectVectorDoF(self.ds1.linearVelocity(True), bv, 0)
-        vel2 = self.joint1.projectVectorDoF(self.ds2.linearVelocity(True), bv, 0)
+        vel1 = self.joint1.projectVectorDoF(self.ds1.linearVelocity(), bv, 0)
+        vel2 = self.joint1.projectVectorDoF(self.ds2.linearVelocity(), bv, 0)
         vel_diff = vel1 - vel2
         damping_force = vel_diff * 10.0
 
@@ -93,8 +93,8 @@ class Ctrl(object):
 
         print('applying spring-damper forces', force1, force2)
 
-        self.ds1.setConstantFExt(force1)
-        self.ds2.setConstantFExt(force2)
+        self.ds1.setConstantFext(force1)
+        self.ds2.setConstantFext(force2)
 
 options = sk.solver_options_create(sn.SICONOS_GENERIC_MECHANICAL_NSGS)
 options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 1000

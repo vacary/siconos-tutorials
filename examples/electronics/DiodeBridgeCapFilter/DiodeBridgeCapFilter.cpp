@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
     // cout << " LS1 matrice A = \n";
     // LS1_A->display();
     auto LS1DiodeBridgeCapFilter =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS1, LS1_A);
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_stateLS1, *LS1_A);
 
     // --- Linear system 2 (load and filter) specification ---
     auto init_stateLS2 = std::make_shared<Vector>(1);
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
     // cout << " LS2 matrice A = \n";
     // LS2_A->display();
     auto LS2DiodeBridgeCapFilter =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS2, LS2_A);
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_stateLS2, *LS2_A);
 
     // --- Interaction between linear systems and non smooth system ---
 
@@ -120,8 +120,8 @@ int main(int argc, char* argv[]) {
     (*Int_B)(2, 2) = 1.0 / Cfilt;
 
     auto LTIRDiodeBridgeCapFilter =
-        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(Int_C, Int_B);
-    LTIRDiodeBridgeCapFilter->setDPtr(Int_D);
+        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*Int_C, *Int_B);
+    LTIRDiodeBridgeCapFilter->setConstantD(*Int_D);
     auto nslaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(4);
 
     auto InterDiodeBridgeCapFilter =

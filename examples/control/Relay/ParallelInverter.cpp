@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
     (*x0)(2) = 4;
     (*x0)(3) = 4;
 
-    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(x0, A);
+    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, *A);
     auto zProc = std::make_shared<Vector>(1, 0);
     process->setzPtr(zProc);
 
@@ -172,7 +172,7 @@ int main(int argc, char* argv[]) {
     (*D)(2, 2) = 0.0;
     myProcessRelation->setComputeEFunction("plugins", "eLDS");
 
-    myProcessRelation->setDPtr(D);
+    myProcessRelation->setConstantD(*D);
     // myProcessRelation->setComputeEFunction("ObserverLCSPlugin","computeE");
 
     // Second relation, related to the observer

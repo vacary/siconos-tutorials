@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
     auto D = std::make_shared<Matrix>(ninter, ninter);
     (*D)(0, 0) = 0.0;
 
-    myProcessRelation->setDPtr(D);
+    myProcessRelation->setConstantD(*D);
     // myProcessRelation->setComputeEFunction("ObserverLCSPlugin","computeE");
 
     // Second relation, related to the observer

@@ -65,7 +65,7 @@ process.setComputebFunction('plugins', 'computeB')
 myNslaw = sk.RelayNSL(2)
 myProcessRelation = sk.FirstOrderLinearR(C, B)
 myProcessRelation.setComputeEFunction('plugins', 'computeE')
-# myProcessRelation.setDPtr(D)
+# myProcessRelation.setConstantD(D)
 
 myProcessInteraction = sk.Interaction(myNslaw, myProcessRelation)
 

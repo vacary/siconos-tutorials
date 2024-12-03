@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
   (*x0)(0) = Xinit;
   (*x0)(1) = -Xinit;
   auto sensorC = std::make_shared<Matrix>(2, 2);
-  sensorC->eye();
+  sensorC->setIdentity();
   auto sensorD = std::make_shared<Matrix>(2, 2, 0);
   auto Csurface = std::make_shared<Matrix>(1, 2, 0);
   (*Csurface)(0, 1) = 1;
@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
 
   // // Comparison with a reference file
   // SiconosMatrix dataPlotRef(dataPlot);
-  // dataPlotRef.zero();
+  // dataPlotRef.setZero();
   // ioMatrix::read("SMCExampleImplicit.ref", "ascii", dataPlotRef);
   // std::cout << (dataPlot - dataPlotRef).normInf() << std::endl;
 

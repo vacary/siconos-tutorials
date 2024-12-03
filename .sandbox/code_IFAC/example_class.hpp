@@ -87,15 +87,14 @@ public:
         // -------------------------
         // --- Dynamical systems ---
         // -------------------------
-        auto dyn(new FirstOrderLinearTIDS(p->init,p->A));
-        dyn->setbPtr(p->b);
+        auto dyn(new FirstOrderLinearDS(p->init,p->A, p->b));
         dyn->setMPtr(p->M);
         // -------------------------
         // --- LCP Relation ---
         // -------------------------
         // Relation LCP lhs
         auto relation(new FirstOrderLinearTIR(p->C, p->R) );
-        relation->setDPtr(p->D);
+        relation->setConstantD(*p->D);
         relation->setePtr(p->e);
         // NonSmooth law: LCP
         auto nslaw(new ComplementarityConditionNSL(dimLambda));

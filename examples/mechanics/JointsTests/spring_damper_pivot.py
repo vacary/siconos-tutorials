@@ -80,8 +80,8 @@ class Ctrl(object):
 
         # Get the velocity of each body projected onto the DoF and
         # calculate their difference (damping torque)
-        vel1 = self.joint1.projectVectorDoF(self.ds1.angularVelocity(True), bv, 0)
-        vel2 = self.joint1.projectVectorDoF(self.ds2.angularVelocity(True), bv, 0)
+        vel1 = self.joint1.projectVectorDoF(self.ds1.angularVelocity(), bv, 0)
+        vel2 = self.joint1.projectVectorDoF(self.ds2.angularVelocity(), bv, 0)
         vel_diff = vel1 - vel2
         damping_torque = vel_diff * 5.0
 

@@ -59,10 +59,11 @@ int main(int argc, char* argv[]) {
     double initialGap = 0.25;
     double alert = 0.02;
 
-    auto Mass = std::make_shared<Matrix>(nDof, nDof);
-    (*Mass)(0, 0) = m;
-    (*Mass)(1, 1) = m;
-    (*Mass)(2, 2) = 2. / 5 * m * R * R;
+    Matrix mass{nDof, nDof};
+    mass.setZero();
+    mass(0, 0) = m;
+    mass(1, 1) = m;
+    mass(2, 2) = 2. / 5 * m * R * R;
 
     // -- Initial positions and velocities --
     std::vector<std::shared_ptr<Vector>> q0(nBeads);
@@ -83,9 +84,9 @@ int main(int argc, char* argv[]) {
 
     std::vector<std::shared_ptr<siconos::modeling::LagrangianLinearTIDS>> beads(nBeads);
     for (unsigned int i = 0; i < nBeads; i++) {
-      beads[i] = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0[i], v0[i], Mass);
+      beads[i] = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0[i], v0[i], mass);
       // -- Set external forces (weight) --
-      beads[i]->setConstantFExt(weight);
+      beads[i]->setConstantFext(weight);
     }
 
     // --------------------
@@ -103,7 +104,7 @@ int main(int argc, char* argv[]) {
     (*b)(0) = -R;
 
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H, b);
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H, *b);
 
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
@@ -119,7 +120,7 @@ int main(int argc, char* argv[]) {
     std::vector<std::shared_ptr<siconos::modeling::Interaction>> interOfBeads(nBeads - 1);
     for (unsigned int i = 0; i < nBeads - 1; i++) {
       relationOfBeads[i] =
-          std::make_shared<siconos::modeling::LagrangianLinearTIR>(HOfBeads, bOfBeads);
+          std::make_shared<siconos::modeling::LagrangianLinearTIR>(*HOfBeads, *bOfBeads);
       interOfBeads[i] =
           std::make_shared<siconos::modeling::Interaction>(nslaw, relationOfBeads[i]);
     }
@@ -210,7 +211,7 @@ int main(int argc, char* argv[]) {
             // std::cout << "Number of contact = " << ncontact << std::endl;
 
             relationOfBeads[i] =
-                std::make_shared<siconos::modeling::LagrangianLinearTIR>(HOfBeads, bOfBeads);
+                std::make_shared<siconos::modeling::LagrangianLinearTIR>(*HOfBeads, *bOfBeads);
             interOfBeads[i] =
                 std::make_shared<siconos::modeling::Interaction>(nslaw, relationOfBeads[i]);
 

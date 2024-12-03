@@ -108,7 +108,7 @@ N = np.zeros((ninter, ndof), dtype=np.float64)
 np.fill_diagonal(N[:number_of_cars, number_of_cars:], -1.)
 
 relation = sk.FirstOrderLinearTIR(N, B)
-relation.setDPtr(M)
+relation.setConstantD(M)
 
 nslaw = sk.ComplementarityConditionNSL(ninter)
 

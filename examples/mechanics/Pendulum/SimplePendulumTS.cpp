@@ -58,16 +58,17 @@ int main(int argc, char* argv[]) {
     // --- DS: Double Pendulum ---
 
     // Initial position (angles in radian)
-    auto q0 = std::make_shared<Vector>(nDof);
-    auto v0 = std::make_shared<Vector>(nDof);
-    (*q0).zero();
-    (*v0).zero();
-    (*q0)(0) = 1;
+    Vector q0{nDof};
+    q0.setZero();
+    Vector v0{nDof};
+    v0.setZero();
+    q0(0).setZero();
+    v0(0).setZero();
+   q0(0) = 1;
 
     auto simplependulum = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
-
-    auto Mass = std::make_shared<Matrix>(nDof, nDof);
-    (*Mass)(0, 0) = m1 * l1;
+Matrix mass{nDof, nDof};
+    mass(0, 0) = m1 * l1;
     simplependulum->setMassPtr(Mass);
 
     // external plug-in
@@ -86,14 +87,14 @@ int main(int argc, char* argv[]) {
 
     //     SiconosMatrix H(1,2);
     //     SiconosVector b(1);
-    //     H.zero();
+    //     H.setZero();
     //     H(0,0) =1.0;
     //     H(0,1) =0.0;
 
     //     b(0) = 0.0;
 
     //     NonSmoothLaw nslaw= std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    //     Relation relation= std::make_shared<siconos::modeling::LagrangianLinearTIR>(H,b);
+    //     Relation relation= std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H,*b);
     //     Interaction inter =  new Interaction("floor-mass1", allDS,1,1, nslaw, relation);)
 
     std::string G = "SimplePendulumPlugin:G0";

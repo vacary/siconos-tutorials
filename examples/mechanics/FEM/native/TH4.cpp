@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
     /* Applied forces  *******************************************************/
 
     std::shared_ptr<SiconosVector> nodal_forces(new SiconosVector(3));
-    nodal_forces->zero();
+    nodal_forces->setZero();
     //(*nodal_forces)(0) = 1e6;
     //(*nodal_forces)(1) = 1e5;
     (*nodal_forces)(2) = -1e6;
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
         std::shared_ptr<SiconosMatrix> H =std::make_shared<SiconosMatrix>(1, FEsolid->dimension());
         (*H)(0, idx_z) = 1.0;
         std::shared_ptr<NonSmoothLaw> nslaw = std::make_shared<NewtonImpactNSL>(e);
-        std::shared_ptr<Relation> relation = std::make_shared<LagrangianLinearTIR>(H, initial_gap);
+        std::shared_ptr<Relation> relation = std::make_shared<LagrangianLinearTIR>(*H, *initial_gap);
         std::shared_ptr<Interaction> inter = std::make_shared<Interaction>(nslaw, relation);
         // link the interaction and the dynamical system
         solid->link(inter, FEsolid);
@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
     SiconosMatrix dataPlot(N + 1, outputSize);
 
     std::shared_ptr<SiconosVector> q = FEsolid->q();
-    std::shared_ptr<SiconosVector> fext = FEsolid->fExt();
+    std::shared_ptr<SiconosVector> fext = FEsolid->fext();
     std::shared_ptr<SiconosVector> v = FEsolid->velocity();
     std::shared_ptr<SiconosVector> p = FEsolid->p(1);
     //std::shared_ptrSiconosVector lambda = inter->lambda(1);

@@ -42,8 +42,10 @@ int main(int argc, char* argv[]) {
     // déclarations
 
     auto M = std::make_shared<Matrix>(nDof, nDof);
-    auto q0 = std::make_shared<Vector>(nDof);
-    auto v0 = std::make_shared<Vector>(nDof);
+    Vector q0{nDof};
+    q0.setZero();
+    Vector v0{nDof};
+    v0.setZero();
 
     auto loi = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
     auto relation = std::make_shared<siconos::modeling::LagrangianRheonomousR>(
@@ -54,24 +56,24 @@ int main(int argc, char* argv[]) {
     (*H)(0, 1) = 0;
     (*H)(0, 2) = 0;
     auto loi0 = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation0 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
+    auto relation0 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H);
 
     // pramètres du solveur siconos
 
     unsigned int outputSize = 9;
     Matrix dataPlot(N, outputSize);
 
-    (*q0)(0) = L / (2 * r);        //  vlaeur de  teta( 0 )
-    (*q0)(1) = -L + r * (*q0)(0);  // y ( 0 )
-    (*q0)(2) = 0;                  // valeur initiale de h
+   q0(0) = L / (2 * r);        //  vlaeur de  teta( 0 )
+   q0(1) = -L + r *q0(0);  // y ( 0 )
+   q0(2) = 0;                  // valeur initiale de h
     // vitesses initiels de teta , y et  h
-    (*v0)(0) = 0;
-    (*v0)(1) = r * (*v0)(0);
-    (*v0)(2) = 0;
+    v0(0) = 0;
+    v0(1) = r * v0(0);
+    v0(2) = 0;
 
     // Objectifs du joueurs avec les instants correspendants
     Matrix Controle(G + 1, 2);
-    Controle(0, 1) = (*q0)(1) - (*q0)(2);
+    Controle(0, 1) =q0(1) -q0(2);
     for (int i = 0; i < G; i++) {
       Controle(i + 1, 0) = temps[i];
       Controle(i + 1, 1) = Som[i] - L;
@@ -85,7 +87,7 @@ int main(int argc, char* argv[]) {
       ///////////////////////////////////////Phase contrainte
       /////////////////////////////////////////
 
-      M->eye();
+      M->setIdentity();
       (*M)(0, 0) = I + m * r * r;
       (*M)(0, 2) = m * r;
       (*M)(1, 0) = -r;
@@ -94,19 +96,19 @@ int main(int argc, char* argv[]) {
 
       if (k != 0) {
         t0 = dataPlot(k - 1, 0);
-        (*q0)(0) = (*q)(0);
-        (*q0)(2) = (*q)(2);
-        (*q0)(1) = (*q0)(2) - L + r * (*q0)(0);
-        (*v0)(0) = (*v)(0);
-        (*v0)(2) = (*v)(2);
-        (*v0)(1) = r * (*v0)(0) + (*v0)(2);
+       q0(0) = (*q)(0);
+       q0(2) = (*q)(2);
+       q0(1) =q0(2) - L + r *q0(0);
+        v0(0) = (*v)(0);
+        v0(2) = (*v)(2);
+        v0(1) = r * v0(0) + v0(2);
       }
 
       // création et insertion  du système dynamique représentant la yoyo dans le récipient
       // allDS
       auto yoyo = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, M);
 
-      yoyo->setComputeFExtFunction("YoyoPlugin", "force_ext");
+      yoyo->setComputeFextFunction("YoyoPlugin", "force_ext");
       yoyo->setComputeFIntFunction("YoyoPlugin", "F_int");
       yoyo->setComputeJacobianFIntqDotFunction("YoyoPlugin", "jacobianVFInt");
       yoyo->setComputeJacobianFIntqFunction("YoyoPlugin", "jacobianFIntq");
@@ -170,21 +172,21 @@ int main(int argc, char* argv[]) {
       //////////////////////////////////////////Phase
       /// libre//////////////////////////////////////////////////////
 
-      M->eye();
+      M->setIdentity();
       (*M)(1, 1) = m;
       (*M)(0, 0) = I;
 
       t0 = dataPlot(k - 1, 0) + h;
       if (t0 + h < T) {
-        (*q0)(0) = 0;
-        (*q0)(2) = (*q)(2);
-        (*q0)(1) = (*q0)(2) - L;
-        (*v0)(0) = -(*v)(0);
-        (*v0)(2) = (*v)(2);
-        (*v0)(1) = -r * (*v0)(0) + (*v0)(2);
+       q0(0) = 0;
+       q0(2) = (*q)(2);
+       q0(1) =q0(2) - L;
+        v0(0) = -(*v)(0);
+        v0(2) = (*v)(2);
+        v0(1) = -r * v0(0) + v0(2);
 
         yoyo = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, M);
-        yoyo->setComputeFExtFunction("YoyoPlugin", "force_extf");
+        yoyo->setComputeFextFunction("YoyoPlugin", "force_extf");
         yoyo->setComputeFIntFunction("YoyoPlugin", "F_intf");
         yoyo->setComputeJacobianFIntqDotFunction("YoyoPlugin", "jacobianVFIntf");
         yoyo->setComputeJacobianFIntqFunction("YoyoPlugin", "jacobianFIntqf");

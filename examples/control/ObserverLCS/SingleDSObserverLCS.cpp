@@ -62,14 +62,14 @@ int main(int argc, char* argv[]) {
     G(0, 1) = 2.0;
 
     SiconosMatrix hatA(2, 2);
-    hatA = A - prod(L, G);
+    hatA = A - L * G;
     TildeA(2, 2) = hatA(0, 0);
     TildeA(2, 3) = hatA(0, 1);
     TildeA(3, 2) = hatA(1, 0);
     TildeA(3, 3) = hatA(1, 1);
 
     SiconosMatrix LG(2, 2);
-    LG = prod(L, G);
+    LG = L * G;
     TildeA(2, 0) = LG(0, 0);
     TildeA(3, 0) = LG(1, 0);
     TildeA(2, 1) = LG(0, 1);
@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
     auto x0 = std::make_shared<Vector>(ndof);
     (*x0)(0) = Vinit;
     auto processObserver = std::make_shared<siconos::modeling::FirstOrderLinearDS>(
-        x0, siconos::pointers::createSPtr(TildeA));
+        *x0, TildeA);
     processObserver->setComputebFunction("SingleDSObserverLCSPlugin", "computeU");
 
     // Relations

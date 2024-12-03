@@ -74,8 +74,8 @@ int main(int argc, char* argv[])
     auto nslaw2(new NewtonImpactFrictionNSL(en, et, 0, 3));
     SimpleMatrix H(90, 21);
     SiconosVector b(90);
-    H.zero();
-    b.zero();
+    H.setZero();
+    b.setZero();
     for (unsigned int i = 0; i < 15; ++i)
     {
       for (unsigned int j = 0; j < 3; ++j)

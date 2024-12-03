@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
     (*x0)(0) = xinit;
     (*x0)(1) = vinit;
 
-    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(x0, A);
+    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, *A);
     //    process->setComputebFunction("ObserverLCSPlugin","uProcess");
 
     // --------------------

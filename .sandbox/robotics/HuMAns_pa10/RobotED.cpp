@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
 
     //     SimpleMatrix H(6,3);
     //     SiconosVector b(6);
-    //     H.zero();
+    //     H.setZero();
     //     H(0,0) =-1;
     //     H(1,0) =1;
     //     H(2,1) =-1;
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
     double lim1 = 3.1;  // -lim_i <= q[i] <= lim_i
     SimpleMatrix H(4, 3);
     SiconosVector b(4);
-    H.zero();
+    H.setZero();
 
     H(0, 0) = -1;
     H(1, 0) = 1;

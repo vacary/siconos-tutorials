@@ -62,8 +62,8 @@ int main(int argc, char* argv[]) {
     auto x0 = std::make_shared<Vector>(ndof);
     (*x0)(0) = Vinit;
     (*x0)(1) = Vinit;
-    auto doubleIntegrator = std::make_shared<siconos::modeling::FirstOrderLinearTIDS>(x0, A);
-
+    auto doubleIntegrator = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
+    doubleIntegrator->setConstantA(*A);
     // --------------------
     // --- Interactions ---
     // --------------------
@@ -76,8 +76,8 @@ int main(int argc, char* argv[]) {
     (*B)(1, 0) = G;
     (*B)(1, 1) = G * beta;
     auto C = std::make_shared<Matrix>(ninter, ndof);
-    C->eye();
-    auto twistingRelation = std::make_shared<siconos::modeling::FirstOrderLinearTIR>(C, B);
+    C->setIdentity();
+    auto twistingRelation = std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*C, *B);
 
     // NonSmoothLaw
     unsigned int nslawSize = 2;

@@ -71,8 +71,8 @@ int main(int argc, char* argv[]) {
 
     // Initial position (angles in radian)
     Vector q0(nDof), v0(nDof);
-    q0.zero();
-    v0.zero();
+    q0.setZero();
+    v0.setZero();
     q0(0) = 0.9;
     q0(1) = -1.6;
     auto z = std::make_shared<Vector>(nDof * 12);
@@ -132,39 +132,39 @@ int main(int argc, char* argv[]) {
 
     auto H10 = std::make_shared<Matrix>(1, 2);
     auto b10 = std::make_shared<Vector>(1);
-    H10->zero();
+    H10->setZero();
     (*H10)(0, 0) = -1;
     (*b10)(0) = PI;
 
     auto nslaw2 = std::make_shared<siconos::modeling::NewtonImpactNSL>(e2);
-    auto relation10 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H10, b10);
+    auto relation10 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H10, *b10);
     auto inter10 = std::make_shared<siconos::modeling::Interaction>(nslaw2, relation10);
 
     auto H11 = std::make_shared<Matrix>(1, 2);
     auto b11 = std::make_shared<Vector>(1);
-    H11->zero();
+    H11->setZero();
     (*H11)(0, 0) = 1;
     (*b11)(0) = 0;
 
-    auto relation11 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H11, b11);
+    auto relation11 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H11, *b11);
     auto inter11 = std::make_shared<siconos::modeling::Interaction>(nslaw2, relation11);
 
     auto H20 = std::make_shared<Matrix>(1, 2);
     auto b20 = std::make_shared<Vector>(1);
-    H20->zero();
+    H20->setZero();
     (*H20)(0, 1) = -1;
     (*b20)(0) = 0.0001;
 
-    auto relation20 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H20, b20);
+    auto relation20 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H20, *b20);
     auto inter20 = std::make_shared<siconos::modeling::Interaction>(nslaw2, relation20);
 
     auto H21 = std::make_shared<Matrix>(1, 2);
     auto b21 = std::make_shared<Vector>(1);
-    H21->zero();
+    H21->setZero();
     (*H21)(0, 1) = 1;
     (*b21)(0) = PI - 0.0001;
 
-    auto relation21 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H21, b21);
+    auto relation21 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H21, *b21);
     auto inter21 = std::make_shared<siconos::modeling::Interaction>(nslaw2, relation21);
 
     // -------------
@@ -226,7 +226,7 @@ int main(int argc, char* argv[]) {
 
     // Initialization of the dicrete parameter z needs the followinf first computations
     arm->computeJacobianFIntq(t0);
-    arm->computeFInt(t0);
+    arm->computeFint(*v, *q, t0);
     arm->computeJacobianFIntqDot(t0);
     inter01->computeOutput(t0, 0);
     inter02->computeOutput(t0, 0);

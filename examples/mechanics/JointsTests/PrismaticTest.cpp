@@ -60,16 +60,16 @@ int main(int argc, char* argv[]) {
     auto q10 = std::make_shared<Vector>(qDim);
     auto v10 = std::make_shared<Vector>(nDim);
     auto I1 = std::make_shared<Matrix>(3, 3);
-    v10->zero();
-    I1->eye();
-    q10->zero();
+    v10->setZero();
+    I1->setIdentity();
+    q10->setZero();
     q10->setValue(0, 1);
     q10->setValue(1, 1);
     q10->setValue(2, 1);
 
     double angle = numbers::pi / 5;
     Vector V1(3);
-    V1.zero();
+    V1.setZero();
     V1.setValue(0, 3);
     V1.setValue(1, 2);
     V1.setValue(2, 1);
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
     auto relation1 = std::make_shared<siconos::joints::PrismaticJointR>(axis1, true, beam1);
 
     auto H1 = std::make_shared<Matrix>(relation1->numberOfConstraints(), qDim);
-    H1->zero();
+    H1->setZero();
     relation1->setJachq(H1);
 
     auto nslaw1 = std::make_shared<siconos::modeling::EqualityConditionNSL>(

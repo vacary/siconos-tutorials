@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
   // Control stuff
   // For the Sensor
   auto sensorC = std::make_shared<Matrix>(4, 4);
-  sensorC->eye();
+  sensorC->setIdentity();
   auto sensor = std::make_shared<siconos::control::LinearSensor>(plant, sensorC);
   // add the sliding mode controller
   auto twisting = std::make_shared<siconos::control::LinearSMC>(sensor);
@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
   /*
     // Comparison with a reference file
     SiconosMatrix dataPlotRef(dataPlot);
-    dataPlotRef.zero();
+    dataPlotRef.setZero();
     ioMatrix::read("SMCExampleImplicit.ref", "ascii", dataPlotRef);
     std::cout << (dataPlot - dataPlotRef).normInf() << std::endl;
     if ((dataPlot - dataPlotRef).normInf() > 1e-12)

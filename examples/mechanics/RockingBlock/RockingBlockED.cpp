@@ -97,12 +97,12 @@ int main(int argc, char* argv[]) {
 
     // 4. Instantiate the object of "LagrangianTIDS"
     auto RockingBlock = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
-        PosIniBlock, VelIniBlock, Mass);
+        PosIniBlock, VelIniBlock, mass);
     // 5. Set the external force
     Vector ForceExtern{Nfreedom};
     ForceExtern.setZero();
     ForceExtern(1) = -MassBlock * GGearth;
-    RockingBlock->setConstantFExt(ForceExtern);    cout << "Initial position of the rocking block:\n";
+    RockingBlock->setConstantFext(ForceExtern);    cout << "Initial position of the rocking block:\n";
     PosIniBlock->display();
     cout << "Initial velocity of the rocking block:\n";
     VelIniBlock->display();
@@ -117,12 +117,12 @@ int main(int argc, char* argv[]) {
     // Impact law
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
     // Interaction at contact point 1
-    // auto relation1= std::make_shared<siconos::modeling::LagrangianLinearTIR>(H, E);
+    // auto relation1= std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H, *E);
     auto relation1 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
         "RockingBlockPlugin:h1", "RockingBlockPlugin:G1", "RockingBlockPlugin:G1dot");
     auto inter1 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation1);
     // Interaction at contact point 2
-    // auto relation2= std::make_shared<siconos::modeling::LagrangianLinearTIR>(H, E);
+    // auto relation2= std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H, *E);
     auto relation2 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
         "RockingBlockPlugin:h2", "RockingBlockPlugin:G2", "RockingBlockPlugin:G2dot");
     auto inter2 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation2);

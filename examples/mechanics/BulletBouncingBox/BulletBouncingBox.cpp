@@ -65,14 +65,13 @@ int main() {
     auto box1 = std::make_shared<siconos::collision::SiconosBox>(1., 1., 1.);
 
     // -- Initial position and velocity
-    auto q0 = std::make_shared<Vector>(7);
-    auto v0 = std::make_shared<Vector>(6);
-    v0->zero();
-    q0->zero();
-
-    (*q0)(2) = position_init;
-    (*q0)(3) = 1.0;
-    (*v0)(2) = velocity_init;
+    siconos::algebra::SiconosVector q0{7};
+    siconos::algebra::SiconosVector v0{6};
+    q0.setZero();
+    v0.setZero();
+   q0(2) = position_init;
+   q0(3) = 1.0;
+    v0(2) = velocity_init;
 
     // -- The dynamical system --
     auto body = std::make_shared<siconos::collision::RigidBodyDS>(q0, v0, 1.0);
@@ -87,7 +86,7 @@ int main() {
     Vector FExt{3};
     FExt.setZero();
     FExt(2) = -g * body->scalarMass();
-    body->setConstantFExt(FExt);
+    body->setConstantFext(FExt);
 
     // -- Add the dynamical system in the non smooth dynamical system
     model->insertDynamicalSystem(body);
@@ -172,7 +171,7 @@ int main() {
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 4;
     Matrix dataPlot(N + 1, outputSize);
-    dataPlot.zero();
+    dataPlot.setZero();
 
     auto q = body->q();
     auto v = body->velocity();

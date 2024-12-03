@@ -106,7 +106,7 @@ void Spheres::init()
 
       qTmp.reset(new SiconosVector(NDOF));
       vTmp.reset(new SiconosVector(NDOF));
-      vTmp->zero();
+      vTmp->setZero();
       (*qTmp)(0) = (*Spheres)(i, 0);
       (*qTmp)(1) = (*Spheres)(i, 1);
       (*qTmp)(2) = (*Spheres)(i, 2);
@@ -132,7 +132,7 @@ void Spheres::init()
       siconos::algebra::SiconosVector FExt{NDOF};
       FExt.setZero();
       FExt(2) = - m * g;
-      body->setConstantFExt(FExt);
+      body->setConstantFext(FExt);
 
       // associate the dynamical system with the one step integrator
       _sim->associate(osi, body);

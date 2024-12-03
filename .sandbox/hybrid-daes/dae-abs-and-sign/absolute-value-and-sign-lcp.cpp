@@ -63,9 +63,9 @@ int main(int argc, char* argv[])
         // should have slide or jump (multiple solutions)
         double B0 = -1.0;
         double B1 = 0.5;
-        A->setRow(0,SiconosVector({0.0, 0.0, B0}));
-        A->setRow(1,SiconosVector({0.0, 0.0, B1}));
-        A->setRow(2,SiconosVector({1.0, -1.0, 0.0}));
+        A->row(0) =SiconosVector({0.0, 0.0, B0});
+        A->row(1)=SiconosVector({0.0, 0.0, B1});
+        A->row(2)=SiconosVector({1.0, -1.0, 0.0});
 
         cout << "matrix A: " << endl;
         A->display();
@@ -83,9 +83,8 @@ int main(int argc, char* argv[])
         b->display();
 
         // Siconos smooth dynamical system
-        auto dyn(new FirstOrderLinearTIDS(init,A));
-        dyn->setbPtr(b);
-        dyn->setMPtr(E);
+        auto dyn = std::make_shared<FirstOrderLinearDS>(*init,*A, *b);
+        dyn->setConstantMMatrix(E);
 
         // -------------------------
         // --- LCP Relation ---
@@ -110,7 +109,7 @@ int main(int argc, char* argv[])
 
         // Relation LCP lhs
         auto relation(new FirstOrderLinearTIR(C, R) );
-        relation->setDPtr(D);
+        relation->setConstantD(*D);
         relation->setePtr(e);
 
         // NonSmooth law: LCP

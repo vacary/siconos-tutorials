@@ -61,9 +61,9 @@ int main(int argc, char* argv[]) {
 
     // -- Initial positions and velocities --
     auto q0 = std::make_shared<Vector>(nDof);
-    (*q0)(0) = y_0;
-    (*q0)(1) = phi_M_0;
-    (*q0)(2) = phi_S_0;
+   q0(0) = y_0;
+   q0(1) = phi_M_0;
+   q0(2) = phi_S_0;
 
     auto velocity0 = std::make_shared<Vector>(nDof);
     (*velocity0)(0) = v_0;
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
 
     auto dynamicalSystem =
         std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, velocity0, Mass, K, C);
-    dynamicalSystem->setComputeFExtFunction("WoodPeckerPlugin", "FExt");
+    dynamicalSystem->setComputeFextFunction("WoodPeckerPlugin", "FExt");
 
     // --------------------
     // --- Interactions ---
@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
     auto nslaw1 = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(
         eps_N_1, eps_T_123, mu_123, 2);
 
-    auto relation1 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H1, b1);
+    auto relation1 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H1, *b1);
 
     auto H2 = std::make_shared<Matrix>(2, nDof);
     (*H2)(0, 0) = 0;
@@ -117,8 +117,8 @@ int main(int argc, char* argv[]) {
     auto nslaw23 = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(
         eps_N_23, eps_T_123, mu_123, 2);
 
-    auto relation2 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H2, b2);
-    auto relation3 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H3, b3);
+    auto relation2 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H2, *b2);
+    auto relation3 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H3, *b3);
 
     auto I1 = std::make_shared<siconos::modeling::Interaction>(nslaw1, relation1);
 

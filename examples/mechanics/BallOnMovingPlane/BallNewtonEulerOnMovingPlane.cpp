@@ -43,7 +43,7 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
   double _sBallRadius;
 
  public:
-  my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius){};
+  my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius) {};
 
   virtual void computeOutput(double t, siconos::modeling::Interaction& inter,
                              unsigned int derivativeNumber) override {
@@ -104,44 +104,43 @@ int main(int argc, char* argv[]) {
 
     std::cout << "====> Model loading ...\n";
 
-    // -- Initial positions and velocities --
-    auto q0 = std::make_shared<Vector>(qDim);
-    auto v0 = std::make_shared<Vector>(nDim);
-    auto I = std::make_shared<Matrix>(3, 3);
-    v0->zero();
-    q0->zero();
+    siconos::algebra::SiconosVector q0{qDim};
+    siconos::algebra::SiconosVector v0{nDim};
+    q0.setZero();
+    v0.setZero();
+    Matrix I = Eigen::MatrixXd::Identity(3, 3);
 
-    I->eye();
-    (*q0)(0) = position_init;
+   q0(0) = position_init;
     /*initial quaternion equal to (1,0,0,0)*/
-    (*q0)(3) = 1.0;
+   q0(3) = 1.0;
 
-    (*v0)(0) = velocity_init;
-    (*v0)(3) = omega_initx;
-    (*v0)(5) = omega_initz;
+    v0(0) = velocity_init;
+    v0(3) = omega_initx;
+    v0(5) = omega_initz;
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::NewtonEulerDS>(q0, v0, m, I);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight(0) = -m * g;
-    ball->setConstantFExt(weight);
+    ball->setConstantFext(weight);
 
     // -- Moving Plane --
 
     // -- Initial positions and velocities --
     auto q02 = std::make_shared<Vector>(qDim);
     auto v02 = std::make_shared<Vector>(nDim);
-    v02->zero();
-    q02->zero();
+    v02->setZero();
+    q02->setZero();
     (*q02)(3) = 1.0;
     // -- The dynamical system --
     auto movingplane = std::make_shared<siconos::modeling::NewtonEulerDS>(q02, v02, m, I);
 
     // // -- Set external forces (weight) --
-    movingplane->setConstantFExt(weight);
+    movingplane->setConstantFext(weight);
 
-    auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(siconos::modeling::BoundaryCondition::Indices{0});
+    auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(
+        siconos::modeling::BoundaryCondition::Indices{0});
     bd->setComputePrescribedVelocityFunction("BallOnMovingPlanePlugin", "prescribedvelocity");
     movingplane->setBoundaryConditions(bd);
 
@@ -316,7 +315,7 @@ int main(int argc, char* argv[]) {
     // Comparison with a reference file
     cout << "====> Comparison with a reference file ...\n";
     Matrix dataPlotRef(dataPlot);
-    dataPlotRef.zero();
+    dataPlotRef.setZero();
     double error = 0.0, eps = 1e-10;
 #ifdef WITH_PROJ
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "resultNETS-WITHPROJ.ref.ref",

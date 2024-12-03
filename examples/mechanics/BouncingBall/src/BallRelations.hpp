@@ -14,9 +14,9 @@ class BallR : public siconos::modeling::LagrangianScleronomousR {
     y.setValue(0, q.getValue(0) + alpha * q.getValue(1));
   }
 
-  void computeJachq(const siconos::algebra::BlockVector& q, siconos::algebra::BlockVector& z) {
-    _jachq->setValue(0, 0, 1.0);
-    _jachq->setValue(0, 1, alpha);
+  void computeJacobianhOver_q(const siconos::algebra::BlockVector& q, siconos::algebra::BlockVector& z) {
+    jacobianhOver_q_->setValue(0, 0, 1.0);
+    jacobianhOver_q_->setValue(0, 1, alpha);
   }
 };
 }  // namespace user_defined

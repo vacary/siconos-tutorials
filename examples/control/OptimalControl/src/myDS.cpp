@@ -22,13 +22,13 @@
 
 user_defined::MyDS::MyDS(std::shared_ptr<siconos::algebra::SiconosVector> x0)
     : FirstOrderNonLinearDS(x0) {
-  _jacobianfx = std::make_shared<siconos::algebra::SiconosMatrix>(4, 4);
+  jacobianfVectorOver_x_ = std::make_shared<siconos::algebra::SiconosMatrix>(4, 4);
   _f = std::make_shared<siconos::algebra::SiconosVector>(4);
   _M = std::make_shared<siconos::algebra::SiconosMatrix>(4, 4);
-  _M->eye();
+  _M->setIdentity();
 
   Q = std::make_shared<siconos::algebra::SiconosMatrix>(2, 2);
-  Q->eye();
+  Q->setIdentity();
   K1 = std::make_shared<siconos::algebra::SiconosMatrix>(2, 2);
   K1->setValue(0, 0, 0.0);
   K1->setValue(0, 1, 1.0 / 2.0);
@@ -36,25 +36,25 @@ user_defined::MyDS::MyDS(std::shared_ptr<siconos::algebra::SiconosVector> x0)
   K1->setValue(1, 1, +1.0);
 }
 
-void user_defined::MyDS::computef(double t,
-                                  std::shared_ptr<siconos::algebra::SiconosVector> state) {
+void user_defined::MyDS::computefVector(
+    const Eigen::Ref<siconos::algebra::SiconosVector> &state, double time) {
   auto QX = std::make_shared<siconos::algebra::SiconosVector>(2);
   auto X = std::make_shared<siconos::algebra::SiconosVector>(2);
 
   X->setValue(0, (state->getValue(0) - 2.0));
   X->setValue(1, (state->getValue(1) + 1.0));
 
-  prod(*Q, *X, *QX, true);
+  *QX = *Q * *X;
 
   auto K1P = std::make_shared<siconos::algebra::SiconosVector>(2);
   auto P = std::make_shared<siconos::algebra::SiconosVector>(2);
   P->setValue(0, state->getValue(2));
   P->setValue(1, state->getValue(3));
-  prod(*K1, *P, *K1P, true);
+  *K1P = *K1 * *P;
 
   auto alphatmp = std::make_shared<siconos::algebra::SiconosVector>(2);
 
-  alpha(t, state, alphatmp);
+  alpha(time, state, alphatmp);
 
   _f->setValue(0, alphatmp->getValue(0));
   _f->setValue(1, alphatmp->getValue(1));
@@ -62,28 +62,28 @@ void user_defined::MyDS::computef(double t,
   _f->setValue(3, -QX->getValue(1) + K1P->getValue(1));
 }
 
-void user_defined::MyDS::computeJacobianfx(
-    double t, std::shared_ptr<siconos::algebra::SiconosVector> state) {
+void user_defined::MyDS::computeJacobianfOver_x(
+    const Eigen::Ref<siconos::algebra::SiconosVector> &state, double time) {
   auto jacXalpha = std::make_shared<siconos::algebra::SiconosMatrix>(2, 2);
 
   JacobianXalpha(t, state, jacXalpha);
 
-  _jacobianfx->setValue(0, 0, jacXalpha->getValue(0, 0));
-  _jacobianfx->setValue(0, 1, jacXalpha->getValue(0, 1));
-  _jacobianfx->setValue(0, 2, 0.0);
-  _jacobianfx->setValue(0, 3, 0.0);
-  _jacobianfx->setValue(1, 0, jacXalpha->getValue(1, 0));
-  _jacobianfx->setValue(1, 1, jacXalpha->getValue(1, 1));
-  _jacobianfx->setValue(1, 2, 0.0);
-  _jacobianfx->setValue(1, 3, 0.0);
-  _jacobianfx->setValue(2, 0, -Q->getValue(0, 0));
-  _jacobianfx->setValue(2, 1, -Q->getValue(0, 1));
-  _jacobianfx->setValue(2, 2, K1->getValue(0, 0));
-  _jacobianfx->setValue(2, 3, K1->getValue(0, 1));
-  _jacobianfx->setValue(3, 0, -Q->getValue(1, 0));
-  _jacobianfx->setValue(3, 1, -Q->getValue(1, 1));
-  _jacobianfx->setValue(3, 2, K1->getValue(1, 0));
-  _jacobianfx->setValue(3, 3, K1->getValue(1, 1));
+  jacobianfVectorOver_x_->setValue(0, 0, jacXalpha->getValue(0, 0));
+  jacobianfVectorOver_x_->setValue(0, 1, jacXalpha->getValue(0, 1));
+  jacobianfVectorOver_x_->setValue(0, 2, 0.0);
+  jacobianfVectorOver_x_->setValue(0, 3, 0.0);
+  jacobianfVectorOver_x_->setValue(1, 0, jacXalpha->getValue(1, 0));
+  jacobianfVectorOver_x_->setValue(1, 1, jacXalpha->getValue(1, 1));
+  jacobianfVectorOver_x_->setValue(1, 2, 0.0);
+  jacobianfVectorOver_x_->setValue(1, 3, 0.0);
+  jacobianfVectorOver_x_->setValue(2, 0, -Q->getValue(0, 0));
+  jacobianfVectorOver_x_->setValue(2, 1, -Q->getValue(0, 1));
+  jacobianfVectorOver_x_->setValue(2, 2, K1->getValue(0, 0));
+  jacobianfVectorOver_x_->setValue(2, 3, K1->getValue(0, 1));
+  jacobianfVectorOver_x_->setValue(3, 0, -Q->getValue(1, 0));
+  jacobianfVectorOver_x_->setValue(3, 1, -Q->getValue(1, 1));
+  jacobianfVectorOver_x_->setValue(3, 2, K1->getValue(1, 0));
+  jacobianfVectorOver_x_->setValue(3, 3, K1->getValue(1, 1));
 }
 
 void user_defined::MyDS::alpha(double t,

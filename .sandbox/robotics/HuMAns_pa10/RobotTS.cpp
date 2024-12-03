@@ -60,9 +60,12 @@ int main(int argc, char* argv[])
 
 
     // Initial position (angles in radian)
-    std::shared_ptr<siconos::algebra::SiconosVector> q0(new SiconosVector(nDof)), v0(new SiconosVector(nDof));
-    (*q0)(0) = 0.05;
-    (*q0)(1) = 0.05;
+    siconos::algebra::SiconosVector q0{nDof};
+    siconos::algebra::SiconosVector v0{nDof};
+    q0.setZero();
+    v0.setZero();
+   q0(0) = 0.05;
+   q0(1) = 0.05;
 
     auto arm(new LagrangianDS(q0, v0));
 
@@ -93,7 +96,7 @@ int main(int argc, char* argv[])
 
     //     SimpleMatrix H(6,3);
     //     SiconosVector b(6);
-    //     H.zero();
+    //     H.setZero();
     //     H(0,0) =-1;
     //     H(1,0) =1;
     //     H(2,1) =-1;
@@ -111,7 +114,7 @@ int main(int argc, char* argv[])
     double lim1 = 3.1;  // -lim <= q[1] <= lim
     auto H(new SimpleMatrix(4, 3));
     std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector(4));
-    H->zero();
+    H->setZero();
 
     (*H)(0, 0) = -1;
     (*H)(1, 0) = 1;

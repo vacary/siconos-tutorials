@@ -85,7 +85,7 @@ D = [[Rvalue]]
 B = [[-1. / Cvalue], [0.]]
 
 LTIRCircuitRLCD = sk.FirstOrderLinearTIR(C, B)
-LTIRCircuitRLCD.setDPtr(D)
+LTIRCircuitRLCD.setConstantD(D)
 
 nslaw = sk.ComplementarityConditionNSL(1)
 InterCircuitRLCD = sk.Interaction(nslaw, LTIRCircuitRLCD)

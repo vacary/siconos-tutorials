@@ -25,17 +25,17 @@ using Vector = siconos::algebra::SiconosVector;
 
 user_defined::MyDS::MyDS(std::shared_ptr<siconos::algebra::SiconosVector> x0)
     : FirstOrderNonLinearDS(x0) {
-  _jacobianfx = std::make_shared<Matrix>(2, 2);
+  jacobianfVectorOver_x_ = std::make_shared<Matrix>(2, 2);
   _f = std::make_shared<Vector>(2);
 
   _M = std::make_shared<Matrix>(2, 2);
-  _M->zero();
+  _M->setZero();
   _M->setValue(0, 0, 1);
   _M->setValue(1, 1, 1);
 }
 
-void user_defined::MyDS::computef(double t,
-                                  std::shared_ptr<siconos::algebra::SiconosVector> x) {
+void user_defined::MyDS::computefVector(
+    const Eigen::Ref<siconos::algebra::SiconosVector> &state, double time) {
   // std::shared_ptr<siconos::algebra::SiconosVector> x=x();
   _f->setValue(0, -4.5 * x->getValue(0));
   _f->setValue(1, -1.5 * x->getValue(1));
@@ -53,18 +53,18 @@ void user_defined::MyDS::computef(double t,
   */
 }
 
-void user_defined::MyDS::computeJacobianfx(
-    double t, std::shared_ptr<siconos::algebra::SiconosVector> x) {
-  _jacobianfx->setValue(0, 0, -4.5);
-  _jacobianfx->setValue(1, 0, 0);
-  _jacobianfx->setValue(0, 1, 0);
-  _jacobianfx->setValue(1, 1, -1.5);
+void user_defined::MyDS::computeJacobianfOver_x(
+    const Eigen::Ref<siconos::algebra::SiconosVector> &state, double time) {
+  jacobianfVectorOver_x_->setValue(0, 0, -4.5);
+  jacobianfVectorOver_x_->setValue(1, 0, 0);
+  jacobianfVectorOver_x_->setValue(0, 1, 0);
+  jacobianfVectorOver_x_->setValue(1, 1, -1.5);
 
   /*
   #ifdef SICONOS_DEBUG
     std::cout<<"MyDS::computeJacobianfx."<<std::endl;
   std::cout<<"Nabla f="<<std::endl;
-    _jacobianfx->display();
+    jacobianfVectorOver_x_->display();
     std::cout<<std::endl;
   #endif
   */

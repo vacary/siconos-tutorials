@@ -53,25 +53,29 @@ int main(int argc, char *argv[]) {
 
     std::cout << "====> Model loading ...\n";
 
-    auto Mass = std::make_shared<Matrix>(nDof, nDof);
-    (*Mass)(0, 0) = m;
-    (*Mass)(1, 1) = m;
-    (*Mass)(2, 2) = 2. / 5 * m * R * R;
+    Matrix mass{nDof, nDof};
+    mass.setZero();
+    mass(0, 0) = m;
+    mass(1, 1) = m;
+    mass(2, 2) = 2. / 5 * m * R * R;
 
     // -- Initial positions and velocities --
-    auto q0 = std::make_shared<Vector>(nDof);
-    auto v0 = std::make_shared<Vector>(nDof);
-    (*q0)(0) = position_init;
-    (*v0)(0) = velocity_init;
+    Vector q0{nDof};
+    q0.setZero();
+    q0(0) = position_init;
+    Vector v0{nDof};
+    v0.setZero();
+    v0(0) = velocity_init;
+
 
     // -- The dynamical system --
-    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, Mass);
+    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
     weight(0) = -m * g;
-    ball->setConstantFExt(weight);
+    ball->setConstantFext(weight);
 
     // --------------------
     // --- Interactions ---
@@ -94,10 +98,10 @@ int main(int argc, char *argv[]) {
     // impact law
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
     // Interaction at contact 1 (ball-floor)
-    auto relation1 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H1, E1);
+    auto relation1 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H1, *E1);
     auto inter1 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation1);
     // Interaction at contact 2 (ball-ceiling)
-    auto relation2 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H2, E2);
+    auto relation2 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H2, *E2);
     auto inter2 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation2);
     // --------------------------------
     // --- NonSmoothDynamicalSystem ---
@@ -145,7 +149,7 @@ int main(int argc, char *argv[]) {
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 9;
-    Matrix dataPlot(N, outputSize);
+    Matrix dataPlot{N, outputSize};
     auto q = ball->q();             // ball position
     auto v = ball->velocity();      // ball velocity
     std::shared_ptr<Vector> gamma;  // ball acceleration
@@ -176,7 +180,7 @@ int main(int argc, char *argv[]) {
     std::cout << "====> Start computation ... \n";
     bool nonSmooth = false;
     unsigned int numberOfEvent = 0;
-    double k = 1;
+    int k = 1;
 
     //    s->setTolerance(1e-10);
     auto start = std::chrono::system_clock::now();

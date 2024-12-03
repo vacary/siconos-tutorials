@@ -72,9 +72,9 @@ int main(int argc, char *argv[]) {
     auto q10 = std::make_shared<Vector>(qDim);
     auto v10 = std::make_shared<Vector>(nDim);
     auto I1 = std::make_shared<Matrix>(3, 3);
-    v10->zero();
+    v10->setZero();
     (*v10)(0) = 100;
-    I1->eye();
+    I1->setIdentity();
     I1->setValue(0, 0, 0.1);
     I1->setValue(0, 1, 0.1);
     I1->setValue(1, 0, 0.1);
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     // angle of the rotation Pi/4
     double angle = M_PI / 4;
     Vector V1(3);
-    V1.zero();
+    V1.setZero();
     // vector of the rotation (Y-axis)
     V1.setValue(0, 0);
     V1.setValue(1, 1);
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
     // --------------------
 
     auto P = std::make_shared<Vector>(3);
-    P->zero();
+    P->setZero();
     // Building the first knee joint for beam1
     // input  - the concerned DS : beam1
     //        - a point in the spatial frame (absolute frame) where the knee is defined P

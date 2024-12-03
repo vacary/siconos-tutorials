@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
   cout << "====> Model loading ..." << endl << endl;
 
   auto A = std::make_shared<Matrix>(nDof, nDof);
-  A->zero();
+  A->setZero();
   (*A)(0, 1) = 1.0;
 
   auto B = std::make_shared<Matrix>(nDof, 1);
@@ -66,8 +66,8 @@ int main(int argc, char* argv[]) {
   (*x0)(1) = velocity_init;
 
   // -- The dynamical system --
-  auto doubleIntegrator = std::make_shared<siconos::modeling::FirstOrderLinearTIDS>(x0, A);
-
+  auto doubleIntegrator = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
+  doubleIntegrator->setConstantA(*A);
   // -------------
   // --- Model ---
   // -------------

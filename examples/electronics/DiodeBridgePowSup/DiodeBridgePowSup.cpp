@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
     (*LS_A)(0, 0) = -1.0 / (Rvalue * Cfilt);
 
     auto LSDiodeBridgePowSup =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS, LS_A);
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_stateLS, *LS_A);
 
     // TODO: review this example with the new way to set the control.
 
@@ -90,10 +90,10 @@ int main(int argc, char* argv[]) {
     *Offset_lambda = -DiodeThreshold * (*Offset_lambda);
 
     auto Int_z = std::make_shared<Vector>(5);
-    auto tmp = std::make_shared<Vector>(4);
-    prod(*Int_D, *Offset_lambda, *tmp);
-    *tmp -= *Offset_y;
-    Int_z->setBlock(0, *tmp);
+    Vector tmp{4};
+    tmp = *Int_D * *Offset_lambda;
+    tmp -= *Offset_y;
+    Int_z->head(4) = tmp;
 
     LSDiodeBridgePowSup->setzPtr(Int_z);
 
@@ -103,7 +103,7 @@ int main(int argc, char* argv[]) {
 
     auto LTIRDiodeBridgePowSup =
         std::make_shared<siconos::modeling::FirstOrderLinearR>(Int_C, Int_B);
-    LTIRDiodeBridgePowSup->setDPtr(Int_D);
+    LTIRDiodeBridgePowSup->setConstantD(*Int_D);
     LTIRDiodeBridgePowSup->setComputeEFunction("SinPoPlugin", "SinPo");
 
     auto nslaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(4);

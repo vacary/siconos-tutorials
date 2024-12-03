@@ -97,8 +97,8 @@ void Spheres::init() {
 
       qTmp.reset(new SiconosVector(7));
       vTmp.reset(new SiconosVector(6));
-      qTmp->zero();
-      vTmp->zero();
+      qTmp->setZero();
+      vTmp->setZero();
 
       (*qTmp)(0) = (*Spheres)(i, 0);
       (*qTmp)(1) = (*Spheres)(i, 1);
@@ -120,7 +120,7 @@ void Spheres::init() {
       FExt.setZero();
       // if (i)
       FExt(2) = -m * g;
-      body->setConstantFExtPtr(FExt);
+      body->setConstantFextPtr(FExt);
 
       // add the dynamical system in the non smooth dynamical system
       nsds->insertDynamicalSystem(body);

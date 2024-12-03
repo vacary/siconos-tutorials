@@ -114,7 +114,7 @@ B = [[0.,        0., -1./Cvalue, 1./Cvalue],
      [1.0/Cfilt,        0.,  1.0/Cfilt,        0.       ]]
 
 LTIRDiodeBridgeCapFilter = FirstOrderLinearTIR(C, B)
-LTIRDiodeBridgeCapFilter.setDPtr(D)
+LTIRDiodeBridgeCapFilter.setConstantD(D)
 
 nslaw = ComplementarityConditionNSL(4)
 InterDiodeBridgeCapFilter = Interaction(nslaw, LTIRDiodeBridgeCapFilter)

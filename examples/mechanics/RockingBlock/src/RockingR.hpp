@@ -36,11 +36,11 @@ class RockingBlockR : public siconos::modeling::LagrangianScleronomousR {
     y.setValue(0, q1 - 0.5 * LengthBlock * sin(q2) - 0.5 * HeightBlock * cos(q2));
   }
 
-  void computeJachq(const siconos::algebra::BlockVector& q, siconos::algebra::BlockVector& z) {
+  void computeJacobianhOver_q(const siconos::algebra::BlockVector& q, siconos::algebra::BlockVector& z) {
     double q2 = q.getValue(2);
-    _jachq->setValue(0, 0, 0.0);
-    _jachq->setValue(0, 1, 1.0);
-    _jachq->setValue(0, 2, -0.5 * LengthBlock * cos(q2) + 0.5 * HeightBlock * sin(q2));
+    jacobianhOver_q_->setValue(0, 0, 0.0);
+    jacobianhOver_q_->setValue(0, 1, 1.0);
+    jacobianhOver_q_->setValue(0, 2, -0.5 * LengthBlock * cos(q2) + 0.5 * HeightBlock * sin(q2));
   }
 
   void computeDotJachq(const siconos::algebra::BlockVector& q,
@@ -50,9 +50,9 @@ class RockingBlockR : public siconos::modeling::LagrangianScleronomousR {
   {
     double q2 = q.getValue(2);
     double qdot2 = qdot.getValue(2);
-    _dotjachq->setValue(0, 0, 0.0);
-    _dotjachq->setValue(0, 1, 0.0);
-    _dotjachq->setValue(0, 2,
+    jacobianhOver_q_dot_->setValue(0, 0, 0.0);
+    jacobianhOver_q_dot_->setValue(0, 1, 0.0);
+    jacobianhOver_q_dot_->setValue(0, 2,
                         (0.5 * LengthBlock * sin(q2) + 0.5 * HeightBlock * cos(q2)) * qdot2);
   }
 };
@@ -69,11 +69,11 @@ class RockingBlockR2 : public siconos::modeling::LagrangianScleronomousR {
     y.setValue(0, q1 + 0.5 * LengthBlock * sin(q2) - 0.5 * HeightBlock * cos(q2));
   }
 
-  void computeJachq(const siconos::algebra::BlockVector& q, siconos::algebra::BlockVector& z) {
+  void computeJacobianhOver_q(const siconos::algebra::BlockVector& q, siconos::algebra::BlockVector& z) {
     double q2 = q.getValue(2);
-    _jachq->setValue(0, 0, 0.0);
-    _jachq->setValue(0, 1, 1.0);
-    _jachq->setValue(0, 2, 0.5 * LengthBlock * cos(q2) + 0.5 * HeightBlock * sin(q2));
+    jacobianhOver_q_->setValue(0, 0, 0.0);
+    jacobianhOver_q_->setValue(0, 1, 1.0);
+    jacobianhOver_q_->setValue(0, 2, 0.5 * LengthBlock * cos(q2) + 0.5 * HeightBlock * sin(q2));
   }
 
   void computeDotJachq(const siconos::algebra::BlockVector& q,
@@ -81,9 +81,9 @@ class RockingBlockR2 : public siconos::modeling::LagrangianScleronomousR {
                        const siconos::algebra::BlockVector& qdot) {
     double q2 = q.getValue(2);
     double qdot2 = qdot.getValue(2);
-    _dotjachq->setValue(0, 0, 0.0);
-    _dotjachq->setValue(0, 1, 0.0);
-    _dotjachq->setValue(0, 2,
+    jacobianhOver_q_dot_->setValue(0, 0, 0.0);
+    jacobianhOver_q_dot_->setValue(0, 1, 0.0);
+    jacobianhOver_q_dot_->setValue(0, 2,
                         (-0.5 * LengthBlock * sin(q2) + 0.5 * HeightBlock * cos(q2)) * qdot2);
   }
 };

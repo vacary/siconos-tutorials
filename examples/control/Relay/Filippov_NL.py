@@ -54,7 +54,7 @@ D = zeros((2,2))
 process = FirstOrderLinearDS(x0, A)
 #myProcessRelation = MyR.MyR(C,B)
 myProcessRelation = MyNonLinearR.MyNonLinearR(C,B)
-#myProcessRelation.setDPtr(D)
+#myProcessRelation.setConstantD(*D)
 
 myNslaw = RelayNSL(2)
 #myNslaw.display()

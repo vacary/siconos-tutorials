@@ -97,13 +97,13 @@ int main(int argc, char* argv[]) {
     auto bar = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, SparseMass);
 
     // -- Set stiffness matrix (weight) --
-    bar->setKPtr(SparseStiffness);
-    bar->setCPtr(SparseDamping);
+    bar->setStiffnessMatrix(SparseStiffness);
+    bar->setDampingMatrix(SparseDamping);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
-    bar->setConstantFExt(weight);
+    bar->setConstantFext(weight);
 
     // --------------------
     // --- Interactions ---
@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
     (*H)(0, 0) = 1.0;
 
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H));
 
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
@@ -196,10 +196,10 @@ int main(int argc, char* argv[]) {
 
     auto tmp = std::make_shared<Vector>(ndof);
 
-    prod(*SparseStiffness, *q, *tmp, true);
-    double potentialEnergy = inner_prod(*q, *tmp);
-    prod(*SparseMass, *v, *tmp, true);
-    double kineticEnergy = inner_prod(*v, *tmp);
+    *tmp = *SparseStiffness * *q;
+    double potentialEnergy = q->dot(tmp);
+    *tmp = *SparseMass * *v;
+    double kineticEnergy = v->dot(tmp);
 
     dataPlot(k, 5) = potentialEnergy;
     dataPlot(k, 6) = kineticEnergy;
@@ -238,10 +238,10 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 9) = (*q)((ndof) / 2);
       dataPlot(k, 10) = (*v)((ndof) / 2);
 
-      prod(*SparseStiffness, *q, *tmp, true);
-      potentialEnergy = inner_prod(*q, *tmp);
-      prod(*SparseMass, *v, *tmp, true);
-      kineticEnergy = inner_prod(*v, *tmp);
+      *tmp = *SparseStiffness * *q;
+      potentialEnergy = q->dot(tmp);
+      *tmp = *SparseMass * *v;
+      kineticEnergy = v->dot(tmp);
 
       dataPlot(k, 5) = potentialEnergy;
       dataPlot(k, 6) = kineticEnergy;

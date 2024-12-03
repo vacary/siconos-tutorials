@@ -54,25 +54,29 @@ int main(int argc, char *argv[]) {
 
     std::cout << "====> Model loading ...\n";
 
-    auto Mass = std::make_shared<Matrix>(nDof, nDof);
-    (*Mass)(0, 0) = m;
-    (*Mass)(1, 1) = m;
-    (*Mass)(2, 2) = 2. / 5 * m * R * R;
-
     // -- Initial positions and velocities --
-    auto q0 = std::make_shared<Vector>(nDof);
-    auto v0 = std::make_shared<Vector>(nDof);
-    (*q0)(0) = position_init;
-    (*v0)(0) = velocity_init;
+    Vector q0{nDof};
+    q0.setZero();
+    q0(0) = position_init;
+    Vector v0{nDof};
+    v0.setZero();
+    v0(0) = velocity_init;
 
     // -- The dynamical system --
-    auto ball = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, Mass);
+    auto ball = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
+    Matrix mass{nDof, nDof};
+    mass.setZero();
+    mass(0, 0) = m;
+    mass(1, 1) = m;
+    mass(2, 2) = 2. / 5 * m * R * R;
+
+    ball->setConstantMass(mass);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
     weight(0) = -m * g;
-    ball->setConstantFExt(weight);
+    ball->setConstantFext(weight);
 
     // --------------------
     // --- Interactions ---

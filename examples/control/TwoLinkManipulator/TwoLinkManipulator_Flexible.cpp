@@ -68,8 +68,8 @@ int main(int argc, char* argv[]) {
 
     // Initial position (angles in radian)
     Vector q0(nDof), v0(nDof);
-    q0.zero();
-    v0.zero();
+    q0.setZero();
+    v0.setZero();
     q0(0) = 0.9;
     q0(1) = -1.5;
     q0(2) = 0.9;
@@ -182,7 +182,7 @@ int main(int argc, char* argv[]) {
 
     // Initialization of the dicrete parameter z needs the followinf first computations
     arm->computeJacobianFIntq(t0);
-    arm->computeFInt(t0);
+    arm->computeFint(*v, *q, t0);
     arm->computeJacobianFIntqDot(t0);
     inter1->computeOutput(t0, 0);
     inter2->computeOutput(t0, 0);
@@ -340,7 +340,7 @@ int main(int argc, char* argv[]) {
 //     arm->setComputeFGyrFunction("Two-linkFlexiblePlugin","FGyr");
 //     arm->setComputeJacobianFGyrFunction(1,"Two-linkFlexiblePlugin","jacobianVFGyr");
 //     arm->setComputeJacobianFGyrFunction(0,"Two-linkFlexiblePlugin","jacobianFGyrq");
-//     arm->setComputeFExtFunction("Two-linkFlexiblePlugin","U");
+//     arm->setComputeFextFunction("Two-linkFlexiblePlugin","U");
 //     arm->setzPtr(z);
 
 //     allDS.insert(arm);
@@ -363,7 +363,7 @@ int main(int argc, char* argv[]) {
 
 //    //  SiconosMatrix H1(2,4);
 // //     SiconosVector b1(2);
-// //     H1.zero();
+// //     H1.setZero();
 // //     H1(0,0) =-1;
 // //     H1(1,0) =1;
 
@@ -376,7 +376,7 @@ int main(int argc, char* argv[]) {
 
 // //     SiconosMatrix H2(2,4);
 // //     SiconosVector b2(2);
-// //     H2.zero();
+// //     H2.setZero();
 // //     H2(0,1) =-1;
 // //     H2(1,1) =1;
 

@@ -52,24 +52,28 @@ int main(int argc, char *argv[]) {
 
     std::cout << "====> Model loading ...\n";
 
-    auto Mass = std::make_shared<Matrix>(nDof, nDof);
-    (*Mass)(0, 0) = m;
-    (*Mass)(1, 1) = m;
-    (*Mass)(2, 2) = 2. / 5 * m * R * R;
+    Matrix mass{nDof, nDof};
+    mass.setZero();
+    mass(0, 0) = m;
+    mass(1, 1) = m;
+    mass(2, 2) = 2. / 5 * m * R * R;
 
     // -- Initial positions and velocities --
-    auto q0 = std::make_shared<Vector>(nDof);
-    auto v0 = std::make_shared<Vector>(nDof);
-    (*q0)(0) = position_init;
-    (*v0)(0) = velocity_init;
+    Vector q0{nDof};
+    q0.setZero();
+    q0(0) = position_init;
+    Vector v0{nDof};
+    v0.setZero();
+    v0(0) = velocity_init;
+
 
     // -- The dynamical system --
-    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, Mass);
+    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight(0) = -m * g;
-    ball->setConstantFExt(weight);
+    ball->setConstantFext(weight);
     // --------------------
     // --- Interactions ---
     // --------------------
@@ -83,7 +87,7 @@ int main(int argc, char *argv[]) {
     (*H)(0, 0) = 1.0;
 
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H);
 
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
@@ -125,15 +129,15 @@ int main(int argc, char *argv[]) {
     unsigned int outputSize = 5;
     Matrix dataPlot(N + 1, outputSize);
 
-    auto q = ball->q();
-    auto v = ball->velocity();
-    auto p = ball->p(1);
+    auto q = ball->q_read();
+    auto v = ball->velocity_read();
+    auto p = ball->p_read(1);
     auto lambda = inter->lambda(1);
 
     dataPlot(0, 0) = bouncingBall->t0();
-    dataPlot(0, 1) = (*q)(0);
-    dataPlot(0, 2) = (*v)(0);
-    dataPlot(0, 3) = (*p)(0);
+    dataPlot(0, 1) = q(0);
+    dataPlot(0, 2) = v(0);
+    dataPlot(0, 3) = p(0);
     dataPlot(0, 4) = (*lambda)(0);
     // --- Time loop ---
     std::cout << "====> Start computation ... \n";
@@ -144,9 +148,9 @@ int main(int argc, char *argv[]) {
       s->computeOneStep();
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
-      dataPlot(k, 1) = (*q)(0);
-      dataPlot(k, 2) = (*v)(0);
-      dataPlot(k, 3) = (*p)(0);
+      dataPlot(k, 1) = q(0);
+      dataPlot(k, 2) = v(0);
+      dataPlot(k, 3) = p(0);
       dataPlot(k, 4) = (*lambda)(0);
       s->nextStep();
       k++;

@@ -67,8 +67,8 @@ int main(int argc, char* argv[]) {
 
     // Initial position (angles in radian)
     Vector q0(nDof), v0(nDof);
-    q0.zero();
-    v0.zero();
+    q0.setZero();
+    v0.setZero();
     q0(0) = 1.5;
     q0(1) = -0.9;
     q0(2) = 1.5;
@@ -188,7 +188,7 @@ int main(int argc, char* argv[]) {
 
     // Initialization of the dicrete parameter z needs the followinf first computations
     arm->computeJacobianFIntq(t0);
-    arm->computeFInt(t0);
+    arm->computeFint(*v, *q, t0);
     arm->computeJacobianFIntqDot(t0);
     inter01->computeOutput(t0, 0);
     inter02->computeOutput(t0, 0);

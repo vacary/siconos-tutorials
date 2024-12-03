@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
     (*x0)(1) = xinit;
     (*x0)(2) = 0.0;
 
-    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(x0, A);
+    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, *A);
     //    process->setComputebFunction("ObserverLCSPlugin","uProcess");
 
     // --------------------
@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
     auto D = std::make_shared<Matrix>(ninter, ninter);
     (*D)(0, 0) = 0.0;
 
-    myProcessRelation->setDPtr(D);
+    myProcessRelation->setConstantD(*D);
     // myProcessRelation->setComputeEFunction("ObserverLCSPlugin","computeE");
 
     // Second relation, related to the observer

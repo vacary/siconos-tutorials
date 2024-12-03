@@ -97,7 +97,7 @@ B = [[0.,        0., -1./Cvalue, 1./Cvalue],
      [0.,        0.,  0.,        0.       ]]
 
 LTIRDiodeBridge = FirstOrderLinearTIR(C, B)
-LTIRDiodeBridge.setDPtr(D)
+LTIRDiodeBridge.setConstantD(D)
 
 nslaw = ComplementarityConditionNSL(4)
 InterDiodeBridge = Interaction(nslaw, LTIRDiodeBridge)

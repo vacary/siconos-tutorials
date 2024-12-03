@@ -60,18 +60,20 @@ int main(int argc, char* argv[]) {
     // --- DS: Simple Pendulum ---
 
     // Initial position (angles in radian)
-    auto q0 = std::make_shared<Vector>(nDof);
-    auto v0 = std::make_shared<Vector>(nDof);
-    (*q0).zero();
-    (*v0).zero();
-    (*q0)(0) = L * sin(InitAngle);
-    (*q0)(1) = L * cos(InitAngle);
+    Vector q0{nDof};
+    q0.setZero();
+    Vector v0{nDof};
+    v0.setZero();
+    q0(0).setZero();
+    v0(0).setZero();
+   q0(0) = L * sin(InitAngle);
+   q0(1) = L * cos(InitAngle);
+    Matrix mass{nDof, nDof};
 
-    auto Mass = std::make_shared<Matrix>(nDof, nDof);
-    (*Mass)(0, 0) = m;
-    (*Mass)(1, 1) = m;
+    mass(0, 0) = m;
+    mass(1, 1) = m;
     auto simplependulum =
-        std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, Mass);
+        std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
 
     std::vector<double> zparams = {L};
     auto zz = std::make_shared<Vector>(zparams);
@@ -80,7 +82,7 @@ int main(int argc, char* argv[]) {
     Vector ForceExtern{nDof};
     ForceExtern.setZero();
     ForceExtern(1) = m * gravity;
-    simplependulum->setConstantFExt(ForceExtern);
+    simplependulum->setConstantFext(ForceExtern);
 
     // -------------------
     // --- Interactions---
@@ -178,10 +180,10 @@ int main(int argc, char* argv[]) {
       if (NSEvent) {
         DataPlot(k, 0) = EDscheme->startingTime();  // instant at non-smooth event
 
-        const auto& _qMemory = simplependulum->qMemory().getSiconosVector(1);
+        const auto& qMemory = simplependulum->qMemory().getSiconosVector(1);
         const auto& _qdotMemory = simplependulum->velocityMemory().getSiconosVector(1);
-        DataPlot(k, 1) = _qMemory(0);
-        DataPlot(k, 2) = _qMemory(1);
+        DataPlot(k, 1) = qMemory(0);
+        DataPlot(k, 2) = qMemory(1);
         DataPlot(k, 3) = _qdotMemory(0);
         DataPlot(k, 4) = _qdotMemory(1);
         DataPlot(k, 5) = (*_qddot)(0);   // Acceleration ax

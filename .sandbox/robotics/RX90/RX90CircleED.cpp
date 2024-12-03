@@ -60,8 +60,8 @@ int main(int argc, char* argv[])
 
     // Initial position (angles in radian)
     SiconosVector q0(nDof), v0(nDof);
-    q0.zero();
-    v0.zero();
+    q0.setZero();
+    v0.setZero();
     q0(1) = PI / 3;
     q0(2) = -PI / 6;
     q0(4) = PI / 6;
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
 
     SimpleMatrix H(12, 6);
     SiconosVector b(12);
-    H.zero();
+    H.setZero();
     for (unsigned int i = 0; i < nDof; i++)
     {
       H(2 * i, i) = 1;

@@ -61,16 +61,18 @@ int main(int argc, char* argv[])
     // The dof are angles between ground and arm and between differents parts of the arm. (See corresponding .pdf for more details)
 
     // Initial position (angles in radian)
-    std::shared_ptr<siconos::algebra::SiconosVector> q0(new SiconosVector(nDof));
-    std::shared_ptr<siconos::algebra::SiconosVector> v0(new SiconosVector(nDof));
-    q0->zero();
-    v0->zero();
-    (*q0)(1) = PI / 3;
-    (*q0)(2) = -PI / 6;
-    (*q0)(4) = PI / 6;
-    (*v0)(0) = -0.34;
-    (*v0)(3) = 0.59;
-    (*v0)(5) = -0.34;
+    siconos::algebra::SiconosVector q0{nDof};
+    siconos::algebra::SiconosVector v0{nDof};
+    q0.setZero();
+    v0.setZero();
+ 
+
+   q0(1) = PI / 3;
+   q0(2) = -PI / 6;
+   q0(4) = PI / 6;
+    v0(0) = -0.34;
+    v0(3) = 0.59;
+    v0(5) = -0.34;
 
 
     auto arm(new LagrangianDS(q0, v0, "RX90Plugin:mass"));
@@ -86,7 +88,7 @@ int main(int argc, char* argv[])
 
     // creating Z parameter computed in Actuators and used in FInt
     std::shared_ptr<siconos::algebra::SiconosVector> torques(new SiconosVector(nDof));
-    torques->zero();
+    torques->setZero();
     arm->setzPtr(torques);
 
     // -------------------
@@ -109,8 +111,8 @@ int main(int argc, char* argv[])
     {
       Hvector[2 * i].reset(new SimpleMatrix(1, 6));
       Hvector[2 * i + 1].reset(new SimpleMatrix(1, 6));
-      Hvector[2 * i]->zero();
-      Hvector[2 * i + 1]->zero();
+      Hvector[2 * i]->setZero();
+      Hvector[2 * i + 1]->setZero();
       (*(Hvector[2 * i]))(0, i) = 1;
       (*(Hvector[2 * i + 1]))(0, i) = -1;
 

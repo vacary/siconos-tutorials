@@ -93,7 +93,7 @@ B = [[0.,        0., -1./Cvalue, 1./Cvalue],
      [0.,        0.,  0.,        0.       ]]
 
 LTIRDiodeBridge = sk.FirstOrderLinearTIR(C, B)
-LTIRDiodeBridge.setDPtr(D)
+LTIRDiodeBridge.setConstantD(D)
 
 nslaw = sk.ComplementarityConditionNSL(4)
 InterDiodeBridge = sk.Interaction(nslaw, LTIRDiodeBridge)

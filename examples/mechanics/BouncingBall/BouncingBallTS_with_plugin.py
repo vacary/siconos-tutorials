@@ -60,7 +60,7 @@ def external_forces(time, fext):
     fext[0] = -m * g
     #print("call external_force ...")
 
-ball.setComputeFExtFunction(external_forces)
+ball.setComputeFextFunction(external_forces)
 
 #
 # Interaction ball-floor

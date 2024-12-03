@@ -97,12 +97,12 @@ int main(int argc, char* argv[]) {
     */
     // 4. Instantiate the object of "LagrangianTIDS"
     auto RockingBlock = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
-        PosIniBlock, VelIniBlock, Mass);
+        PosIniBlock, VelIniBlock, mass);
     // 5. Set the external force
     Vector ForceExtern{Nfreedom};
     ForceExtern.setZero();
     ForceExtern(1) = -MassBlock * GGearth;
-    RockingBlock->setConstantFExt(ForceExtern);    //
+    RockingBlock->setConstantFext(ForceExtern);  //
     //----------------------------- Display variables of the dynamical
     // system---------------------------------------
     cout << "Initial position of the rocking block:\n";
@@ -176,15 +176,15 @@ int main(int argc, char* argv[]) {
     DataPlot(0, 6) = (*VelBlock)(2);  // Angular velocity
 
     auto tmp = std::make_shared<Vector>(Nfreedom);
-    prod(*Mass, *VelBlock, *tmp, true);
-    double kineticEnergy = 0.5 * inner_prod(*VelBlock, *tmp);
+    *tmp  = *Mass * *VelBlock;
+    double kineticEnergy = 0.5 * VelBlock->dot(*tmp);
     DataPlot(0, 7) = kineticEnergy;
 
     auto PosRef = std::make_shared<Vector>(Nfreedom);
     (*PosRef)(0) = 0.0;
     (*PosRef)(1) = HeightBlock / 2.0;
     (*PosRef)(2) = 0.0;
-    double potentialEnergy = -1.0 * inner_prod(*PosBlock - *PosRef, *ForceExtern);
+    double potentialEnergy = -1.0 * (*PosBlock - *PosRef)->dot(*ForceExtern);
     DataPlot(0, 8) = potentialEnergy;
 
     //----------------------------------- Simulation starts
@@ -202,11 +202,11 @@ int main(int argc, char* argv[]) {
       DataPlot(k, 5) = (*VelBlock)(1);  // Velocity Vy
       DataPlot(k, 6) = (*VelBlock)(2);  // Velocity Vtheta
 
-      prod(*Mass, *VelBlock, *tmp, true);
-      kineticEnergy = 0.5 * inner_prod(*VelBlock, *tmp);
+      *tmp  = *Mass * *VelBlock;
+      kineticEnergy = 0.5 * VelBlock->dot(*tmp);
       DataPlot(k, 7) = kineticEnergy;
 
-      potentialEnergy = -1.0 * inner_prod(*PosBlock - *PosRef, *ForceExtern);
+      potentialEnergy = -1.0 * (*PosBlock - *PosRef)->dot(*ForceExtern);
       DataPlot(k, 8) = potentialEnergy;
       // go to the next time step
       k++;

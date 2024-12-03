@@ -48,13 +48,15 @@ int main(int argc, char* argv[]) {
     double mu = 0.8;
 
     // initial conditions
-    auto q0 = std::make_shared<Vector>(nDof);
-    auto v0 = std::make_shared<Vector>(nDof);
-    q0->zero();
-    v0->zero();
-    (*q0)(0) = 0.1;
-    (*q0)(2) = 0.1;
-    (*v0)(0) = 2.;
+    Vector q0{nDof};
+    q0.setZero();
+    Vector v0{nDof};
+    v0.setZero();
+
+
+   q0(0) = 0.1;
+   q0(2) = 0.1;
+    v0(0) = 2.;
 
     // -------------------------
     // --- Dynamical systems ---

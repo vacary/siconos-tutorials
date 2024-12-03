@@ -248,7 +248,7 @@ public:
    std::shared_ptr<siconos::algebra::SiconosVector> v0(new SiconosVector(nDof,velocity_init));
 
    _init(q0,v0);
-   _K = create_matrix_from_mfem(A);
+   stiffnessMatrix_ = create_matrix_from_mfem(A);
    _mass = create_matrix_from_mfem(M);
 
 

@@ -30,10 +30,6 @@
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-#include <SiconosKernel.hpp>
-#include <chrono>
-
-#include "CamState.h"
 using namespace std;
 
 int main(int argc, char* argv[]) {
@@ -71,18 +67,11 @@ int main(int argc, char* argv[]) {
     (*(velocity0[0]))(0) = velocity_init;
     auto lds = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0[0], velocity0[0],
                                                                          Mass, K, C);
-    lds->setComputeFExtFunction("FollowerPlugin", "FollowerFExtR");
-
-    // Example to set a list of parameters in FExt function.
-    // 1 - Create a simple vector that contains the required parameters.
-    auto param =
-        std::make_shared<Vector>(1);  // Here we only set one parameter, the DS number.
-    //    (*param)(0) = vectorDS[0]->getNumber();
-    (*param)(0) = rpm;
-    // 2 - Assign this param to the function FExt
-    lds->setzPtr(param);
-    // 2 corresponds to the position of FExt in the stl vector of possible parameters. 0 is
-    // mass, 1 FInt and so on. Now the DS number will be available in FExt plugin.
+    lds->setComputeFextFunction(
+        [user_defined::mass, user_defined::gravity](
+            double time, Eigen::Ref<siconos::algebra::MapVectorType> fext) {
+          fext[0] = -mass * gravity;
+        });
 
     // --------------------
     // --- Interactions ---
@@ -96,7 +85,7 @@ int main(int argc, char* argv[]) {
     auto H = std::make_shared<Matrix>(1, nDof);
     (*H)(0, 0) = 1.0;
     auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation0 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
+    auto relation0 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H);
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw0, relation0);
 
     // -------------
@@ -148,7 +137,7 @@ int main(int argc, char* argv[]) {
     DataPlot(k, 1) = (*lds->q())(0);
     DataPlot(k, 2) = (*lds->velocity())(0);
     DataPlot(k, 3) = (*inter->lambda(1))(0);
-    DataPlot(k, 4) = (*lds->fExt())(0);
+    DataPlot(k, 4) = (*lds->fext())(0);
 
     // State of the Cam
     //    double rpm=358;
@@ -176,7 +165,7 @@ int main(int argc, char* argv[]) {
       DataPlot(k, 1) = (*lds->q())(0);
       DataPlot(k, 2) = (*lds->velocity())(0);
       DataPlot(k, 3) = (*inter->lambda(1))(0);
-      DataPlot(k, 4) = (*lds->fExt())(0);
+      DataPlot(k, 4) = (*lds->fext())(0);
 
       CamEqForce = user_defined::CamState(S->nextTime(), rpm, CamPosition, CamVelocity,
                                           CamAcceleration);

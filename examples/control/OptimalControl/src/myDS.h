@@ -99,14 +99,16 @@ class MyDS : public siconos::modeling::FirstOrderNonLinearDS {
    * \param double time : current time
    * \param std::shared_ptr<siconos::algebra::SiconosVector>
    */
-  virtual void computef(double, std::shared_ptr<siconos::algebra::SiconosVector>);
+  virtual void computefVector(const Eigen::Ref<siconos::algebra::SiconosVector> &state,
+                              double time);
   ;
 
   /** Default function to compute \f$ \nabla_x f: (x,t) \in R^{n} \times R  \mapsto  R^{n
    * \times n} \f$ with x different from current saved state. \param double time : current time
    *  \param std::shared_ptr<siconos::algebra::SiconosVector>
    */
-  virtual void computeJacobianfx(double, std::shared_ptr<siconos::algebra::SiconosVector>);
+  virtual void computeJacobianfOver_x(const Eigen::Ref<siconos::algebra::SiconosVector> &state,
+                                 double time);
 
   /** Default function to the right-hand side term
    *  \param double time : current time

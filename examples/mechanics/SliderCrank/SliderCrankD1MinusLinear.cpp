@@ -71,20 +71,22 @@ int main(int argc, char* argv[]) {
     // double mu4 = 0.01;
 
     // initial conditions
-    auto q0 = std::make_shared<Vector>(nDof);
-    auto v0 = std::make_shared<Vector>(nDof);
-    q0->zero();
-    v0->zero();
-    (*v0)(0) = 150.;
-    (*v0)(1) = -75.;
+    Vector q0{nDof};
+    q0.setZero();
+    Vector v0{nDof};
+    v0.setZero();
+
+
+    v0(0) = 150.;
+    v0(1) = -75.;
 
     // t0 = 7e-5;
-    // (*q0)(0)=  1.129178e-02;
-    // (*q0)(1)= -5.777764e-03;
-    // (*q0)(2)=  0.000000e+00;
+    //q0(0)=  1.129178e-02;
+    //q0(1)= -5.777764e-03;
+    //q0(2)=  0.000000e+00;
 
-    // (*v0)(0) = 1.971606e+02 ;
-    // (*v0)(1) = -1.064301e+02;
+    // v0(0) = 1.971606e+02 ;
+    // v0(1) = -1.064301e+02;
 
     // -------------------------
     // --- Dynamical systems ---

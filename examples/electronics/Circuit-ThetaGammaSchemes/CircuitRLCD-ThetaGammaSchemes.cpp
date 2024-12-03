@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
     LS_A->setValue(0, 1, -1.0);
     LS_A->setValue(1, 0, 1.0 / (Lvalue * Cvalue));
 
-    auto LSCircuitRLCD =
-        std::make_shared<siconos::modeling::FirstOrderLinearTIDS>(init_state, LS_A);
+    auto LSCircuitRLCD = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state);
+    LSCircuitRLCD->setConstantA(*LS_A);
 
     // --- Interaction between linear system and non smooth system ---
 
@@ -87,10 +87,10 @@ int main(int argc, char *argv[]) {
     Int_B->setValue(0, 0, 1.0);
 
     auto LTIRCircuitRLCD =
-        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(Int_C, Int_B);
+        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*Int_C, *Int_B);
     auto NSLaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(1);
 
-    LTIRCircuitRLCD->setDPtr(Int_D);
+    LTIRCircuitRLCD->setConstantD(*Int_D);
 
     auto InterCircuitRLCD =
         std::make_shared<siconos::modeling::Interaction>(NSLaw, LTIRCircuitRLCD);

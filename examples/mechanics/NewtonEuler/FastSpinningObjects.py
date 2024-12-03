@@ -22,7 +22,7 @@
 from siconos.kernel import NewtonEulerDS, NewtonImpactNSL,\
      NewtonEulerR, NewtonEuler1DR, Interaction,\
      MoreauJeanOSI, TimeDiscretisation, LCP, TimeStepping,\
-     changeFrameAbsToBody,changeFrameBodyToAbs,\
+     changeFrameAbsToBody,rewriteVectorFromBodyToAbsoluteFrame,\
      rotationVectorFromQuaternion, quaternionFromRotationVector,\
      SiconosVector, NonSmoothDynamicalSystem
 
@@ -57,7 +57,7 @@ class UnstableRotation(NewtonEulerDS):
             mExt = self._mExt
 
         if isinstance(mExt,SiconosVector):
-            mExt.zero()
+            mExt.setZero()
             if (0 <= time < td):
                 mExt.setValue(0, 20.0)
             elif (td <= time <= td + h):
@@ -100,7 +100,7 @@ class HeavyTop(NewtonEulerDS):
     def centermass(self,q):
         r= np.zeros(3)
         E3 = SiconosVector(3)
-        E3.zero()
+        E3.setZero()
         E3.setValue(2,1.0)
         rotateAbsToBody(q,E3)
         r[0] = E3.getValue(0)
@@ -134,7 +134,7 @@ class HeavyTop(NewtonEulerDS):
 
 
 rotationVector_init= SiconosVector(3)
-rotationVector_init.zero()
+rotationVector_init.setZero()
 rotationVector_init.setValue(0,0.3)
 x=SiconosVector(7)
 quaternionFromRotationVector(rotationVector_init,x)
@@ -229,7 +229,7 @@ omega = v[3:6]
 print("omega", omega)
 angular_momentum = np.dot(ds.inertia(),omega)
 am= SiconosVector(angular_momentum)
-changeFrameBodyToAbs(q,am)
+rewriteVectorFromBodyToAbsoluteFrame(q,am)
 
 dataPlot[k, 14] = am.getValue(0)
 dataPlot[k, 15] = am.getValue(1)
@@ -281,7 +281,7 @@ while(s.hasNextEvent() and k < N):
     omega = v[3:6]
     angular_momentum = np.dot(ds.inertia(),omega)
     am= SiconosVector(angular_momentum)
-    changeFrameBodyToAbs(q,am)
+    rewriteVectorFromBodyToAbsoluteFrame(q,am)
     a = np.zeros(1)
     a[0] = am.getValue(0)
     #a[1] = am.getValue(1)

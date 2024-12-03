@@ -119,20 +119,22 @@ int main(int argc, char* argv[]) {
     // --- DS: slidercrank ---
 
     // Initial position (angles in radian)
-    auto q0 = std::make_shared<Vector>(nDof);
-    auto v0 = std::make_shared<Vector>(nDof);
-    q0->zero();
-    v0->zero();
-    (*q0)(0) = 1.570823772407980;   // 1.5708;
-    (*q0)(1) = 0.3532842020624460;  // 0.3533;
-    (*q0)(2) = 1.264872058968431;   // 1.2649;
-    (*q0)(3) = 1.876454585097650;   // 1.87647;
-    (*q0)(4) = 1.691962091335582;   // 1.69199;
-    (*q0)(5) = 0.3764686197082958;  // 0.3764+3.5e-5;
-    (*q0)(6) = 1.191962183453451;   // 1.19197;
-    (*v0)(0) = 0.0;
-    (*v0)(1) = 0.0;
-    (*v0)(2) = 0.0;
+    Vector q0{nDof};
+    q0.setZero();
+    Vector v0{nDof};
+    v0.setZero();
+
+
+   q0(0) = 1.570823772407980;   // 1.5708;
+   q0(1) = 0.3532842020624460;  // 0.3533;
+   q0(2) = 1.264872058968431;   // 1.2649;
+   q0(3) = 1.876454585097650;   // 1.87647;
+   q0(4) = 1.691962091335582;   // 1.69199;
+   q0(5) = 0.3764686197082958;  // 0.3764+3.5e-5;
+   q0(6) = 1.191962183453451;   // 1.19197;
+    v0(0) = 0.0;
+    v0(1) = 0.0;
+    v0(2) = 0.0;
 
     auto fourbar = std::make_shared<siconos::modeling::LagrangianDS>(
         q0, v0, "FourBarClearancePlugin:mass");
@@ -205,7 +207,7 @@ int main(int argc, char* argv[]) {
     //  ----------------
     //  --- Simulation ---
     //  ----------------
-    fourbar->computeForces(t0, fourbar->q(), fourbar->velocity());
+    fourbar->computeTotalForces(fourbar->velocity(), fourbar->q(), t0);
 
     inter->computeOutput(t0, 0);
     inter1->computeOutput(t0, 0);
@@ -359,10 +361,10 @@ int main(int argc, char* argv[]) {
       // Solve problem
       // s->newtonSolve(criterion, maxIter); //2000000
       // std::cout << "jachq:" <<std::endl;
-      // std::static_pointer_cast<LagrangianScleronomousR>(relation)->jachq()->display();
+      // std::static_pointer_cast<LagrangianScleronomousR>(relation)->jacobianhOver_q()->display();
       // std::cout << "=================================" << std::endl;
       // std::cout << "jachq:" <<std::endl;
-      // std::static_pointer_cast<LagrangianScleronomousR>(relation1)->jachq()->display();
+      // std::static_pointer_cast<LagrangianScleronomousR>(relation1)->jacobianhOver_q()->display();
       // std::cout << "*********************************" << std::endl;
       // Data Output
 

@@ -14,10 +14,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 /*!\file clutchFrictionEngaging.cpp
- 
+
   Engaging of a clutch modeled using a friction coefficient.
   Simulation with a Time-Stepping scheme.
 */
@@ -26,182 +26,173 @@
 
 using namespace std;
 
-int main(int argc, char* argv[])
-{
-    try
-    {
+int main(int argc, char* argv[]) {
+  try {
+    // ================= Creation of the model =======================
 
-        // ================= Creation of the model =======================
+    // User-defined main parameters
+    unsigned int dimX = 3;       // Dimension of the system state variables
+    unsigned int dimLambda = 3;  // Dimension of the system lambda variables
 
-        // User-defined main parameters
-        unsigned int dimX = 3;            // Dimension of the system state variables
-        unsigned int dimLambda = 3;       // Dimension of the system lambda variables
+    double t0 = 0;       // initial computation time
+    double tswitch = 5;  // switching time
+    double T = 10;       // final computation time
+    double h = 0.05;     // time step
 
-        double t0 = 0;                    // initial computation time
-        double tswitch = 5;               // switching time
-        double T = 10;                    // final computation time
-        double h = 0.05;                   // time step
+    double omega1_init = 10;  // initial rotation speed of disk 1
+    double omega2_init = 5;   // initial rotation speed of disk 2
 
-        double omega1_init = 10;           // initial rotation speed of disk 1
-        double omega2_init = 5;            // initial rotation speed of disk 2
+    double J1 = 1.0;   // inertial of disk 1
+    double J2 = 0.25;  // inertial of disk 2
 
-        double J1 = 1.0;                    // inertial of disk 1
-        double J2 = 0.25;                   // inertial of disk 2
+    double T1 = 10;   // Torque on disk 1 when clutch is not engaged
+    double T2 = -10;  // Torque on disk 2 when clutch is not engaged
 
-        double T1 = 10;                     // Torque on disk 1 when clutch is not engaged
-        double T2 = -10;                    // Torque on disk 2 when clutch is not engaged
+    double alpha = 3000;  // Friction coefficient
 
-        double alpha = 3000;                // Friction coefficient
+    // -------------------------
+    // --- Dynamical systems ---
+    // -------------------------
 
-        // -------------------------
-        // --- Dynamical systems ---
-        // -------------------------
+    cout << "====> Model definition ..." << endl;
 
-        cout << "====> Model definition ..." <<  endl;
+    std::shared_ptr<siconos::algebra::SiconosVector> init(
+        new SiconosVector({tswitch, omega1_init, omega2_init}));
 
+    std::shared_ptr<siconos::algebra::SiconosMatrix> A(new SimpleMatrix(ZeroMat(dimX, dimX)));
+    std::shared_ptr<siconos::algebra::SiconosVector> b(
+        new SiconosVector({-1.0, T1 / J1, T2 / J2}));
 
-        std::shared_ptr<siconos::algebra::SiconosVector> init(new SiconosVector({tswitch, omega1_init, omega2_init}));
+    // Siconos smooth dynamical system
+    auto dyn(new FirstOrderLinearTIDS(init, A, b));
 
-        std::shared_ptr<siconos::algebra::SiconosMatrix> A(new SimpleMatrix( ZeroMat(dimX,dimX) )); 
-        std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector({-1.0,T1/J1,T2/J2}));
+    // -------------------------
+    // --- Complemetary Relation ---
+    // ---  y _|_ lambda ---
+    // ---  dynamic input: B.dot(lambda)
+    // -------------------------
 
-        // Siconos smooth dynamical system
-        auto dyn(new FirstOrderLinearTIDS(init,A,b));
+    // Jacobian of y wrt x
+    auto C(new SimpleMatrix(dimLambda, dimX));
+    (*C)(0, 0) = 1.0;
+    (*C)(1, 1) = 1.0;
+    (*C)(1, 2) = -1.0;
 
-        // -------------------------
-        // --- Complemetary Relation ---
-        // ---  y _|_ lambda ---
-        // ---  dynamic input: B.dot(lambda)
-        // -------------------------
+    // Jacobian of y wrt lambda
+    auto D(new SimpleMatrix(dimLambda, dimLambda));
+    (*D)(1, 2) = 1.0;
+    (*D)(2, 0) = 2.0;
+    (*D)(2, 1) = -1.0;
 
-        // Jacobian of y wrt x
-        auto C(new SimpleMatrix(dimLambda,dimX));
-        (*C)(0,0) = 1.0;
-        (*C)(1,1) = 1.0;
-        (*C)(1,2) = -1.0;
+    // Jacobian of r wrt lambda
+    auto B(new SimpleMatrix(dimX, dimLambda));
+    (*B)(0, 0) = 1.0 / alpha;
+    B->row(1) = SiconosVector({-1.0 / J1, 1.0 / J1, 0.0});
+    B->row(2) = SiconosVector({1.0 / J2, -1.0 / J2, 0.0});
 
-        // Jacobian of y wrt lambda
-        auto D(new SimpleMatrix(dimLambda,dimLambda));
-        (*D)(1,2) = 1.0;
-        (*D)(2,0) = 2.0;
-        (*D)(2,1) = -1.0;
+    // Relation LCP lhs
+    auto relation(new FirstOrderLinearTIR(*C, *B));
+    relation->setConstantD(*D);
 
-        // Jacobian of r wrt lambda
-        auto B(new SimpleMatrix(dimX,dimLambda));
-        (*B)(0,0) = 1.0/alpha;
-        B->setRow(1,SiconosVector({ -1.0/J1, 1.0/J1, 0.0}));
-        B->setRow(2,SiconosVector({ 1.0/J2, -1.0/J2, 0.0}));
+    // NonSmooth law LCP rhs
+    auto nslaw(new ComplementarityConditionNSL(dimLambda));
 
-        // Relation LCP lhs
-        auto relation(new FirstOrderLinearTIR(C,B));
-        relation->setDPtr(D);
+    // interaction: complete LCP
+    auto inter(new Interaction(nslaw, relation));
 
-        // NonSmooth law LCP rhs
-        auto nslaw(new ComplementarityConditionNSL(dimLambda));
+    // -----------------------------
+    // --- Siconos Model Entity ---
+    // ----------------------------
+    auto clutch(new NonSmoothDynamicalSystem(t0, T));
 
-        // interaction: complete LCP
-        auto inter(new Interaction(nslaw, relation));
+    // add the dynamical system in the non smooth dynamical system
+    clutch->insertDynamicalSystem(dyn);
 
-        // -----------------------------
-        // --- Siconos Model Entity ---
-        // ----------------------------
-        auto clutch(new NonSmoothDynamicalSystem(t0, T));
+    // link the interaction and the dynamical system
+    clutch->link(inter, dyn);
 
-        // add the dynamical system in the non smooth dynamical system
-        clutch->insertDynamicalSystem(dyn);
+    // -----------------------------
+    // --- Simulation Definition ---
+    // -----------------------------
 
-        // link the interaction and the dynamical system
-        clutch->link(inter, dyn);
+    // -- (1) OneStepIntegrators --
+    double theta = 1.0;
+    double gamma = 1.0;
+    auto osi(new EulerMoreauOSI(theta, gamma));
 
-        // -----------------------------
-        // --- Simulation Definition ---
-        // -----------------------------
+    // -- (2) Time discretisation --
+    auto td(new TimeDiscretisation(t0, h));
 
-        // -- (1) OneStepIntegrators --
-        double theta = 1.0;
-        double gamma = 1.0;
-        auto osi(new EulerMoreauOSI(theta,gamma));
+    // -- (3) one step non smooth problem
+    auto osnspb(new LCP());
 
+    // -- (4) Simulation setup with (1) (2) (3)
+    auto s(new TimeStepping(clutch, td, osi, osnspb));
 
-        // -- (2) Time discretisation --
-        auto td(new TimeDiscretisation(t0, h));
+    // =========================== End of model definition ===========================
+    cout << "====> ... End of Model definition" << endl;
+    //   // ================================= Computation =================================
 
-        // -- (3) one step non smooth problem
-        auto osnspb(new LCP());
+    int N = ceil((T - t0) / h) + 10000;  // Number of time steps
 
-        // -- (4) Simulation setup with (1) (2) (3)
-        auto s(new TimeStepping(clutch, td, osi, osnspb));
+    // --- Get the values to be plotted ---
+    // -> saved in a matrix dataPlot
+    unsigned int outputSize = 7;
+    SimpleMatrix dataPlot(N + 1, outputSize);
 
-        // =========================== End of model definition ===========================
-        cout <<  "====> ... End of Model definition" <<  endl;
-        //   // ================================= Computation =================================
+    std::shared_ptr<siconos::algebra::SiconosVector> x = dyn->x();
+    std::shared_ptr<siconos::algebra::SiconosVector> lambda = inter->lambda(0);
 
-        int N = ceil((T - t0) / h)+10000; // Number of time steps
+    dataPlot(0, 0) = clutch->t0();
+    dataPlot(0, 1) = (*x)(0);
+    dataPlot(0, 2) = (*x)(1);
+    dataPlot(0, 3) = (*x)(2);
+    dataPlot(0, 4) = (*lambda)(0);
+    dataPlot(0, 5) = (*lambda)(1);
+    dataPlot(0, 6) = (*lambda)(2);
+    // --- Time loop ---
+    cout << "====> Start computation ... " << endl;
+    // ==== Simulation loop - Writing without explicit event handling =====
+    int k = 1;
+    boost::progress_display show_progress(N);
+    boost::timer time;
+    time.restart();
 
-        // --- Get the values to be plotted ---
-        // -> saved in a matrix dataPlot
-        unsigned int outputSize = 7;
-        SimpleMatrix dataPlot(N + 1, outputSize);
-
-        std::shared_ptr<siconos::algebra::SiconosVector> x = dyn->x();
-        std::shared_ptr<siconos::algebra::SiconosVector> lambda = inter->lambda(0);
-
-        dataPlot(0, 0) = clutch->t0();
-        dataPlot(0, 1) = (*x)(0);
-        dataPlot(0, 2) = (*x)(1);
-        dataPlot(0, 3) = (*x)(2);
-        dataPlot(0, 4) = (*lambda)(0);
-        dataPlot(0, 5) = (*lambda)(1);
-        dataPlot(0, 6) = (*lambda)(2);
-        // --- Time loop ---
-        cout << "====> Start computation ... " << endl;
-        // ==== Simulation loop - Writing without explicit event handling =====
-        int k = 1;
-        boost::progress_display show_progress(N);
-        boost::timer time;
-        time.restart();
-
-        while (s->hasNextEvent())
-        {
-            s->computeOneStep();
-            // --- Get values to be plotted ---
-            dataPlot(k, 0) =  s->nextTime();
-            dataPlot(k, 1) = (*x)(0);
-            dataPlot(k, 2) = (*x)(1);
-            dataPlot(k, 3) = (*x)(2);
-            dataPlot(k, 4) = (*lambda)(0);
-            dataPlot(k, 5) = (*lambda)(1);
-            dataPlot(k, 6) = (*lambda)(2);
-            s->nextStep();
-            ++show_progress;
-            k++;
-
-        }
-        cout  << "End of computation - Number of iterations done: " << k - 1 << endl;
-        cout << "Computation Time " << time.elapsed()  << endl;
-
-        // --- Output files ---
-        cout << "====> Output file writing ..." << endl;
-        dataPlot.resize(k, outputSize);
-        ioMatrix::write("result_ClutchEngaging.dat", "ascii", dataPlot, "noDim");
-        //double error=0.0, eps=1e-12;
-        // if ((error=ioMatrix::compareRefFile(dataPlot, "ClutchEngaging.ref", eps)) >= 0.0
-        //     && error > eps)
-        //     return 1;
-        // }
+    while (s->hasNextEvent()) {
+      s->computeOneStep();
+      // --- Get values to be plotted ---
+      dataPlot(k, 0) = s->nextTime();
+      dataPlot(k, 1) = (*x)(0);
+      dataPlot(k, 2) = (*x)(1);
+      dataPlot(k, 3) = (*x)(2);
+      dataPlot(k, 4) = (*lambda)(0);
+      dataPlot(k, 5) = (*lambda)(1);
+      dataPlot(k, 6) = (*lambda)(2);
+      s->nextStep();
+      ++show_progress;
+      k++;
     }
+    cout << "End of computation - Number of iterations done: " << k - 1 << endl;
+    cout << "Computation Time " << time.elapsed() << endl;
 
-    catch (SiconosException& e)    
-    {
+    // --- Output files ---
+    cout << "====> Output file writing ..." << endl;
+    dataPlot.resize(k, outputSize);
+    ioMatrix::write("result_ClutchEngaging.dat", "ascii", dataPlot, "noDim");
+    // double error=0.0, eps=1e-12;
+    //  if ((error=ioMatrix::compareRefFile(dataPlot, "ClutchEngaging.ref", eps)) >= 0.0
+    //      && error > eps)
+    //      return 1;
+    //  }
+  }
+
+  catch (SiconosException& e) {
     cerr << e.report() << endl;
     return 1;
-    }
+  }
 
-    catch (...) 
-    {
+  catch (...) {
     cerr << "Exception caught in ClutchFrictionEngaging.cpp" << endl;
     return 1;
-    }
-
-
+  }
 }

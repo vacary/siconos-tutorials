@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
     std::cout << " LS1 matrice A = \n";
     LS1_A->display();
     auto LS1DiodeBridgeCapFilter =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS1, LS1_A);
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_stateLS1, *LS1_A);
 
     // --- Linear system 2 (load and filter) specification ---
     auto init_stateLS2 = std::make_shared<Vector>(1);
@@ -119,8 +119,8 @@ int main(int argc, char* argv[]) {
     (*Int_B)(2, 2) = 1.0 / Cfilt;
 
     auto LTIRDiodeBridgeCapFilter =
-        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(Int_C, Int_B);
-    LTIRDiodeBridgeCapFilter->setDPtr(Int_D);
+        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*Int_C, *Int_B);
+    LTIRDiodeBridgeCapFilter->setConstantD(*Int_D);
     auto nslaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(4);
 
     auto InterDiodeBridgeCapFilter =
@@ -241,7 +241,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Comparison with a reference file ...\n";
     Matrix dataPlotRef(dataPlot);
-    dataPlotRef.zero();
+    dataPlotRef.setZero();
     std::vector<int> idx(4);
     for (auto i = 0; i < 4; i++) idx.push_back(i);
     double error = 0.0, eps = 1e-12;

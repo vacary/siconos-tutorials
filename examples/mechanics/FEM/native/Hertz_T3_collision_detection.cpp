@@ -110,8 +110,7 @@ class MyContactDetection : public InteractionManager {
     // std::endl;
 
     SiconosVector& displacement = *(_fesolid->q());
-    std::shared_ptr<NonSmoothDynamicalSystem> solid =
-        simulation->nonSmoothDynamicalSystem();
+    std::shared_ptr<NonSmoothDynamicalSystem> solid = simulation->nonSmoothDynamicalSystem();
 
     // update the list of contacting node by brute contact detection
     //_contacting_nodes.clear();
@@ -172,11 +171,10 @@ class MyContactDetection : public InteractionManager {
           relation = std::make_shared<siconos::mechanics::fem::NodeFem2d2DR>(
               cn->_node, pc2, _normal, _tangent);
         } else {
-          relation = std::make_shared<siconos::mechanics::fem::NodeFem1d2DR>(
-              cn->_node, pc2, _normal);
+          relation =
+              std::make_shared<siconos::mechanics::fem::NodeFem1d2DR>(cn->_node, pc2, _normal);
         }
-        std::shared_ptr<Interaction> inter =
-            std::make_shared<Interaction>(_nslaw, relation);
+        std::shared_ptr<Interaction> inter = std::make_shared<Interaction>(_nslaw, relation);
         cn->_inter = inter;
         // link the interaction and the dynamical system
         solid->link(inter, _fesolid);
@@ -202,21 +200,16 @@ int main(int argc, char* argv[]) {
 
   double density = 7800.;
   // a very soft materila is used to postprocess large deformations.
-  std::shared_ptr<Material> mat1 =
-      std::make_shared<Material>(density, 210e6, 1 / 3.);
-  std::map<unsigned int, std::shared_ptr<Material> > materials = {
-      {bulk_material_tag, mat1}};
+  std::shared_ptr<Material> mat1 = std::make_shared<Material>(density, 210e6, 1 / 3.);
+  std::map<unsigned int, std::shared_ptr<Material> > materials = {{bulk_material_tag, mat1}};
 
   try {
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
     std::shared_ptr<FiniteElementLinearTIDS> FEsolid =
-        std::make_shared<FiniteElementLinearTIDS>(mesh, materials,
-                                                  Siconos::SPARSE);
+        std::make_shared<FiniteElementLinearTIDS>(mesh, materials, Siconos::SPARSE);
     end = std::chrono::system_clock::now();
-    int elapsed =
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-            .count();
+    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     cout << "Assembly time : " << elapsed << " ms" << endl;
     std::cout << " " << std::endl;
     // FEsolid->display(true);
@@ -228,14 +221,13 @@ int main(int argc, char* argv[]) {
 
     /*------------------------------------------------- Applied forces  */
 
-    std::shared_ptr<SiconosVector> nodal_forces =
-        std::make_shared<SiconosVector>(2);
-    nodal_forces->zero();
+    std::shared_ptr<SiconosVector> nodal_forces = std::make_shared<SiconosVector>(2);
+    nodal_forces->setZero();
     //(*nodal_forces)(0) = 1e6;
     (*nodal_forces)(1) = -1e6;
     FEsolid->applyNodalForces(applied_force_tag, nodal_forces);
 
-    // FEsolid->fExt()->display();
+    // FEsolid->fext()->display();
     // getchar();
 
     // /*------------------------------------------------- Boundary Conditions
@@ -282,8 +274,8 @@ int main(int argc, char* argv[]) {
     normal->setValue(0, 0.0);
     normal->setValue(1, 1.0);
     std::shared_ptr<MyContactDetection> collision_detection =
-        std::make_shared<MyContactDetection>(initial_gap, contact_condition_tag,
-                                             normal, nslaw, FEsolid);
+        std::make_shared<MyContactDetection>(initial_gap, contact_condition_tag, normal, nslaw,
+                                             FEsolid);
 
     // ------------------
     // --- Simulation ---
@@ -295,13 +287,11 @@ int main(int argc, char* argv[]) {
     OSI->setGamma(0.0);
 
     // -- (2) Time discretisation --
-    std::shared_ptr<TimeDiscretisation> t =
-        std::make_shared<TimeDiscretisation>(t0, h);
+    std::shared_ptr<TimeDiscretisation> t = std::make_shared<TimeDiscretisation>(t0, h);
 
     // -- (3) one step non smooth problem
 #ifdef WITH_FRICTION
-    std::shared_ptr<OneStepNSProblem> osnspb =
-        std::make_shared<FrictionContact>(2);
+    std::shared_ptr<OneStepNSProblem> osnspb = std::make_shared<FrictionContact>(2);
 #else
     std::shared_ptr<OneStepNSProblem> osnspb = std::make_shared<LCP>();
 #endif
@@ -312,8 +302,7 @@ int main(int argc, char* argv[]) {
     // solver_options_print(options);
 
     // -- (4) Simulation setup with (1) (2) (3)
-    std::shared_ptr<TimeStepping> s =
-        std::make_shared<TimeStepping>(solid, t, OSI, osnspb);
+    std::shared_ptr<TimeStepping> s = std::make_shared<TimeStepping>(solid, t, OSI, osnspb);
 
     s->insertInteractionManager(collision_detection);
 
@@ -364,8 +353,7 @@ int main(int argc, char* argv[]) {
 
       std::cout << "numerics -- "
                 << " iterations: " << options->iparam[SICONOS_IPARAM_ITER_DONE]
-                << " precision: " << options->dparam[SICONOS_DPARAM_RESIDU]
-                << std::endl;
+                << " precision: " << options->dparam[SICONOS_DPARAM_RESIDU] << std::endl;
 
       // dataPlot(k, 4) = (*lambda)(0);
       s->nextStep();
@@ -377,17 +365,15 @@ int main(int argc, char* argv[]) {
       // s->lambda(1,0)->display();
 
       double y_max = 0.0;
-      unsigned int id_max;
-      getMax(-1.0 * *(s->y(0, 0)), y_max, id_max);
+
+      auto y_max = (s->y(0, 0))->minCoeff();
       std::cout << "y_max violation " << std::max(y_max, 0.0) << std::endl;
       k++;
       // progressBar((double)k/N);
     }
     end = std::chrono::system_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-                  .count();
-    cout << endl
-         << "End of computation - Number of iterations done: " << k - 1 << endl;
+    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    cout << endl << "End of computation - Number of iterations done: " << k - 1 << endl;
     cout << "Computation time : " << elapsed << " ms" << endl;
 
     // --- Output files ---
@@ -396,13 +382,12 @@ int main(int argc, char* argv[]) {
     ioMatrix::write("Hertz_T3_1612.dat", "ascii", dataPlot, "noDim");
     double error = 0.0, eps = 1e-12;
 #ifdef WITH_FRICTION
-    if ((error = ioMatrix::compareRefFile(
-             dataPlot, "Hertz_T3_1612_with_friction.ref", eps)) >= 0.0 &&
+    if ((error = ioMatrix::compareRefFile(dataPlot, "Hertz_T3_1612_with_friction.ref", eps)) >=
+            0.0 &&
         error > eps)
       return 1;
 #else
-    if ((error = ioMatrix::compareRefFile(dataPlot, "Hertz_T3_1612.ref",
-                                          eps)) >= 0.0 &&
+    if ((error = ioMatrix::compareRefFile(dataPlot, "Hertz_T3_1612.ref", eps)) >= 0.0 &&
         error > eps)
       return 1;
 #endif

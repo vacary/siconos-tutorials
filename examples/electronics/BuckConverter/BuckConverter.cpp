@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
 
   // --- Dynamical system creation ---
   auto LSBuckConverter =
-      std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS, LS_A);
+      std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_stateLS, *LS_A);
 
   auto paramVin = std::make_shared<Vector>(SIZEZ_PAR + SIZEZ_INP);
   paramVin->setValue(0, VlowRamp);
@@ -246,15 +246,15 @@ int main(int argc, char *argv[]) {
   auto Coltemp = std::make_shared<Matrix>(2 * NBHYP, 1);
 
   auto Int_D_buck = std::make_shared<Matrix>(NSLSIZE_BUCK, NSLSIZE_BUCK);
-  Int_D_buck->eye();
+  Int_D_buck->setIdentity();
 
-  Coltemp->setCol(0, vec1 + vec2);
+  Coltemp->col(0) = vec1 + vec2;
   Int_D_buck->setBlock(2, 0, SlopeComp * *Coltemp);
   Int_D_buck->setBlock(2, 1, (-SlopeComp) * *Coltemp);
   Int_D_buck->setBlock(2 + (2 * NBHYP), 0, (-SlopeComp) * *Coltemp);
   Int_D_buck->setBlock(2 + (2 * NBHYP), 1, SlopeComp * *Coltemp);
 
-  Coltemp->setCol(0, vec2);
+  Coltemp->col(0) = vec2;
   Int_D_buck->setBlock(2, NSLSIZE_BUCK - 1, (-1.0) * *Coltemp);
   Int_D_buck->setBlock(2 + (2 * NBHYP), NSLSIZE_BUCK - 1, *Coltemp);
 
@@ -291,8 +291,8 @@ int main(int argc, char *argv[]) {
       std::make_shared<siconos::modeling::ComplementarityConditionNSL>(NSLSIZE_BUCK);
 
   auto LTIRBuckConverter_buck =
-      std::make_shared<siconos::modeling::FirstOrderLinearTIR>(Int_C_buck, Int_B_buck);
-  LTIRBuckConverter_buck->setDPtr(Int_D_buck);
+      std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*Int_C_buck, *Int_B_buck);
+  LTIRBuckConverter_buck->setConstantD(*Int_D_buck);
   LTIRBuckConverter_buck->setePtr(Int_e_buck);
   LTIRBuckConverter_buck->setFPtr(Int_F0_buck);
 

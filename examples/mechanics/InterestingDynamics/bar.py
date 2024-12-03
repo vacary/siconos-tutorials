@@ -100,7 +100,7 @@ import scipy.constants as constants
 def apply_forces(body):
   g = constants.g / gravity_scale
   weight = [0, 0, - body.scalarMass() * g]
-  #body.setConstantFExt(weight)
+  #body.setConstantFext(weight)
   mext = [0.0, 0.0, 100.0]
   constant =1e6 # unstable for 1e8
   mext = [scale*constant*math.cos(angle)/(aspect_ratio**2)*0.90,0,scale*constant*math.sin(angle)/(aspect_ratio**2)]

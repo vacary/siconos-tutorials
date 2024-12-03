@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
     // -- Set external forces (weight) --
     siconos::algebra::SiconosVector weight{nDof};
     weight.setZero();
-    punch->setConstantFExt(weight);
+    punch->setConstantFext(weight);
 
     // --------------------
     // --- Interactions ---
@@ -114,11 +114,6 @@ int main(int argc, char* argv[]) {
 
     std::shared_ptr<siconos::algebra::SiconosVector> tmp(new SiconosVector(nDof));
 
-    // prod(*SparseStiffness, *q, *tmp, true);
-    // double potentialEnergy = inner_prod(*q,   *tmp);
-    // prod(*SparseMass, *v, *tmp, true);
-    // double kineticEnergy = inner_prod(*v,*tmp);
-
     // dataPlot(0, 5) = potentialEnergy;
     // dataPlot(0, 6) = kineticEnergy;
 
@@ -154,11 +149,6 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 9) = (*q)((nDof) / 2);
       dataPlot(k, 10) = (*v)((nDof) / 2);
 
-      // prod(*SparseStiffness, *q, *tmp, true);
-      // potentialEnergy = inner_prod(*q,   *tmp);
-      // prod(*SparseMass, *v, *tmp, true);
-      // kineticEnergy = inner_prod(*v,*tmp);
-
       // dataPlot(k, 5) = potentialEnergy;
       // dataPlot(k, 6) = kineticEnergy;
 
@@ -180,7 +170,7 @@ int main(int argc, char* argv[]) {
     ioMatrix::write("ImpactingPunch.dat", "ascii", dataPlot, "noDim");
     //     cout << " Comparison with a reference file" << endl;
     //     SimpleMatrix dataPlotRef(dataPlot);
-    //     dataPlotRef.zero();
+    //     dataPlotRef.setZero();
     //     ioMatrix::read("ImpactingPunch.ref", "ascii", dataPlotRef);
 
     //     double error = (dataPlot - dataPlotRef).normInf() ;

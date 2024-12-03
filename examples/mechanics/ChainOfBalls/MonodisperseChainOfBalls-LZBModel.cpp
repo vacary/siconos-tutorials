@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
       Vector FextBall{nDofBall};
       FextBall.setZero();
       FextBall(0) = -_massBall * g;
-      ball->setConstantFExt(FextBall);
+      ball->setConstantFext(FextBall);
 
 
 
@@ -189,7 +189,7 @@ int main(int argc, char* argv[]) {
       (*E)(0) = -1.0 * ((*RadiusBalls)(j) + (*RadiusBalls)(j + 1));
       auto nslaw =
           std::make_shared<siconos::modeling::MultipleImpactNSL>(ResCoef, Stiff, ElasPow);
-      auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H, E);
+      auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H, *E);
       auto interaction = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
       BallChain->link(interaction, VecOfallDS[j], VecOfallDS[j + 1]);
     }

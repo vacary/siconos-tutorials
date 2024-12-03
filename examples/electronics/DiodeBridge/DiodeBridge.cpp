@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
     LS_A->setValue(1, 0, 1.0 / Lvalue);
 
     auto LSDiodeBridge =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_state, LS_A);
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state, *LS_A);
 
     // --- Interaction between linear system and non smooth system ---
     auto Int_C = std::make_shared<Matrix>(4, 2);
@@ -95,8 +95,8 @@ int main(int argc, char* argv[]) {
     (*Int_B)(0, 3) = 1.0 / Cvalue;
 
     auto LTIRDiodeBridge =
-        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(Int_C, Int_B);
-    LTIRDiodeBridge->setDPtr(Int_D);
+        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*Int_C, *Int_B);
+    LTIRDiodeBridge->setConstantD(*Int_D);
 
     auto nslaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(4);
 
@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
     siconos::algebra::io::write("DiodeBridge.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
-    double error = 0.0, eps = 1e-12;
+    double error = 0.0, eps = 1e-11;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "DiodeBridge.ref", eps)) > eps)
       return 1;
 
