@@ -49,13 +49,19 @@
 #
 # -----------------------------------------------------------------------
 
-import siconos.kernel as sk
+import siconos.modeling as sm
+import siconos.integrators as si
+import siconos.simulation as ss
+import siconos.nonsmooth_formulations as snsf
 import numpy as np
-with_plot = False
-if with_plot:
-    import matplotlib
+import matplotlib
+import os
+import matplotlib.pyplot as plt
+havedisplay = "DISPLAY" in os.environ
+
+if not havedisplay:
     matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
+
 
 t0 = 0.0
 T = 5.0e-3       # Total simulation time
@@ -69,40 +75,44 @@ Modeltitle = "DiodeBridge"
 #
 # dynamical system
 #
-init_state = [Vinit, 0]
-A = np.zeros((2, 2), dtype=np.float64)
+init_state = np.array([Vinit, 0], dtype=np.float64)
+A = np.zeros((2, 2), dtype=np.float64, order='F')
 A.flat[...] = [0., -1.0 / Cvalue, 1.0 / Lvalue, 0.]
 
-LSDiodeBridge = sk.FirstOrderLinearDS(init_state, A)
+LSDiodeBridge = sm.FirstOrderLinearDS(init_state)
+LSDiodeBridge.setConstantA(A)
 
 #
 # Interactions
 #
 
-C = [[0.,   0.],
+C = np.array([[0.,   0.],
      [0,    0.],
      [-1.,  0.],
-     [1.,   0.]]
+     [1.,   0.]],
+     dtype=np.float64, order='F')
 
-D = [[1./Rvalue, 1./Rvalue, -1.,  0.],
+D = np.array([[1./Rvalue, 1./Rvalue, -1.,  0.],
      [1./Rvalue, 1./Rvalue,  0., -1.],
      [1.,        0.,         0.,  0.],
-     [0.,        1.,         0.,  0.]]
+     [0.,        1.,         0.,  0.]],
+     dtype=np.float64, order='F')
 
-B = [[0.,        0., -1./Cvalue, 1./Cvalue],
-     [0.,        0.,  0.,        0.       ]]
+B = np.array([[0.,        0., -1./Cvalue, 1./Cvalue],
+     [0.,        0.,  0.,        0.       ]],
+     dtype=np.float64, order='F')
 
-LTIRDiodeBridge = sk.FirstOrderLinearTIR(C, B)
+LTIRDiodeBridge = sm.FirstOrderLinearTIR(C, B)
 LTIRDiodeBridge.setConstantD(D)
 
-nslaw = sk.ComplementarityConditionNSL(4)
-InterDiodeBridge = sk.Interaction(nslaw, LTIRDiodeBridge)
+nslaw = sm.ComplementarityConditionNSL(4)
+InterDiodeBridge = sm.Interaction(nslaw, LTIRDiodeBridge)
 
 
 #
 # Model
 #
-DiodeBridge = sk.NonSmoothDynamicalSystem(t0, T)
+DiodeBridge = sm.NonSmoothDynamicalSystem(t0, T)
 DiodeBridge.setTitle(Modeltitle)
 #   add the dynamical system in the non smooth dynamical system
 DiodeBridge.insertDynamicalSystem(LSDiodeBridge)
@@ -116,15 +126,15 @@ DiodeBridge.link(InterDiodeBridge, LSDiodeBridge)
 
 # (1) OneStepIntegrators
 theta = 0.5
-aOSI = sk.EulerMoreauOSI(theta)
+aOSI = si.EulerMoreauOSI(theta)
 # (2) Time discretisation
-aTiDisc = sk.TimeDiscretisation(t0, h_step)
+aTiDisc = ss.TimeDiscretisation(t0, h_step)
 
 # (3) Non smooth problem
-aLCP = sk.LCP()
+aLCP = snsf.LCP()
 
 # (4) Simulation setup with (1) (2) (3)
-aTS = sk.TimeStepping(DiodeBridge, aTiDisc, aOSI, aLCP)
+aTS = ss.TimeStepping(DiodeBridge, aTiDisc, aOSI, aLCP)
 
 # end of model definition
 
@@ -150,7 +160,7 @@ x = LSDiodeBridge.x()
 print("Initial state : ", x)
 y = InterDiodeBridge.y(0)
 print("First y : ", y)
-lambda_ = InterDiodeBridge.lambda_(0)
+lambda_ = InterDiodeBridge.lambda_python(0)
 
 # For the initial time step:
 # time
@@ -201,14 +211,17 @@ while (k < N):
     aTS.nextStep()
 
 # comparison with reference file
-from siconos.kernel import SiconosMatrix, getMatrix
+import siconos.input
 from numpy.linalg import norm
 
-ref = getMatrix(SiconosMatrix("DiodeBridge.ref"))
+ref = siconos.input.readMatrixFromFile("DiodeBridge.ref")
+error = np.linalg.norm(dataPlot - ref)
+print("Error:", error)
+if  error > 1e-12:
+    print("Warning. The result is rather different from the reference file.")
+    raise ValueError("Results are different from reference.")
 
-assert (norm(dataPlot - ref) < 1e-12)
-
-if with_plot:
+if havedisplay:
     #
     # plots
     #
@@ -231,4 +244,4 @@ if with_plot:
     plt.plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 7])
     plt.grid()
     plt.savefig("diode_bridge.png")
-
+    plt.show()

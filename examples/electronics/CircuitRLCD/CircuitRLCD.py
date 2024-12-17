@@ -46,8 +46,12 @@
 #-----------------------------------------------------------------------
 
 
-import siconos.kernel as sk
+import siconos.modeling as sm
+import siconos.integrators as si
+import siconos.simulation as ss
+import siconos.nonsmooth_formulations as snsf
 import numpy as np
+import siconos.input
 
 t0 = 0.0
 T = 5.0e-3       # Total simulation time
@@ -67,34 +71,35 @@ if (withPlot):
 #
 # dynamical system
 #
-init_state = [-1, 0]
+init_state = np.array([-1, 0], dtype=np.float64, order='F')
 
-A = np.zeros((2, 2), dtype=np.float64)
+A = np.zeros((2, 2), dtype=np.float64, order='F')
 A.flat[...] = [0., -1.0 / Cvalue, 1.0 / Lvalue, 0.]
 
-LSCircuitRLCD = sk.FirstOrderLinearDS(init_state, A)
+LSCircuitRLCD = sm.FirstOrderLinearDS(init_state)
+LSCircuitRLCD.setConstantA(A)
 
 #
 # Interactions
 #
 
-C = [[-1., 0.]]
+C = np.array([[-1., 0.]], dtype=np.float64, order='F')
 
-D = [[Rvalue]]
+D = np.array([[Rvalue]], dtype=np.float64, order='F')
 
-B = [[-1. / Cvalue], [0.]]
+B = np.array([[-1. / Cvalue], [0.]], dtype=np.float64, order='F')
 
-LTIRCircuitRLCD = sk.FirstOrderLinearTIR(C, B)
+LTIRCircuitRLCD = sm.FirstOrderLinearTIR(C, B)
 LTIRCircuitRLCD.setConstantD(D)
 
-nslaw = sk.ComplementarityConditionNSL(1)
-InterCircuitRLCD = sk.Interaction(nslaw, LTIRCircuitRLCD)
+nslaw = sm.ComplementarityConditionNSL(1)
+InterCircuitRLCD = sm.Interaction(nslaw, LTIRCircuitRLCD)
 
 
 #
 # Model
 #
-CircuitRLCD = sk.NonSmoothDynamicalSystem(t0, T)
+CircuitRLCD = sm.NonSmoothDynamicalSystem(t0, T)
 CircuitRLCD.setTitle("CircuitRLCD")
 
 #   add the dynamical system in the non smooth dynamical system
@@ -109,16 +114,16 @@ CircuitRLCD.link(InterCircuitRLCD, LSCircuitRLCD)
 
 # (1) OneStepIntegrators
 theta = 0.500000001
-aOSI = sk.EulerMoreauOSI(theta)
+aOSI = si.EulerMoreauOSI(theta)
 
 # (2) Time discretisation
-aTiDisc = sk.TimeDiscretisation(t0, h_step)
+aTiDisc = ss.TimeDiscretisation(t0, h_step)
 
 # (3) Non smooth problem
-aLCP = sk.LCP()
+aLCP = snsf.LCP()
 
 # (4) Simulation setup with (1) (2) (3)
-aTS = sk.TimeStepping(CircuitRLCD, aTiDisc, aOSI, aLCP)
+aTS = ss.TimeStepping(CircuitRLCD, aTiDisc, aOSI, aLCP)
 
 # end of model definition
 
@@ -142,7 +147,7 @@ x = LSCircuitRLCD.x()
 print("Initial state : ", x)
 y = InterCircuitRLCD.y(0)
 print("First y : ", y)
-lambda_ = InterCircuitRLCD.lambda_(0)
+lambda_ = InterCircuitRLCD.lambda_python(0)
 
 # For the initial time step:
 # time
@@ -179,7 +184,12 @@ while (k < N):
 
 # comparison with reference file
 
-ref = sk.getMatrix(sk.SiconosMatrix("CircuitRLCD.ref"))
+ref = siconos.input.readMatrixFromFile("CircuitRLCD.ref")
+error = np.linalg.norm(dataPlot - ref)
+print("Error:", error)
+if  error > 1e-10:
+    print("Warning. The result is rather different from the reference file.")
+    # raise ValueError("Results are different from reference.")
 
 #assert (np.linalg.norm(dataPlot - ref) < 1e-10)
 
@@ -194,6 +204,7 @@ if (withPlot):
     subplot(412)
     title('inductor current')
     plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 2])
+    # plot(dataPlot[0:k - 1, 0], ref[0:k - 1, 2])
     grid()
     subplot(413)
     title('diode  voltage')
