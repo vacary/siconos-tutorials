@@ -1,3 +1,20 @@
+/* Siconos is a program dedicated to modeling, simulation and control
+ * of non smooth dynamical systems.
+ *
+ * Copyright 2024 INRIA.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 //-----------------------------------------------------------------------
 //
 //  DiodeBridgePowSup  : sample of an electrical circuit involving :
@@ -49,14 +66,16 @@ int main(int argc, char* argv[]) {
   try {
     // --- Dynamical system creation ---
     // --- Linear system  (load and filter) specification ---
-    auto init_stateLS = std::make_shared<Vector>(1);
-    (*init_stateLS)(0) = VinitLS;
-
-    auto LS_A = std::make_shared<Matrix>(1, 1);
-    (*LS_A)(0, 0) = -1.0 / (Rvalue * Cfilt);
-
+    // --- Dynamical system specification ---
+    Vector init_stateLS{1};
+    init_stateLS << VinitLS;
     auto LSDiodeBridgePowSup =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_stateLS, *LS_A);
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS);
+
+    Matrix LS_A{1, 1};
+    LS_A(0, 0) = -1.0 / (Rvalue * Cfilt);
+
+    LSDiodeBridgePowSup->setConstantA(LS_A);
 
     // TODO: review this example with the new way to set the control.
 
@@ -66,45 +85,63 @@ int main(int argc, char* argv[]) {
 
     // --- Interaction between linear system and non smooth system ---
 
-    auto Int_C = std::make_shared<Matrix>(4, 1);
-    (*Int_C)(0, 0) = 1.0;
-    (*Int_C)(2, 0) = 1.0;
+    Matrix Int_C{4, 1};
+    Int_C.setZero();
+    Int_C(0, 0) = 1.0;
+    Int_C(2, 0) = 1.0;
 
-    auto Int_D = std::make_shared<Matrix>(4, 4);
+    Matrix Int_D{4, 4};
+    Int_D.setZero();
+    Int_D(0, 1) = -1.0;
+    Int_D(1, 0) = 1.0;
+    Int_D(1, 2) = 1.0;
+    Int_D(1, 3) = -1.0;
+    Int_D(2, 1) = -1.0;
+    Int_D(3, 1) = 1.0;
 
-    (*Int_D)(0, 1) = -1.0;
-    (*Int_D)(1, 0) = 1.0;
-    (*Int_D)(1, 2) = 1.0;
-    (*Int_D)(1, 3) = -1.0;
-    (*Int_D)(2, 1) = -1.0;
-    (*Int_D)(3, 1) = 1.0;
+    Matrix Int_B{1, 4};
+    Int_B.setZero();
+    Int_B(0, 0) = 1.0 / Cfilt;
+    Int_B(0, 2) = 1.0 / Cfilt;
 
-    auto Offset_y = std::make_shared<Vector>(4);
-    (*Offset_y)(0) = 1.0;
-    (*Offset_y)(2) = 1.0;
-    (*Offset_y)(3) = 1.0;
-    *Offset_y = -DiodeThreshold * (*Offset_y);
+    auto LTIRDiodeBridgePowSup = std::make_shared<siconos::modeling::FirstOrderLinearR>();
+    LTIRDiodeBridgePowSup->setConstantC(Int_C);
+    LTIRDiodeBridgePowSup->setConstantB(Int_B);
+    LTIRDiodeBridgePowSup->setConstantD(Int_D);
 
-    auto Offset_lambda = std::make_shared<Vector>(4);
-    (*Offset_lambda)(1) = 1.0;
-    *Offset_lambda = -DiodeThreshold * (*Offset_lambda);
+    Vector offset_y{4};
+    offset_y.setZero();
+    offset_y(0) = 1.0;
+    offset_y(2) = 1.0;
+    offset_y(3) = 1.0;
+    offset_y *= -DiodeThreshold;
 
-    auto Int_z = std::make_shared<Vector>(5);
+    Vector offset_lambda{4};
+    offset_lambda.setZero();
+    offset_lambda(1) = -DiodeThreshold;
+
+    Vector Int_z{5};
+    Int_z.setZero();
     Vector tmp{4};
-    tmp = *Int_D * *Offset_lambda;
-    tmp -= *Offset_y;
-    Int_z->head(4) = tmp;
+    tmp = Int_D * offset_lambda - offset_y;
+    Int_z.head(4) = tmp;
+    Int_z(4) = 10.;
 
-    LSDiodeBridgePowSup->setzPtr(Int_z);
+    LTIRDiodeBridgePowSup->setComputeeVectorFunction(
+        [&Int_z](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          double omega = 1e4;
+          double Voffset = 0.0;
+          double amplitude = 10.0;
+          double phase = 0.0;
+          double VSinPo;
 
-    auto Int_B = std::make_shared<Matrix>(1, 4);
-    (*Int_B)(0, 0) = 1.0 / Cfilt;
-    (*Int_B)(0, 2) = 1.0 / Cfilt;
+          VSinPo = Voffset + (amplitude * cos((omega * time) + phase));
 
-    auto LTIRDiodeBridgePowSup =
-        std::make_shared<siconos::modeling::FirstOrderLinearR>(Int_C, Int_B);
-    LTIRDiodeBridgePowSup->setConstantD(*Int_D);
-    LTIRDiodeBridgePowSup->setComputeEFunction("SinPoPlugin", "SinPo");
+          result = Int_z.head(result.size());
+          result(2) -= VSinPo;
+          result(3) += VSinPo;
+          Int_z(4) = VSinPo;
+        });
 
     auto nslaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(4);
 
@@ -146,9 +183,7 @@ int main(int argc, char* argv[]) {
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    unsigned int nbPlot = 9;
-    Matrix dataPlot(N + 1, nbPlot);
-    //    char buffer[30];
+    Matrix dataPlot(N + 1, 9);
     double i_DF1, i_DR1, i_DF2, i_DR2;
     double v_DF1, v_DR1, v_DF2, v_DR2;
 
@@ -168,7 +203,7 @@ int main(int argc, char* argv[]) {
     dataPlot(k, 0) = DiodeBridgePowSup->t0();
 
     // source voltage
-    dataPlot(k, 1) = (LSDiodeBridgePowSup->z())->getValue(4);
+    dataPlot(k, 1) = Int_z(4);
 
     // source current
     dataPlot(k, 2) = i_DF1 - i_DR2;
@@ -192,10 +227,9 @@ int main(int argc, char* argv[]) {
     dataPlot(k, 8) = i_DR2;
 
     // --- Compute elapsed time ---
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
+    auto start = std::chrono::system_clock::now();
     // --- Time loop  ---
-    while (k < N - 1) {
+    while (k < N ) {
       // get current time step
       k++;
       tinst = k * h_step;
@@ -218,7 +252,7 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 0) = aTS->nextTime();
 
       // source voltage
-      dataPlot(k, 1) = (LSDiodeBridgePowSup->z())->getValue(4);
+      dataPlot(k, 1) = Int_z(4);
 
       // source current
       dataPlot(k, 2) = i_DF1 - i_DR2;
@@ -246,8 +280,8 @@ int main(int argc, char* argv[]) {
 
     // --- elapsed time computing ---
     std::cout << "time = \n";
-    end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "Computation time : " << elapsed << " ms\n";
 
     // Number of time iterations
@@ -261,7 +295,6 @@ int main(int argc, char* argv[]) {
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "DB.ref", eps)) > eps)
       return 1;
   }
-
   // --- Exceptions handling ---
   catch (...) {
     siconos::exception::process();

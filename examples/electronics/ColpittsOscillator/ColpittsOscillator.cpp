@@ -50,6 +50,7 @@ int main(int argc, char* argv[]) {
     init_state->setZero();
     //    init_state->setValue(1,-1.0);
     auto LS_A = std::make_shared<Matrix>(3, 3);
+    LS_A->setZero();
 
     LS_A->setValue(0, 0, -1.0 / (Rc * C1));
     LS_A->setValue(1, 0, -1.0 / (Rc * C2));
@@ -70,11 +71,11 @@ int main(int argc, char* argv[]) {
     LS_b->setValue(2, VCC / L);
 
     auto LSCollpitts =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state, *LS_A, LS_b);
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state, *LS_A, *LS_b);
 
     // --- Interaction between linear system and non smooth system ---
     auto Int_C = std::make_shared<Matrix>(2, 3);
-
+    Int_C->setZero();
     (*Int_C)(0, 0) = 1.0;
     (*Int_C)(1, 0) = 0.0;
 
@@ -95,6 +96,7 @@ int main(int argc, char* argv[]) {
     //  (*Int_D)(3, 1) = 1.0;
 
     auto Int_B = std::make_shared<Matrix>(3, 2);
+    Int_B->setZero();
     (*Int_B)(0, 0) = 1.0 / C1;
     (*Int_B)(1, 0) = (1.0 - alphaR) / C2;
     (*Int_B)(2, 0) = 0.0;
@@ -153,7 +155,7 @@ int main(int argc, char* argv[]) {
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    Matrix dataPlot(N, 8);
+    Matrix dataPlot{N, 8};
 
     auto x = LSCollpitts->x();
     auto y = InterCollpitts->y(0);
@@ -210,14 +212,12 @@ int main(int argc, char* argv[]) {
                                 siconos::algebra::io::WriteType::nodim);
 
     double error = 0.0, eps = 1e-12;
-    // if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts.ref", eps)) > eps)
-    // {
-    //   if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts-sol2.ref", eps))
-    //   >
-    //       eps)
-    //     return 1;
-    // }
-    // return 0;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts.ref", eps)) > eps) {
+      if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts-sol2.ref", eps)) >
+          eps)
+        return 1;
+    }
+    return 0;
   }
   // --- Exceptions handling ---
   catch (...) {

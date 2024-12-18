@@ -80,8 +80,8 @@ int main() {
   // SiconosVector* As = 0;
   // SiconosVector* mti = 0;
 
-  auto xti = std::make_shared<Vector>(dimX);
-  xti->setValue(0, 0);
+  Vector xti{dimX};
+  xti.setZero();
 
   int NBStep = (int)floor(user_defined::sTf / user_defined::sStep);
 
@@ -163,6 +163,7 @@ int main() {
   fin->precision(10);
   // unsigned int count = 0; // events counter.
   // do simulation while events remains in the "future events" list of events manager.
+
   cout << " ==== Start of  simulation : " << NBStep << " steps====\n";
 #ifdef CLSC_CIRCUIT
 #else
@@ -170,7 +171,6 @@ int main() {
           << "V1 "
           << "R(t)\n";
 #endif
-
   for (int k = 0; k < NBStep; k++) {
     //      if (cmp==150)
     //        numerics_set_verbose(1);
@@ -178,12 +178,16 @@ int main() {
     //        numerics_set_verbose(0);
     // cout << "..." << cmp << "\n";
     cmp++;
-    // solve ...
+    // // solve ...
+    // std::cout << "AAAAA \n" << aR->jacobianhOver_state() << "\n";
+    // std::cout << "BBBBB \n" << aR->jacobianhOver_lambda() << "\n CCCCC \n";
+    //  std::cout << " \n" << aR->jacobiangOver_lambda() << "\n DDD \n";
     aS->computeOneStep();
     // aMLCP->display();
     aS->nextStep();
     x = aDS->x();
     lambda = aI->lambda(0);
+
 #ifdef CLSC_CIRCUIT
 
     // std::cout<<"x="<<x->getValue(0)<<" Is="<<lambda->getValue(0)<<"
@@ -242,7 +246,7 @@ int main() {
       cout << "==== simulation is stopped because of a too large difference with a referenced "
               "trajectory. ==== \n";
       cout << "==== difference = " << fabs(xR - x->getValue(0)) << "\n";
-      // return 1;
+      return 1;
     }
 #else
     (*fout) << cmp << " " << x->getValue(0) << " " << lambda->getValue(0) << " "
