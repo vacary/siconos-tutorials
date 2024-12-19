@@ -22,9 +22,8 @@
 
 namespace user_defined {
 class NonlinearRelation : public siconos::modeling::FirstOrderType2R {
- protected:
  public:
-  NonLinearRelation();
+  NonlinearRelation();
 
   virtual ~NonlinearRelation() noexcept = default;
 };

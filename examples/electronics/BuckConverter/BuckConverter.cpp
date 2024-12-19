@@ -1,15 +1,7 @@
 #include <NumericsMatrix.h>
-#include <cblas.h>
-#include <math.h>
-#include <stdlib.h>
 #include <sys/time.h>
 
 #include <SiconosKernel.hpp>
-#include <exception>
-#include <iostream>
-#include <sstream>
-#include <string>
-
 // #include "const.h"
 
 using namespace std;
@@ -190,116 +182,176 @@ int main(int argc, char *argv[]) {
     fPWLmat.setValue(0, i + NBHYP, -varp[i]);
   }
 
+  // --- Dynamical system creation ---
   auto init_stateLS = std::make_shared<Vector>(SIZEX);
+  auto LSBuckConverter =
+      std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_stateLS);
 
-  auto LS_A = std::make_shared<Matrix>(SIZEX, SIZEX);
-  (*LS_A)(0, 0) = -((1.0 / (Rload * C)) + (beta / (C * alpha * R21)));
-  (*LS_A)(0, 1) = 1.0 / C;
-  (*LS_A)(0, 2) = 1.0 / (C * alpha * R21 * R11);
-  (*LS_A)(0, 3) = -beta / (C * alpha * R21);
-  (*LS_A)(0, 4) = beta / (C * alpha * R21);
+  Matrix LS_A{SIZEX, SIZEX};
+  LS_A.setZero();
+  LS_A(0, 0) = -((1.0 / (Rload * C)) + (beta / (C * alpha * R21)));
+  LS_A(0, 1) = 1.0 / C;
+  LS_A(0, 2) = 1.0 / (C * alpha * R21 * R11);
+  LS_A(0, 3) = -beta / (C * alpha * R21);
+  LS_A(0, 4) = beta / (C * alpha * R21);
 
-  (*LS_A)(1, 0) = -1.0 / L;
+  LS_A(1, 0) = -1.0 / L;
 
-  (*LS_A)(2, 0) = (1.0 - (((1.0 / R11) + (1.0 / R12)) / alpha)) / tau11;
-  (*LS_A)(2, 2) = ((1.0 / (alpha * R11)) - 1.0) / tau11;
-  (*LS_A)(2, 3) = 1.0 / (alpha * R21 * tau11);
-  (*LS_A)(2, 4) = -((*LS_A)(2, 3));
+  LS_A(2, 0) = (1.0 - (((1.0 / R11) + (1.0 / R12)) / alpha)) / tau11;
+  LS_A(2, 2) = ((1.0 / (alpha * R11)) - 1.0) / tau11;
+  LS_A(2, 3) = 1.0 / (alpha * R21 * tau11);
+  LS_A(2, 4) = -(LS_A(2, 3));
 
-  (*LS_A)(3, 0) = -((1.0 / R11) + (1.0 / R12)) / (alpha * tau21);
-  (*LS_A)(3, 2) = 1.0 / (alpha * R11 * tau21);
-  (*LS_A)(3, 3) = ((1.0 / (alpha * R21)) - 1.0) / tau21;
-  (*LS_A)(3, 4) = -((*LS_A)(3, 3));
+  LS_A(3, 0) = -((1.0 / R11) + (1.0 / R12)) / (alpha * tau21);
+  LS_A(3, 2) = 1.0 / (alpha * R11 * tau21);
+  LS_A(3, 3) = ((1.0 / (alpha * R21)) - 1.0) / tau21;
+  LS_A(3, 4) = -(LS_A(3, 3));
 
-  (*LS_A)(4, 0) = -((1.0 / R11) + (1.0 / R12)) * AmpliGain / (alpha * tauAmpli);
-  (*LS_A)(4, 2) = AmpliGain / (alpha * R11 * tauAmpli);
-  (*LS_A)(4, 3) = AmpliGain / (alpha * R21 * tauAmpli);
-  (*LS_A)(4, 4) = -((AmpliGain / (alpha * R21)) + 1.0) / tauAmpli;
+  LS_A(4, 0) = -((1.0 / R11) + (1.0 / R12)) * AmpliGain / (alpha * tauAmpli);
+  LS_A(4, 2) = AmpliGain / (alpha * R11 * tauAmpli);
+  LS_A(4, 3) = AmpliGain / (alpha * R21 * tauAmpli);
+  LS_A(4, 4) = -((AmpliGain / (alpha * R21)) + 1.0) / tauAmpli;
+
+  LSBuckConverter->setConstantA(LS_A);
 
   //     SiconosVector LS_b(SIZEX);
   //     LS_b(1) = -VthDN/L;
 
-  // --- Dynamical system creation ---
-  auto LSBuckConverter =
-      std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_stateLS, *LS_A);
+  Vector paramVin{SIZEZ_PAR + SIZEZ_INP};
 
-  auto paramVin = std::make_shared<Vector>(SIZEZ_PAR + SIZEZ_INP);
-  paramVin->setValue(0, VlowRamp);
-  paramVin->setValue(1, VhighRamp);
-  paramVin->setValue(2, RampTD);
-  paramVin->setValue(3, RampTR);
-  paramVin->setValue(4, RampTF);
-  paramVin->setValue(5, RampPW);
-  paramVin->setValue(6, RampPER);
-  paramVin->setValue(7, Vref);
-  paramVin->setValue(8, VrefSettlingTime);
-  paramVin->setValue(9, AmpliGain / tauAmpli);
-  paramVin->setValue(10, -VthDN / L);
+  paramVin.setValue(0, VlowRamp);
+  paramVin.setValue(1, VhighRamp);
+  paramVin.setValue(2, RampTD);
+  paramVin.setValue(3, RampTR);
+  paramVin.setValue(4, RampTF);
+  paramVin.setValue(5, RampPW);
+  paramVin.setValue(6, RampPER);
+  paramVin.setValue(7, Vref);
+  paramVin.setValue(8, VrefSettlingTime);
+  paramVin.setValue(9, AmpliGain / tauAmpli);
+  paramVin.setValue(10, -VthDN / L);
   //    SiconosMatrix* LS_T = new SiconosMatrix(SIZEX,3);
   //    LS_T->setValue(4,1,AmpliGain/tauAmpli);
   //    LSBuckConverter->setTPtr(LS_T);
 
-  LSBuckConverter->setzPtr(paramVin);
+  LSBuckConverter->setComputebVectorFunction(
+      [&paramVin](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+        // Warning: paramVin is modified at each call of b(t)!
 
-  LSBuckConverter->setComputebFunction("./plugins.so", "Rampb");
+        // double epsitime = 1e-15;
+        double VlowRamp = paramVin[0];
+        double VhighRamp = paramVin[1];
+        double RampTD = paramVin[2];
+        double RampTR = paramVin[3];
+        double RampTF = paramVin[4];
+        double RampPW = paramVin[5];
+        double RampPER = paramVin[6];
+        double SlopeRiseRamp = (VhighRamp - VlowRamp) / RampTR;
+        double SlopeFallRamp = (VhighRamp - VlowRamp) / RampTF;
+        double phaseRamp;
 
-  auto Coltemp = std::make_shared<Matrix>(2 * NBHYP, 1);
+        double Vref = paramVin[7];
+        double VrefSettlingTime = paramVin[8];
 
-  auto Int_D_buck = std::make_shared<Matrix>(NSLSIZE_BUCK, NSLSIZE_BUCK);
-  Int_D_buck->setIdentity();
+        double UPtr[2];
 
-  Coltemp->col(0) = vec1 + vec2;
-  Int_D_buck->setBlock(2, 0, SlopeComp * *Coltemp);
-  Int_D_buck->setBlock(2, 1, (-SlopeComp) * *Coltemp);
-  Int_D_buck->setBlock(2 + (2 * NBHYP), 0, (-SlopeComp) * *Coltemp);
-  Int_D_buck->setBlock(2 + (2 * NBHYP), 1, SlopeComp * *Coltemp);
+        phaseRamp = std::fmod(time, RampPER);
 
-  Coltemp->col(0) = vec2;
-  Int_D_buck->setBlock(2, NSLSIZE_BUCK - 1, (-1.0) * *Coltemp);
-  Int_D_buck->setBlock(2 + (2 * NBHYP), NSLSIZE_BUCK - 1, *Coltemp);
+        if (phaseRamp < RampTD)
+          UPtr[0] = VlowRamp;
+        else if (phaseRamp < (RampTD + RampTR))
+          UPtr[0] = VlowRamp + (SlopeRiseRamp * (phaseRamp - RampTD));
+        else if (phaseRamp < (RampTD + RampTR + RampPW))
+          UPtr[0] = VhighRamp;
+        else if (phaseRamp < (RampTD + RampTR + RampPW + RampTF))
+          UPtr[0] = VhighRamp - (SlopeFallRamp * (phaseRamp - (RampTD + RampTR + RampPW)));
+        else
+          UPtr[0] = VlowRamp;
 
-  Int_D_buck->setValue(NSLSIZE_BUCK - 2, NSLSIZE_BUCK - 2, 0.);
-  Int_D_buck->setValue(NSLSIZE_BUCK - 2, NSLSIZE_BUCK - 1, -1.0);
+        /*if (time < VrefSettlingTime) UPtr[1] = Vref*time/VrefSettlingTime;
+          else UPtr[1] = Vref; */
+        if (time < VrefSettlingTime)
+          UPtr[1] = Vref * time / VrefSettlingTime;
+        else if (time > 2. * VrefSettlingTime)
+          UPtr[1] = -Vref * time / VrefSettlingTime + 3 * Vref;
+        else
+          UPtr[1] = Vref;
 
-  Int_D_buck->setBlock(NSLSIZE_BUCK - 1, 2, (-HalfKP) * fPWLmat);
-  Int_D_buck->setBlock(NSLSIZE_BUCK - 1, 2 + (2 * NBHYP), HalfKN * fPWLmat);
-  Int_D_buck->setValue(NSLSIZE_BUCK - 1, NSLSIZE_BUCK - 2, 1.0);
-  Int_D_buck->setValue(NSLSIZE_BUCK - 1, NSLSIZE_BUCK - 1, 0.);
+        paramVin[paramVin.size() - 2] = UPtr[0];
+        paramVin[paramVin.size() - 1] = UPtr[1];
+        result.setZero();
+        result[1] = paramVin[10];
+        result[4] = paramVin[9] * UPtr[1];
+      });
 
-  Int_D_buck->display();
+  Matrix int_D_buck{NSLSIZE_BUCK, NSLSIZE_BUCK};
+  int_D_buck.setIdentity();
+
+  auto Coltemp = vec1 + vec2;
+  auto colsize = vec2.size();
+  int_D_buck.block(2, 0, colsize, 1) = SlopeComp * Coltemp;
+  int_D_buck.block(2, 1, colsize, 1) = (-SlopeComp) * Coltemp;
+  int_D_buck.block(2 + (2 * NBHYP), 0, colsize, 1) = (-SlopeComp) * Coltemp;
+  int_D_buck.block(2 + (2 * NBHYP), 1, colsize, 1) = SlopeComp * Coltemp;
+
+  int_D_buck.block(2, NSLSIZE_BUCK - 1, colsize, 1) = (-1.0) * vec2;
+  int_D_buck.block(2 + (2 * NBHYP), NSLSIZE_BUCK - 1, colsize, 1) = vec2;
+
+  int_D_buck.setValue(NSLSIZE_BUCK - 2, NSLSIZE_BUCK - 2, 0.);
+  int_D_buck.setValue(NSLSIZE_BUCK - 2, NSLSIZE_BUCK - 1, -1.0);
+
+  int_D_buck.block(NSLSIZE_BUCK - 1, 2, fPWLmat.rows(), fPWLmat.cols()) = (-HalfKP) * fPWLmat;
+  int_D_buck.block(NSLSIZE_BUCK - 1, 2 + (2 * NBHYP), fPWLmat.rows(), fPWLmat.cols()) =
+      HalfKN * fPWLmat;
+  int_D_buck.setValue(NSLSIZE_BUCK - 1, NSLSIZE_BUCK - 2, 1.);
+  int_D_buck.setValue(NSLSIZE_BUCK - 1, NSLSIZE_BUCK - 1, 0.);
+
+  //  int_D_buck.display();
   // getchar();
-  auto Int_F0_buck = std::make_shared<Matrix>(NSLSIZE_BUCK, SIZEZ_PAR + SIZEZ_INP);
-  Int_F0_buck->setValue(0, SIZEZ_PAR, -1.0);
-  Int_F0_buck->setValue(1, SIZEZ_PAR, -1.0);
 
-  auto Int_e_buck = std::make_shared<Vector>(NSLSIZE_BUCK);
-  Int_e_buck->setValue(0, X1Comp);
-  Int_e_buck->setValue(1, X2Comp);
-  Int_e_buck->setBlock(2, (-Vt0P) * (vec1 + vec2) - VI * vec1 + VthDN * vec2 + vecHyp);
-  Int_e_buck->setBlock(2 + (2 * NBHYP), Vt0N * (vec1 + vec2) - VthDN * vec2 + vecHyp);
-  Int_e_buck->setValue(NSLSIZE_BUCK - 2, VI + VthDP + VthDN);
+  Matrix int_F0_buck{NSLSIZE_BUCK, SIZEZ_PAR + SIZEZ_INP};
+  int_F0_buck.setZero();
+  int_F0_buck.setValue(0, SIZEZ_PAR, -1.0);
+  int_F0_buck.setValue(1, SIZEZ_PAR, -1.0);
 
-  auto Int_C_buck = std::make_shared<Matrix>(NSLSIZE_BUCK, SIZEX);
-  Int_C_buck->setValue(0, 4, 1.0);
-  Int_C_buck->setValue(1, 4, 1.0);
-  Int_C_buck->setValue(NSLSIZE_BUCK - 1, 1, 1.0);
+  Vector int_e_buck{NSLSIZE_BUCK};
+  int_e_buck.setZero();
+  int_e_buck.setValue(0, X1Comp);
+  int_e_buck.setValue(1, X2Comp);
+  int_e_buck.segment(2, vecHyp.size()) =
+      (-Vt0P) * (vec1 + vec2) - VI * vec1 + VthDN * vec2 + vecHyp;
+  int_e_buck.segment(2 + (2 * NBHYP), vecHyp.size()) =
+      Vt0N * (vec1 + vec2) - VthDN * vec2 + vecHyp;
+  int_e_buck.setValue(NSLSIZE_BUCK - 2, VI + VthDP + VthDN);
 
-  auto Int_B_buck = std::make_shared<Matrix>(SIZEX, NSLSIZE_BUCK);
-  Int_B_buck->setValue(1, NSLSIZE_BUCK - 1, 1.0 / L);
+  Matrix int_C_buck{NSLSIZE_BUCK, SIZEX};
+  int_C_buck.setZero();
+  int_C_buck.setValue(0, 4, 1.0);
+  int_C_buck.setValue(1, 4, 1.0);
+  int_C_buck.setValue(NSLSIZE_BUCK - 1, 1, 1.0);
+
+  Matrix int_B_buck{SIZEX, NSLSIZE_BUCK};
+  int_B_buck.setZero();
+  int_B_buck.setValue(1, NSLSIZE_BUCK - 1, 1.0 / L);
 
   auto nslaw_buck =
       std::make_shared<siconos::modeling::ComplementarityConditionNSL>(NSLSIZE_BUCK);
 
-  auto LTIRBuckConverter_buck =
-      std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*Int_C_buck, *Int_B_buck);
-  LTIRBuckConverter_buck->setConstantD(*Int_D_buck);
-  LTIRBuckConverter_buck->setePtr(Int_e_buck);
-  LTIRBuckConverter_buck->setFPtr(Int_F0_buck);
+  auto LTIRBuckConverter_buck = std::make_shared<siconos::modeling::FirstOrderLinearR>();
+  LTIRBuckConverter_buck->setConstantB(int_B_buck);
+  LTIRBuckConverter_buck->setConstantC(int_C_buck);
+  LTIRBuckConverter_buck->setConstantD(int_D_buck);
+  LTIRBuckConverter_buck->setComputeeVectorFunction(
+      [&int_e_buck, &int_F0_buck, &paramVin](
+          double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+        // We must take into account paramVin values updated by the DS (call b(t))
+        result = int_e_buck + int_F0_buck * paramVin;
+      });
 
   auto InterBuckConverter_buck =
       std::make_shared<siconos::modeling::Interaction>(nslaw_buck, LTIRBuckConverter_buck);
 
-  InterBuckConverter_buck->display();
+  //   InterBuckConverter_buck->display();
   // getchar();
 
   // --- Model creation ---
@@ -351,18 +403,11 @@ int main(int argc, char *argv[]) {
   //**************************************************************************************************
   //  straight implementation of integration & one step solving algorithm
   //**************************************************************************************************
-  double *b_straight;
-  double *zpar_straight;
 
-  b_straight = LSBuckConverter->b()->data();
-  zpar_straight = LSBuckConverter->z()->data();
-
-  double z_straight[NSLSIZE_BUCK];
-  double w_straight[NSLSIZE_BUCK];
-  for (int i = 0; i < NSLSIZE_BUCK; ++i) {
-    z_straight[i] = 0.;
-    w_straight[i] = 0.;
-  }
+  Vector w_straight{NSLSIZE_BUCK};
+  w_straight.setZero();
+  Vector z_straight{NSLSIZE_BUCK};
+  z_straight.setZero();
 
   double *fPWLmat_straight;
   fPWLmat_straight = fPWLmat.data();
@@ -385,7 +430,6 @@ int main(int argc, char *argv[]) {
   auto x = LSBuckConverter->x();
   auto y = InterBuckConverter_buck->y(0);
   auto lambda = InterBuckConverter_buck->lambda(0);
-  double *lambda_array = lambda->data();
 
   // For the initial time step:
 
@@ -393,7 +437,7 @@ int main(int argc, char *argv[]) {
   dataPlot(k, 0) = k * h_step;
 
   // ramp voltage
-  dataPlot(k, 1) = (*LSBuckConverter->z())(SIZEZ_PAR);
+  dataPlot(k, 1) = paramVin(SIZEZ_PAR);
 
   // MOS P drain potential
   dataPlot(k, 2) = -VthDN;
@@ -405,27 +449,31 @@ int main(int argc, char *argv[]) {
   dataPlot(k, 4) = (*x)(0);
 
   // gate voltage Vcomp = V_G
-  dataPlot(k, 5) = SlopeComp * (z_straight[0] - z_straight[1]);
+  dataPlot(k, 5) = SlopeComp * (z_straight(0) - z_straight(1));
 
   // error voltage
   dataPlot(k, 6) = (*x)(4);
 
   // DPMOS current
-  dataPlot(k, 7) = z_straight[NSLSIZE_BUCK - 2];
+  dataPlot(k, 7) = z_straight(NSLSIZE_BUCK - 2);
 
   // DNMOS current
-  dataPlot(k, 8) = w_straight[NSLSIZE_BUCK - 1];
+  dataPlot(k, 8) = w_straight(NSLSIZE_BUCK - 1);
 
   // // PMOS Isd current
   rowsize = 2 * NBHYP;
-  dataPlot(k, 9) =
-      HalfKP * cblas_ddot(rowsize, fPWLmat_straight, incx, &(z_straight[2]), incy);
+  // dataPlot(k, 9) =
+  //     HalfKP * cblas_ddot(rowsize, fPWLmat_straight, incx, &(z_straight[2]), incy);
   // *(++dataPlot) = HalfKP *cblas_ddot( &rowsize , fPWLmat_straight , &incx , &(z_straight[2])
   // , &incy );
+  dataPlot(k, 9) = HalfKP * fPWLmat.col(0).head(rowsize).dot(z_straight.segment(2, rowsize));
 
   // // NMOS Ids current
-  dataPlot(k, 10) = HalfKN * cblas_ddot(rowsize, fPWLmat_straight, incx,
-                                        &(z_straight[2 + (2 * NBHYP)]), incy);
+  // dataPlot(k, 10) = HalfKN * cblas_ddot(rowsize, fPWLmat_straight, incx,
+  //                                       &(z_straight[2 + (2 * NBHYP)]), incy);
+  dataPlot(k, 10) =
+      HalfKN * fPWLmat.col(0).head(rowsize).dot(z_straight.segment(2 + (2 * NBHYP), rowsize));
+
   // *(++dataPlot) = HalfKN *cblas_ddot( &rowsize , fPWLmat_straight , &incx ,
   // &(z_straight[2+(2*NBHYP)]) , &incy );
 
@@ -474,7 +522,7 @@ int main(int argc, char *argv[]) {
       // time
       dataPlot(k, 0) = k * h_step;
       // ramp voltage
-      dataPlot(k, 1) = (*LSBuckConverter->z())(SIZEZ_PAR);
+      dataPlot(k, 1) = (paramVin)(SIZEZ_PAR);
       // MOS P drain potential
       dataPlot(k, 2) = (*lambda)(NSLSIZE_BUCK - 1) - VthDN;
       // L current
@@ -491,13 +539,18 @@ int main(int argc, char *argv[]) {
       dataPlot(k, 8) = (*y)(NSLSIZE_BUCK - 1);
       // PMOS Isd current
       rowsize = 2 * NBHYP;
-      dataPlot(k, 9) =
-          HalfKP * cblas_ddot(rowsize, fPWLmat_straight, incx, &(lambda_array[2]), incy);
+      // dataPlot(k, 9) =
+      //     HalfKP * cblas_ddot(rowsize, fPWLmat_straight, incx, &(lambda_array[2]), incy);
       // *(++dataPlot) = HalfKP *cblas_ddot( &rowsize , fPWLmat_straight , &incx ,
       // &(z_straight[2]) , &incy );
+      dataPlot(k, 9) = HalfKP * fPWLmat.col(0).head(rowsize).dot(lambda->segment(2, rowsize));
+
       //  NMOS Ids current
-      dataPlot(k, 10) = HalfKN * cblas_ddot(rowsize, fPWLmat_straight, incx,
-                                            &(lambda_array[2 + (2 * NBHYP)]), incy);
+      // dataPlot(k, 10) = HalfKN * cblas_ddot(rowsize, fPWLmat_straight, incx,
+      //                                       &(lambda_array[2 + (2 * NBHYP)]), incy);
+      dataPlot(k, 10) =
+          HalfKN * fPWLmat.col(0).head(rowsize).dot(lambda->segment(2 + (2 * NBHYP), rowsize));
+
       // *(++dataPlot) = HalfKN *cblas_ddot( &rowsize , fPWLmat_straight , &incx ,
       // &(z_straight[2+(2*NBHYP)]) , &incy );
 
@@ -527,11 +580,7 @@ int main(int argc, char *argv[]) {
 
   std::cout << "time = " << elapsed << " --- cpu time " << elapsed2
             << "--- cpu time in lcp solving : " << elapsedCPU_LCP << endl;
-  cerr << "time = " << elapsed << " --- cpu time " << elapsed2
-       << "--- cpu time in lcp solving : " << elapsedCPU_LCP << endl;
-
   // dataPlot (ascii) output
-  dataPlot.resize(k + 1, nbPlot);
   siconos::algebra::io::write("BuckConverter.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                               siconos::algebra::io::WriteType::nodim);
 

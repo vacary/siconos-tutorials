@@ -19,11 +19,13 @@
 //
 //  DiodeBridge  : sample of an electrical circuit involving :
 //  - a linear dynamical system consisting of an LC oscillator (1 microF , 10 mH)
-//  - a non smooth system (a 1000 Ohm resistor supplied through a 4 diodes bridge) in parallel
-//    with the oscillator
+//  - a non smooth system (a 1000 Ohm resistor supplied through a 4
+//    diodes bridge) in parallel with the oscillator
 //
 //  Expected behavior :
-//  The initial state (Vc = 10 V , IL = 0) of the oscillator provides an initial energy.
+
+//  The initial state (Vc = 10 V , IL = 0) of the oscillator provides
+//  an initial energy.
 //  The period is 2 Pi sqrt(LC) ~ 0,628 ms.
 //      The non smooth system is a full wave rectifier :
 //  each phase (positive and negative) of the oscillation allows current to flow
@@ -35,9 +37,10 @@
 //  - the current through the inductor
 //
 //  Since there is only one dynamical system, the interaction is defined by :
-//  - complementarity laws between diodes current and voltage. Depending on
-//        the diode position in the bridge, y stands for the reverse voltage across the diode
-//    or for the diode current (see figure in the template file)
+//  - complementarity laws between diodes current and
+//    voltage. Depending on the diode position in the bridge, y stands
+//    for the reverse voltage across the diode or for the diode
+//    current (see figure in the template file)
 //  - a linear time invariant relation between the state variables and
 //    y and lambda (derived from Kirchhoff laws)
 //
@@ -59,40 +62,45 @@ int main(int argc, char* argv[]) {
   double Vinit = 10.0;                  // initial voltage
   std::string Modeltitle = "DiodeBridge";
 
+  auto start = std::chrono::system_clock::now();
   try {
     // --- Dynamical system specification ---
-    auto init_state = std::make_shared<Vector>(2);
-    init_state->setValue(0, Vinit);
+    Vector init_state{2};
+    init_state << Vinit, 0.;
+    auto LSDiodeBridge = std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_state);
 
-    auto LS_A = std::make_shared<Matrix>(2, 2);
-    LS_A->setValue(0, 1, -1.0 / Cvalue);
-    LS_A->setValue(1, 0, 1.0 / Lvalue);
+    Matrix LS_A{2, 2};
+    LS_A.setZero();
+    LS_A(0, 1) = -1.0 / Cvalue;
+    LS_A(1, 0) = 1.0 / Lvalue;
 
-    auto LSDiodeBridge =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state, *LS_A);
+    LSDiodeBridge->setConstantA(LS_A);
 
     // --- Interaction between linear system and non smooth system ---
-    auto Int_C = std::make_shared<Matrix>(4, 2);
-    (*Int_C)(2, 0) = -1.0;
-    (*Int_C)(3, 0) = 1.0;
+    Matrix int_C{4, 2};
+    int_C.setZero();
+    int_C(2, 0) = -1.0;
+    int_C(3, 0) = 1.0;
 
-    auto Int_D = std::make_shared<Matrix>(4, 4);
-    (*Int_D)(0, 0) = 1.0 / Rvalue;
-    (*Int_D)(0, 1) = 1.0 / Rvalue;
-    (*Int_D)(0, 2) = -1.0;
-    (*Int_D)(1, 0) = 1.0 / Rvalue;
-    (*Int_D)(1, 1) = 1.0 / Rvalue;
-    (*Int_D)(1, 3) = -1.0;
-    (*Int_D)(2, 0) = 1.0;
-    (*Int_D)(3, 1) = 1.0;
+    Matrix int_D{4, 4};
+    int_D.setZero();
+    int_D(0, 0) = 1.0 / Rvalue;
+    int_D(0, 1) = 1.0 / Rvalue;
+    int_D(0, 2) = -1.0;
+    int_D(1, 0) = 1.0 / Rvalue;
+    int_D(1, 1) = 1.0 / Rvalue;
+    int_D(1, 3) = -1.0;
+    int_D(2, 0) = 1.0;
+    int_D(3, 1) = 1.0;
 
-    auto Int_B = std::make_shared<Matrix>(2, 4);
-    (*Int_B)(0, 2) = -1.0 / Cvalue;
-    (*Int_B)(0, 3) = 1.0 / Cvalue;
+    Matrix int_B{2, 4};
+    int_B.setZero();
+    int_B(0, 2) = -1.0 / Cvalue;
+    int_B(0, 3) = 1.0 / Cvalue;
 
     auto LTIRDiodeBridge =
-        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*Int_C, *Int_B);
-    LTIRDiodeBridge->setConstantD(*Int_D);
+        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(int_C, int_B);
+    LTIRDiodeBridge->setConstantD(int_D);
 
     auto nslaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(4);
 
@@ -133,7 +141,7 @@ int main(int argc, char* argv[]) {
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    Matrix dataPlot(N, 10);
+    Matrix dataPlot{N, 10};
 
     auto x = LSDiodeBridge->x();
     auto y = InterDiodeBridge->y(0);
@@ -172,16 +180,10 @@ int main(int argc, char* argv[]) {
     LS_Q->setValue(3, 2, coef);
     LS_Q->setValue(3, 3, coef);
 
-    auto xlambda = std::make_shared<siconos::algebra::BlockVector>(x, lambda);
-
     auto tmp6 = std::make_shared<Vector>(6);
     auto tmp6bis = std::make_shared<Vector>(6);
 
-    auto tmp = std::make_shared<Vector>(2);
-
-    *tmp = 0.5 * *LS_P * *x;
-
-    dataPlot(k, 7) = x->dot(tmp);
+    dataPlot(k, 7) = x->dot(0.5 * *LS_P * *x);
 
     dataPlot(k, 8) = 0.0;
 
@@ -193,11 +195,8 @@ int main(int argc, char* argv[]) {
     for (k = 1; k < N; ++k) {
       // solve ...
       aTS->computeOneStep();
-      // aLCP->display();
-      //    char  sz[0];
-      //    cin >> sz;
-      //  --- Get values to be plotted ---
-      //  time
+      // --- Get values to be plotted ---
+      // time
       dataPlot(k, 0) = aTS->nextTime();
 
       // inductor voltage
@@ -217,12 +216,10 @@ int main(int argc, char* argv[]) {
 
       // diode F1 current
       dataPlot(k, 6) = (*lambda)(2);
-      *tmp = 0.5 * *LS_P * *x;
-
-      dataPlot(k, 7) = x->dot(tmp);
-      *tmp6 = *LS_Q * *xlambda;
-      *tmp6 *= 1 / 2.0 * h;
-      *tmp6bis = *xlambda;
+      dataPlot(k, 7) = x->dot(0.5 * *LS_P * *x);
+      tmp6bis->head(2) = *x;
+      tmp6bis->tail(4) = *lambda;
+      *tmp6 = 1 / 2.0 * h * *LS_Q * *tmp6bis;
       dataPlot(k, 8) = tmp6bis->dot(*tmp6) + dataPlot(k - 1, 8);
 
       dataPlot(k, 9) = dataPlot(k, 7) + dataPlot(k, 8);
@@ -231,7 +228,6 @@ int main(int argc, char* argv[]) {
     }
 
     // --- elapsed time computing ---
-    std::cout << "time = \n";
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "Computation time : " << elapsed << " ms\n";
@@ -239,19 +235,17 @@ int main(int argc, char* argv[]) {
     // Number of time iterations
     std::cout << "Number of iterations done: " << k << "\n";
 
-    // dataPlot (ascii) output
     siconos::algebra::io::write("DiodeBridge.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
     double error = 0.0, eps = 1e-10;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "DiodeBridge.ref", eps)) > eps)
       return 1;
-
   }
-
   // --- Exceptions handling ---
   catch (...) {
     siconos::exception::process();
     return 1;
   }
+  return 0;
 }

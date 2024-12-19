@@ -212,7 +212,6 @@ int main(int argc, char *argv[]) {
     std::cout << "Computation time : " << elapsed << " ms\n";
 
     // dataPlot (ascii) output
-    dataPlot.resize(k, 9);
     siconos::algebra::io::write("CircuitRLCD.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;

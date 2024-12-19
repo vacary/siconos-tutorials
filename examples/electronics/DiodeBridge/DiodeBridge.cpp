@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,38 +65,40 @@ int main(int argc, char* argv[]) {
   auto start = std::chrono::system_clock::now();
   try {
     // --- Dynamical system specification ---
-    auto init_state = std::make_shared<Vector>(2);
-    init_state->setValue(0, Vinit);
+    Vector init_state{2};
+    init_state << Vinit, 0.;
+    auto LSDiodeBridge = std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_state);
 
-    auto LS_A = std::make_shared<Matrix>(2, 2);
-    LS_A->setValue(0, 1, -1.0 / Cvalue);
-    LS_A->setValue(1, 0, 1.0 / Lvalue);
-
-    auto LSDiodeBridge =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state, *LS_A);
+    Matrix LS_A{2, 2};
+    LS_A.setValue(0, 1, -1.0 / Cvalue);
+    LS_A.setValue(1, 0, 1.0 / Lvalue);
+    LSDiodeBridge->setConstantA(LS_A);
 
     // --- Interaction between linear system and non smooth system ---
-    auto Int_C = std::make_shared<Matrix>(4, 2);
-    (*Int_C)(2, 0) = -1.0;
-    (*Int_C)(3, 0) = 1.0;
+    Matrix int_C{4, 2};
+    int_C.setZero();
+    int_C(2, 0) = -1.0;
+    int_C(3, 0) = 1.0;
 
-    auto Int_D = std::make_shared<Matrix>(4, 4);
-    (*Int_D)(0, 0) = 1.0 / Rvalue;
-    (*Int_D)(0, 1) = 1.0 / Rvalue;
-    (*Int_D)(0, 2) = -1.0;
-    (*Int_D)(1, 0) = 1.0 / Rvalue;
-    (*Int_D)(1, 1) = 1.0 / Rvalue;
-    (*Int_D)(1, 3) = -1.0;
-    (*Int_D)(2, 0) = 1.0;
-    (*Int_D)(3, 1) = 1.0;
+    Matrix int_D{4, 4};
+    int_D.setZero();
+    int_D(0, 0) = 1.0 / Rvalue;
+    int_D(0, 1) = 1.0 / Rvalue;
+    int_D(0, 2) = -1.0;
+    int_D(1, 0) = 1.0 / Rvalue;
+    int_D(1, 1) = 1.0 / Rvalue;
+    int_D(1, 3) = -1.0;
+    int_D(2, 0) = 1.0;
+    int_D(3, 1) = 1.0;
 
-    auto Int_B = std::make_shared<Matrix>(2, 4);
-    (*Int_B)(0, 2) = -1.0 / Cvalue;
-    (*Int_B)(0, 3) = 1.0 / Cvalue;
+    Matrix int_B{2, 4};
+    int_B.setZero();
+    int_B(0, 2) = -1.0 / Cvalue;
+    int_B(0, 3) = 1.0 / Cvalue;
 
     auto LTIRDiodeBridge =
-        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*Int_C, *Int_B);
-    LTIRDiodeBridge->setConstantD(*Int_D);
+        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(int_C, int_B);
+    LTIRDiodeBridge->setConstantD(int_D);
 
     auto nslaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(4);
 
@@ -210,7 +212,6 @@ int main(int argc, char* argv[]) {
     // Number of time iterations
     std::cout << "Number of iterations done: " << k << "\n";
 
-    // dataPlot (ascii) output
     siconos::algebra::io::write("DiodeBridge.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 

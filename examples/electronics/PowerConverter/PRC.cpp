@@ -61,32 +61,39 @@ int main(int argc, char* argv[]) {
     (*LS_A)(3, 2) = 1.0 / Cfvalue;
     (*LS_A)(3, 3) = -1.0 / (Rvalue * Cfvalue);
 
-    auto LSPRC = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state, *LS_A);
+    auto LSPRC = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state);
+    LSPRC->setConstantA(*LS_A);
 
-    // Lrvalue is required in the plug-in, thus we set z[0] = 100.0/ Lrvalue.
-    auto z = std::make_shared<Vector>(1);
-
-    // z[0] is used as a parameter in the plug-in.
-    (*z)(0) = 1.0 / Lrvalue;
-    LSPRC->setzPtr(z);
-    LSPRC->setComputebFunction("PRCPlugin", "computeU");
-
+    auto z = 1.0 / Lrvalue;
+    LSPRC->setComputebVectorFunction(
+        [z](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          result.setZero();
+          double f = 55000.0;
+          if (time == 0.0)
+            result(0) = 0;
+          else {
+            result(0) = z * sin(2.0 * M_PI * f * time) / fabs(sin(2.0 * M_PI * f * time));
+          }
+        });
     // --- Interaction between linear system and non smooth system ---
 
     // -> Relation
     auto Int_C = std::make_shared<Matrix>(4, 4);
+    Int_C->setZero();
     (*Int_C)(0, 1) = -1.0;
     (*Int_C)(1, 1) = 1.0;
     (*Int_C)(2, 2) = 1.0;
     (*Int_C)(3, 2) = 1.0;
 
     auto Int_D = std::make_shared<Matrix>(4, 4);
+    Int_D->setZero();
     (*Int_D)(0, 2) = 1.0;
     (*Int_D)(1, 3) = 1.0;
     (*Int_D)(2, 0) = -1.0;
     (*Int_D)(3, 1) = -1.0;
 
     auto Int_B = std::make_shared<Matrix>(4, 4);
+    Int_B->setZero();
     (*Int_B)(1, 0) = -1.0 / Crvalue;
     (*Int_B)(1, 1) = 1.0 / Crvalue;
     (*Int_B)(2, 2) = 1.0 / Lfvalue;

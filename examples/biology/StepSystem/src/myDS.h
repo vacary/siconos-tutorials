@@ -34,31 +34,14 @@ namespace user_defined {
 class MyDS : public siconos::modeling::FirstOrderNonLinearDS {
  public:
   /** default constructor
-   * \param the type of the system
+   * \param x0 initial state
    */
-  MyDS(std::shared_ptr<siconos::algebra::SiconosVector> x0);
-
+  MyDS(Eigen::Ref<siconos::algebra::SiconosVector> x0);
   // ===== DESTRUCTOR =====
 
   /** destructor
    */
-  virtual ~MyDS() noexcept = default;
-
-  using FirstOrderNonLinearDS::computef;
-
-  /** Default function to compute \f$ f: (x,t)\f$
-   * \param double time : current time
-   */
-  virtual void computefVector(const Eigen::Ref<siconos::algebra::SiconosVector> &state,
-                              double time) override;
-
-  // using FirstOrderNonLinearDS::computeJacobianfx;
-  /** Default function to compute \f$ \nabla_x f: (x,t) \in R^{n} \times R  \mapsto  R^{n
-   * \times n} \f$ with x different from current saved state. \param double time : current time
-   *  \param auto
-   */
-  virtual void computeJacobianfOver_x(const Eigen::Ref<siconos::algebra::SiconosVector> &state,
-                                 double time) override;
+  ~MyDS() noexcept = default;
 };
 }  // namespace user_defined
 

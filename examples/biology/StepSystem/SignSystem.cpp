@@ -25,15 +25,13 @@
 #include <chrono>
 #include <string>
 
-#include "NonlinearRelationWithSign.hpp"
-#include "NonlinearRelationWithSignInversed.hpp"
 #include "const.h"
 #include "myDS.h"
 
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   try {
     // printf("argc %i\n", argc);
     int cmp = 0;
@@ -45,6 +43,7 @@ int main(int argc, char *argv[]) {
     // default, x0 = (1, 6)
     // else read from command line
     auto xti = std::make_shared<Vector>(dimX);
+    xti->setZero();
     if (argc == 1) {
       xti->setValue(0, 1);
       xti->setValue(1, 6);
@@ -74,11 +73,87 @@ int main(int argc, char *argv[]) {
     int NBStep = (int)floor(user_defined::sTf / user_defined::sStep);
     // NBStep =1;
     //*****BUILD THE DYNAMICAL SYSTEM
-
-    auto aDS = std::make_shared<user_defined::MyDS>(xti);
+    auto aDS = std::make_shared<user_defined::MyDS>(*xti);
 
     //******BUILD THE RELATION
-    auto aR = std::make_shared<user_defined::NonlinearRelationWithSignInversed>();
+
+    // A nonlinear, "with sign inversed" relation
+    auto aR = std::make_shared<siconos::modeling::FirstOrderNonLinearR>();
+
+    aR->setComputehFunction([](const siconos::algebra::BlockVector& state, double time,
+                               const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
+                               Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y.setZero();
+      y.setValue(0, state(0) - 4);
+      y.setValue(1, state(1) - 4);
+      y.setValue(2, state(0) - 8);
+      y.setValue(3, state(1) - 8);
+    });
+
+    aR->setComputegFunction([](const siconos::algebra::BlockVector& state, double time,
+                               const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
+                               siconos::algebra::BlockVector& res) {
+      res.setZero();
+      res.setValue(0, 10.0 * (1 + lambda(2)) * (1 - lambda(1)));
+      res.setValue(1, 10.0 * (1 - lambda(0)) * (1 + lambda(3)));
+    });
+
+    siconos::algebra::SiconosMatrix jachx{user_defined::sNSLawSize, dimX};
+    jachx.setZero();
+    jachx(0, 0) = 1.;
+    jachx(1, 1) = 1.;
+    jachx(2, 0) = 1.;
+    jachx(3, 1) = 1.;
+    aR->setConstantJacobianhOver_state(jachx);
+
+    aR->setComputeJacobiangOver_lambdaFunction(
+        [](const siconos::algebra::BlockVector& state, double time,
+           const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result.setZero();
+          result.setValue(1, 0, -10.0 * (1 + lambda(3)));
+          result.setValue(0, 1, -10.0 * (1 + lambda(2)));
+          result.setValue(0, 2, 10.0 * (1 - lambda(1)));
+          result.setValue(1, 3, 10.0 * (1 - lambda(0)));
+        });
+
+    // For the records, "sign version" of the relation
+    // aR->setComputehFunction([](const siconos::algebra::BlockVector& state, double time,
+    //                            const Eigen::Ref<const siconos::algebra::SiconosVector>&
+    //                            lambda, Eigen::Ref<siconos::algebra::SiconosVector> y) {
+    //   y.setZero();
+    //   y.setValue(0, 4.0 - state(0));
+    //   y.setValue(1, 4.0 - state(1));
+    //   y.setValue(2, 8.0 - state(0));
+    //   y.setValue(3, 8.0 - state(1));
+    // });
+
+    // aR->setComputegFunction([](const siconos::algebra::BlockVector& state, double time,
+    //                            const Eigen::Ref<const siconos::algebra::SiconosVector>&
+    //                            lambda, siconos::algebra::BlockVector& res) {
+    //   res.setZero();
+    //   res.setValue(0, 10.0 * (1 - lambda(2)) * (1 + lambda(1)));
+    //   res.setValue(1, 10.0 * (1 + lambda(0)) * (1 - lambda(3)));
+    // });
+
+    // siconos::algebra::SiconosMatrix jachx{user_defined::sNSLawSize, dimX};
+    // jachx.setZero();
+    // jachx(0, 0) = -1.;
+    // jachx(1, 1) = -1.;
+    // jachx(2, 0) = -1.;
+    // jachx(3, 1) = -1.;
+    // aR->setConstantJacobianhOver_state(jachx);
+
+    // aR->setComputeJacobiangOver_lambdaFunction(
+    //     [](const siconos::algebra::BlockVector& state, double time,
+    //        const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
+    //        Eigen::Ref<siconos::algebra::MapType> result) {
+    //       result.setZero();
+    //       result.setValue(1, 0, 10.0 * (1 - lambda(3)));
+    //       result.setValue(0, 1, 10.0 * (1 - lambda(2)));
+    //       result.setValue(0, 2, -10.0 * (1 + lambda(1)));
+    //       result.setValue(1, 3, -10.0 * (1 + lambda(0)));
+    //     });
 
     //*****BUILD THE NSLAW
     double ub = 1.;
@@ -133,8 +208,6 @@ int main(int argc, char *argv[]) {
     Matrix dataPlot(NBStep + 1, outputSize);
 
     std::cout << "=== Start of simulation: " << NBStep << " steps ===\n";
-
-    printf("=== Start of simulation: %d steps ===  \n", NBStep);
 
     dataPlot(0, 0) = aN->t0();
     dataPlot(0, 1) = x->getValue(0);

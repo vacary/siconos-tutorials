@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
     // default, x0 = (1, 6)
     // else read from command line
     auto xti = std::make_shared<Vector>(dimX);
+    xti->setZero();
     if (argc == 1) {
       xti->setValue(0, 1);
       xti->setValue(1, 6);
@@ -73,7 +74,7 @@ int main(int argc, char *argv[]) {
     // NBStep =1;
     //*****BUILD THE DYNAMICAL SYSTEM
 
-    auto aDS = std::make_shared<user_defined::MyDS>(xti);
+    auto aDS = std::make_shared<user_defined::MyDS>(*xti);
 
     //******BUILD THE RELATION
     auto aR = std::make_shared<user_defined::NonlinearRelation>();
@@ -133,8 +134,6 @@ int main(int argc, char *argv[]) {
 
     std::cout << "=== Start of simulation: " << NBStep << " steps ===\n";
 
-    printf("=== Start of simulation: %d steps ===  \n", NBStep);
-
     dataPlot(0, 0) = aN->t0();
     dataPlot(0, 1) = x->getValue(0);
     dataPlot(0, 2) = x->getValue(1);
@@ -146,11 +145,9 @@ int main(int argc, char *argv[]) {
     dataPlot(0, 8) = vectorfield->getValue(1);
 
     auto start = std::chrono::system_clock::now();
-    for (int k = 0; k < NBStep; k++)
-    //  while(aS->hasNextEvent())
-    {
+    for (int k = 0; k < NBStep; k++) {
+      //  while(aS->hasNextEvent())
       cmp++;
-
       aS->advanceToEvent();
 
       dataPlot(cmp, 0) = aS->nextTime();
@@ -173,17 +170,12 @@ int main(int argc, char *argv[]) {
       dataPlot(cmp, 8) = vectorfield->getValue(1);
 
       aS->nextStep();
-
-      // (*fout)<<cmp<<" "<<x->getValue(0)<<" "<<x->getValue(1)<<" "<<lambda->getValue(0)<<"
-      // "<<lambda->getValue(1)<<" "<<lambda->getValue(2)<<" "<<lambda->getValue(3)<<"\n";
     }
 
-    std::cout << "Computational time = " << "\n";
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "Computation time : " << elapsed << " ms\n";
 
-    dataPlot.resize(cmp, outputSize);
     siconos::algebra::io::write(filename, dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     if (argc == 1) {
@@ -192,7 +184,6 @@ int main(int argc, char *argv[]) {
       if ((error = siconos::algebra::io::compareRefFile(dataPlot, "simu.1.6.ref", eps)) > eps)
         return 1;
     }
-
     std::cout << "=== End of simulation. === \n";
   } catch (...) {
     siconos::exception::process();

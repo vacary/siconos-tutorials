@@ -16,25 +16,20 @@
  * limitations under the License.
  */
 #include "myDS.h"
+// #define DEBUG_STDOUT
+// #define DEBUG_MESSAGES
+#include <siconos_debug.h>
 
-user_defined::MyDS::MyDS(std::shared_ptr<siconos::algebra::SiconosVector> x0)
+using Matrix = siconos::algebra::SiconosMatrix;
+using Vector = siconos::algebra::SiconosVector;
+
+user_defined::MyDS::MyDS(Eigen::Ref<siconos::algebra::SiconosVector> x0)
     : FirstOrderNonLinearDS(x0) {
-  jacobianfVectorOver_x_ = std::make_shared<siconos::algebra::SiconosMatrix>(1, 1);
-  _f = std::make_shared<siconos::algebra::SiconosVector>(1);
-  _M = std::make_shared<siconos::algebra::SiconosMatrix>(1, 1);
-  _M->setIdentity();
+  setComputefVectorFunction(
+      [](const Eigen::Ref<const siconos::algebra::SiconosVector> &x, double time,
+         Eigen::Ref<siconos::algebra::MapVectorType> result) { result.setZero(); });
+
+  setComputeJacobianfOver_xFunction(
+      [](const Eigen::Ref<const siconos::algebra::SiconosVector> &x, double time,
+         Eigen::Ref<siconos::algebra::MapType> result) { result.setZero(); });
 }
-
-void user_defined::MyDS::computeF(double t) { _f->setValue(0, 0); }
-void user_defined::MyDS::computeF(double, std::shared_ptr<siconos::algebra::SiconosVector>) {
-  _f->setValue(0, 0);
-}
-
-
-void user_defined::MyDS::computeJacobianfOver_x(
-    const Eigen::Ref<siconos::algebra::SiconosVector> &state, double time) {
-  jacobianfVectorOver_x_->setValue(0, 0, 0);
-}
-
-void user_defined::MyDS::computeRhs(double t) { ; }
-void user_defined::MyDS::resetNonSmoothPart(unsigned int level) { _r->setZero(); }

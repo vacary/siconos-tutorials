@@ -81,39 +81,14 @@ namespace user_defined {
 class MyDS : public siconos::modeling::FirstOrderNonLinearDS {
  public:
   /** default constructor
-   * \param the type of the system
+   * \param x0 initial state
    */
-  MyDS(std::shared_ptr<siconos::algebra::SiconosVector> x0);
+  MyDS(Eigen::Ref<siconos::algebra::SiconosVector> x0);
 
   // ===== DESTRUCTOR =====
 
-  /** destructor
-   */
+  /** destructor */
   virtual ~MyDS() noexcept = default;
-
-  /** Default function to compute \f$ f: (x,t)\f$
-   * \param double time : current time
-   */
-  virtual void computeF(double);
-
-  /** function to compute \f$ f: (x,t)\f$ with x different from current saved state.
-   * \param double time : current time
-   * \param std::shared_ptr<siconos::algebra::SiconosVector>
-   */
-  virtual void computeF(double, std::shared_ptr<siconos::algebra::SiconosVector>);
-
-  /** Default function to compute \f$ \nabla_x f: (x,t) \in R^{n} \times R  \mapsto  R^{n
-   * \times n} \f$ with x different from current saved state. \param double time : current time
-   *  \param std::shared_ptr<siconos::algebra::SiconosVector>
-   */
-  virtual void computeJacobianfOver_x(const Eigen::Ref<siconos::algebra::SiconosVector> &state,
-                                 double time) override;
-
-  /** Default function to the right-hand side term
-   *  \param double time : current time
-   */
-  virtual void computeRhs(double) override;
-  virtual void resetNonSmoothPart(unsigned int level) override;
 };
 }  // namespace user_defined
 #endif

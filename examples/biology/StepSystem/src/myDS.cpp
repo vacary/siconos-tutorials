@@ -18,59 +18,25 @@
 #include "myDS.h"
 // #define DEBUG_STDOUT
 // #define DEBUG_MESSAGES
-#include "siconos_debug.h"
+#include <siconos_debug.h>
 
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-user_defined::MyDS::MyDS(std::shared_ptr<siconos::algebra::SiconosVector> x0)
+user_defined::MyDS::MyDS(Eigen::Ref<siconos::algebra::SiconosVector> x0)
     : FirstOrderNonLinearDS(x0) {
-  jacobianfVectorOver_x_ = std::make_shared<Matrix>(2, 2);
-  _f = std::make_shared<Vector>(2);
+  setComputefVectorFunction([](const Eigen::Ref<const siconos::algebra::SiconosVector> &x,
+                               double time,
+                               Eigen::Ref<siconos::algebra::MapVectorType> result) {
+    result(0) = -4.5 * x(0);
+    result(1) = -1.5 * x(1);
+  });
 
-  _M = std::make_shared<Matrix>(2, 2);
-  _M->setZero();
-  _M->setValue(0, 0, 1);
-  _M->setValue(1, 1, 1);
+  setComputeJacobianfOver_xFunction(
+      [](const Eigen::Ref<const siconos::algebra::SiconosVector> &x, double time,
+         Eigen::Ref<siconos::algebra::MapType> result) {
+        result.setZero();
+        result(0, 0) = -4.5;
+        result(1, 1) = -1.5;
+      });
 }
-
-void user_defined::MyDS::computefVector(
-    const Eigen::Ref<siconos::algebra::SiconosVector> &state, double time) {
-  // std::shared_ptr<siconos::algebra::SiconosVector> x=x();
-  _f->setValue(0, -4.5 * x->getValue(0));
-  _f->setValue(1, -1.5 * x->getValue(1));
-  DEBUG_PRINT("MyDS::computeF");
-  DEBUG_EXPR(x->display(););
-  /*
-  #ifdef SICONOS_DEBUG
-    std::cout<<"MyDS::computeF with x="<<std::endl;
-    x()->display();
-    std::cout<<std::endl;
-    std::cout<<"F(x)="<<std::endl;
-    _f->display();
-    std::cout<<std::endl;
-  #endif
-  */
-}
-
-void user_defined::MyDS::computeJacobianfOver_x(
-    const Eigen::Ref<siconos::algebra::SiconosVector> &state, double time) {
-  jacobianfVectorOver_x_->setValue(0, 0, -4.5);
-  jacobianfVectorOver_x_->setValue(1, 0, 0);
-  jacobianfVectorOver_x_->setValue(0, 1, 0);
-  jacobianfVectorOver_x_->setValue(1, 1, -1.5);
-
-  /*
-  #ifdef SICONOS_DEBUG
-    std::cout<<"MyDS::computeJacobianfx."<<std::endl;
-  std::cout<<"Nabla f="<<std::endl;
-    jacobianfVectorOver_x_->display();
-    std::cout<<std::endl;
-  #endif
-  */
-}
-
-// void MyDS::computeRhs(double t)
-// {
-//   ;
-// }

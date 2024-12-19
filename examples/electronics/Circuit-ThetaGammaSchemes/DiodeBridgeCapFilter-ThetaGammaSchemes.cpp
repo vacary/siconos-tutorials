@@ -73,54 +73,55 @@ int main(int argc, char* argv[]) {
 
   try {
     // --- Linear system 1 (LC oscillator) specification ---
-    auto init_stateLS1 = std::make_shared<Vector>(2);
-    (*init_stateLS1)(0) = VinitLS1;
+    Vector init_stateLS1{2};
+    init_stateLS1 << VinitLS1, 0.;
 
-    auto LS1_A = std::make_shared<Matrix>(2, 2);
-    (*LS1_A)(0, 1) = -1.0 / Cvalue;
-    (*LS1_A)(1, 0) = 1.0 / Lvalue;
-
-    std::cout << " LS1 matrice A = \n";
-    LS1_A->display();
     auto LS1DiodeBridgeCapFilter =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_stateLS1, *LS1_A);
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS1);
+    Matrix LS1_A{2, 2};
+    LS1_A.setZero();
+    LS1_A(0, 1) = -1.0 / Cvalue;
+    LS1_A(1, 0) = 1.0 / Lvalue;
+
+    LS1DiodeBridgeCapFilter->setConstantA(LS1_A);
+    LS1DiodeBridgeCapFilter->display();
 
     // --- Linear system 2 (load and filter) specification ---
-    auto init_stateLS2 = std::make_shared<Vector>(1);
-    (*init_stateLS2)(0) = VinitLS2;
-
-    auto LS2_A = std::make_shared<Matrix>(1, 1);
-    (*LS2_A)(0, 0) = -1.0 / (Rvalue * Cfilt);
-
-    std::cout << " LS2 matrice A = \n";
-    LS2_A->display();
+    Vector init_stateLS2{1};
+    init_stateLS2 << VinitLS2;
     auto LS2DiodeBridgeCapFilter =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS2, LS2_A);
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS2);
+    Matrix LS2_A{1, 1};
+    LS2_A(0, 0) = -1.0 / (Rvalue * Cfilt);
+    LS2DiodeBridgeCapFilter->setConstantA(LS2_A);
 
     // --- Interaction between linear systems and non smooth system ---
-    auto Int_C = std::make_shared<Matrix>(4, 3);
-    (*Int_C)(0, 2) = 1.0;
-    (*Int_C)(2, 0) = -1.0;
-    (*Int_C)(2, 2) = 1.0;
-    (*Int_C)(3, 0) = 1.0;
+    Matrix int_C{4, 3};
+    int_C.setZero();
+    int_C(0, 2) = 1.0;
+    int_C(2, 0) = -1.0;
+    int_C(2, 2) = 1.0;
+    int_C(3, 0) = 1.0;
 
-    auto Int_D = std::make_shared<Matrix>(4, 4);
-    (*Int_D)(0, 1) = -1.0;
-    (*Int_D)(1, 0) = 1.0;
-    (*Int_D)(1, 2) = 1.0;
-    (*Int_D)(1, 3) = -1.0;
-    (*Int_D)(2, 1) = -1.0;
-    (*Int_D)(3, 1) = 1.0;
+    Matrix int_D{4, 4};
+    int_D.setZero();
+    int_D(0, 1) = -1.0;
+    int_D(1, 0) = 1.0;
+    int_D(1, 2) = 1.0;
+    int_D(1, 3) = -1.0;
+    int_D(2, 1) = -1.0;
+    int_D(3, 1) = 1.0;
 
-    auto Int_B = std::make_shared<Matrix>(3, 4);
-    (*Int_B)(0, 2) = -1.0 / Cvalue;
-    (*Int_B)(0, 3) = 1.0 / Cvalue;
-    (*Int_B)(2, 0) = 1.0 / Cfilt;
-    (*Int_B)(2, 2) = 1.0 / Cfilt;
+    Matrix int_B{3, 4};
+    int_B.setZero();
+    int_B(0, 2) = -1.0 / Cvalue;
+    int_B(0, 3) = 1.0 / Cvalue;
+    int_B(2, 0) = 1.0 / Cfilt;
+    int_B(2, 2) = 1.0 / Cfilt;
 
     auto LTIRDiodeBridgeCapFilter =
-        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*Int_C, *Int_B);
-    LTIRDiodeBridgeCapFilter->setConstantD(*Int_D);
+        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(int_C, int_B);
+    LTIRDiodeBridgeCapFilter->setConstantD(int_D);
     auto nslaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(4);
 
     auto InterDiodeBridgeCapFilter =
@@ -130,23 +131,29 @@ int main(int argc, char* argv[]) {
     auto DiodeBridgeCapFilter =
         std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
     DiodeBridgeCapFilter->setTitle(Modeltitle);
+    // add the dynamical system in the non smooth dynamical system
     DiodeBridgeCapFilter->insertDynamicalSystem(LS1DiodeBridgeCapFilter);
     DiodeBridgeCapFilter->insertDynamicalSystem(LS2DiodeBridgeCapFilter);
+    // link the interaction and the dynamical system
     DiodeBridgeCapFilter->link(InterDiodeBridgeCapFilter, LS1DiodeBridgeCapFilter,
                                LS2DiodeBridgeCapFilter);
+
     // ------------------
     // --- Simulation ---
     // ------------------
 
     // -- (1) OneStepIntegrators --
-    double theta = 0.5;
+    double theta = 1.;
     double gamma = 0.5;
+
     auto aOSI = std::make_shared<siconos::integrators::EulerMoreauOSI>(theta, gamma);
     aOSI->setUseGammaForRelation(true);
     // -- (2) Time discretisation --
     auto aTiDisc = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h_step);
+
     // -- (3) Non smooth problem
     auto aLCP = std::make_shared<siconos::nonsmooth_formulations::LCP>();
+
     // -- (4) Simulation setup with (1) (2) (3)
     auto aTS = std::make_shared<siconos::simulation::TimeStepping>(DiodeBridgeCapFilter,
                                                                    aTiDisc, aOSI, aLCP);
@@ -157,16 +164,12 @@ int main(int argc, char* argv[]) {
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    Matrix dataPlot(N, 8);
-
+    Matrix dataPlot{N, 8};
     // For the initial time step:
-
     // time
     dataPlot(k, 0) = DiodeBridgeCapFilter->t0();
-
     // inductor voltage
     dataPlot(k, 1) = (*LS1DiodeBridgeCapFilter->x())(0);
-
     // inductor current
     dataPlot(k, 2) = (*LS1DiodeBridgeCapFilter->x())(1);
 
@@ -188,13 +191,9 @@ int main(int argc, char* argv[]) {
     // --- Compute elapsed time ---
     auto start = std::chrono::system_clock::now();
     // --- Time loop  ---
-    while (k < N - 1) {
-      // get current time step
-      k++;
-
+    for (k = 1; k < N; ++k) {
       // solve ...
       aTS->computeOneStep();
-
       // --- Get values to be plotted ---
       // time
       dataPlot(k, 0) = aTS->nextTime();
@@ -216,7 +215,6 @@ int main(int argc, char* argv[]) {
 
       // diode F1 current
       dataPlot(k, 6) = (InterDiodeBridgeCapFilter->getLambda(0))(2);
-
       // load voltage
       dataPlot(k, 7) = (*LS2DiodeBridgeCapFilter->x())(0);
 
@@ -224,7 +222,6 @@ int main(int argc, char* argv[]) {
     }
 
     // --- elapsed time computing ---
-    std::cout << "time = \n";
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "Computation time : " << elapsed << " ms\n";
@@ -232,16 +229,11 @@ int main(int argc, char* argv[]) {
     // Number of time iterations
     std::cout << "Number of iterations done: " << k << "\n";
 
-    // dataPlot (ascii) output
-    dataPlot.resize(k, 10);
-
     siconos::algebra::io::write("DiodeBridgeCapFilter.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
     std::cout << "Comparison with a reference file ...\n";
-    Matrix dataPlotRef(dataPlot);
-    dataPlotRef.setZero();
     std::vector<int> idx(4);
     for (auto i = 0; i < 4; i++) idx.push_back(i);
     double error = 0.0, eps = 1e-12;
@@ -249,10 +241,10 @@ int main(int argc, char* argv[]) {
                                                       eps, idx)) > eps)
       return 1;
   }
-
   // --- Exceptions handling ---
   catch (...) {
     siconos::exception::process();
     return 1;
   }
+  return 0;
 }
