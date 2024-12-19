@@ -23,18 +23,19 @@
 import  numpy as np
 
 from numpy.linalg import norm
-from siconos.kernel import FirstOrderLinearTIDS, FirstOrderLinearDS, RelayNSL, Interaction, FirstOrderLinearR, NonSmoothDynamicalSystem,\
-    EulerMoreauOSI, TimeDiscretisation, TimeStepping, Relay
-
+import siconos.modeling as sm
+import siconos.integrators as si
+import siconos.simulation as ss
+import siconos.nonsmooth_formulations as snsf
+import siconos.pynumerics as sn
+import siconos.input
 
 
 
 # LagrangianLinearTIDS, NewtonImpactNSL,\
 #     LagrangianLinearTIR, Interaction, NonSmoothDynamicalSystem, MoreauJeanOSI,\
 #     TimeDiscretisation, LCP, TimeStepping
-from siconos.kernel import SiconosMatrix, getMatrix
-
-import siconos.numerics as sn
+# import siconos.pynumerics as sn
 
 
 from numpy import eye, empty, float64, zeros
@@ -54,14 +55,14 @@ T = 100     # end time
 h = 1e-02    # time step
 theta = 0.5  # theta scheme
 
-m = 1; stiffness = 1;
+m = 1; stiffness = 1
 alpha = 1
 xinit=12.
 vinit=6.
 
-x0 = [xinit, vinit]    # initial state
+x0 = np.array([xinit, vinit], dtype=np.float64)    # initial state
 
-A = np.zeros((2,2))
+A = np.zeros((2,2), dtype=np.float64, order='F')
 
 A[0,1] = 1
 A[1,0] = -stiffness/m
@@ -70,7 +71,8 @@ A[1,0] = -stiffness/m
 # dynamical system
 #
 
-oscillator = FirstOrderLinearTIDS(x0, A)
+oscillator = sm.FirstOrderLinearDS(x0)
+oscillator.setConstantA(A)
 #oscillator.display()
 
 #oscillator = FirstOrderLinearDS(x0, A)
@@ -81,20 +83,23 @@ oscillator = FirstOrderLinearTIDS(x0, A)
 #
 
 
-B = np.array([[0] , [alpha]])
-C = np.array([[0  , 1.]])
+B = np.array([[0] , [alpha]], dtype=np.float64, order='F')
+C = np.array([[0  , 1.]], dtype=np.float64, order='F')
 
-nslaw = RelayNSL(1, -1, 1)
+nslaw = sm.RelayNSL(1, -1, 1)
 
-relation = FirstOrderLinearR(C, B)
-inter = Interaction(nslaw, relation)
+# relation = sm.FirstOrderLinearR(C, B)
+relation = sm.FirstOrderLinearR()
+relation.setConstantB(B)
+relation.setConstantC(C)
+inter = sm.Interaction(nslaw, relation)
 
-inter.display()
+print(inter)
 
 #
 # Model
 #
-frictionOscillator = NonSmoothDynamicalSystem(t0, T)
+frictionOscillator = sm.NonSmoothDynamicalSystem(t0, T)
 
 # add the dynamical system to the non smooth dynamical system
 frictionOscillator.insertDynamicalSystem(oscillator)
@@ -109,18 +114,18 @@ frictionOscillator.link(inter, oscillator)
 #
 
 # (1) OneStepIntegrators
-OSI = EulerMoreauOSI(theta)
+OSI = si.EulerMoreauOSI(theta)
 
 # (2) Time discretisation --
-t = TimeDiscretisation(t0, h)
+t = ss.TimeDiscretisation(t0, h)
 
 # (3) one step non smooth problem
-osnspb = Relay()
-osnspb.setSolverId(sn.SICONOS_RELAY_LEMKE);
+osnspb = snsf.Relay()
+osnspb.setSolverId(sn.Constants.SICONOS_RELAY_LEMKE)
 
-osnspb.numericsSolverOptions().dparam[0] = 1e-08;
+osnspb.numericsSolverOptions().dparam[0] = 1e-08
 # (4) Simulation setup with (1) (2) (3)
-s = TimeStepping(frictionOscillator,t, OSI, osnspb)
+s = ss.TimeStepping(frictionOscillator,t, OSI, osnspb)
 
 # end of model definition
 
@@ -142,7 +147,7 @@ dataPlot = zeros((N+1, 6))
 # #
 x = oscillator.x()
 # p = ball.p(1)
-lambda_ = inter.lambda_(0)
+lambda_ = inter.lambda_python(0)
 y = inter.y(0)
 
 
