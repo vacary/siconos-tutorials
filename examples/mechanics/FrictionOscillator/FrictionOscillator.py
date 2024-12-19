@@ -178,7 +178,7 @@ while s.hasNextEvent():
 #
 # comparison with the reference file (produced by the cpp version)
 #
-ref = getMatrix(SiconosMatrix("FrictionOscillator.ref"))
+ref = siconos.input.readMatrixFromFile("FrictionOscillator.ref")
 if (norm(dataPlot[0:10000,0:6] - ref[0:10000,0:6]) > 1e-12):
     print("Warning. The result is rather different from the reference file.", norm(dataPlot[0:10000,0:6] - ref[0:10000,0:6]) )
 else:
