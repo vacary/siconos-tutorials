@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
  * limitations under the License.
  */
 
-/*!\file BouncingBallTS.cpp
-  \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
+/*
   V. Acary, F. Perignon.
 
   A Ball bouncing on the ground.
-  Direct description of the model.
-  Simulation with a Time-Stepping scheme.
+  - Simulation with a TimeSteppingCombinedProjection scheme
 */
 
 #include <SiconosKernel.hpp>
@@ -66,7 +64,6 @@ int main(int argc, char *argv[]) {
     v0.setZero();
     v0(0) = velocity_init;
 
-
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
 
@@ -85,12 +82,11 @@ int main(int argc, char *argv[]) {
 
     // Interaction ball-floor
     //
-    auto H = std::make_shared<Matrix>(1, nDof);
-    (*H)(0, 0) = 1.0;
-
+    Matrix H{1, nDof};
+    H.setZero();
+    H(0, 0) = 1.0;
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H));
-
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
     // --------------------------------
@@ -129,8 +125,7 @@ int main(int argc, char *argv[]) {
     s->setConstraintTol(1e-10);
     // =========================== End of model definition ===========================
 
-    // ================================= Computation
-    // =================================
+    // ================================= Computation =================================
 
     int N = ceil((T - t0) / h);  // Number of time steps
 
@@ -197,13 +192,14 @@ int main(int argc, char *argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
-    siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+    siconos::algebra::io::write("BouncingBallTS-MoreauJeanCombinedProjectionOSI.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
     if ((error = siconos::algebra::io::compareRefFile(
              dataPlot, "BouncingBallTS-MoreauJeanCombinedProjectionOSI.ref", eps)) >= eps)
       return 1;
+    return 0;
   }
 
   catch (...) {

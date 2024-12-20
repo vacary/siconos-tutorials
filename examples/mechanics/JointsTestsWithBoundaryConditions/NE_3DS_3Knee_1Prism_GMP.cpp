@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 
     auto beam2 = std::make_shared<siconos::modeling::NewtonEulerDS>(q02, v02, m, I2);
     // -- Set external forces (weight) --
-     beam2->etConstantFExt(weight);
+    beam2->etConstantFExt(weight);
 
     auto q03 = std::make_shared<Vector>(qDim);
     auto v03 = std::make_shared<Vector>(nDim);
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
 
     auto beam3 = std::make_shared<siconos::modeling::NewtonEulerDS>(q03, v03, m, I3);
     // -- Set external forces (weight) --
-     beam3->etConstantFExt(weight);
+    beam3->etConstantFExt(weight);
     // --------------------
     // --- Interactions ---
     // --------------------
@@ -175,8 +175,10 @@ int main(int argc, char *argv[]) {
     // --------------------
     auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(
         siconos::modeling::BoundaryCondition::Indices{4});
-    bd->setComputePrescribedVelocityFunction("Beam1Plugin", "prescribedvelocity");
-
+    bd->setComputePrescribedVelocityFunction(
+        [](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          result = cos(0.5 * std::numbers::pi * time);
+        });
     beam1->setBoundaryConditions(bd);
 
     // --------------------

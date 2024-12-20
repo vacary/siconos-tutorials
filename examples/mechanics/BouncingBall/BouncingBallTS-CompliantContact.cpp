@@ -16,12 +16,10 @@
  * limitations under the License.
  */
 
-/*!\file BouncingBallTS.cpp
-  \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
-  V. Acary, F. Perignon.
+/* C++ input file, Time-Stepping version -
+   V. Acary, F. Perignon.
 
-  A Ball bouncing on the ground.
-  Direct description of the model.
+  A Ball bouncing between a roof and a ground. Compliant contact with the ground.
   Simulation with a Time-Stepping scheme.
 */
 
@@ -37,8 +35,8 @@ int main(int argc, char* argv[]) {
 
     // User-defined main parameters
     unsigned int nDof = 3;       // degrees of freedom for the ball
-    double t0 = 0;               // initial computation time
-    double T = 10;               // final computation time
+    double t0 = 0.;              // initial computation time
+    double T = 10.;              // final computation time
     double h = 0.0005;           // time step
     double position_init = 1.0;  // initial position for lowest bead.
     double velocity_init = 0.0;  // initial velocity for lowest bead.
@@ -47,6 +45,7 @@ int main(int argc, char* argv[]) {
     double height = 1.0;         // height to the roof
     double m = 1;                // Ball mass
     double g = 9.81;             // Gravity
+
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
@@ -67,7 +66,6 @@ int main(int argc, char* argv[]) {
     v0.setZero();
     v0(0) = velocity_init;
 
-
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
 
@@ -85,28 +83,27 @@ int main(int argc, char* argv[]) {
 
     // Interaction ball-roof with impact
     //
-    auto H = std::make_shared<Matrix>(1, nDof);
-    (*H)(0, 0) = -1.0;
-
-    auto b = std::make_shared<Vector>(1);
-    (*b)(0) = height - R - .2;
-
+    Matrix H{1, nDof};
+    H.setZero();
+    H(0, 0) = -1.0;
+    Vector b{1};
+    b << height - R - .2;
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H, b);
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H, *b);
-
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
     // -- nslaw --
     double compliance = 0.01;
 
-    // Interaction ball-floor with a compliant spring
-    auto Hfloor = std::make_shared<Matrix>(1, nDof);
-    (*Hfloor)(0, 0) = 1.0;
-    auto Kfloor = std::make_shared<Matrix>(1, 1);
-    (*Kfloor)(0, 0) = compliance;
-
-    auto bfloor = std::make_shared<Vector>(1);
-    (*bfloor)(0) = -R;
+    // Interaction ball-floor with a compliant spring -
+    // y = q0 + compliance.lambda - R
+    Matrix Hfloor{1, nDof};
+    Hfloor.setZero();
+    Hfloor(0, 0) = 1.0;
+    Matrix Kfloor{1, 1};
+    Kfloor << compliance;
+    Vector bfloor{1};
+    bfloor << -R;
 
     auto nslawfloor = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(1);
     auto relationfloor = std::make_shared<siconos::modeling::LagrangianCompliantLinearTIR>(
@@ -189,8 +186,8 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
-    siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+    siconos::algebra::io::write("BouncingBallTS-CompliantContact.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
     if ((error = siconos::algebra::io::compareRefFile(

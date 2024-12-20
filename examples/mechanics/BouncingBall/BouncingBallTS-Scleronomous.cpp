@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
  * limitations under the License.
  */
 
-/*!\file BouncingBallTS.cpp
-  \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
+/*
   V. Acary, F. Perignon.
 
   A Ball bouncing on the ground.
-  Direct description of the model.
-  Simulation with a Time-Stepping scheme.
+  - Scleronomous relation used for the contact, user-defined derived class
+  - Simulation with a Time-Stepping scheme.
 */
 
 #include <SiconosKernel.hpp>
@@ -31,7 +30,7 @@
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   try {
     // ================= Creation of the model =======================
 
@@ -46,6 +45,7 @@ int main(int argc, char *argv[]) {
     double R = 0.1;              // Ball radius
     double m = 1;                // Ball mass
     double g = 10;               // Gravity
+
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
@@ -84,9 +84,21 @@ int main(int argc, char *argv[]) {
 
     // Interaction ball-floor
     //
+    double alpha = 0.1;
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "BouncingBallPlugin:h0", "BouncingBallPlugin:G0");
+    auto relation = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+    relation->setComputehFunction([alpha](const siconos::algebra::BlockVector& q,
+                                          Eigen::Ref<siconos::algebra::MapVectorType> y) {
+      y(0) = q(0) + alpha * q(1);
+    });
+
+    relation->setComputeJacobianhOver_qFunction(
+        [alpha](const siconos::algebra::BlockVector& q,
+                Eigen::Ref<siconos::algebra::MapType> result) {
+          result.setZero();
+          result(0, 0) = 1.0;
+          result(0, 1) = alpha;
+        });
 
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
@@ -117,11 +129,9 @@ int main(int argc, char *argv[]) {
     // -- (4) Simulation setup with (1) (2) (3)
     auto s = std::make_shared<siconos::simulation::TimeStepping>(bouncingBall, t, OSI, osnspb);
 
-    // =========================== End of model definition
-    // ===========================
+    //  =========================== End of model definition ===========================
 
-    // ================================= Computation
-    // =================================
+    // ================================= Computation =================================
 
     int N = ceil((T - t0) / h);  // Number of time steps
 
@@ -168,7 +178,6 @@ int main(int argc, char *argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("result-scleronomous.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);

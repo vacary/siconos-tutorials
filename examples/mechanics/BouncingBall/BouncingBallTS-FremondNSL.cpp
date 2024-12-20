@@ -16,12 +16,11 @@
  * limitations under the License.
  */
 
-/*!\file BouncingBallTS.cpp
-  \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
+/*
   V. Acary, F. Perignon.
 
   A Ball bouncing on the ground.
-  Direct description of the model.
+  Fremond contact
   Simulation with a Time-Stepping scheme.
 */
 
@@ -37,13 +36,14 @@ int main(int argc, char* argv[]) {
 
     // User-defined main parameters
     unsigned int nDof = 3;  // degrees of freedom for the ball
-    double t0 = 0;          // initial computation time
-    double T = 10;          // final computation time
+    double t0 = 0.;         // initial computation time
+    double T = 10.;         // final computation time
     double h = 0.005;       // time step
     double theta = 0.5;     // theta for MoreauJeanOSI integrator
     double R = 0.1;         // Ball radius
     double m = 1;           // Ball mass
     double g = 9.81;        // Gravity
+
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
@@ -61,10 +61,9 @@ int main(int argc, char* argv[]) {
     q0.setZero();
     Vector v0{nDof};
     v0.setZero();
-   q0(1) = 1.0;
+    q0(1) = 1.0;
     v0(0) = 0.0;
     v0(2) = 1.e-01;
-
 
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
@@ -84,14 +83,13 @@ int main(int argc, char* argv[]) {
     double mu = 0.5;
     // Interaction ball-floor
     //
-    auto H = std::make_shared<Matrix>(2, nDof);
-    (*H)(0, 1) = 1.0;
-    (*H)(1, 0) = -1.0;
-    (*H)(1, 2) = -R;
-
+    Matrix H{2, nDof};
+    H.setZero();
+    H(0, 1) = 1.0;
+    H(1, 0) = -1.0;
+    H(1, 2) = -R;
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
     auto nslaw = std::make_shared<siconos::modeling::FremondImpactFrictionNSL>(e, 0.0, mu, 2);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H);
-
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
     // --------------------------------
@@ -186,7 +184,6 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("BouncingBallTS-FremondNSL.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);

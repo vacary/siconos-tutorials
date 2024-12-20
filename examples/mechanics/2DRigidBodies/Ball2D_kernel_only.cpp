@@ -58,19 +58,19 @@ int main(int argc, char* argv[]) {
     v0.setZero();
     v0(0) = velocity_init;
 
-
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
 
-    auto q01 = std::make_shared<Vector>(nDof);
-    auto v01 = std::make_shared<Vector>(nDof);
-    (*q01)(0) = position_init + 2 * R + 0.1;
-    (*v01)(0) = velocity_init;
+    Vector q01{nDof};
+    Vector v01{nDof};
+    q01(0) = position_init + 2 * R + 0.1;
+    v01(0) = velocity_init;
 
     auto ball1 = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q01, v01, mass);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
+    weight.setZero();
     weight(0) = -m * g;
     ball->setConstantFext(weight);
     ball1->setConstantFext(weight);
@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 9;
-    Matrix dataPlot(N + 1, outputSize);
+    Matrix dataPlot(N, outputSize);
 
     auto q = ball->q();
     auto v = ball->velocity();
@@ -178,6 +178,7 @@ int main(int argc, char* argv[]) {
       (*nnc1)(1) = 0.0;
 
       s->computeOneStep();
+
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(0);
@@ -200,7 +201,6 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("Ball2D_kernel_only.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
@@ -209,7 +209,8 @@ int main(int argc, char* argv[]) {
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Ball2D_kernel_only.ref",
                                                       eps)) > eps)
       return 1;
-
+    else
+      return 0;
   }
 
   catch (...) {

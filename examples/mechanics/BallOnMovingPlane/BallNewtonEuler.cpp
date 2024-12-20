@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-/*!\file BouncingBallNETS.cpp
-  \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
+/*
   V. Acary, O. Bonnefon.
 
   A Ball bouncing on the ground.
@@ -27,7 +26,7 @@
 
 #include <SiconosKernel.hpp>
 #include <chrono>
-
+#include <numbers>  // For std::numbers::pi
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
@@ -47,18 +46,18 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
  public:
   my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius) {};
 
-  virtual void computeOutput(double t, siconos::modeling::Interaction& inter,
+  virtual void computeOutput(double time, siconos::modeling::Interaction& inter,
                              unsigned int derivativeNumber) override {
     auto& DSlink = inter.linkToDSVariables();
     if (derivativeNumber == 0) {
-      computeh(t, *DSlink[NewtonEulerR::q0], *inter.y(0));
+      computeh(*DSlink[siconos::tools::enum_to_index(WorkDS::q0)], *inter.y(0));
     } else {
-      R_CLASS::computeOutput(t, inter, derivativeNumber);
+      R_CLASS::computeOutput(time, inter, derivativeNumber);
     }
   }
 
-  void computeh(double time, const siconos::algebra::BlockVector& q0,
-                siconos::algebra::SiconosVector& y) override {
+  void computeh(const siconos::algebra::BlockVector& q0,
+                Eigen::Ref<siconos::algebra::SiconosVector> y) override {
     std::cout << "my_NewtonEulerR:: computeh \n";
     std::cout << "q0.size() = " << q0.size() << "\n";
     double height = q0.getValue(0) - _sBallRadius - q0.getValue(7);
@@ -113,15 +112,11 @@ int main(int argc, char* argv[]) {
     siconos::algebra::SiconosVector v0{nDim};
     q0.setZero();
     v0.setZero();
-    Matrix I{3,3};
-    I.setZero();
-    v0->setZero();
-    q0->setZero();
+    Matrix I = Eigen::MatrixXd::Identity(3, 3);
 
-    I->setIdentity();
-   q0(0) = position_init;
+    q0(0) = position_init;
     /*initial quaternion equal to (1,0,0,0)*/
-   q0(3) = 1.0;
+    q0(3) = 1.0;
 
     v0(0) = velocity_init;
     v0(3) = omega_initx;
@@ -137,7 +132,11 @@ int main(int argc, char* argv[]) {
     // siconos::modeling::BoundaryCondition::Indices bdindex = {0, 3, 5};
     auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(
         siconos::modeling::BoundaryCondition::Indices{0, 3, 5});
-    bd->setComputePrescribedVelocityFunction("BallOnMovingPlanePlugin", "prescribedvelocity3");
+
+    bd->setComputePrescribedVelocityFunction(
+        [](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          result.setConstant(2. + cos(0.5 * std::numbers::pi * time));
+        });
     ball->setBoundaryConditions(bd);
 
     // --------------------
@@ -290,7 +289,6 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("BallNewtonEuler.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
@@ -308,7 +306,7 @@ int main(int argc, char* argv[]) {
         eps)
       return 1;
 #endif
-
+    return 0;
   }
 
   catch (...) {

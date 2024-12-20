@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
  * limitations under the License.
  */
 
-/*!\file BouncingBallTS.cpp
-  \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
+/*
   V. Acary, F. Perignon.
 
   A Ball bouncing on the ground.
-  Direct description of the model.
+  Add/create contact (interaction) during the simulation.
   Simulation with a Time-Stepping scheme.
 */
 
@@ -31,14 +30,14 @@
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   try {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
     unsigned int nDof = 3;       // degrees of freedom for the ball
-    double t0 = 0;               // initial computation time
-    double T = 10;               // final computation time
+    double t0 = 0.;              // initial computation time
+    double T = 10.;              // final computation time
     double h = 0.005;            // time step
     double position_init = 1.0;  // initial position for lowest bead.
     double velocity_init = 0.0;  // initial velocity for lowest bead.
@@ -46,6 +45,7 @@ int main(int argc, char *argv[]) {
     double R = 0.1;              // Ball radius
     double m = 1;                // Ball mass
     double g = 9.81;             // Gravity
+
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
@@ -66,12 +66,12 @@ int main(int argc, char *argv[]) {
     v0.setZero();
     v0(0) = velocity_init;
 
-
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
+    weight.setZero();
     weight(0) = -m * g;
     ball->setConstantFext(weight);
 
@@ -84,12 +84,11 @@ int main(int argc, char *argv[]) {
 
     // Interaction ball-floor
     //
-    auto H = std::make_shared<Matrix>(1, nDof);
-    (*H)(0, 0) = 1.0;
-
+    Matrix H{1, nDof};
+    H.setZero();
+    H(0, 0) = 1.0;
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H);
-
     std::shared_ptr<siconos::modeling::Interaction> inter{nullptr};
 
     // --------------------------------
@@ -116,11 +115,9 @@ int main(int argc, char *argv[]) {
     // -- (4) Simulation setup with (1) (2) (3)
     auto s = std::make_shared<siconos::simulation::TimeStepping>(bouncingBall, t, OSI, osnspb);
 
-    // =========================== End of model definition
-    // ===========================
+    // =========================== End of model definition ===========================
 
-    // ================================= Computation
-    // =================================
+    // ================================= Computation =================================
 
     int N = ceil((T - t0) / h);  // Number of time steps
 
@@ -132,7 +129,6 @@ int main(int argc, char *argv[]) {
     auto q = ball->q();
     auto v = ball->velocity();
     auto p = ball->p(1);
-
     // lambda is zero until we create the Interaction
     auto lambda = std::make_shared<Vector>(1);
     lambda->setZero();
@@ -161,7 +157,6 @@ int main(int argc, char *argv[]) {
       s->computeOneStep();
 
       s->clearNSDSChangeLog();
-
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(0);
@@ -179,8 +174,8 @@ int main(int argc, char *argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
-    siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+    siconos::algebra::io::write("BouncingBallTS-Dynamic.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BouncingBallTS-Dynamic.ref",
@@ -192,4 +187,5 @@ int main(int argc, char *argv[]) {
     siconos::exception::process();
     return 1;
   }
+  return 0;
 }

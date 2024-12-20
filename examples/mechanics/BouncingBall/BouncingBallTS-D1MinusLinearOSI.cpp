@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-/*!\file
-  C++ input file, D1MinusLinearOSI-Time-Stepping version
+/* D1MinusLinearOSI-Time-Stepping version
   T. Schindler, V. Acary
 
   A Ball bouncing on the ground.
@@ -31,13 +30,13 @@
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   try {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
     unsigned int nDof = 3;       // degrees of freedom for the ball
-    double t0 = 0;               // initial computation time
+    double t0 = 0.;              // initial computation time
     double T = 10.;              // final computation time
     double h = 5e-4;             // time step
     double hplot = 0.005;        // plot step size (larger than time step)
@@ -67,12 +66,12 @@ int main(int argc, char *argv[]) {
     v0.setZero();
     v0(0) = velocity_init;
 
-
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
+    weight.setZero();
     weight(0) = -m * g;
     ball->setConstantFext(weight);
 
@@ -85,12 +84,11 @@ int main(int argc, char *argv[]) {
 
     // Interaction ball-floor
     //
-    auto H = std::make_shared<Matrix>(1, nDof);
-    (*H)(0, 0) = 1.0;
-
+    Matrix H{1, nDof};
+    H.setZero();
+    H(0, 0) = 1.0;
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H));
-
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
     // --------------------------------
@@ -132,15 +130,13 @@ int main(int argc, char *argv[]) {
 
     // ================================= Computation =================================
 
-    // --- Simulation initialization ---
-
     int N = ceil((T - t0) / h);  // Number of time steps
     // int Nplot = (int)((T - t0) / hplot); // Number of plot steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 7;
-    Matrix dataPlot(N + 10, outputSize);
+    Matrix dataPlot(N + 1, outputSize);
 
     auto q = ball->q();
     auto v = ball->velocity();
@@ -191,8 +187,8 @@ int main(int argc, char *argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
-    siconos::algebra::io::write("result_tdg.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+    siconos::algebra::io::write("BouncingBallTS-D1MinusLinearOSI.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
     if ((error = siconos::algebra::io::compareRefFile(
@@ -204,4 +200,5 @@ int main(int argc, char *argv[]) {
     siconos::exception::process();
     return 1;
   }
+  return 0;
 }

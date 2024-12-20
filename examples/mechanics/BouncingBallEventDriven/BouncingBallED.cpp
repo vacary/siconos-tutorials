@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,10 @@
  * limitations under the License.
  */
 
-/*!\file BouncingBallED.cpp
-  \brief \ref EMBouncingBall - C++ input file, Event-Driven version - V. Acary,
-  F. Perignon.
+/*
+  V. Acary, F. Perignon.
 
   A Ball bouncing on the ground.
-  Direct description of the model.
   Simulation with an Event-Driven scheme.
 */
 
@@ -85,12 +83,11 @@ int main(int argc, char *argv[]) {
 
     // Interaction ball-floor
     //
-    auto H = std::make_shared<Matrix>(1, nDof);
-    (*H)(0, 0) = 1.0;
-
+    Matrix H{1, nDof};
+    H.setZero();
+    H(0, 0) = 1.0;
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H);
-
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
     // --------------------------------
@@ -124,13 +121,9 @@ int main(int argc, char *argv[]) {
     s->insertNonSmoothProblem(impact, siconos::simulation::SICONOS_OSNSP_ED_IMPACT);
     s->insertNonSmoothProblem(acceleration, siconos::simulation::SICONOS_OSNSP_ED_SMOOTH_ACC);
 
-    // =========================== End of model definition
-    // ===========================
+    // =========================== End of model definition ===========================
 
-    // ================================= Computation
-    // =================================
-
-    s->setPrintStat(true);
+    // ================================= Computation =================================
 
     int N = 1854;  // Number of saved points: depends on the number of events ...
 
@@ -138,25 +131,16 @@ int main(int argc, char *argv[]) {
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 7;
     Matrix dataPlot(N + 1, outputSize);
-    auto q = ball->q();
-    auto v = ball->velocity();
-    auto p = ball->p(1);
-
-    std::shared_ptr<Vector> f;
-    //   SiconosVector * y =
-    //   bouncingBall->nonSmoothDynamicalSystem()->interaction(0)->y(0);
-
+    auto q = ball->q_read();
+    auto v = ball->velocity_read();
+    auto p = ball->p_read(1);
     auto eventsManager = s->eventsManager();
 
-    // For the initial time step:
-    // time
-
     dataPlot(0, 0) = bouncingBall->t0();
-    dataPlot(0, 1) = (*q)(0);
-    dataPlot(0, 2) = (*v)(0);
-    dataPlot(0, 3) = (*p)(0);
-    dataPlot(0, 4) = 0.0;
-
+    dataPlot(0, 1) = q(0);
+    dataPlot(0, 2) = v(0);
+    dataPlot(0, 3) = p(0);
+    dataPlot(0, 4) = 0.;
     // --- Time loop ---
     std::cout << "====> Start computation ... \n";
     bool nonSmooth = false;
@@ -167,7 +151,7 @@ int main(int argc, char *argv[]) {
     auto start = std::chrono::system_clock::now();
     while (s->hasNextEvent() && k < N) {
       s->advanceToEvent();
-      f = ball->p(2);
+      auto f = ball->p(2);
       if (eventsManager->nextEvent()->getType() == siconos::simulation::EventType::NS)
         nonSmooth = true;
 
@@ -185,9 +169,9 @@ int main(int argc, char *argv[]) {
         nonSmooth = false;
       }
       dataPlot(k, 0) = s->startingTime();
-      dataPlot(k, 1) = (*q)(0);
-      dataPlot(k, 2) = (*v)(0);
-      dataPlot(k, 3) = (*p)(0);
+      dataPlot(k, 1) = q(0);
+      dataPlot(k, 2) = v(0);
+      dataPlot(k, 3) = p(0);
       dataPlot(k, 4) = (*f)(0);
       dataPlot(k, 5) = (*inter->lambda(1))(0);
       dataPlot(k, 6) = (*inter->lambda(2))(0);
@@ -197,21 +181,25 @@ int main(int argc, char *argv[]) {
     }
 
     auto end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "===== End of Event Driven simulation. \n";
     std::cout << numberOfEvent << " events have been processed. ==== \n";
     std::cout << numberOfEvent - kns << " events are of time--discretization type  ==== \n";
     std::cout << kns << " events are of nonsmooth type  ==== \n\n";
     std::cout << "\nComputation time : " << elapsed << " ms\n";
+
     // --- Output files ---
     std::cout << "====> Output file writing ...\n\n";
-    dataPlot.resize(k, outputSize);
-    siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+    //    dataPlot.resize(k, outputSize);
+    siconos::algebra::io::write("BouncingBallED.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BouncingBallED.ref", eps)) >
         eps)
       return 1;
+
+    return 0;
   }
 
   catch (...) {

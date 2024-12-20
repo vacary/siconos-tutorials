@@ -16,19 +16,18 @@
  * limitations under the License.
  */
 
-/*!\file BouncingBallTS.cpp
-  \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
+/*
   V. Acary, F. Perignon.
 
   A Ball bouncing on the ground.
-  Direct description of the model.
-  Simulation with a Time-Stepping scheme.
+  - Impact friction
+  - Simulation with a Moreau-Jean GOSI scheme
 */
-
-#include <SolverOptions.h>
+#include <SolverOptions.h>  // from numerics
 
 #include <SiconosKernel.hpp>
 #include <chrono>
+
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
@@ -67,12 +66,10 @@ int main(int argc, char *argv[]) {
     v0.setZero();
     v0(0) = velocity_init;
 
-
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
 
     // -- Set external forces (weight) --
-
     Vector weight{nDof};
     weight.setZero();
     weight(0) = -m * g;
@@ -87,14 +84,13 @@ int main(int argc, char *argv[]) {
 
     // Interaction ball-floor
     //
-    auto H = std::make_shared<Matrix>(nDof, nDof);
-    (*H)(0, 0) = 1.0;
-    (*H)(1, 1) = 1.0;
-    (*H)(2, 2) = 1.0;
-
+    Matrix H{nDof, nDof};
+    H.setZero();
+    H(0, 0) = 1.0;
+    H(1, 1) = 1.0;
+    H(2, 2) = 1.0;
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, e, 0.6, 3);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H);
-
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
     // --------------------------------
@@ -125,11 +121,9 @@ int main(int argc, char *argv[]) {
     // -- (4) Simulation setup with (1) (2) (3)
     auto s = std::make_shared<siconos::simulation::TimeStepping>(bouncingBall, t, OSI, osnspb);
 
-    // =========================== End of model definition
-    // ===========================
+    // =========================== End of model definition ===========================
 
-    // ================================= Computation
-    // =================================
+    // ================================= Computation =================================
 
     int N = ceil((T - t0) / h);  // Number of time steps
 
@@ -171,8 +165,8 @@ int main(int argc, char *argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
-    siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+    siconos::algebra::io::write("BouncingBallTS-MoreauJeanGOSI.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
     if ((error = siconos::algebra::io::compareRefFile(
@@ -182,7 +176,7 @@ int main(int argc, char *argv[]) {
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BouncingBallTS.ref", eps)) >=
         eps)
       return 1;
-
+    return 0;
   }
 
   catch (...) {

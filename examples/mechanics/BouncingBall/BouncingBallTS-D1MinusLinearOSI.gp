@@ -1,8 +1,6 @@
 #set term X11
-#tail -n 100000 result.dat > result-gp.dat
-#tail -n 100000 result_tdg.dat > result_tdg-gp.dat
 
-resultfile=  "result_tdg.dat"
+resultfile=  "BouncingBallTS-D1MinusLinearOSI.dat"
 resultfile1=  "result.dat"
 resultfile_ref = "BouncingBallTS-D1MinusLinearOSI.ref"
 

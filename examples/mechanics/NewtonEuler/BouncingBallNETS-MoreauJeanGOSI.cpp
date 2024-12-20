@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,18 +46,8 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
  public:
   my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius) {};
 
-  virtual void computeOutput(double t, siconos::modeling::Interaction& inter,
-                             unsigned int derivativeNumber) override {
-    auto& DSlink = inter.linkToDSVariables();
-    if (derivativeNumber == 0) {
-      computeh(t, *DSlink[NewtonEulerR::q0], *inter.y(0));
-    } else {
-      R_CLASS::computeOutput(t, inter, derivativeNumber);
-    }
-  }
-
-  void computeh(double time, const siconos::algebra::BlockVector& q0,
-                siconos::algebra::SiconosVector& y) override {
+  void computeh(const siconos::algebra::BlockVector& q0,
+                Eigen::Ref<siconos::algebra::SiconosVector> y) override {
     double height = fabs(q0.getValue(0)) - _sBallRadius;
     y.setValue(0, height);
     _Nc->setValue(0, 1);
@@ -106,7 +96,7 @@ int main(int argc, char* argv[]) {
     siconos::algebra::SiconosVector v0{nDim};
     q0.setZero();
     v0.setZero();
-
+    Matrix I = Eigen::MatrixXd::Identity(3, 3);
     q0(0) = position_init;
     /*initial quaternion equal to (1,0,0,0)*/
     q0(3) = 1.0;
@@ -219,7 +209,7 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 3) = (*p)(0);
     dataPlot(0, 4) = (*lambda)(0);
     dataPlot(0, 5) = acos((*q)(3));
-    dataPlot(0, 6) = relation0->contactForce()->norm2();
+    dataPlot(0, 6) = relation0->contactForce().norm();
     dataPlot(0, 7) = (*q)(0);
     dataPlot(0, 8) = (*q)(1);
     dataPlot(0, 9) = (*q)(2);
@@ -236,7 +226,7 @@ int main(int argc, char* argv[]) {
     int k = 1;
 
     auto start = std::chrono::system_clock::now();
-    dataPlot(k, 6) = relation0->contactForce()->norm2();
+    dataPlot(k, 6) = relation0->contactForce().norm();
     while (s->hasNextEvent()) {
       //      s->computeOneStep();
       s->advanceToEvent();
@@ -247,7 +237,7 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 3) = (*p)(0);
       dataPlot(k, 4) = (*lambda)(0);
       dataPlot(k, 5) = acos((*q)(3));
-      dataPlot(k, 6) = relation0->contactForce()->norm2();
+      dataPlot(k, 6) = relation0->contactForce().norm();
       dataPlot(k, 7) = (*q)(0);
       dataPlot(k, 8) = (*q)(1);
       dataPlot(k, 9) = (*q)(2);
@@ -268,7 +258,6 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
@@ -276,7 +265,7 @@ int main(int argc, char* argv[]) {
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BouncingBallNETS.ref", eps)) >
         eps)
       return 1;
-
+    return 0;
   }
 
   catch (...) {

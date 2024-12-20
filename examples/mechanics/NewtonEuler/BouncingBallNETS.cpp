@@ -46,8 +46,8 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
  public:
   my_NewtonEulerR(double radius) : R_CLASS{}, _sBallRadius{radius} {};
 
-  void computeh(double time, const siconos::algebra::BlockVector& q0,
-                siconos::algebra::SiconosVector& y) override {
+  void computeh(const siconos::algebra::BlockVector& q0,
+                Eigen::Ref<siconos::algebra::SiconosVector> y) override {
     double height = fabs(q0.getValue(0)) - _sBallRadius;
     // std::cout <<"my_NewtonEulerR:: computeh jacobianhOver_q_" << std:: endl;
     // jacobianhOver_q_->display();
@@ -99,9 +99,9 @@ int main(int argc, char* argv[]) {
     q0.setZero();
     v0.setZero();
     Matrix I = Eigen::MatrixXd::Identity(3, 3);
-   q0(0) = position_init;
+    q0(0) = position_init;
     /*initial quaternion equal to (1,0,0,0)*/
-   q0(3) = 1.0;
+    q0(3) = 1.0;
 
     v0(0) = velocity_init;
     v0(3) = omega_initx;
@@ -225,7 +225,7 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 3) = (*p)(0);
     dataPlot(0, 4) = (*lambda)(0);
     dataPlot(0, 5) = acos((*q)(3));
-    dataPlot(0, 6) = relation0->contactForce()->norm2();
+    dataPlot(0, 6) = relation0->contactForce().norm();
     dataPlot(0, 7) = (*q)(0);
     dataPlot(0, 8) = (*q)(1);
     dataPlot(0, 9) = (*q)(2);
@@ -242,7 +242,7 @@ int main(int argc, char* argv[]) {
     int k = 1;
 
     auto start = std::chrono::system_clock::now();
-    dataPlot(k, 6) = relation0->contactForce()->norm2();
+    dataPlot(k, 6) = relation0->contactForce().norm();
     while (s->hasNextEvent()) {
       //      s->computeOneStep();
       s->advanceToEvent();
@@ -253,7 +253,7 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 3) = (*p)(0);
       dataPlot(k, 4) = (*lambda)(0);
       dataPlot(k, 5) = acos((*q)(3));
-      dataPlot(k, 6) = relation0->contactForce()->norm2();
+      dataPlot(k, 6) = relation0->contactForce().norm();
       dataPlot(k, 7) = (*q)(0);
       dataPlot(k, 8) = (*q)(1);
       dataPlot(k, 9) = (*q)(2);
@@ -274,7 +274,6 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 

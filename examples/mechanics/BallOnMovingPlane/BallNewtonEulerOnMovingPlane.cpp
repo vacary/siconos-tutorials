@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-/*!\file BallNewtonEulerOnMovingPlane.cpp
-  \brief
+/*
   A Ball bouncing on the moving ground.
   Direct description of the model.
   Simulation with a Time-Stepping scheme.
@@ -25,7 +24,7 @@
 
 #include <SiconosKernel.hpp>
 #include <chrono>
-
+#include <numbers>  // For std::numbers::pi
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
@@ -45,20 +44,19 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
  public:
   my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius) {};
 
-  virtual void computeOutput(double t, siconos::modeling::Interaction& inter,
+  virtual void computeOutput(double time, siconos::modeling::Interaction& inter,
                              unsigned int derivativeNumber) override {
     auto& DSlink = inter.linkToDSVariables();
     if (derivativeNumber == 0) {
-      computeh(t, *DSlink[NewtonEulerR::q0], *inter.y(0));
+      computeh(*DSlink[siconos::tools::enum_to_index(WorkDS::q0)], *inter.y(0));
     } else {
-      R_CLASS::computeOutput(t, inter, derivativeNumber);
+      R_CLASS::computeOutput(time, inter, derivativeNumber);
     }
   }
 
-  void computeh(double time, const siconos::algebra::BlockVector& q0,
-                siconos::algebra::SiconosVector& y) override {
+  void computeh(const siconos::algebra::BlockVector& q0,
+                Eigen::Ref<siconos::algebra::SiconosVector> y) override {
     double height = q0.getValue(0) - _sBallRadius - q0.getValue(7);
-
     y.setValue(0, height);
     _Nc->setValue(0, 1);
     _Nc->setValue(1, 0);
@@ -104,15 +102,17 @@ int main(int argc, char* argv[]) {
 
     std::cout << "====> Model loading ...\n";
 
+    // -- Initial positions and velocities --
+
     siconos::algebra::SiconosVector q0{qDim};
     siconos::algebra::SiconosVector v0{nDim};
     q0.setZero();
     v0.setZero();
     Matrix I = Eigen::MatrixXd::Identity(3, 3);
 
-   q0(0) = position_init;
+    q0(0) = position_init;
     /*initial quaternion equal to (1,0,0,0)*/
-   q0(3) = 1.0;
+    q0(3) = 1.0;
 
     v0(0) = velocity_init;
     v0(3) = omega_initx;
@@ -128,11 +128,11 @@ int main(int argc, char* argv[]) {
     // -- Moving Plane --
 
     // -- Initial positions and velocities --
-    auto q02 = std::make_shared<Vector>(qDim);
-    auto v02 = std::make_shared<Vector>(nDim);
-    v02->setZero();
-    q02->setZero();
-    (*q02)(3) = 1.0;
+    Vector q02{qDim};
+    Vector v02{nDim};
+    v02.setZero();
+    q02.setZero();
+    q02(3) = 1.0;
     // -- The dynamical system --
     auto movingplane = std::make_shared<siconos::modeling::NewtonEulerDS>(q02, v02, m, I);
 
@@ -141,7 +141,10 @@ int main(int argc, char* argv[]) {
 
     auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(
         siconos::modeling::BoundaryCondition::Indices{0});
-    bd->setComputePrescribedVelocityFunction("BallOnMovingPlanePlugin", "prescribedvelocity");
+    bd->setComputePrescribedVelocityFunction(
+        [](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          result.setConstant(2. + cos(0.5 * std::numbers::pi * time));
+        });
     movingplane->setBoundaryConditions(bd);
 
     // --------------------
@@ -216,7 +219,6 @@ int main(int argc, char* argv[]) {
 #endif
     s->setNewtonTolerance(1e-10);
     s->setNewtonMaxIteration(10);
-
     // =========================== End of model definition ===========================
 
     // ================================= Computation =================================
@@ -246,7 +248,7 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 3) = (*p)(0);
     dataPlot(0, 4) = (*lambda)(0);
     dataPlot(0, 5) = acos((*q)(3));
-    dataPlot(0, 6) = relation0->contactForce()->norm2();
+    dataPlot(0, 6) = relation0->contactForce().norm();
 
     dataPlot(0, 7) = (*q)(0);
     dataPlot(0, 8) = (*q)(1);
@@ -258,7 +260,6 @@ int main(int argc, char* argv[]) {
 
     dataPlot(0, 14) = (*v)(1);
     dataPlot(0, 15) = (*v)(2);
-
     dataPlot(0, 16) = (*qplane)(2);
     dataPlot(0, 17) = (*vplane)(2);
     dataPlot(0, 18) = (*reaction)(0);
@@ -269,7 +270,7 @@ int main(int argc, char* argv[]) {
     int k = 1;
 
     auto start = std::chrono::system_clock::now();
-    dataPlot(k, 6) = relation0->contactForce()->norm2();
+    dataPlot(k, 6) = relation0->contactForce().norm();
     while (s->hasNextEvent() && k < 5000000) {
       //      s->computeOneStep();
       s->advanceToEvent();
@@ -280,7 +281,7 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 3) = (*p)(0);
       // dataPlot(k, 4) = (*lambda)(0);
       dataPlot(k, 5) = acos((*q)(3));
-      dataPlot(k, 6) = relation0->contactForce()->norm2();
+      dataPlot(k, 6) = relation0->contactForce().norm();
       dataPlot(k, 7) = (*q)(0);
       dataPlot(k, 8) = (*q)(1);
       dataPlot(k, 9) = (*q)(2);
@@ -307,15 +308,12 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("BallNewtonEulerOnMovingPlane.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
     // Comparison with a reference file
     cout << "====> Comparison with a reference file ...\n";
-    Matrix dataPlotRef(dataPlot);
-    dataPlotRef.setZero();
     double error = 0.0, eps = 1e-10;
 #ifdef WITH_PROJ
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "resultNETS-WITHPROJ.ref.ref",

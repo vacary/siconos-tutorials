@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
  * limitations under the License.
  */
 
-/*!\file BouncingBallTS.cpp
-  \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
+/*
   V. Acary, F. Perignon.
 
   A Ball bouncing on the ground.
-  Direct description of the model.
-  Simulation with a Time-Stepping scheme.
+  - Scleronomous relation used for the contact, user-defined derived class
+  - LagrangianDS
+  - Simulation with a Time-Stepping scheme.
 */
 
 #include <SiconosKernel.hpp>
@@ -48,11 +48,18 @@ int main(int argc, char *argv[]) {
     double R = 0.1;              // Ball radius
     double m = 1;                // Ball mass
     double g = 10;               // Gravity
+
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
 
     std::cout << "====> Model loading ...\n";
+
+    Matrix mass{nDof, nDof};
+    mass.setZero();
+    mass(0, 0) = m;
+    mass(1, 1) = m;
+    mass(2, 2) = 2. / 5 * m * R * R;
 
     // -- Initial positions and velocities --
     Vector q0{nDof};
@@ -64,11 +71,6 @@ int main(int argc, char *argv[]) {
 
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
-    Matrix mass{nDof, nDof};
-    mass.setZero();
-    mass(0, 0) = m;
-    mass(1, 1) = m;
-    mass(2, 2) = 2. / 5 * m * R * R;
 
     ball->setConstantMass(mass);
 
@@ -119,11 +121,9 @@ int main(int argc, char *argv[]) {
     // -- (4) Simulation setup with (1) (2) (3)
     auto s = std::make_shared<siconos::simulation::TimeStepping>(bouncingBall, t, OSI, osnspb);
 
-    // =========================== End of model definition
-    // ===========================
+    //  =========================== End of model definition ===========================
 
-    // ================================= Computation
-    // =================================
+    // ================================= Computation =================================
 
     int N = ceil((T - t0) / h);  // Number of time steps
 
@@ -170,7 +170,6 @@ int main(int argc, char *argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("result-scleronomous.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);

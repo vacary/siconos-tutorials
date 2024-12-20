@@ -27,8 +27,7 @@
 
 #include <SiconosKernel.hpp>
 #include <chrono>
-#include <numbers>
-
+#include <numbers>  // For std::numbers::pi
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
@@ -48,23 +47,21 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
  public:
   my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius) {};
 
-  virtual void computeOutput(double t, siconos::modeling::Interaction& inter,
+  virtual void computeOutput(double time, siconos::modeling::Interaction& inter,
                              unsigned int derivativeNumber) override {
     auto& DSlink = inter.linkToDSVariables();
     if (derivativeNumber == 0) {
-      computeh(t, *DSlink[NewtonEulerR::q0], *inter.y(0));
+      computeh(*DSlink[siconos::tools::enum_to_index(WorkDS::q0)], *inter.y(0));
     } else {
-      R_CLASS::computeOutput(t, inter, derivativeNumber);
+      R_CLASS::computeOutput(time, inter, derivativeNumber);
     }
   }
 
-  void computeh(double time, const siconos::algebra::BlockVector& q0,
-                siconos::algebra::SiconosVector& y) override {
+  void computeh(const siconos::algebra::BlockVector& q0,
+                Eigen::Ref<siconos::algebra::SiconosVector> y) override {
     std::cout << "my_NewtonEulerR:: computeh \n";
     std::cout << "q0.size() = " << q0.size() << "\n";
     double height = q0.getValue(0) - _sBallRadius - q0.getValue(7);
-
-
     y.setValue(0, height);
     _Nc->setValue(0, 1);
     _Nc->setValue(1, 0);
@@ -96,13 +93,13 @@ int main(int argc, char* argv[]) {
     double t0 = 0;               // initial computation time
     double T = 10.0;             // final computation time
     double h = 0.001;            // time step
-    double position_init = 1.0;  // initial position for lowest bead.
-    double velocity_init = 0.0;  // initial velocity for lowest bead.
-    double omega_initx = 0.0;
-    double omega_initz = 0.0;  // initial velocity for lowest bead.
-    double theta = 1.0;        // theta for MoreauJeanOSI integrator
-    double m = 1;              // Ball mass
-    double g = 10.0;           // Gravity
+    double position_init = 1.0;  // initial position
+    double velocity_init = 0.0;  // initial velocity
+    double omega_initx = 0.0;    // initial angular velocity
+    double omega_initz = 0.0;    // initial angular velocity
+    double theta = 1.0;          // theta for MoreauJeanOSI integrator
+    double m = 1;                // Ball mass
+    double g = 10.0;             // Gravity
     double radius = 0.1;
     // -------------------------
     // --- Dynamical systems ---
@@ -111,15 +108,16 @@ int main(int argc, char* argv[]) {
     std::cout << "====> Model loading ...\n";
 
     // -- Initial positions and velocities --
+
     siconos::algebra::SiconosVector q0{qDim};
     siconos::algebra::SiconosVector v0{nDim};
     q0.setZero();
     v0.setZero();
     Matrix I = Eigen::MatrixXd::Identity(3, 3);
 
-   q0(0) = position_init;
+    q0(0) = position_init;
     /*initial quaternion equal to (1,0,0,0)*/
-   q0(3) = 1.0;
+    q0(3) = 1.0;
 
     v0(0) = velocity_init;
     v0(3) = omega_initx;
@@ -143,18 +141,6 @@ int main(int argc, char* argv[]) {
 
     // -- nslaw --
     double e = 0.9;
-
-    // Interaction ball-floor
-    //
-
-    //     vector<auto> vecMatrix1;
-    //     vecMatrix1.push_back(H);
-    //     auto H_block(new BlockMatrix(vecMatrix1,1,1));
-
-    //     auto HT= std::make_shared<Matrix>(1,nDim));
-    //     vector<auto> vecMatrix2;
-    //     vecMatrix2.push_back(HT);
-    //     auto HT_block(new BlockMatrix(vecMatrix2,1,1));
 
 #ifdef WITH_FC3D
     auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, e, 0.6, 3);
@@ -204,11 +190,9 @@ int main(int argc, char* argv[]) {
 #endif
     s->setNewtonTolerance(1e-10);
     s->setNewtonMaxIteration(10);
-    // =========================== End of model definition
-    // ===========================
+    // =========================== End of model definition ===========================
 
-    // ================================= Computation
-    // =================================
+    // ================================= Computation =================================
 
     int N = ceil((T - t0) / h);  // Number of time steps
 
@@ -256,16 +240,24 @@ int main(int argc, char* argv[]) {
 
     auto start = std::chrono::system_clock::now();
     while (s->hasNextEvent()) {
-      //      s->computeOneStep();
+      // std::cout << "step " << k << std::endl;
+      //        s->computeOneStep();
       s->advanceToEvent();
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(0);
       dataPlot(k, 2) = (*v)(0);
       dataPlot(k, 3) = (*p)(0);
-
       dataPlot(k, 4) = (*reaction)(0);
-      dataPlot(k, 5) = acos((*q)(3));
+
+      /* fix issue with machine accuracy */
+      if ((*q)(3) > 1.0) {
+        dataPlot(k, 5) = acos(1.0);
+      } else if ((*q)(3) < -1.0) {
+        dataPlot(k, 5) = acos(-1.0);
+      } else {
+        dataPlot(k, 5) = acos((*q)(3));
+      }
       // dataPlot(k, 6) = relation0->contactForce()->norm2();
       dataPlot(k, 7) = (*q)(0);
       dataPlot(k, 8) = (*q)(1);
@@ -293,11 +285,24 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("BallNewtonEuler.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
+    // Comparison with a reference file
+    cout << "====> Comparison with a reference file ...\n";
+#ifdef WITH_PROJ
+    double error = 0.0, eps = 1e-10;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BallNewtonEuler-WITHPROJ.ref",
+                                                      eps)) > eps)
+      return 1;
+#else
+    double error = 0.0, eps = 1e-10;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BallNewtonEuler.ref", eps)) >
+        eps)
+      return 1;
+#endif
+    return 0;
   }
 
   catch (...) {

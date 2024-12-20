@@ -16,14 +16,6 @@
  * limitations under the License.
  */
 
-/*!\file BouncingBallTS.cpp
-  \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
-  V. Acary, F. Perignon.
-
-  A Ball bouncing on the ground.
-  Direct description of the model.
-  Simulation with a Time-Stepping scheme.
-*/
 #include <Contact2dR.hpp>
 #include <RigidBody2dDS.hpp>
 #include <SiconosBodies.hpp>
@@ -69,28 +61,32 @@ int main(int argc, char* argv[]) {
     v0.setZero();
     v0(0) = velocity_init;
 
-
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::collision::RigidBody2dDS>(q0, v0, mass);
 
-    auto q01 = std::make_shared<Vector>(nDof);
-    auto v01 = std::make_shared<Vector>(nDof);
-    (*q01)(0) = position_init + 2 * R + 0.1;
-    (*v01)(0) = velocity_init;
+    Vector q01{nDof};
+    Vector v01{nDof};
+    q01.setZero();
+    v01.setZero();
+    q01(0) = position_init + 2 * R + 0.1;
+    v01(0) = velocity_init;
 
     auto ball1 = std::make_shared<siconos::collision::RigidBody2dDS>(q01, v01, mass);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
+    weight.setZero();
     weight(0) = -m * g;
     ball->setConstantFext(weight);
-    ball1->setFExt(weight);
+    ball1->setConstantFext(weight);
+
     // --------------------
     // --- Interactions ---
     // --------------------
 
     // -- nslaw --
     double e = 0.9;
+
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, 0.0, 0.1, 2);
 
     auto relation = std::make_shared<siconos::collision::Contact2dR>();
@@ -139,7 +135,7 @@ int main(int argc, char* argv[]) {
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 9;
-    Matrix dataPlot(N + 1, outputSize);
+    Matrix dataPlot(N, outputSize);
 
     auto q = ball->q();
     auto v = ball->velocity();
@@ -159,13 +155,12 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 6) = (*v1)(0);
     dataPlot(0, 7) = (*p1)(0);
     dataPlot(0, 8) = (*lambda1)(0);
+
     // --- Time loop ---
     cout << "====> Start computation ... \n";
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
-
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
+    auto start = std::chrono::system_clock::now();
 
     auto pc = relation->pc1();
     auto nnc = relation->nc();
@@ -193,6 +188,7 @@ int main(int argc, char* argv[]) {
       (*nnc1)(1) = 0.0;
 
       s->computeOneStep();
+
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(0);
@@ -204,17 +200,17 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 7) = (*p1)(0);
       dataPlot(k, 8) = (*lambda1)(0);
       s->nextStep();
+
       k++;
     }
     cout << "End of computation - Number of iterations done: " << k - 1 << endl;
     cout << "Computation Time : " << endl;
-    end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     cout << "Computation time : " << elapsed << " ms\n";
 
     // --- Output files ---
     cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("Ball2D.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 

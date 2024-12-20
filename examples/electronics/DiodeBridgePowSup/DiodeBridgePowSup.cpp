@@ -77,12 +77,6 @@ int main(int argc, char* argv[]) {
 
     LSDiodeBridgePowSup->setConstantA(LS_A);
 
-    // TODO: review this example with the new way to set the control.
-
-    //    //  Source term "u" specification
-    //    LSDiodeBridgePowSup->setUSize(1);
-    //    LSDiodeBridgePowSup->setComputeBFunction("./SinPoPlugin","SinPo");
-
     // --- Interaction between linear system and non smooth system ---
 
     Matrix Int_C{4, 1};
@@ -229,7 +223,7 @@ int main(int argc, char* argv[]) {
     // --- Compute elapsed time ---
     auto start = std::chrono::system_clock::now();
     // --- Time loop  ---
-    while (k < N ) {
+    while (k < N) {
       // get current time step
       k++;
       tinst = k * h_step;

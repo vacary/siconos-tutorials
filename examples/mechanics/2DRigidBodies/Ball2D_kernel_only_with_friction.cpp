@@ -50,11 +50,10 @@ class MyCollisionManager : public siconos::simulation::InteractionManager {
             indexSet0->properties(*ui).source));
         auto pc = r->pc1();
         auto nnc = r->nc();
-        auto q = ds1->q();
-        double angle = (*q)(2);
+        // double angle = (*q)(2);
         // std::cout << "angle = " << angle << std::endl;
-        (*pc)(0) = -_R + (*q)(0);
-        (*pc)(1) = 0.0 + (*q)(1);
+        (*pc)(0) = -_R + ds1->q_read()(0);
+        (*pc)(1) = 0.0 + ds1->q_read()(1);
         (*nnc)(0) = 1.0;
         (*nnc)(1) = 0.0;
       }
@@ -85,7 +84,7 @@ int main(int argc, char* argv[]) {
 
     cout << "====> Model loading ..." << endl;
 
-      Matrix mass{nDof, nDof};
+    Matrix mass{nDof, nDof};
     mass.setZero();
     mass(0, 0) = m;
     mass(1, 1) = m;
@@ -94,21 +93,15 @@ int main(int argc, char* argv[]) {
     // -- Initial positions and velocities --
     Vector q0{nDof};
     q0.setZero();
+    q0(0) = position_init;
+    q0(1) = 0.0;
     Vector v0{nDof};
     v0.setZero();
-   q0(0) = position_init;
-   q0(1) = 0.0;
     v0(0) = velocity_init;
     v0(2) = rotation_init;
 
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
-
-    auto q01 = std::make_shared<Vector>(nDof);
-    auto v01 = std::make_shared<Vector>(nDof);
-    (*q01)(0) = position_init + 2 * R + 0.1;
-    (*v01)(0) = velocity_init;
-    (*v01)(2) = rotation_init;
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
@@ -169,14 +162,14 @@ int main(int argc, char* argv[]) {
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 9;
-    Matrix dataPlot(N + 1, outputSize);
+    Matrix dataPlot(N, outputSize);
 
     auto q = ball->q();
     auto v = ball->velocity();
     auto p = ball->p(1);
     auto lambda = inter->lambda(1);
 
-    dataPlot(0, 0) = s->nextTime();
+    dataPlot(0, 0) = bouncingBall->t0();
     dataPlot(0, 1) = (*q)(0);
     dataPlot(0, 2) = (*v)(0);
     dataPlot(0, 3) = (*v)(2);
@@ -219,7 +212,6 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("Ball2D_kernel_only_with_friction.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
@@ -229,6 +221,8 @@ int main(int argc, char* argv[]) {
              dataPlot, "Ball2D_kernel_only_with_friction.ref", eps)) > eps)
       return 1;
 
+    else
+      return 0;
   }
 
   catch (...) {

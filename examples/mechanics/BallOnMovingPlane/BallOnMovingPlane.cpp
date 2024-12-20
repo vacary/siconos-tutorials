@@ -27,6 +27,7 @@
 
 #include <SiconosKernel.hpp>
 #include <chrono>
+#include <numbers>
 
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
@@ -67,34 +68,37 @@ int main(int argc, char* argv[]) {
     v0.setZero();
     v0(0) = velocity_init;
 
-
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
+    weight.setZero();
     weight(0) = -m * g;
     ball->setConstantFext(weight);
 
     // -- Moving Plane --
 
     // -- Initial positions and velocities --
-    auto q02 = std::make_shared<Vector>(nDof);
-    auto v02 = std::make_shared<Vector>(nDof);
-    (*q02)(0) = 0.0;
-    (*v02)(0) = -velocity_init;
+    Vector q02{nDof};
+    Vector v02{nDof};
+    q02.setZero();
+    v02.setZero();
+    v02(0) = -velocity_init;
 
     // -- The dynamical system --
-    auto movingplane =
-        std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q02, v02, mass);
+    auto movingplane = std::make_shared<siconos::modeling::LagrangianDS>(q02, v02);
+    movingplane->setConstantMass(mass);
 
     // -- Set external forces (weight) --
-    movingplane->setCFExtPtr(weight);
+    movingplane->setConstantFext(weight);
 
     auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(
         siconos::modeling::BoundaryCondition::Indices{0});
-    bd->setComputePrescribedVelocityFunction("BallOnMovingPlanePlugin", "prescribedvelocity");
-
+    bd->setComputePrescribedVelocityFunction(
+        [](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          result = 2. + cos(0.5 * std::numbers::pi * time);
+        });
     movingplane->setBoundaryConditions(bd);
 
     // --------------------
@@ -213,7 +217,6 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
@@ -223,7 +226,6 @@ int main(int argc, char* argv[]) {
                                                       eps)) > eps)
       return 1;
     return 0;
-
   }
 
   catch (...) {
