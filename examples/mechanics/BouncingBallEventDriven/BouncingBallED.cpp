@@ -64,7 +64,6 @@ int main(int argc, char *argv[]) {
     v0.setZero();
     v0(0) = velocity_init;
 
-
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
 
@@ -125,12 +124,12 @@ int main(int argc, char *argv[]) {
 
     // ================================= Computation =================================
 
-    int N = 1854;  // Number of saved points: depends on the number of events ...
+    int N = 1788;  // Number of saved points: depends on the number of events ...
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 7;
-    Matrix dataPlot(N + 1, outputSize);
+    Matrix dataPlot(N, outputSize);
     auto q = ball->q_read();
     auto v = ball->velocity_read();
     auto p = ball->p_read(1);
@@ -151,7 +150,6 @@ int main(int argc, char *argv[]) {
     auto start = std::chrono::system_clock::now();
     while (s->hasNextEvent() && k < N) {
       s->advanceToEvent();
-      auto f = ball->p(2);
       if (eventsManager->nextEvent()->getType() == siconos::simulation::EventType::NS)
         nonSmooth = true;
 
@@ -162,8 +160,8 @@ int main(int argc, char *argv[]) {
         dataPlot(k, 0) = s->startingTime();
         dataPlot(k, 1) = ball->qMemory().getSiconosVector(1)(0);
         dataPlot(k, 2) = ball->velocityMemory().getSiconosVector(1)(0);
-        dataPlot(k, 3) = (*p)(0);
-        dataPlot(k, 4) = (*f)(0);
+        dataPlot(k, 3) = p(0);
+        dataPlot(k, 4) = (*ball->p(2))(0);
         k++;
         kns++;
         nonSmooth = false;
@@ -172,7 +170,7 @@ int main(int argc, char *argv[]) {
       dataPlot(k, 1) = q(0);
       dataPlot(k, 2) = v(0);
       dataPlot(k, 3) = p(0);
-      dataPlot(k, 4) = (*f)(0);
+      dataPlot(k, 4) = (*ball->p(2))(0);
       dataPlot(k, 5) = (*inter->lambda(1))(0);
       dataPlot(k, 6) = (*inter->lambda(2))(0);
 
@@ -190,7 +188,6 @@ int main(int argc, char *argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n\n";
-    //    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("BouncingBallED.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);

@@ -146,11 +146,10 @@ int main(int argc, char *argv[]) {
     while (s->hasNextEvent()) {
       s->computeOneStep();
       // --- Get values to be plotted ---
-      auto p = ball->p(0);
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = q(0);
       dataPlot(k, 2) = v(0);
-      dataPlot(k, 3) = p(0);
+      dataPlot(k, 3) = (ball->p_read(0))(0);
       dataPlot(k, 4) = (*lambda)(0);
       s->nextStep();
       k++;

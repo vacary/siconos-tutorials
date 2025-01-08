@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-/* C++ input file, Time-Stepping version -
-   V. Acary, F. Perignon.
+/*
+  V. Acary, F. Perignon.
 
   A Ball bouncing between a roof and a ground. Compliant contact with the ground.
   Simulation with a Time-Stepping scheme.
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     double h = 0.0005;           // time step
     double position_init = 1.0;  // initial position for lowest bead.
     double velocity_init = 0.0;  // initial velocity for lowest bead.
-    double theta = 0.5;          // theta for MoreauJeanOSI integrator
+    double theta = 0.5;          // theta for the integrator
     double R = 0.1;              // Ball radius
     double height = 1.0;         // height to the roof
     double m = 1;                // Ball mass
@@ -71,6 +71,7 @@ int main(int argc, char* argv[]) {
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
+    weight.setZero();
     weight(0) = -m * g;
     ball->setConstantFext(weight);
 
@@ -149,7 +150,7 @@ int main(int argc, char* argv[]) {
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    unsigned int outputSize = 5;
+    unsigned int outputSize = 6;
     Matrix dataPlot(N + 1, outputSize);
 
     auto q = ball->q();
@@ -162,6 +163,7 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 2) = (*v)(0);
     dataPlot(0, 3) = (*p)(0);
     dataPlot(0, 4) = (*lambda)(0);
+    dataPlot(0, 5) = (*interfloor->y(0))(0);
     // --- Time loop ---
     std::cout << "====> Start computation ... \n";
     // ==== Simulation loop - Writing without explicit event handling =====
@@ -175,6 +177,7 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 2) = (*v)(0);
       dataPlot(k, 3) = (*p)(0);
       dataPlot(k, 4) = (*lambda)(0);
+      dataPlot(k, 5) = (*interfloor->y(0))(0);
       s->nextStep();
       siconos::tools::progressBar((double)k / N);
       k++;

@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
         siconos::modeling::BoundaryCondition::Indices{0});
     bd->setComputePrescribedVelocityFunction(
         [](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
-          result = 2. + cos(0.5 * std::numbers::pi * time);
+          result(0) = 2. + cos(0.5 * std::numbers::pi * time);
         });
     movingplane->setBoundaryConditions(bd);
 

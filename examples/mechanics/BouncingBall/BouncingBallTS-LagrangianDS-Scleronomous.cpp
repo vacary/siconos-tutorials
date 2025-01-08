@@ -41,13 +41,13 @@ int main(int argc, char *argv[]) {
     unsigned int nDof = 3;       // degrees of freedom for the ball
     double t0 = 0;               // initial computation time
     double T = 10;               // final computation time
-    double h = 0.025;            // time step
+    double h = 0.005;            // time step
     double position_init = 1.0;  // initial position for lowest bead.
     double velocity_init = 0.0;  // initial velocity for lowest bead.
     double theta = 0.5;          // theta for MoreauJeanOSI integrator
     double R = 0.1;              // Ball radius
     double m = 1;                // Ball mass
-    double g = 10;               // Gravity
+    double g = 9.81;             // Gravity
 
     // -------------------------
     // --- Dynamical systems ---
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
     // -- (4) Simulation setup with (1) (2) (3)
     auto s = std::make_shared<siconos::simulation::TimeStepping>(bouncingBall, t, OSI, osnspb);
 
-    //  =========================== End of model definition ===========================
+    // =========================== End of model definition ===========================
 
     // ================================= Computation =================================
 
@@ -132,17 +132,17 @@ int main(int argc, char *argv[]) {
     unsigned int outputSize = 7;
     Matrix dataPlot(N + 1, outputSize);
 
-    auto q = ball->q();
-    auto v = ball->velocity();
-    auto p = ball->p(1);
+    auto q = ball->q_read();
+    auto v = ball->velocity_read();
+    auto p = ball->p_read(1);
     auto lambda = inter->lambda(1);
 
     dataPlot(0, 0) = bouncingBall->t0();
-    dataPlot(0, 1) = (*q)(0);
-    dataPlot(0, 2) = (*q)(1);
-    dataPlot(0, 3) = (*v)(0);
-    dataPlot(0, 4) = (*v)(1);
-    dataPlot(0, 5) = (*p)(0);
+    dataPlot(0, 1) = q(0);
+    dataPlot(0, 2) = q(1);
+    dataPlot(0, 3) = v(0);
+    dataPlot(0, 4) = v(1);
+    dataPlot(0, 5) = p(0);
     dataPlot(0, 6) = (*lambda)(0);
     // --- Time loop ---
     std::cout << "====> Start computation ... \n";
@@ -153,30 +153,32 @@ int main(int argc, char *argv[]) {
       s->computeOneStep();
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
-      dataPlot(k, 1) = (*q)(0);
-      dataPlot(k, 2) = (*q)(1);
-      dataPlot(k, 3) = (*v)(0);
-      dataPlot(k, 4) = (*v)(1);
-      dataPlot(k, 5) = (*p)(0);
+      dataPlot(k, 1) = q(0);
+      dataPlot(k, 2) = q(1);
+      dataPlot(k, 3) = v(0);
+      dataPlot(k, 4) = v(1);
+      dataPlot(k, 5) = p(0);
       dataPlot(k, 6) = (*lambda)(0);
       s->nextStep();
       siconos::tools::progressBar((double)k / N);
       k++;
     }
     auto end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
     std::cout << "\nComputation time : " << elapsed << " ms\n";
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    siconos::algebra::io::write("result-scleronomous.dat", dataPlot,
+    siconos::algebra::io::write("BouncingBallTS-Lagrangian-scleronomous.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
     if ((error = siconos::algebra::io::compareRefFile(
              dataPlot, "BouncingBallTS-Scleronomous.ref", eps)) >= eps)
       return 1;
+
+    return 0;
   }
 
   catch (...) {

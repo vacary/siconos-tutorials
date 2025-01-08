@@ -139,7 +139,6 @@ int main(int argc, char *argv[]) {
     auto p1 = ball->p(1);
     auto lambda1 = inter->lambda(1);
     auto lambda0 = inter->lambda(0);
-    std::shared_ptr<Vector> p0;  // = ball->p(0);
 
     dataPlot(0, 0) = bouncingBall->t0();
     dataPlot(0, 1) = (*q)(0);
@@ -159,13 +158,12 @@ int main(int argc, char *argv[]) {
     while (s->hasNextEvent()) {
       s->computeOneStep();
       // --- Get values to be plotted ---
-      p0 = ball->p(0);
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(0);
       dataPlot(k, 2) = (*v)(0);
       dataPlot(k, 3) = (*p1)(0);
       dataPlot(k, 4) = (*lambda1)(0);
-      dataPlot(k, 5) = (*p0)(0);
+      dataPlot(k, 5) = (*ball->p(0))(0);
       dataPlot(k, 6) = (*lambda0)(0);
 
       maxviolation = s->maxViolationUnilateral();

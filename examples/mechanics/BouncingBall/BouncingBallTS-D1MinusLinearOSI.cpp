@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,17 +138,14 @@ int main(int argc, char* argv[]) {
     unsigned int outputSize = 7;
     Matrix dataPlot(N + 1, outputSize);
 
-    auto q = ball->q();
-    auto v = ball->velocity();
-    auto p = ball->p(1);
-    std::shared_ptr<Vector> lambda;
-    std::shared_ptr<Vector> p2;
-    std::shared_ptr<Vector> lambda2;
+    auto q = ball->q_read();
+    auto v = ball->velocity_read();
+    auto p = ball->p_read(1);
 
     dataPlot(0, 0) = bouncingBall->t0();
-    dataPlot(0, 1) = (*q)(0);
-    dataPlot(0, 2) = (*v)(0);
-    dataPlot(0, 3) = (*p)(0);
+    dataPlot(0, 1) = q(0);
+    dataPlot(0, 2) = v(0);
+    dataPlot(0, 3) = p(0);
     dataPlot(0, 4) = 0;
     dataPlot(0, 5) = 0;
     dataPlot(0, 6) = 0;
@@ -160,20 +157,17 @@ int main(int argc, char* argv[]) {
     while (s->hasNextEvent()) {
       s->advanceToEvent();
       // ball->display();
-      p2 = ball->p(2);
-      lambda2 = inter->lambda(2);
-      lambda = inter->lambda(1);
       // --- Get values to be plotted ---
       //  if (fmod(s->nextTime(), hplot) < h)
       {
         // std::cout << "k=" << k <<std::endl;
         dataPlot(k, 0) = s->nextTime();
-        dataPlot(k, 1) = (*q)(0);
-        dataPlot(k, 2) = (*v)(0);
-        dataPlot(k, 3) = (*p)(0);
-        dataPlot(k, 4) = (*lambda)(0);
-        dataPlot(k, 5) = (*p2)(0);
-        dataPlot(k, 6) = (*lambda2)(0);
+        dataPlot(k, 1) = q(0);
+        dataPlot(k, 2) = v(0);
+        dataPlot(k, 3) = p(0);
+        dataPlot(k, 4) = (*inter->lambda(1))(0);
+        dataPlot(k, 5) = (*ball->p(2))(0);
+        dataPlot(k, 6) = (*inter->lambda(2))(0);
         k++;
       }
 
@@ -181,7 +175,7 @@ int main(int argc, char* argv[]) {
       siconos::tools::progressBar((double)k / N);
     }
     auto end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
     std::cout << "\nComputation time : " << elapsed << " ms\n";
 
@@ -194,11 +188,12 @@ int main(int argc, char* argv[]) {
     if ((error = siconos::algebra::io::compareRefFile(
              dataPlot, "BouncingBallTS-D1MinusLinearOSI.ref", eps)) >= eps)
       return 1;
+
+    return 0;
   }
 
   catch (...) {
     siconos::exception::process();
     return 1;
   }
-  return 0;
 }

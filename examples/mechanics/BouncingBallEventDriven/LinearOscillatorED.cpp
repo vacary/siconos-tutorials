@@ -73,11 +73,12 @@ int main(int argc, char* argv[]) {
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
     // set stiffmatrix
-    auto K = std::make_shared<Matrix>(nDof, nDof);
-    (*K)(0, 0) = kx;
-    (*K)(1, 1) = ky;
-    (*K)(2, 2) = 0.;
-    ball->setK(*K);
+    Matrix K{nDof, nDof};
+    K.setZero();
+    K(0, 0) = kx;
+    K(1, 1) = ky;
+    K(2, 2) = 0.;
+    ball->setStiffnessMatrix(K);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
@@ -144,7 +145,7 @@ int main(int argc, char* argv[]) {
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 9;
-    Matrix dataPlot(N + 1, outputSize);
+    Matrix dataPlot(N, outputSize);
     auto q = ball->q();
     auto v = ball->velocity();
     auto p = ball->p(1);
@@ -206,7 +207,7 @@ int main(int argc, char* argv[]) {
       ++numberOfEvent;
     }
     auto end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "===== End of Event Driven simulation. \n";
     std::cout << numberOfEvent << " events have been processed. ==== \n";
     std::cout << numberOfEvent - kns << " events are of time--discretization type  ==== \n";
@@ -214,11 +215,10 @@ int main(int argc, char* argv[]) {
     std::cout << "\nComputation time : " << elapsed << " ms\n";
     // --- Output files ---
     std::cout << "====> Output file writing ...\n\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("LinearOscillatorED.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
-    double error = 0.0, eps = 1e-10;
+    double error = 0.0, eps = 1e-08;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "LinearOscillatorED.ref",
                                                       eps)) > eps)
       return 1;

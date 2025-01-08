@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
 
     s->setPrintStat(true);
 
-    int N = 1850;  // Number of saved points: depends on the number of events ...
+    int N = 1161;  // Number of saved points: depends on the number of events ...
     int ll = 0;
 
     // --- Get the values to be plotted ---
@@ -240,7 +240,6 @@ int main(int argc, char *argv[]) {
     std::cout << ll << " events are of nonsmooth type  ==== \n\n";
     std::cout << "\nComputation time : " << elapsed << " ms\n";
 
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("BouncingBallED-TwoContacts.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);

@@ -137,12 +137,12 @@ int main(int argc, char *argv[]) {
 
     s->setPrintStat(true);
 
-    int N = 1854;  // Number of saved points: depends on the number of events ...
+    int N = 1700;  // Number of saved points: depends on the number of events ...
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 7;
-    Matrix dataPlot(N + 1, outputSize);
+    Matrix dataPlot(N, outputSize);
     auto q = ball->q();
     auto v = ball->velocity();
     auto p = ball->p(1);
@@ -211,7 +211,6 @@ int main(int argc, char *argv[]) {
     std::cout << "\nComputation time : " << elapsed << " ms\n";
     // --- Output files ---
     std::cout << "====> Output file writing ...\n\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
   }
