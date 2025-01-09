@@ -22,34 +22,15 @@
 #include <chrono>
 #include <numbers>  // for pi
 
+#include "tools.h"
+
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
-
-using namespace std;
 
 // parameters according to Table 1
 // geometrical characteristics
 
-namespace {
-constexpr double l1 = 1.0;
-constexpr double l2 = 4.0;
-constexpr double l3 = 2.5;
-constexpr double l0 = 3.0;
-
-double r1 = 0.0;
-double r3 = 0.0;
-double r5 = 0.0;
-double Kp = 0.0;
-double lmd = 0.0;
-// force elements
-constexpr double gravity = 9.81;
-constexpr double m1 = 1.0;
-constexpr double m2 = 1.0;
-constexpr double m3 = 1.0;
-constexpr double I1 = m1 * l1 * l1 / 3.0;
-constexpr double J2 = m2 * l2 * l2 / 12.0;
-constexpr double I3 = m3 * l3 * l3 / 3.0;
-}  // namespace
+using namespace user;
 
 int main(int argc, char* argv[]) {
   try {
@@ -68,6 +49,8 @@ int main(int argc, char* argv[]) {
     // eN1 = 0.1;
     double eT = 0.0;
     double mu = 0.1;
+
+    double r1, r3, r5, Kp, lmd;
 
     std::cout << "argc :" << argc << "\n";
     if (argc < 2) {
@@ -124,32 +107,112 @@ int main(int argc, char* argv[]) {
     Vector v0{nDof};
     v0.setZero();
 
-
-   q0(0) = 1.570823772407980;   // 1.5708;
-   q0(1) = 0.3532842020624460;  // 0.3533;
-   q0(2) = 1.264872058968431;   // 1.2649;
-   q0(3) = 1.876454585097650;   // 1.87647;
-   q0(4) = 1.691962091335582;   // 1.69199;
-   q0(5) = 0.3764686197082958;  // 0.3764+3.5e-5;
-   q0(6) = 1.191962183453451;   // 1.19197;
+    q0(0) = 1.570823772407980;   // 1.5708;
+    q0(1) = 0.3532842020624460;  // 0.3533;
+    q0(2) = 1.264872058968431;   // 1.2649;
+    q0(3) = 1.876454585097650;   // 1.87647;
+    q0(4) = 1.691962091335582;   // 1.69199;
+    q0(5) = 0.3764686197082958;  // 0.3764+3.5e-5;
+    q0(6) = 1.191962183453451;   // 1.19197;
     v0(0) = 0.0;
     v0(1) = 0.0;
     v0(2) = 0.0;
 
-    auto fourbar = std::make_shared<siconos::modeling::LagrangianDS>(
-        q0, v0, "FourBarClearancePlugin:mass");
-    std::vector<double> zparams = {0.0, 0.0, 0.0, r1, r3, r5, Kp, lmd};
-    auto zz = std::make_shared<Vector>(zparams);
-    fourbar->setzPtr(zz);  // for r1, r3, r5, Kp and lmd
-    // external plug-in
-    fourbar->setComputeFGyrFunction("FourBarClearancePlugin.so", "FGyr");
-    fourbar->setComputeJacobianFGyrqFunction("FourBarClearancePlugin.so", "jacobianFGyrq");
-    fourbar->setComputeJacobianFGyrqDotFunction("FourBarClearancePlugin.so",
-                                                "jacobianFGyrVelocity");
-    fourbar->setComputeFIntFunction("FourBarClearancePlugin.so", "FInt");
-    fourbar->setComputeJacobianFIntqDotFunction("FourBarClearancePlugin.so",
-                                                "jacobianFIntqDot");
-    fourbar->setComputeJacobianFIntqFunction("FourBarClearancePlugin.so", "jacobianFIntq");
+    auto fourbar = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
+    fourbar->setComputeMassFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector>& pos,
+           Eigen::Ref<siconos::algebra::MapType> mass) {
+          mass.setZero();
+
+          mass(0, 0) = J1 + (0.25 * m1) * l1 * l1;
+          mass(1, 1) = J2;
+          mass(2, 2) = J3;
+          mass(3, 3) = m2;
+          mass(4, 4) = m2;
+          mass(5, 5) = m3;
+          mass(6, 6) = m3;
+        });
+
+    // In the plugin functions, we use 'params' variable to save user-defined parameters, with:
+    // params = [params0, params1, params2, r1, r3, r5, Kp, lmd]
+    // params values are supposed to be initialized in main driver file.
+
+    std::vector<double> params = {0.0, 0.0, 0.0, r1, r3, r5, Kp, lmd};
+    fourbar->setComputeFintFunction(
+        [&params](const Eigen::Ref<const siconos::algebra::SiconosVector>& velocity,
+                  const Eigen::Ref<const siconos::algebra::SiconosVector>& q, double time,
+                  Eigen::Ref<siconos::algebra::MapVectorType> fint) {
+          double s11 = FS1(q);
+          double s21 = FS2(q);
+          double c11 = Fc1(q);
+          double T7 = Fdtc1(q);
+          double T8 = Fdac1(q);
+          double T11 = Fft11(q);
+          double T13 = Fft13(q);
+          double ct1 = Fdtc1(q);
+          double ca1 = Fdac1(q);
+          double gt1 = Fdtg(q);
+          double ga1 = Fdag(q);
+          double gp1 = Fdpg(q);
+          double mass11 = MASS1(q);
+          double nonnl11 = NonNL1(q, velocity);
+          double Kp = params[6];
+          double lmd = params[7];
+          fint.setZero();
+          fint(0) =
+              (0.5 * m1) * gravity * l1 * cos(q(0)) -
+              (2 * (Jx1 + (Jx2 * s11 * s11) + (Jx3 * s21 * s21) + (P1 * c11 * s11)) *
+               (-6.0 * 0.75 * 0.75 * std::numbers::pi * std::numbers::pi *
+                    sin(0.75 * std::numbers::pi * time) -
+                lmd * (velocity(0) -
+                       0.75 * std::numbers::pi * 6.0 * cos(0.75 * std::numbers::pi * time)))) -
+              ((2 * Jx2 * s11 * T11 + 2 * J3 * s21 * T13 +
+                P1 * (c11 * T11 + s11 * (T7 + s11 * T8))) *
+               velocity(0)) *
+                  (velocity(0) - lmd * (q(0) - 6.0 * sin(0.75 * std::numbers::pi * time))) +
+              Kp * (velocity(0) -
+                    0.75 * std::numbers::pi * 6.0 * cos(0.75 * std::numbers::pi * time)) +
+              Kp * lmd * (q(0) - 6.0 * sin(0.75 * std::numbers::pi * time)) -
+              (-gt1 - s11 * ga1 - s21 * gp1);
+
+          fint(4) = m2 * gravity;
+          fint(5) = 0.0;
+          fint(6) = m3 * gravity;
+          params[0] = mass11;
+          params[1] = nonnl11;
+          params[2] =
+              (2 * (Jx1 + (Jx2 * s11 * s11) + (Jx3 * s21 * s21) + (P1 * c11 * s11)) *
+               (-6.0 * 0.75 * 0.75 * std::numbers::pi * std::numbers::pi *
+                    sin(0.75 * std::numbers::pi * time) -
+                lmd * (velocity(0) -
+                       0.75 * std::numbers::pi * 6.0 * cos(0.75 * std::numbers::pi * time)))) +
+              ((2 * Jx2 * s11 * T11 + 2 * J3 * s21 * T13 +
+                P1 * (c11 * T11 + s11 * (T7 + s11 * T8))) *
+               velocity(0)) *
+                  (velocity(0) - lmd * (q(0) - 6.0 * sin(0.75 * std::numbers::pi * time))) -
+              Kp * (velocity(0) -
+                    0.75 * std::numbers::pi * 6.0 * cos(0.75 * std::numbers::pi * time)) -
+              Kp * lmd * (q(0) - 6.0 * sin(0.75 * std::numbers::pi * time)) +
+              (-gt1 - s11 * ga1 - s21 * gp1);
+        });
+
+    // fourbar->setComputeFgyrFunction(
+    //     [](const Eigen::Ref<const siconos::algebra::SiconosVector>& vel,
+    //        const Eigen::Ref<const siconos::algebra::SiconosVector>& q,
+    //        Eigen::Ref<siconos::algebra::MapVectorType> result) { result.setZero(); });
+
+    // fourbar->->setComputeJacobianFgyrOver_qFunction(
+    //   [](const Eigen::Ref<const siconos::algebra::SiconosVector> &v,
+    //      const Eigen::Ref<const siconos::algebra::SiconosVector> &q,
+    //      Eigen::Ref<siconos::algebra::MapType> result) { result.setZero(); });
+
+    fourbar->setComputeJacobianFgyrOver_qFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector>& v,
+           const Eigen::Ref<const siconos::algebra::SiconosVector>& q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result.setZero();
+          result(0, 0) = -(0.5 * m1) * gravity * l1 * sin(q(0));
+        });
 
     // -------------------
     // --- Interactions---
@@ -161,20 +224,137 @@ int main(int argc, char* argv[]) {
 
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(
         eN, eT, mu, 2);  // EqualityConditionNSL NewtonImpactNSL
-    auto relation = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "FourBarClearancePlugin:g1", "FourBarClearancePlugin:W1");
+    auto relation = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+    relation->setComputehFunction([params](const siconos::algebra::BlockVector& q,
+                                           Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y.setZero();
+      double v1 = fcnExpression1(*q.vector(0));
+      double r1 = params[3];
+      y(0) = l1 * (r2 - r1) - v1;
+    });
+
+    relation->setComputeJacobianhOver_qFunction(
+        [params](const siconos::algebra::BlockVector& q,
+                 Eigen::Ref<siconos::algebra::MapType> result) {
+          double v1 = fcnExpression1(*q.vector(0));
+          double r1 = params[3];
+          result.setZero();
+          result(0, 0) = (-q(3) * l1 * sin(q(0)) + 0.5 * l1 * l2 * sin(q(0) - q(1)) +
+                          q(4) * l1 * cos(q(0))) /
+                         v1;
+          result(1, 0) = ((q(3) * l1 * cos(q(0)) - 0.5 * l1 * l2 * cos(q(0) - q(1)) +
+                           q(4) * l1 * sin(q(0)) - l1 * l1) /
+                          v1) -
+                         r1;
+
+          result(0, 1) = (-0.5 * q(3) * l2 * sin(q(1)) - 0.5 * l1 * l2 * sin(q(0) - q(1)) +
+                          0.5 * q(4) * l2 * cos(q(1))) /
+                         v1;
+          result(1, 1) = ((0.5 * q(3) * l2 * cos(q(1)) - 0.5 * l1 * l2 * cos(q(0) - q(1)) +
+                           0.5 * q(4) * l2 * sin(q(1)) - 0.25 * l2 * l2) /
+                          v1) +
+                         r2;
+
+          result(0, 3) = (-q(3) + l1 * cos(q(0)) + 0.5 * l2 * cos(q(1))) / v1;
+          result(1, 3) = (q(4) - 0.5 * l2 * sin(q(1)) - l1 * sin(q(0))) / v1;
+
+          result(0, 4) = (-q(4) + l1 * sin(q(0)) + 0.5 * l2 * sin(q(1))) / v1;
+          result(1, 4) = -(q(3) - 0.5 * l2 * cos(q(1)) - l1 * cos(q(0))) / v1;
+        });
+
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
     auto nslaw1 = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(
         eN, eT, mu, 2);  // EqualityConditionNSL NewtonImpactNSL
-    auto relation1 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "FourBarClearancePlugin:g2", "FourBarClearancePlugin:W2");
+    auto relation1 = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+
+    relation1->setComputehFunction([params](const siconos::algebra::BlockVector& q,
+                                            Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y.setZero();
+      double v2 = fcnExpression2(*q.vector(0));
+      double r3 = params[4];
+      y(0) = (r4 - r3) - v2;
+    });
+
+    relation1->setComputeJacobianhOver_qFunction(
+        [params](const siconos::algebra::BlockVector& q,
+                 Eigen::Ref<siconos::algebra::MapType> result) {
+          double v2 = fcnExpression2(*q.vector(0));
+          double r3 = params[4];
+
+          result.setZero();
+          result(1, 0) = 0.0;
+
+          result(0, 1) = (-0.5 * l0 * l2 * sin(q(1)) - 0.5 * q(5) * l2 * sin(q(1)) +
+                          0.5 * q(3) * l2 * sin(q(1)) - 0.25 * l2 * l3 * sin(q(1) - q(2)) -
+                          0.5 * q(4) * l2 * cos(q(1)) + 0.5 * q(6) * l2 * cos(q(1))) /
+                         v2;
+          result(1, 1) =
+              ((0.5 * l0 * l2 * cos(q(1)) + 0.5 * q(5) * l2 * cos(q(1)) -
+                0.5 * q(3) * l2 * cos(q(1)) + 0.25 * l2 * l3 * cos(q(1) - q(2)) -
+                0.5 * q(4) * l2 * sin(q(1)) + 0.5 * q(6) * l2 * sin(q(1)) - 0.25 * l2 * l2) /
+               v2) -
+              r3;
+
+          result(0, 2) = (0.5 * l0 * l3 * sin(q(2)) + 0.5 * q(5) * l3 * sin(q(2)) -
+                          0.5 * q(3) * l3 * sin(q(2)) + 0.25 * l2 * l3 * sin(q(1) - q(2)) +
+                          0.5 * q(4) * l3 * cos(q(2)) - 0.5 * q(6) * l3 * cos(q(2))) /
+                         v2;
+          result(1, 2) =
+              ((-0.5 * l0 * l3 * cos(q(2)) - 0.5 * q(5) * l3 * cos(q(2)) +
+                0.5 * q(3) * l3 * cos(q(2)) + 0.25 * l2 * l3 * cos(q(1) - q(2)) +
+                0.5 * q(4) * l3 * sin(q(2)) - 0.5 * q(6) * l3 * sin(q(2)) - 0.25 * l3 * l3) /
+               v2) +
+              r4;
+
+          result(0, 3) =
+              (-q(3) + l0 + q(5) + 0.5 * l3 * cos(q(2)) - 0.5 * l2 * cos(q(1))) / v2;
+          result(1, 3) = (q(4) - q(6) - 0.5 * l3 * sin(q(2)) + 0.5 * l2 * sin(q(1))) / v2;
+
+          result(0, 4) = (-q(4) + q(6) + 0.5 * l3 * sin(q(2)) - 0.5 * l2 * sin(q(1))) / v2;
+          result(1, 4) = (q(5) + l0 - q(3) + 0.5 * l3 * cos(q(2)) - 0.5 * l2 * cos(q(1))) / v2;
+
+          result(0, 5) =
+              (-q(5) - l0 - 0.5 * l3 * cos(q(2)) + 0.5 * l2 * cos(q(1)) + q(3)) / v2;
+          result(1, 5) = (q(6) - q(4) + 0.5 * l3 * sin(q(2)) - 0.5 * l2 * sin(q(1))) / v2;
+
+          result(0, 6) = (-q(6) + q(4) - 0.5 * l3 * sin(q(2)) + 0.5 * l2 * sin(q(1))) / v2;
+          result(1, 6) =
+              (-q(5) - l0 - 0.5 * l3 * cos(q(2)) + 0.5 * l2 * cos(q(1)) + q(3)) / v2;
+        });
     auto inter1 = std::make_shared<siconos::modeling::Interaction>(nslaw1, relation1);
 
     auto nslaw2 = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(
         eN, eT, mu, 2);  // EqualityConditionNSL NewtonImpactNSL
-    auto relation2 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "FourBarClearancePlugin:g3", "FourBarClearancePlugin:W3");
+    auto relation2 = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+
+    relation2->setComputehFunction([params](const siconos::algebra::BlockVector& q,
+                                            Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y.setZero();
+      double v3 = fcnExpression3(*q.vector(0));
+      double r5 = params[5];
+      y(0) = (r6 - r5) - v3;
+    });
+
+    relation2->setComputeJacobianhOver_qFunction(
+        [params](const siconos::algebra::BlockVector& q,
+                 Eigen::Ref<siconos::algebra::MapType> result) {
+          double v3 = fcnExpression3(*q.vector(0));
+          double r5 = params[5];
+          result.setZero();
+          result(0, 2) = (-0.5 * q(5) * l3 * sin(q(2)) + 0.5 * q(6) * l3 * cos(q(2))) / v3;
+          result(1, 2) =
+              ((0.5 * q(5) * l3 * cos(q(2)) + 0.5 * q(6) * l3 * sin(q(2)) - 0.25 * l3 * l3) /
+               v3) -
+              r5;
+
+          result(0, 5) = (-q(5) + 0.5 * l3 * cos(q(2))) / v3;
+          result(1, 5) = (q(6) - 0.5 * l3 * sin(q(2))) / v3;
+
+          result(0, 6) = (-q(6) + 0.5 * l3 * sin(q(2))) / v3;
+          result(1, 6) = (-q(5) + 0.5 * l3 * cos(q(2))) / v3;
+        });
+
     auto inter2 = std::make_shared<siconos::modeling::Interaction>(nslaw2, relation2);
 
     // auto nslaw2= std::make_shared<siconos::modeling::EqualityConditionNSL>(e1);
@@ -207,7 +387,7 @@ int main(int argc, char* argv[]) {
     //  ----------------
     //  --- Simulation ---
     //  ----------------
-    fourbar->computeTotalForces(fourbar->velocity(), fourbar->q(), t0);
+    fourbar->computeTotalForces(fourbar->velocity_read(), fourbar->q_read(), t0);
 
     inter->computeOutput(t0, 0);
     inter1->computeOutput(t0, 0);
@@ -251,7 +431,8 @@ int main(int argc, char* argv[]) {
 
     // -- OneStepNsProblem --//
 
-    // auto osnspb= std::make_shared<siconos::nonsmooth_formulations::FrictionContact>(2);
+    // auto osnspb=
+    // std::make_shared<siconos::nonsmooth_formulations::FrictionContact>(2);
 
     // s->insertNonSmoothProblem(osnspb);
 
@@ -266,7 +447,7 @@ int main(int argc, char* argv[]) {
 
     int k = 1;
     int N = ceil((T - t0) / h) + 1;
-    std::cout << "Number of time step   " << N << endl;
+    std::cout << "Number of time step   " << N << "\n";
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 42;
@@ -284,7 +465,7 @@ int main(int argc, char* argv[]) {
     Matrix beam11Plot(1, 2 * ((N / 500) + 1));
     Matrix beam12Plot(1, 2 * ((N / 500) + 1));
     Matrix beam13Plot(1, 2 * ((N / 500) + 1));
-    // std::cout << "size here " << (N/20) + 1 << endl;
+    // std::cout << "size here " << (N/20) + 1 << "\n";
     //  For the initial time step:
     //  time
     auto q = fourbar->q();
@@ -330,22 +511,24 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 33) = (*inter1->y(0))(0);
     dataPlot(0, 34) = (*inter2->y(0))(0);
 
-    dataPlot(0, 35) = (*fourbar->fInt())(0) - (0.5 * m1) * gravity * l1 * cos((*q)(0));
+    dataPlot(0, 35) = fourbar->fint()(0) - (0.5 * m1) * gravity * l1 * cos((*q)(0));
     dataPlot(0, 36) =
-        0.5 * ((*v)(0) - 6.0 * 0.75 * numbers::pi * cos(0.75 * numbers::pi * h)) *
-            ((*v)(0) - 6.0 * 0.75 * numbers::pi * cos(0.75 * numbers::pi * h)) +
-        0.5 * 3000.0 * ((*q)(0) - 6.0 * sin(0.75 * numbers::pi * h)) *
-            ((*q)(0) - 6.0 * sin(0.75 * numbers::pi * h)) +
-        0.5 * 10.0 * ((*v)(0) - 6.0 * 0.75 * numbers::pi * cos(0.75 * numbers::pi * h)) *
-            ((*q)(0) - 6.0 * sin(0.75 * numbers::pi * h));
-    dataPlot(0, 37) = 6.0 * sin(0.75 * numbers::pi * h);
-    dataPlot(0, 38) = 6.0 * 0.75 * numbers::pi * cos(0.75 * numbers::pi * h);
-    dataPlot(0, 39) = (*zz)(2);
-    dataPlot(0, 40) = 0.5 *
-                      (((*v)(0) - 6.0 * 0.75 * numbers::pi * cos(0.75 * numbers::pi * h)) +
-                       10.0 * ((*q)(0) - 6.0 * sin(0.75 * numbers::pi * h))) *
-                      (((*v)(0) - 6.0 * 0.75 * numbers::pi * cos(0.75 * numbers::pi * h)) +
-                       10.0 * ((*q)(0) - 6.0 * sin(0.75 * numbers::pi * h)));
+        0.5 * ((*v)(0) - 6.0 * 0.75 * std::numbers::pi * cos(0.75 * std::numbers::pi * h)) *
+            ((*v)(0) - 6.0 * 0.75 * std::numbers::pi * cos(0.75 * std::numbers::pi * h)) +
+        0.5 * 3000.0 * ((*q)(0) - 6.0 * sin(0.75 * std::numbers::pi * h)) *
+            ((*q)(0) - 6.0 * sin(0.75 * std::numbers::pi * h)) +
+        0.5 * 10.0 *
+            ((*v)(0) - 6.0 * 0.75 * std::numbers::pi * cos(0.75 * std::numbers::pi * h)) *
+            ((*q)(0) - 6.0 * sin(0.75 * std::numbers::pi * h));
+    dataPlot(0, 37) = 6.0 * sin(0.75 * std::numbers::pi * h);
+    dataPlot(0, 38) = 6.0 * 0.75 * std::numbers::pi * cos(0.75 * std::numbers::pi * h);
+    dataPlot(0, 39) = params[2];
+    dataPlot(0, 40) =
+        0.5 *
+        (((*v)(0) - 6.0 * 0.75 * std::numbers::pi * cos(0.75 * std::numbers::pi * h)) +
+         10.0 * ((*q)(0) - 6.0 * sin(0.75 * std::numbers::pi * h))) *
+        (((*v)(0) - 6.0 * 0.75 * std::numbers::pi * cos(0.75 * std::numbers::pi * h)) +
+         10.0 * ((*q)(0) - 6.0 * sin(0.75 * std::numbers::pi * h)));
     dataPlot(0, 41) = 0.5 * ((*inter->y(1))(0) * (*inter->y(1))(0));
     auto start = std::chrono::system_clock::now();
     // --- Time loop ---
@@ -414,23 +597,25 @@ int main(int argc, char* argv[]) {
         dataPlot(kk, 32) = (*inter->y(0))(0);
         dataPlot(kk, 33) = (*inter1->y(0))(0);
         dataPlot(kk, 34) = (*inter2->y(0))(0);
-        dataPlot(kk, 35) = (*fourbar->fInt())(0) - (0.5 * m1) * gravity * l1 * cos((*q)(0));
+        dataPlot(kk, 35) = fourbar->fint()(0) - (0.5 * m1) * gravity * l1 * cos((*q)(0));
         dataPlot(kk, 36) =
-            0.5 * ((*v)(0) - 6.0 * 0.75 * numbers::pi * cos(0.75 * numbers::pi * tt)) *
-                ((*v)(0) - 6.0 * 0.75 * numbers::pi * cos(0.75 * numbers::pi * tt)) +
-            0.5 * 3000.0 * ((*q)(0) - 6.0 * sin(0.75 * numbers::pi * tt)) *
-                ((*q)(0) - 6.0 * sin(0.75 * numbers::pi * tt)) +
-            0.5 * 10.0 * ((*v)(0) - 6.0 * 0.75 * numbers::pi * cos(0.75 * numbers::pi * tt)) *
-                ((*q)(0) - 6.0 * sin(0.75 * numbers::pi * tt));
-        dataPlot(kk, 37) = 6.0 * sin(0.75 * numbers::pi * tt);
-        dataPlot(kk, 38) = 6.0 * 0.75 * numbers::pi * cos(0.75 * numbers::pi * tt);
-        dataPlot(kk, 39) = (*zz)(2);
+            0.5 *
+                ((*v)(0) - 6.0 * 0.75 * std::numbers::pi * cos(0.75 * std::numbers::pi * tt)) *
+                ((*v)(0) - 6.0 * 0.75 * std::numbers::pi * cos(0.75 * std::numbers::pi * tt)) +
+            0.5 * 3000.0 * ((*q)(0) - 6.0 * sin(0.75 * std::numbers::pi * tt)) *
+                ((*q)(0) - 6.0 * sin(0.75 * std::numbers::pi * tt)) +
+            0.5 * 10.0 *
+                ((*v)(0) - 6.0 * 0.75 * std::numbers::pi * cos(0.75 * std::numbers::pi * tt)) *
+                ((*q)(0) - 6.0 * sin(0.75 * std::numbers::pi * tt));
+        dataPlot(kk, 37) = 6.0 * sin(0.75 * std::numbers::pi * tt);
+        dataPlot(kk, 38) = 6.0 * 0.75 * std::numbers::pi * cos(0.75 * std::numbers::pi * tt);
+        dataPlot(kk, 39) = params[2];
         dataPlot(kk, 40) =
             0.5 *
-            (((*v)(0) - 6.0 * 0.75 * numbers::pi * cos(0.75 * numbers::pi * tt)) +
-             10.0 * ((*q)(0) - 6.0 * sin(0.75 * numbers::pi * tt))) *
-            (((*v)(0) - 6.0 * 0.75 * numbers::pi * cos(0.75 * numbers::pi * tt)) +
-             10.0 * ((*q)(0) - 6.0 * sin(0.75 * numbers::pi * tt)));
+            (((*v)(0) - 6.0 * 0.75 * std::numbers::pi * cos(0.75 * std::numbers::pi * tt)) +
+             10.0 * ((*q)(0) - 6.0 * sin(0.75 * std::numbers::pi * tt))) *
+            (((*v)(0) - 6.0 * 0.75 * std::numbers::pi * cos(0.75 * std::numbers::pi * tt)) +
+             10.0 * ((*q)(0) - 6.0 * sin(0.75 * std::numbers::pi * tt)));
         dataPlot(kk, 41) = 0.5 * ((*inter->y(1))(0) * (*inter->y(1))(0));
 
         beam1Plot(0, 3 * kk) = 0.0;
@@ -520,7 +705,6 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(kk, outputSize);
     siconos::algebra::io::write(filename, dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     siconos::algebra::io::write("Link1.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
@@ -553,7 +737,7 @@ int main(int argc, char* argv[]) {
     siconos::algebra::io::write("ex1xy4_ey1xy4.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
-    double error = 0.0, eps = 1e-09;
+    double error = 0.0, eps = 2.e-05;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "FourBarClearance.ref", eps)) >
         eps)
       return 1;

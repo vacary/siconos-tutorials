@@ -58,10 +58,9 @@ int main(int argc, char* argv[]) {
                                  // for the Hertzian contact
     std::string TypeContactLaw = "BiStiffness";  // Type of compliance contact law
     // Parameters for the global simulation
-    double t0 = 0;                   // initial computation time
-    double T = 0.5;                  // final computation time
-    double h = 0.001;                // time step
-    unsigned int Npointsave = 1000;  // Number of data points to be saved
+    double t0 = 0;     // initial computation time
+    double T = 0.5;    // final computation time
+    double h = 0.001;  // time step
     // For impact computation
     double DelPest = 1.0e-6;  // Step size estimated for multiple impacts computation
     unsigned int Nstep_save_impact =
@@ -77,46 +76,30 @@ int main(int argc, char* argv[]) {
     // ---- Configuration of chaines
     //--------------------------------------
     //************* Balls ******************
-    double NumberContacts = NumberBalls;  // Number of contacts
+    auto NumberContacts = NumberBalls;  // Number of contacts
     //(1) Radius of balls
-    auto RadiusBalls = std::make_shared<Vector>(NumberBalls);
-    for (unsigned int k = 0; k < NumberBalls; ++k) {
-      (*RadiusBalls)(k) = (pow((1.0 - q_taper), (int)(k + 1))) * R_base_taper;
-    }
+    Vector RadiusBalls{NumberBalls};
+    RadiusBalls =
+        Eigen::VectorXd::NullaryExpr(RadiusBalls.size(), [q_taper, R_base_taper](int i) {
+          return (pow((1.0 - q_taper), i + 1)) * R_base_taper;
+        });
+
     // (2) Mass of balls
-    auto MassBalls = std::make_shared<Vector>(NumberBalls);
-    for (unsigned int id = 0; id < NumberBalls; ++id) {
-      (*MassBalls)(id) = (4.0 / 3.0) * PI * pow((*RadiusBalls)(id), 3) * mass_density;
-    }
-    // (3) Initial position of balls
-    // For the impactor balls
-    auto InitPosBalls = std::make_shared<Vector>(NumberBalls);
-    (*InitPosBalls)(0) = Height + (*RadiusBalls)(0);
-    for (unsigned int j = 1; j < NumberBalls; ++j) {
-      (*InitPosBalls)(j) = (*InitPosBalls)(j - 1) + (*RadiusBalls)(j - 1) + (*RadiusBalls)(j);
-    }
-    // (4) Initial velocity of balls
-    auto InitVelBalls = std::make_shared<Vector>(NumberBalls);
-    for (unsigned int i = 0; i < NumberBalls; ++i) {
-      (*InitVelBalls)(i) = 0.0;
-    }
+    Vector MassBalls{NumberBalls};
+    MassBalls =
+        Eigen::VectorXd::NullaryExpr(MassBalls.size(), [RadiusBalls, mass_density](int i) {
+          return (4.0 / 3.0) * PI * pow(RadiusBalls(i), 3) * mass_density;
+        });
+
     //****************** Contacts ******************
     // (1) Restitution coefficient at contacts
-    auto ResCofContacts = std::make_shared<Vector>(NumberContacts);
-    auto ElasCofContacts = std::make_shared<Vector>(NumberContacts);
-    for (unsigned int id = 0; id < NumberContacts; ++id) {
-      if (id == 0)  // contact ball-wall
-      {
-        (*ResCofContacts)(id) = Res_BallWall;
-      } else  // contact ball-ball
-      {
-        (*ResCofContacts)(id) = Res_BallBall;
-      }
-      //
-      (*ElasCofContacts)(id) = PowCompLaw;
-    }
+    Vector ResCofContacts{NumberContacts};
+    Vector ElasCofContacts{NumberContacts};
+    ResCofContacts.setConstant(Res_BallWall);
+    ElasCofContacts.setConstant(PowCompLaw);
+
     // (2) Stiffness at contacts
-    auto StiffContacts = std::make_shared<Vector>(NumberContacts);
+    Vector StiffContacts{NumberContacts};
     double Rmoy, Emoy;
     for (unsigned int id = 0; id < NumberContacts; ++id) {
       // for ball-wall contact
@@ -124,15 +107,15 @@ int main(int argc, char* argv[]) {
         Emoy = (4.0 / 3.0) *
                ((YoungBall * YoungWall) / ((1.0 - pow(PoissonBall, 2)) * YoungWall +
                                            (1.0 - pow(PoissonWall, 2)) * YoungBall));
-        Rmoy = (*RadiusBalls)(0);
+        Rmoy = RadiusBalls(0);
       }
       // Ball-ball contact
       else {
         Emoy = (2.0 / 3.0) * (YoungBall / (1.0 - pow(PoissonBall, 2)));
-        Rmoy = ((*RadiusBalls)(id - 1) * (*RadiusBalls)(id)) /
-               ((*RadiusBalls)(id - 1) + (*RadiusBalls)(id));
+        Rmoy =
+            (RadiusBalls(id - 1) * RadiusBalls(id)) / (RadiusBalls(id - 1) + RadiusBalls(id));
       }
-      (*StiffContacts)(id) = pow(Rmoy, 0.5) * Emoy;
+      StiffContacts(id) = pow(Rmoy, 0.5) * Emoy;
     }
     // // Display and save the configuration of the chain simulated
     // cout << "Configuation of ball chains\n";
@@ -152,7 +135,7 @@ int main(int argc, char* argv[]) {
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
-    cout << "====> Model loading ..." << endl << endl;
+    cout << "====> Model loading ...\n\n";
     // -------------
     // --- Model ---
     // -------------
@@ -163,69 +146,69 @@ int main(int argc, char* argv[]) {
     // -- (1) OneStepIntegrators --
     auto OSI = std::make_shared<siconos::integrators::LsodarOSI>();
 
-    std::vector<std::shared_ptr<siconos::modeling::LagrangianLinearTIDS>> VecOfallDS;
-    double _Rball, _massBall, _Pos0Ball, _Vel0Ball;
-    for (unsigned int i = 0; i < NumberBalls; ++i) {
-      _Rball = (*RadiusBalls)(i);      // radius of the ball
-      _massBall = (*MassBalls)(i);     // mass of the ball
-      _Pos0Ball = (*InitPosBalls)(i);  // initial position of the ball
-      _Vel0Ball = (*InitVelBalls)(i);  // initial velocity of the ball
-      // Declaration of the DS in Siconos
-      auto MassBall = std::make_shared<Matrix>(nDofBall, nDofBall);
-      (*MassBall)(0, 0) = _massBall;
-      // -- Initial positions and velocities --
-      auto q0Ball = std::make_shared<Vector>(nDofBall);
-      auto v0Ball = std::make_shared<Vector>(nDofBall);
-      (*q0Ball)(0) = _Pos0Ball;
-      (*v0Ball)(0) = _Vel0Ball;
+    std::vector<std::shared_ptr<siconos::modeling::LagrangianLinearTIDS>> VecOfallDS(
+        NumberBalls);
+
+    Vector InitPosBalls{NumberBalls};
+    InitPosBalls(0) = Height + RadiusBalls(0);
+    for (unsigned int j = 1; j < NumberBalls; ++j) {
+      InitPosBalls(j) = InitPosBalls(j - 1) + RadiusBalls(j - 1) + RadiusBalls(j);
+    }
+    std::vector<Vector> FextBall(NumberBalls, Vector::Zero(nDofBall));
+    std::vector<Matrix> MassBall(NumberBalls, Matrix::Zero(nDofBall, nDofBall));
+    std::vector<Vector> q0Ball(NumberBalls, Vector::Zero(nDofBall));
+    std::vector<Vector> vel0Ball(NumberBalls, Vector::Zero(nDofBall));
+
+    for (auto id = 0; id < NumberBalls; ++id) {
       // -- The dynamical system --
-      auto ball =
-          std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0Ball, v0Ball, MassBall);
-      // -- Set external forces (weight1) --
+      FextBall[id](0) = -MassBalls(id) * g;
+      MassBall[id](0, 0) = MassBalls(id);
+      q0Ball[id](0) = InitPosBalls(id);
 
-      Vector FextBall{nDofBall};
-      FextBall.setZero();
-      FextBall(0) = -_massBall * g;
-      ball->setConstantFext(FextBall);
-
-
-      //
-      VecOfallDS.push_back(ball);
-      BallChain->insertDynamicalSystem(ball);
+      VecOfallDS[id] = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
+          q0Ball[id], vel0Ball[id], MassBall[id]);
+      VecOfallDS[id]->setConstantFext(FextBall[id]);
+      BallChain->insertDynamicalSystem(VecOfallDS[id]);
     }
     // --------------------
     // --- Interactions ---
     // --------------------
-    double ResCoef, Stiff, ElasPow;
-    for (unsigned int j = 0; j < NumberContacts; ++j) {
-      ResCoef = (*ResCofContacts)(j);
-      Stiff = (*StiffContacts)(j);
-      ElasPow = (*ElasCofContacts)(j);
-      std::shared_ptr<Vector> E;
-      std::shared_ptr<Matrix> H;
-      if (j == 0)  // for contact wall-ball
-      {
-        H = std::make_shared<Matrix>(1, nDofBall);
-        (*H)(0, 0) = 1.0;
-        E = std::make_shared<Vector>(1);
-        (*E)(0) = -(*RadiusBalls)(j);
-      } else  // For ball-ball contact
-      {
-        H = std::make_shared<Matrix>(1, (nDofBall + nDofBall));
-        (*H)(0, 0) = -1.0;
-        (*H)(0, 1) = 1.0;
-        E = std::make_shared<Vector>(1);
-        (*E)(0) = -1.0 * ((*RadiusBalls)(j - 1) + (*RadiusBalls)(j));
-      }
-      //
-      auto nslaw =
+
+    std::vector<std::shared_ptr<siconos::modeling::Interaction>> interactions(NumberContacts);
+    std::vector<std::shared_ptr<siconos::modeling::MultipleImpactNSL>> nslaws(NumberContacts);
+    std::vector<std::shared_ptr<siconos::modeling::LagrangianLinearTIR>> relations(
+        NumberContacts);
+    std::vector<Vector> E(NumberContacts, Vector::Zero(1));
+    // contact wall-ball - id = 0
+    Matrix Hwall_ball{1, nDofBall};
+    Hwall_ball.setZero();
+    Hwall_ball(0, 0) = 1.;
+    E[0] << -RadiusBalls(0);
+    nslaws[0] = std::make_shared<siconos::modeling::MultipleImpactNSL>(
+        ResCofContacts(0), StiffContacts(0), ElasCofContacts(0));
+    relations[0] = std::make_shared<siconos::modeling::LagrangianLinearTIR>(Hwall_ball, E[0]);
+    interactions[0] =
+        std::make_shared<siconos::modeling::Interaction>(nslaws[0], relations[0]);
+    BallChain->link(interactions[0], VecOfallDS[0]);
+
+    Matrix H{1, 2 * nDofBall};
+    H.setZero();
+    H(0, 0) = -1.0;
+    H(0, 1) = 1.0;
+
+    for (auto id = 1; id < NumberContacts; ++id) {
+      auto ResCoef = ResCofContacts(id);
+      auto Stiff = StiffContacts(id);
+      auto ElasPow = ElasCofContacts(id);
+      E[id](0) = -(RadiusBalls(id - 1) + RadiusBalls(id));
+
+      nslaws[id] =
           std::make_shared<siconos::modeling::MultipleImpactNSL>(ResCoef, Stiff, ElasPow);
-      auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H, *E);
-      auto interaction = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
-      if (j == 0)  // for contact wall-ball
-        BallChain->link(interaction, VecOfallDS[j]);
-      else  // For ball-ball contact
-        BallChain->link(interaction, VecOfallDS[j - 1], VecOfallDS[j]);
+      relations[id] = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H, E[id]);
+      interactions[id] =
+          std::make_shared<siconos::modeling::Interaction>(nslaws[id], relations[id]);
+      // For ball-ball contact
+      BallChain->link(interactions[id], VecOfallDS[id - 1], VecOfallDS[id]);
     }
     // -- (2) Time discretisation --
     auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
@@ -263,10 +246,11 @@ int main(int argc, char* argv[]) {
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 2 * NumberBalls + 1;
+    unsigned int Npointsave = 778;  // Number of data points to be saved
     Matrix dataPlot(Npointsave, outputSize);
 
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ...\n\n ";
     // ==== Simulation loop - Writing without explicit event handling =====
     bool nonSmooth = false;
     unsigned int NumberOfEvents = 0;
@@ -330,7 +314,6 @@ int main(int argc, char* argv[]) {
     cout << "Computation time : " << elapsed << " ms\n";
     // --- Output files ---
     cout << "====> Output file writing ..." << endl;
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("BeadColumnED_LZBModel.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);

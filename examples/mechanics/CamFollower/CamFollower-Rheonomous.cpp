@@ -17,7 +17,6 @@
  */
 
 // =============================== Cam Follower (1DOF Impact System)
-// ===============================
 //
 // The Cam Follower system is modelled as a Generalised Langrangian System impacting against a
 // fixed wall the moving constraint (i.e. a rotational cam) is modelled as an input force
@@ -58,28 +57,24 @@ int main(int argc, char *argv[]) {
     // --- Dynamical systems ---
     // -------------------------
 
-    auto Mass = std::make_shared<Matrix>(nDof, nDof);
-    auto K = std::make_shared<Matrix>(nDof, nDof);
-    auto C = std::make_shared<Matrix>(nDof, nDof);  // mass/rigidity/viscosity
-    (*Mass)(0, 0) = 1.221;
-    (*K)(0, 0) = 1430.8;
-
-    // -- Initial positions and velocities --
-    std::vector<std::shared_ptr<Vector>> q0;
-    std::vector<std::shared_ptr<Vector>> velocity0;
-    q0.resize(dsNumber);
-    velocity0.resize(dsNumber);
-    q0[0] = std::make_shared<Vector>(nDof);
-    velocity0[0] = std::make_shared<Vector>(nDof);
-    (*(q0[0]))(0) = position_init;
-    (*(velocity0[0]))(0) = velocity_init;
-    auto lds = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0[0], velocity0[0],
-                                                                         Mass, K, C);
-
+    Matrix Mass{nDof, nDof};
+    Mass.setZero();
+    Mass(0, 0) = user_defined::mass;
+    Vector q0{nDof};
+    Vector velocity0{nDof};
+    q0.setZero();
+    q0(0) = position_init;
+    velocity0.setZero();
+    velocity0(0) = velocity_init;
+    auto lds = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, velocity0, Mass);
+    Matrix K{nDof, nDof};
+    K.setZero();
+    K(0, 0) = 1430.8;
+    lds->setStiffnessMatrix(K);
     lds->setComputeFextFunction(
-        [user_defined::mass, user_defined::gravity](
+        [mass = user_defined::mass, gravity = user_defined::gravity](
             double time, Eigen::Ref<siconos::algebra::MapVectorType> fext) {
-          fext[0] = -mass * gravity;
+          fext(0) = -mass * gravity;
         });
 
     // --------------------
@@ -102,13 +97,13 @@ int main(int argc, char *argv[]) {
       // CamEqForce =
       //     user_defined::CamState(time, rpm, CamPosition, CamVelocity, CamAcceleration);
       //  y[0] = q[0] - CamPosition;
-      y[0] = q[0];
+      y(0) = pos(0);
     };
     relation0->setComputehFunction(hfunc);
 
     auto jachq = [](const siconos::algebra::BlockVector &pos, double time,
-                    Eigen::Ref<siconos::algebra::MapType> result) { result[0] = 1; };
-    rel->setComputeJacobianhOver_qFunction(jachq);
+                    Eigen::Ref<siconos::algebra::MapType> result) { result(0, 0) = 1; };
+    relation0->setComputeJacobianhOver_qFunction(jachq);
 
     auto hdot = [rpm](const siconos::algebra::BlockVector &pos, double time,
                       Eigen::Ref<siconos::algebra::MapVectorType> result) {
@@ -117,11 +112,12 @@ int main(int argc, char *argv[]) {
       // CamEqForce =
       //     user_defined::CamState(time, rpm, CamPosition, CamVelocity, CamAcceleration);
       // result[0] = -CamVelocity;
-      result[0] = 0;
+      result.setZero();
     };
-    rel->setComputehdotFunction(hdot);
+    relation0->setComputehdotFunction(hdot);
 
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw0, relation0);
+
     // -------------
     // --- Model ---
     // -------------
@@ -133,6 +129,9 @@ int main(int argc, char *argv[]) {
     // ----------------
     // --- Simulation ---
     // ----------------
+
+    // -- Time discretisation --
+    auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
     // -- OneStepIntegrator --
     auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
@@ -149,11 +148,7 @@ int main(int argc, char *argv[]) {
     // tolerance
     osnspb->numericsSolverOptions()->dparam[0] = 1e-6;
 
-    // -- Time discretisation --
-    auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
-
     auto S = std::make_shared<siconos::simulation::TimeStepping>(Follower, t, OSI, osnspb);
-
     cout << "=== End of model loading === \n";
     // =========================== End of model definition ===========================
 
@@ -172,7 +167,7 @@ int main(int argc, char *argv[]) {
     DataPlot(k, 1) = (*lds->q())(0);
     DataPlot(k, 2) = (*lds->velocity())(0);
     DataPlot(k, 3) = (*inter->lambda(1))(0);
-    DataPlot(k, 4) = (*lds->fext())(0);
+    DataPlot(k, 4) = lds->fext()(0);
 
     // State of the Cam
     //    double rpm=358;
@@ -200,7 +195,7 @@ int main(int argc, char *argv[]) {
       DataPlot(k, 1) = (*lds->q())(0);
       DataPlot(k, 2) = (*lds->velocity())(0);
       DataPlot(k, 3) = (*inter->lambda(1))(0);
-      DataPlot(k, 4) = (*lds->fext())(0);
+      DataPlot(k, 4) = lds->fext()(0);
 
       CamEqForce = user_defined::CamState(S->nextTime(), rpm, CamPosition, CamVelocity,
                                           CamAcceleration);
@@ -212,11 +207,12 @@ int main(int argc, char *argv[]) {
     }
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    cout << endl << "End of computation - Number of iterations done: " << k - 1 << endl;
+    cout << "\nEnd of computation - Number of iterations done: " << k - 1 << endl;
     cout << "Computation time : " << elapsed << " ms\n";
 
     // --- Output files ---
-    siconos::algebra::io::write("result.dat", DataPlot, siconos::algebra::io::ASCII_OUT,
+    siconos::algebra::io::write("CamFollower-Rheonomous.dat", DataPlot,
+                                siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
     double error = 0.0, eps = 1e-12;

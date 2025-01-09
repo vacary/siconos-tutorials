@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-/*!\file ImpactingBarD1MinusLinear.cpp
+/*
   V. Acary
 
   A Bar bouncing on the ground
@@ -50,58 +50,66 @@ int main(int argc, char* argv[]) {
     auto ndof = user::nDof;
     double l = user::L / ndof;  // length of an element
 
-    auto SparseMass =
-        std::make_shared<Matrix>(ndof, ndof, siconos::algebra::UblasType::SPARSE, ndof);
-    auto SparseStiffness =
-        std::make_shared<Matrix>(ndof, ndof, siconos::algebra::UblasType::SPARSE, 3 * ndof);
+    // auto massMatrix =
+    //     std::make_shared<Matrix>(ndof, ndof, siconos::algebra::UblasType::SPARSE, ndof);
+    // auto stiffnessMatrix =
+    //     std::make_shared<Matrix>(ndof, ndof, siconos::algebra::UblasType::SPARSE, 3 * ndof);
 
-    SparseMass->setValue(0, 0, 1.0 / 3.0);
-    SparseMass->setValue(0, 1, 1.0 / 6.0);
-    SparseStiffness->setValue(0, 0, 1.0);
-    SparseStiffness->setValue(0, 1, -1.0);
+    Matrix massMatrix{ndof, ndof};
+    massMatrix.setZero();
+    Matrix stiffnessMatrix{ndof, ndof};
+    stiffnessMatrix.setZero();
+
+    massMatrix.setValue(0, 0, 1.0 / 3.0);
+    massMatrix.setValue(0, 1, 1.0 / 6.0);
+    stiffnessMatrix.setValue(0, 0, 1.0);
+    stiffnessMatrix.setValue(0, 1, -1.0);
 
     for (unsigned int i = 1; i < ndof - 1; i++) {
-      SparseMass->setValue(i, i, 2.0 / 3.0);
-      SparseMass->setValue(i, i - 1, 1.0 / 6.0);
-      SparseMass->setValue(i, i + 1, 1.0 / 6.0);
+      massMatrix.setValue(i, i, 2.0 / 3.0);
+      massMatrix.setValue(i, i - 1, 1.0 / 6.0);
+      massMatrix.setValue(i, i + 1, 1.0 / 6.0);
 
-      SparseStiffness->setValue(i, i, 2.0);
-      SparseStiffness->setValue(i, i - 1, -1.0);
-      SparseStiffness->setValue(i, i + 1, -1.0);
+      stiffnessMatrix.setValue(i, i, 2.0);
+      stiffnessMatrix.setValue(i, i - 1, -1.0);
+      stiffnessMatrix.setValue(i, i + 1, -1.0);
     }
 
-    SparseMass->setValue(ndof - 1, ndof - 1, 1.0 / 3.0);
-    SparseMass->setValue(ndof - 1, ndof - 2, 1.0 / 6.0);
+    massMatrix.setValue(ndof - 1, ndof - 1, 1.0 / 3.0);
+    massMatrix.setValue(ndof - 1, ndof - 2, 1.0 / 6.0);
 
-    SparseStiffness->setValue(ndof - 1, ndof - 2, -1.0);
-    SparseStiffness->setValue(ndof - 1, ndof - 1, 1.0);
+    stiffnessMatrix.setValue(ndof - 1, ndof - 2, -1.0);
+    stiffnessMatrix.setValue(ndof - 1, ndof - 1, 1.0);
 
-    auto SparseDamping = std::make_shared<Matrix>(*SparseStiffness);
+    Matrix dampingMatrix{ndof, ndof};
+    dampingMatrix.setZero();
+    // auto SparseDamping = std::make_shared<Matrix>(*SparseStiffness);
 
-    *SparseMass *= user::rho * user::S * l;
-    *SparseStiffness *= user::E * user::S / l;
+    massMatrix *= user::rho * user::S * l;
+    stiffnessMatrix *= user::E * user::S / l;
 
     double xsi = 1000.0;
-    std::cout << xsi * user::S / l << "\n";
-    *SparseDamping *= xsi * user::S / l;
+    std::cout << "xsi:" << xsi * user::S / l << "\n";
+    dampingMatrix *= xsi * user::S / l;
 
     //      SparseMass->display();
     //      SparseStiffness->display();
 
     // -- Initial positions and velocities --
-    auto q0 = std::make_shared<Vector>(ndof, user::position_init);
-    auto v0 = std::make_shared<Vector>(ndof, user::velocity_init);
+    Vector q0{ndof};
+    q0.setConstant(user::position_init);
+    Vector v0{ndof};
+    v0.setConstant(user::velocity_init);
 
     // -- The dynamical system --
-    auto SparseMassforDS = std::make_shared<Matrix>(*SparseMass);
-    auto bar = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, SparseMass);
+    auto bar = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, massMatrix);
 
     // -- Set stiffness matrix (weight) --
-    bar->setStiffnessMatrix(SparseStiffness);
-    bar->setDampingMatrix(SparseDamping);
+    bar->setStiffnessMatrix(stiffnessMatrix);
+    bar->setDampingMatrix(dampingMatrix);
 
     // -- Set external forces (weight) --
-    Vector weight{nDof};
+    Vector weight{ndof};
     weight.setZero();
     bar->setConstantFext(weight);
 
@@ -118,7 +126,7 @@ int main(int argc, char* argv[]) {
     (*H)(0, 0) = 1.0;
 
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H));
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H);
 
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
@@ -167,39 +175,38 @@ int main(int argc, char* argv[]) {
 
     // ================================= Computation =================================
 
-    int N = floor((user::T - user::t0) / user::h) + 1;  // Number of time steps
+    int N = floor((user::T - user::t0) / user::h);  // Number of time steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 13;
     Matrix dataPlot(N, outputSize);
 
-    auto q = bar->q();
-    auto v = bar->velocity();
-    auto p = bar->p(1);
-    auto lambd = inter->lambda(1);
+    auto q = bar->q_read();
+    auto v = bar->velocity_read();
+    auto p = bar->p_read(1);
+    auto lambda = inter->lambda(1);
 
     auto y = inter->y(0);
     int k = 0;
     dataPlot(k, 0) = impactingBar->t0();
-    dataPlot(k, 1) = (*q)(0);
-    dataPlot(k, 2) = (*v)(0);
-    dataPlot(k, 3) = (*p)(0);
-    dataPlot(k, 4) = (*lambd)(0);
+    dataPlot(k, 1) = q(0);
+    dataPlot(k, 2) = v(0);
+    dataPlot(k, 3) = p(0);
+    dataPlot(k, 4) = (*lambda)(0);
     dataPlot(k, 11) = 0.0; /* not yet initialized (*lambdaminus)(0); // lambda1_{k+1}^- */
     dataPlot(k, 12) = 0.0;
 
-    dataPlot(k, 7) = (*q)(ndof - 1);
-    dataPlot(k, 8) = (*v)(ndof - 1);
-    dataPlot(k, 9) = (*q)((ndof) / 2);
-    dataPlot(k, 10) = (*v)((ndof) / 2);
+    dataPlot(k, 7) = q(ndof - 1);
+    dataPlot(k, 8) = v(ndof - 1);
+    dataPlot(k, 9) = q((ndof) / 2);
+    dataPlot(k, 10) = v((ndof) / 2);
 
-    auto tmp = std::make_shared<Vector>(ndof);
-
-    *tmp = *SparseStiffness * *q;
-    double potentialEnergy = q->dot(tmp);
-    *tmp = *SparseMass * *v;
-    double kineticEnergy = v->dot(tmp);
+    Vector tmp{ndof};
+    tmp = stiffnessMatrix * q;
+    double potentialEnergy = q.dot(tmp);
+    tmp = massMatrix * v;
+    double kineticEnergy = v.dot(tmp);
 
     dataPlot(k, 5) = potentialEnergy;
     dataPlot(k, 6) = kineticEnergy;
@@ -224,25 +231,24 @@ int main(int argc, char* argv[]) {
       // --- Get values to be plotted ---
       const auto& lambdaplus = inter->lambdaMemory(2).getSiconosVector(0);
       dataPlot(k, 0) = s->nextTime();
-      dataPlot(k, 1) = (*q)(0);
-      dataPlot(k, 2) = (*v)(0);
-      dataPlot(k, 3) = (*p)(0);
-      dataPlot(k, 4) = (*lambd)(0);
+      dataPlot(k, 1) = q(0);
+      dataPlot(k, 2) = v(0);
+      dataPlot(k, 3) = p(0);
+      dataPlot(k, 4) = (*lambda)(0);
 
       dataPlot(k, 11) = (*inter->lambda(2))(0);  // lambda1_{k+1}^-
       dataPlot(k, 12) = lambdaplus(0);
       ;
 
-      dataPlot(k, 7) = (*q)(ndof - 1);
-      dataPlot(k, 8) = (*v)(ndof - 1);
-      dataPlot(k, 9) = (*q)((ndof) / 2);
-      dataPlot(k, 10) = (*v)((ndof) / 2);
+      dataPlot(k, 7) = q(ndof - 1);
+      dataPlot(k, 8) = v(ndof - 1);
+      dataPlot(k, 9) = q((ndof) / 2);
+      dataPlot(k, 10) = v((ndof) / 2);
 
-      *tmp = *SparseStiffness * *q;
-      potentialEnergy = q->dot(tmp);
-      *tmp = *SparseMass * *v;
-      kineticEnergy = v->dot(tmp);
-
+      tmp = stiffnessMatrix * q;
+      potentialEnergy = q.dot(tmp);
+      tmp = massMatrix * v;
+      kineticEnergy = v.dot(tmp);
       dataPlot(k, 5) = potentialEnergy;
       dataPlot(k, 6) = kineticEnergy;
 
@@ -257,13 +263,12 @@ int main(int argc, char* argv[]) {
       k++;
     }
     auto end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
     std::cout << "\nComputation time : " << elapsed << " ms\n";
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("ImpactingBarD1MinusLinear.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);

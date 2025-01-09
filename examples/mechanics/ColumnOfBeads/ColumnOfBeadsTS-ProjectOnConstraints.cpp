@@ -15,21 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/*!\file ColumnOfBeadsTS.cpp
-  \brief \ref EMColumnOfBeads - C++ input file, Time-Stepping version -
-  V. Acary, F. Perignon.
-
-  A Ball bouncing on the ground.
-  Direct description of the model.
-  Simulation with a Time-Stepping scheme.
-*/
-
 #include <SolverOptions.h>
 
 #include <SiconosKernel.hpp>
 #include <chrono>
-
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
@@ -54,23 +43,29 @@ int withLevel(unsigned int mylevel) {
     // --- Dynamical systems ---
     // -------------------------
 
-    cout << "====> Model loading ..." << endl << endl;
+    cout << "====> Model loading ...\n\n";
 
     // Number of Beads
     unsigned int nBeads = 10;
     double initialGap = 0.25;
     double alert = 0.02;
 
-  
+    Matrix mass{nDof, nDof};
+    mass.setZero();
+    mass(0, 0) = m;
+    mass(1, 1) = m;
+    mass(2, 2) = 2. / 5 * m * R * R;
+
     // -- Initial positions and velocities --
-    std::vector<std::shared_ptr<Vector>> q0(nBeads);
-    std::vector<std::shared_ptr<Vector>> v0(nBeads);
+
+    std::vector<Vector> q0(nBeads);
+    std::vector<Vector> v0(nBeads);
 
     for (unsigned int i = 0; i < nBeads; i++) {
-      (q0[i]) = std::make_shared<Vector>(nDof);
-      (v0[i]) = std::make_shared<Vector>(nDof);
-      (q0[i])->setValue(0, position_init + i * initialGap);
-      (v0[i])->setValue(0, velocity_init);
+      q0[i] = Vector::Zero(nDof);
+      v0[i] = Vector::Zero(nDof);
+      q0[i](0) = position_init + i * initialGap;
+      v0[i](0) = velocity_init;
     }
 
     // -- The dynamical system --
@@ -95,23 +90,23 @@ int withLevel(unsigned int mylevel) {
 
     // Interaction ball-floor
     //
-    auto H = std::make_shared<Matrix>(1, nDof);
-    (*H)(0, 0) = 1.0;
-    auto b = std::make_shared<Vector>(1);
-    (*b)(0) = -R;
-
+    Matrix H{1, nDof};
+    H.setZero();
+    H(0, 0) = 1.;
+    Vector b{1};
+    b << -R;
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H, *b);
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H, b);
 
     std::shared_ptr<siconos::modeling::Interaction> inter{nullptr};
 
     // beads/beads interactions
-    auto HOfBeads = std::make_shared<Matrix>(1, 2 * nDof);
-    (*HOfBeads)(0, 0) = -1.0;
-    (*HOfBeads)(0, 3) = 1.0;
-    auto bOfBeads = std::make_shared<Vector>(1);
-    (*bOfBeads)(0) = -2 * R;
-
+    Matrix HOfBeads{1, 2 * nDof};
+    HOfBeads.setZero();
+    HOfBeads(0, 0) = -1.0;
+    HOfBeads(0, 3) = 1.0;
+    Vector bOfBeads{1};
+    bOfBeads << -2 * R;
     std::vector<std::shared_ptr<siconos::modeling::LagrangianLinearTIR>> relationOfBeads(
         nBeads - 1);
     std::vector<std::shared_ptr<siconos::modeling::Interaction>> interOfBeads(nBeads - 1);
@@ -119,13 +114,15 @@ int withLevel(unsigned int mylevel) {
     // --------------------------------------
     // ---      Model and simulation      ---
     // --------------------------------------
+
     auto columnOfBeads = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
-    // --  (1) OneStepIntegrators --
-    auto OSI = std::make_shared<siconos::integrators::MoreauJeanDirectProjectionOSI>(theta);
     // add the dynamical system in the non smooth dynamical system
     for (unsigned int i = 0; i < nBeads; i++) {
       columnOfBeads->insertDynamicalSystem(beads[i]);
     }
+
+    // --  (1) OneStepIntegrators --
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanDirectProjectionOSI>(theta);
 
     // -- (2) Time discretisation --
     auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
@@ -201,7 +198,7 @@ int withLevel(unsigned int mylevel) {
             // std::cout << "Number of contact = " << ncontact << std::endl;
 
             relationOfBeads[i] =
-                std::make_shared<siconos::modeling::LagrangianLinearTIR>(*HOfBeads, *bOfBeads);
+                std::make_shared<siconos::modeling::LagrangianLinearTIR>(HOfBeads, bOfBeads);
             interOfBeads[i] =
                 std::make_shared<siconos::modeling::Interaction>(nslaw, relationOfBeads[i]);
 
@@ -239,7 +236,6 @@ int withLevel(unsigned int mylevel) {
     cout << "Computation time : " << elapsed << " ms\n";
     // --- Output files ---
     cout << "====> Output file writing ..." << endl;
-    dataPlot.resize(k, outputSize);
     ostringstream convert;
     convert << mylevel;
 
