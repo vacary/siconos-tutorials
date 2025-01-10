@@ -209,7 +209,7 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<FiniteElementLinearTIDS> FEsolid =
         std::make_shared<FiniteElementLinearTIDS>(mesh, materials, Siconos::SPARSE);
     end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     cout << "Assembly time : " << elapsed << " ms" << endl;
     std::cout << " " << std::endl;
     // FEsolid->display(true);

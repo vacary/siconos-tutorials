@@ -407,7 +407,7 @@ int main(int argc, char* argv[]) {
     cout << "Computation Time " << endl;
     ;
     end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     cout << "Computation time : " << elapsed << " ms" << endl;
     // --- Output files ---
     cout << "====> Output file writing ..." << endl;

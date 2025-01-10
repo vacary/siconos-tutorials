@@ -171,7 +171,7 @@ int SimuEngine::simulate(){
     }
     std::cout << std::endl << "End of computation - Number of iterations done: " << k - 1 << std::endl;
     end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
                   (end-start).count();
     std::cout << "Computation time : " << elapsed << " ms" << std::endl;
 

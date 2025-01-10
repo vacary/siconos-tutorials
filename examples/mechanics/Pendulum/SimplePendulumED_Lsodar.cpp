@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-// =============================== Double Pendulum Example ===============================
+// =============================== Simple Pendulum Example ===============================
 //
 // Author: Vincent Acary
 //
@@ -31,25 +31,21 @@
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-using namespace std;
-
 constexpr double gravity = 9.8100;
-
-// User-defined main parameters
-unsigned int nDof = 2;                 // degrees of freedom for robot arm
-double L = 1.0;                        // Length of the pendulum
-double InitAngle = numbers::pi / 3.0;  // Initial inclination angle
-double m = 1.0;                        // Mass of the pendulum
-double t0 = 0;                         // initial computation time
-double T = 10.0;                       // final computation time
-double h = 0.01;                       // time step
-unsigned int N = ceil(T / h) + 1;      // Number of points to be saved
-double e = 0.9;                        // nslaw
-double _rho = 0.99;
 
 int main(int argc, char* argv[]) {
   try {
     // ================= Creation of the model =======================
+    // User-defined main parameters
+    unsigned int nDof = 2;                      // degrees of freedom for robot arm
+    double t0 = 0;                              // initial computation time
+    double T = 10.0;                            // final computation time
+    double h = 0.01;                            // time step
+    double L = 1.0;                             // Length of the pendulum
+    double InitAngle = std::numbers::pi / 3.0;  // Initial inclination angle
+    double m = 1.0;                             // Mass of the pendulum
+    double e = 0.9;                             // nslaw
+    double _rho = 0.99;
 
     // -> mind to set the initial conditions below.
 
@@ -64,20 +60,14 @@ int main(int argc, char* argv[]) {
     q0.setZero();
     Vector v0{nDof};
     v0.setZero();
-    q0(0).setZero();
-    v0(0).setZero();
-   q0(0) = L * sin(InitAngle);
-   q0(1) = L * cos(InitAngle);
+    q0(0) = L * sin(InitAngle);
+    q0(1) = L * cos(InitAngle);
     Matrix mass{nDof, nDof};
 
     mass(0, 0) = m;
     mass(1, 1) = m;
     auto simplependulum =
         std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
-
-    std::vector<double> zparams = {L};
-    auto zz = std::make_shared<Vector>(zparams);
-    simplependulum->setzPtr(zz);
 
     Vector ForceExtern{nDof};
     ForceExtern.setZero();
@@ -87,12 +77,27 @@ int main(int argc, char* argv[]) {
     // -------------------
     // --- Interactions---
     // -------------------
-
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "SimplePendulumBilateralConstraintPlugin:h0",
-        "SimplePendulumBilateralConstraintPlugin:G0",
-        "SimplePendulumBilateralConstraintPlugin:G0dot");
+    auto relation = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+    relation->setComputehFunction([L](const siconos::algebra::BlockVector& q,
+                                      Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y(0) = pow(L, 2) - (pow(q(0), 2) + pow(q(1), 2));
+    });
+
+    relation->setComputeJacobianhOver_qFunction(
+        [](const siconos::algebra::BlockVector& q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result(0, 0) = -2.0 * q(0);
+          result(0, 1) = -2.0 * q(1);
+        });
+
+    relation->setComputejacobianhOver_q_dotFunction(
+        [](const siconos::algebra::BlockVector& q, const siconos::algebra::BlockVector& qdot,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result(0, 0) = -2.0 * qdot(0);
+          result(0, 1) = -2.0 * qdot(1);
+        });
+
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
     // -------------
@@ -102,6 +107,7 @@ int main(int argc, char* argv[]) {
     auto Pendulum = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
     Pendulum->insertDynamicalSystem(simplependulum);
     Pendulum->link(inter, simplependulum);
+
     // ----------------
     // --- Simulation ---
     // ----------------
@@ -138,9 +144,10 @@ int main(int argc, char* argv[]) {
     auto _qddot = simplependulum->acceleration();
     auto _g = inter->y(0);
     auto indexSet0 = Pendulum->topology()->indexSet(0);
-    std::cout << "Size of IndexSet0: " << indexSet0->size() << endl;
+    std::cout << "Size of IndexSet0: " << indexSet0->size() << "\n";
     //-------------------- Save the output during simulation
     //---------------------------------------------------------
+    unsigned int N = ceil(T / h) + 1;  // Number of points to be saved
     Matrix DataPlot(N, 10);
     //------------- At the initial time
     //-----------------------------------------------------------------------------
@@ -157,7 +164,7 @@ int main(int argc, char* argv[]) {
 
     //----------------------------------- Simulation starts
     //----------------------------------------------------------
-    std::cout << "====> Start computation ... " << endl << endl;
+    std::cout << "====> Start computation ... \n";
     bool NSEvent = false;
     unsigned int NumberNSEvent = 0;
     unsigned int k = 0;

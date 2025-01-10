@@ -699,7 +699,7 @@ int main(int argc, char* argv[]) {
       k++;
     }
     auto end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
     std::cout << "\nComputation time : " << elapsed << " ms\n";
 

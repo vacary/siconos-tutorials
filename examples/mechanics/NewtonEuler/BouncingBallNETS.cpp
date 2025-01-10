@@ -246,6 +246,7 @@ int main(int argc, char* argv[]) {
     while (s->hasNextEvent()) {
       //      s->computeOneStep();
       s->advanceToEvent();
+
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(0);
@@ -274,7 +275,8 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+    siconos::algebra::io::write("BouncingBallNETS.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
     // Comparison with a reference file

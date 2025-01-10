@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Number of iterations done: " << k - 1 << "\n";
     std::cout << "Computation Time \n";
     end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "Computation time : " << elapsed << " ms\n";
 
     // dataPlot (ascii) output

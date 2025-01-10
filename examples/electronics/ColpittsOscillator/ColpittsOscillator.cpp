@@ -201,7 +201,7 @@ int main(int argc, char* argv[]) {
 
     // --- elapsed time computing ---
     end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "Computation time : " << elapsed << " ms\n";
 
     // Number of time iterations

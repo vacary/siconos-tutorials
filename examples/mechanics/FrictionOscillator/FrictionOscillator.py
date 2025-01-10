@@ -20,7 +20,10 @@
 #
 
 
-import  numpy as np
+import numpy as np
+import os
+import matplotlib
+import matplotlib.pyplot as plt
 
 from numpy.linalg import norm
 import siconos.modeling as sm
@@ -28,44 +31,38 @@ import siconos.integrators as si
 import siconos.simulation as ss
 import siconos.nonsmooth_formulations as snsf
 import siconos.pynumerics as sn
+
+
 import siconos.input
-
-
-
-# LagrangianLinearTIDS, NewtonImpactNSL,\
-#     LagrangianLinearTIR, Interaction, NonSmoothDynamicalSystem, MoreauJeanOSI,\
-#     TimeDiscretisation, LCP, TimeStepping
-# import siconos.pynumerics as sn
-
-
-from numpy import eye, empty, float64, zeros
+import math
 
 """
 
 Equations of motion
 
 m1 x1" +  k1  x1 =  r(t)
-Coulomb(x1'(t),r(t))=0 
+Coulomb(x1'(t),r(t))=0
 
 """
 
 
-t0 = 0       # start time
-T = 100     # end time
-h = 1e-02    # time step
+t0 = 0  # start time
+T = 100  # end time
+h = 1e-02  # time step
 theta = 0.5  # theta scheme
 
-m = 1; stiffness = 1
+m = 1
+stiffness = 1
 alpha = 1
-xinit=12.
-vinit=6.
+xinit = 12.0
+vinit = 6.0
 
-x0 = np.array([xinit, vinit], dtype=np.float64)    # initial state
+x0 = np.array([xinit, vinit], dtype=np.float64)  # initial state
 
-A = np.zeros((2,2), dtype=np.float64, order='F')
+A = np.zeros((2, 2), dtype=np.float64, order="F")
 
-A[0,1] = 1
-A[1,0] = -stiffness/m
+A[0, 1] = 1
+A[1, 0] = -stiffness / m
 
 #
 # dynamical system
@@ -73,18 +70,18 @@ A[1,0] = -stiffness/m
 
 oscillator = sm.FirstOrderLinearDS(x0)
 oscillator.setConstantA(A)
-#oscillator.display()
+# oscillator.display()
 
-#oscillator = FirstOrderLinearDS(x0, A)
-#oscillator.setComputebFunction("plugins", "TwoDofsOscillatorB")
+# oscillator = FirstOrderLinearDS(x0, A)
+# oscillator.setComputebFunction("plugins", "TwoDofsOscillatorB")
 
 #
 # Interactions
 #
 
 
-B = np.array([[0] , [alpha]], dtype=np.float64, order='F')
-C = np.array([[0  , 1.]], dtype=np.float64, order='F')
+B = np.array([[0], [alpha]], dtype=np.float64, order="F")
+C = np.array([[0, 1.0]], dtype=np.float64, order="F")
 
 nslaw = sm.RelayNSL(1, -1, 1)
 
@@ -108,7 +105,6 @@ frictionOscillator.insertDynamicalSystem(oscillator)
 frictionOscillator.link(inter, oscillator)
 
 
-
 #
 # Simulation
 #
@@ -125,22 +121,20 @@ osnspb.setSolverId(sn.Constants.SICONOS_RELAY_LEMKE)
 
 osnspb.numericsSolverOptions().dparam[0] = 1e-08
 # (4) Simulation setup with (1) (2) (3)
-s = ss.TimeStepping(frictionOscillator,t, OSI, osnspb)
+s = ss.TimeStepping(frictionOscillator, t, OSI, osnspb)
 
 # end of model definition
 
 #
 # computation
 #
-import math
-
 # the number of time steps
 N = math.ceil((T - t0) / h)
 
 # # Get the values to be plotted
 # # ->saved in a matrix dataPlot
 
-dataPlot = zeros((N+1, 6))
+dataPlot = np.zeros((N + 1, 6))
 
 # #
 # # numpy pointers on dense Siconos vectors
@@ -166,7 +160,7 @@ k = 1
 # time loop
 while s.hasNextEvent():
     s.computeOneStep()
-    #print('.')
+    # print('.')
     dataPlot[k, 0] = s.nextTime()
     dataPlot[k, 1] = x[0]
     dataPlot[k, 2] = x[1]
@@ -179,36 +173,39 @@ while s.hasNextEvent():
 # comparison with the reference file (produced by the cpp version)
 #
 ref = siconos.input.readMatrixFromFile("FrictionOscillator.ref")
-if (norm(dataPlot[0:10000,0:6] - ref[0:10000,0:6]) > 1e-12):
-    print("Warning. The result is rather different from the reference file.", norm(dataPlot[0:10000,0:6] - ref[0:10000,0:6]) )
+if norm(dataPlot[0:10000, 0:6] - ref[0:10000, 0:6]) > 1e-12:
+    print(
+        "Warning. The result is rather different from the reference file.",
+        norm(dataPlot[0:10000, 0:6] - ref[0:10000, 0:6]),
+    )
 else:
-    print("Error with the reference file.", norm(dataPlot[0:10000,0:6] - ref[0:10000,0:6]) )
+    print(
+        "Error with the reference file.",
+        norm(dataPlot[0:10000, 0:6] - ref[0:10000, 0:6]),
+    )
 
 #
 # plots
 #
-import matplotlib,os
 havedisplay = "DISPLAY" in os.environ
 if not havedisplay:
-    matplotlib.use('Agg')
-
-import matplotlib.pyplot as plt
+    matplotlib.use("Agg")
 plt.subplot(411)
-plt.title('position x1')
+plt.title("position x1")
 plt.plot(dataPlot[:, 0], dataPlot[:, 1])
 plt.grid()
 plt.subplot(412)
-plt.title('velocity dot x1')
+plt.title("velocity dot x1")
 plt.plot(dataPlot[:, 0], dataPlot[:, 2])
 plt.grid()
 plt.figure()
 plt.plot(dataPlot[:, 1], dataPlot[:, 2])
-plt.title('lambda')
+plt.title("lambda")
 
 
 plt.figure()
 plt.plot(dataPlot[:, 0], dataPlot[:, 3])
-plt.title('lambda')
+plt.title("lambda")
 
 
 if havedisplay:

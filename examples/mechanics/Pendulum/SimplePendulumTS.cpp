@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-// =============================== Double Pendulum Example ===============================
+// =============================== Simple Pendulum Example ===============================
 //
 // Author: Vincent Acary
 //
@@ -30,11 +30,11 @@
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-double gravity = 10.0;
+constexpr double gravity = 10.;
 double m1 = 1.0;
 double l1 = 1.0;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   try {
     // ================= Creation of the model =======================
 
@@ -53,54 +53,47 @@ int main(int argc, char* argv[]) {
     // --- Dynamical systems ---
     // -------------------------
 
-    // unsigned int i;
-
-    // --- DS: Double Pendulum ---
+    // --- DS: Simple Pendulum ---
 
     // Initial position (angles in radian)
     Vector q0{nDof};
     q0.setZero();
     Vector v0{nDof};
     v0.setZero();
-    q0(0).setZero();
-    v0(0).setZero();
-   q0(0) = 1;
+    q0(0) = 1;
 
     auto simplependulum = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
-Matrix mass{nDof, nDof};
+    Matrix mass{nDof, nDof};
     mass(0, 0) = m1 * l1;
-    simplependulum->setMassPtr(Mass);
+    simplependulum->setConstantMass(mass);
 
-    // external plug-in
-    // simplependulum->setComputeMassFunction("SimplePendulumPlugin","mass");
+    simplependulum->setComputeFintFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &v,
+           const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+           Eigen::Ref<siconos::algebra::MapVectorType> fint) {
+          fint(0) = m1 * sin(q(0)) * gravity;
+        });
 
-    simplependulum->setComputeFIntFunction("SimplePendulumPlugin", "FInt");
-    simplependulum->setComputeJacobianFIntqDotFunction("SimplePendulumPlugin",
-                                                       "jacobianVFInt");
-    simplependulum->setComputeJacobianFIntqFunction("SimplePendulumPlugin", "jacobianFIntq");
+    simplependulum->setComputeJacobianFintOver_qFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &v,
+           const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+           Eigen::Ref<siconos::algebra::MapType> jacob) {
+          jacob(0, 0) = cos(q(0)) * gravity * (m1);
+        });
 
     // -------------------
     // --- Interactions---
     // -------------------
-
-    // -- relations --
-
-    //     SiconosMatrix H(1,2);
-    //     SiconosVector b(1);
-    //     H.setZero();
-    //     H(0,0) =1.0;
-    //     H(0,1) =0.0;
-
-    //     b(0) = 0.0;
-
-    //     NonSmoothLaw nslaw= std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    //     Relation relation= std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H,*b);
-    //     Interaction inter =  new Interaction("floor-mass1", allDS,1,1, nslaw, relation);)
-
-    std::string G = "SimplePendulumPlugin:G0";
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "SimplePendulumPlugin:h0", G);
+    auto relation = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+    relation->setComputehFunction(
+        [](const siconos::algebra::BlockVector &q,
+           Eigen::Ref<siconos::algebra::SiconosVector> y) { y(0) = l1 * sin(q(0)); });
+
+    relation->setComputeJacobianhOver_qFunction(
+        [](const siconos::algebra::BlockVector &q,
+           Eigen::Ref<siconos::algebra::MapType> result) { result(0, 0) = l1 * cos(q(0)); });
+
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
     // -------------

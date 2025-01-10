@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
     // ================================= Computation =================================
 
     int N = ceil((T - t0) / h);  // Number of time steps
-
+    //s->setDisplayNewtonConvergence(true);
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 16;
@@ -248,7 +248,6 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 14) = (*v)(1);
       dataPlot(k, 15) = (*v)(2);
       s->nextStep();
-
       k++;
     }
     auto end = std::chrono::system_clock::now();

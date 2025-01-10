@@ -99,7 +99,8 @@ int main(int argc, char* argv[]) {
     (*x0)(0) = xinit;
     (*x0)(1) = vinit;
 
-    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, *A);
+    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
+    process->setConstantA(*A);
     //    process->setComputebFunction("ObserverLCSPlugin","uProcess");
 
     // --------------------
@@ -118,7 +119,9 @@ int main(int argc, char* argv[]) {
     (*C)(0, 0) = 0.0;
     (*C)(0, 1) = 1.0;
 
-    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>(C, B);
+    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>();
+    myProcessRelation->setConstantC(*C);
+    myProcessRelation->setConstantB(*B);
 
     // NonSmoothLaw
     unsigned int nslawSize = 1;
@@ -211,7 +214,7 @@ int main(int argc, char* argv[]) {
       s->nextStep();
     }
     auto end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
     std::cout << "\nComputation time : " << elapsed << " ms\n";
 

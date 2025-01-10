@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
 
     // --- Output files ---
     auto end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "===== End of Event Driven simulation. \n";
     std::cout << numberOfEvent << " events have been processed. ==== \n";
     std::cout << numberOfEvent - ll << " events are of time--discretization type  ==== \n";
