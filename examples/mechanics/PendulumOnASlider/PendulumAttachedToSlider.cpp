@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-/*!\file
+/*
  *C++ input file, MoreauJeanOSI-Time-Stepping version
  */
 
@@ -24,15 +24,25 @@
 
 #include <SiconosKernel.hpp>
 #include <chrono>
+#include <cmath>
 
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 #define WITH_FRICTION
 // #define DISPLAY_INTER
-using namespace std;
 
-int main(int argc, char* argv[]) {
+// Inertial parameters
+double m1 = 1.0;
+double m2 = 1.0;
+double l = 1.0;
+double a = 0.025;
+double d = 0.25;
+
+// force elements
+double gravity = 9.81;
+
+int main(int argc, char *argv[]) {
   try {
     // ================= Creation of the model =======================
 
@@ -53,44 +63,135 @@ int main(int argc, char* argv[]) {
     Vector v0{nDof};
     v0.setZero();
 
-
-   q0(0) = 0.1;
-   q0(2) = 0.1;
+    q0(0) = 0.1;
+    q0(2) = 0.1;
     v0(0) = 2.;
 
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
-    cout << "====> Model loading ..." << endl << endl;
+    std::cout << "====> Model loading ...\n\n";
 
-    auto pendulum =
-        std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, "PendulumPlugin:mass");
-    pendulum->setComputeFGyrFunction("PendulumPlugin", "FGyr");
-    pendulum->setComputeJacobianFGyrqFunction("PendulumPlugin", "jacobianFGyrq");
-    pendulum->setComputeJacobianFGyrqDotFunction("PendulumPlugin", "jacobianFGyrqDot");
-    pendulum->setComputeFIntFunction("PendulumPlugin", "FInt");
-    pendulum->setComputeJacobianFIntqFunction("PendulumPlugin", "jacobianFIntq");
-    pendulum->setComputeJacobianFIntqDotFunction("PendulumPlugin", "jacobianFIntqDot");
+    auto pendulum = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
+    pendulum->setComputeMassFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &q,
+           Eigen::Ref<siconos::algebra::MapType> mass) {
+          mass.setZero();
+          mass(0, 0) = m1 + m2;
+          mass(2, 0) = cos(q(2));
+          mass(1, 1) = 1.;
+          mass(0, 2) = m2 * l * cos(q(2));
+          mass(2, 2) = l;
+        });
+
+    pendulum->setComputeFgyrFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &velocity,
+           const Eigen::Ref<const siconos::algebra::SiconosVector> &q,
+           Eigen::Ref<siconos::algebra::MapVectorType> fgyr) {
+          fgyr.setZero();
+          fgyr(0) = -m2 * l * velocity(2) * velocity(2) * sin(q(2));
+        });
+
+    // set 'random' value for jacobians, whatever fgyr is, just for tests
+    pendulum->setComputeJacobianFgyrOver_qFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &velocity,
+           const Eigen::Ref<const siconos::algebra::SiconosVector> &q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result.setZero();
+          result(2, 0) = -m2 * l * velocity(2) * velocity(2) * cos(q(2));
+        });
+
+    pendulum->setComputeJacobianFgyrOver_velocityFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &velocity,
+           const Eigen::Ref<const siconos::algebra::SiconosVector> &q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result.setZero();
+          result(2, 0) = -2.0 * m2 * velocity(2) * sin(q(2));
+        });
+
+    pendulum->setComputeFintFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &velocity,
+           const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+           Eigen::Ref<siconos::algebra::MapVectorType> fint) {
+          fint(0) = 0;
+          fint(1) = gravity * q(1);
+          fint(2) = gravity * sin(q(2));
+        });
+
+    pendulum->setComputeJacobianFintOver_qFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &velocity,
+           const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+           Eigen::Ref<siconos::algebra::MapType> jacob) {
+          jacob.setZero();
+          jacob(1, 0) = gravity;
+          jacob(2, 2) = gravity * cos(q(2));
+        });
 
     // -------------------
     // --- Interactions---
     // -------------------
     auto nslaw1 = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(eN, eT, mu, 2);
-    auto relation1 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "PendulumPlugin:g1", "PendulumPlugin:W1");
+    auto relation1 = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+    relation1->setComputehFunction([](const siconos::algebra::BlockVector &q,
+                                      Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y(0) = q(1);
+      y(1) = 0.;
+    });
+
+    Matrix Jhq1{2, nDof};
+    Jhq1.setZero();
+    Jhq1(1, 0) = 1.;
+    Jhq1(0, 1) = 1.;
+    //    relation1->setConstantJacobianhOver_q(Jhq1);
+    relation1->setComputeJacobianhOver_qFunction(
+        [](const siconos::algebra::BlockVector &q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result.setZero();
+          result(1, 0) = 1.;
+          result(0, 1) = 1.;
+        });
+
     auto inter1 = std::make_shared<siconos::modeling::Interaction>(nslaw1, relation1);
 
     auto nslaw2 =
         std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(eN, 0.0, 0.0, 2);
     // auto nslaw2= std::make_shared<siconos::modeling::NewtonImpactNSL>(eN);
-    auto relation2 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "PendulumPlugin:g2", "PendulumPlugin:W2");
+    auto relation2 = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+    relation2->setComputehFunction([](const siconos::algebra::BlockVector &q,
+                                      Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y(0) = d - q(0) - 0.5 * a;  // normal
+      y(1) = 0.;
+    });
+    Matrix Jhq2{2, nDof};
+    Jhq2.setZero();
+    Jhq2(0, 0) = -1.;
+    // relation2->setConstantJacobianhOver_q(Jhq2);
+    relation2->setComputeJacobianhOver_qFunction(
+        [](const siconos::algebra::BlockVector &q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result.setZero();
+          result(0, 0) = -1.;
+        });
     auto inter2 = std::make_shared<siconos::modeling::Interaction>(nslaw2, relation2);
 
     auto nslaw3 =
         std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(eN, 0.0, 0.0, 2);
-    auto relation3 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "PendulumPlugin:g3", "PendulumPlugin:W3");
+    auto relation3 = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+    relation3->setComputehFunction([](const siconos::algebra::BlockVector &q,
+                                      Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y(0) = q(0) - 0.5 * a;  // normal
+      y(1) = 0.;
+    });
+    Matrix Jhq3{2, nDof};
+    Jhq3.setZero();
+    Jhq3(0, 0) = 1.;
+    //    relation3->setConstantJacobianhOver_q(Jhq3);
+    relation3->setComputeJacobianhOver_qFunction(
+        [](const siconos::algebra::BlockVector &q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result.setZero();
+          result(0, 0) = 1.;
+        });
     auto inter3 = std::make_shared<siconos::modeling::Interaction>(nslaw3, relation3);
 
     // -------------
@@ -126,7 +227,7 @@ int main(int argc, char* argv[]) {
 
     // ================================= Computation =================================
 
-    int N = ceil((T - t0) / h) + 1;  // Number of time steps
+    int N = ceil((T - t0) / h);  // Number of time steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
@@ -148,7 +249,7 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 9) = (*inter3->y(0))(0);  // g3
 
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl << endl;
+    std::cout << "====> Start computation ... \n\n";
 
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
@@ -210,8 +311,8 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
-    siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+    siconos::algebra::io::write("PendulumSlider.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "PendulumSlider.ref", eps)) >

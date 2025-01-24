@@ -24,12 +24,13 @@ namespace geomtools {
 /* Given a position of a point in the Inertial Frame and the configuration vector q of a solid
  * returns a position in the spatial frame.
  */
-void fromInertialToSpatialFrame(double *positionInInertialFrame,
-                                double *positionInSpatialFrame, auto q) {
-  double q0 = q->getValue(3);
-  double q1 = q->getValue(4);
-  double q2 = q->getValue(5);
-  double q3 = q->getValue(6);
+void fromInertialToSpatialFrame(std::vector<double> &positionInInertialFrame,
+                                std::vector<double> &positionInSpatialFrame,
+                                const Eigen::Ref<const siconos::algebra::SiconosVector> &q) {
+  double q0 = q.getValue(3);
+  double q1 = q.getValue(4);
+  double q2 = q.getValue(5);
+  double q3 = q.getValue(6);
 
   boost::math::quaternion<double> quatQ(q0, q1, q2, q3);
   boost::math::quaternion<double> quatcQ(q0, -q1, -q2, -q3);
@@ -40,13 +41,14 @@ void fromInertialToSpatialFrame(double *positionInInertialFrame,
   // perform the rotation
   quatBuff = quatQ * quatpos * quatcQ;
 
-  positionInSpatialFrame[0] = quatBuff.R_component_2() + q->getValue(0);
-  positionInSpatialFrame[1] = quatBuff.R_component_3() + q->getValue(1);
-  positionInSpatialFrame[2] = quatBuff.R_component_4() + q->getValue(2);
+  positionInSpatialFrame[0] = quatBuff.R_component_2() + q.getValue(0);
+  positionInSpatialFrame[1] = quatBuff.R_component_3() + q.getValue(1);
+  positionInSpatialFrame[2] = quatBuff.R_component_4() + q.getValue(2);
 }
-void tipTrajectories(auto q, double *traj, double length) {
-  double positionInInertialFrame[3];
-  double positionInSpatialFrame[3];
+void tipTrajectories(const Eigen::Ref<const siconos::algebra::SiconosVector> &q,
+                     std::vector<double> &traj, double length) {
+  std::vector<double> positionInInertialFrame(3);
+  std::vector<double> positionInSpatialFrame(3);
   // Output the position of the tip of beam1
   positionInInertialFrame[0] = length / 2;
   positionInInertialFrame[1] = 0.0;

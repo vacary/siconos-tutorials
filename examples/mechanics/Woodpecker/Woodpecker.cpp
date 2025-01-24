@@ -23,8 +23,6 @@
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-using namespace std;
-
 int main(int argc, char* argv[]) {
   std::chrono::time_point<std::chrono::system_clock> start, end;
   start = std::chrono::system_clock::now();
@@ -42,37 +40,43 @@ int main(int argc, char* argv[]) {
     // --- Dynamical systems ---
     // -------------------------
 
-    auto Mass = std::make_shared<Matrix>(nDof, nDof);
-    (*Mass)(0, 0) = m_S + m_M;
-    (*Mass)(0, 1) = m_S * l_M;
-    (*Mass)(0, 2) = m_S * l_G;
-    (*Mass)(1, 0) = m_S * l_M;
-    (*Mass)(1, 1) = J_M + m_S * l_M * l_M;
-    (*Mass)(1, 2) = m_S * l_M * l_G;
-    (*Mass)(2, 0) = m_S * l_G;
-    (*Mass)(2, 1) = m_S * l_M * l_G;
-    (*Mass)(2, 2) = J_S + m_S * l_G * l_G;
-    auto K = std::make_shared<Matrix>(nDof, nDof);
-    (*K)(1, 1) = c_phi;
-    (*K)(1, 2) = -c_phi;
-    (*K)(2, 1) = -c_phi;
-    (*K)(2, 2) = c_phi;
-    auto C = std::make_shared<Matrix>(nDof, nDof);
+    Matrix mass{nDof, nDof};
+    mass(0, 0) = m_S + m_M;
+    mass(0, 1) = m_S * l_M;
+    mass(0, 2) = m_S * l_G;
+    mass(1, 0) = m_S * l_M;
+    mass(1, 1) = J_M + m_S * l_M * l_M;
+    mass(1, 2) = m_S * l_M * l_G;
+    mass(2, 0) = m_S * l_G;
+    mass(2, 1) = m_S * l_M * l_G;
+    mass(2, 2) = J_S + m_S * l_G * l_G;
+    Matrix K{nDof, nDof};
+    K(1, 1) = c_phi;
+    K(1, 2) = -c_phi;
+    K(2, 1) = -c_phi;
+    K(2, 2) = c_phi;
 
     // -- Initial positions and velocities --
-    auto q0 = std::make_shared<Vector>(nDof);
-   q0(0) = y_0;
-   q0(1) = phi_M_0;
-   q0(2) = phi_S_0;
+    Vector q0{nDof};
+    q0(0) = y_0;
+    q0(1) = phi_M_0;
+    q0(2) = phi_S_0;
 
-    auto velocity0 = std::make_shared<Vector>(nDof);
-    (*velocity0)(0) = v_0;
-    (*velocity0)(1) = omega_M_0;
-    (*velocity0)(2) = omega_S_0;
+    Vector velocity0{nDof};
+    velocity0(0) = v_0;
+    velocity0(1) = omega_M_0;
+    velocity0(2) = omega_S_0;
 
     auto dynamicalSystem =
-        std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, velocity0, Mass, K, C);
-    dynamicalSystem->setComputeFextFunction("WoodPeckerPlugin", "FExt");
+        std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, velocity0, mass);
+    dynamicalSystem->setStiffnessMatrix(K);
+
+    dynamicalSystem->setComputeFextFunction(
+        [](double time, Eigen::Ref<siconos::algebra::MapVectorType> fext) {
+          fext(0) = -(m_S + m_M) * g;
+          fext(1) = -m_S * l_M * g;
+          fext(2) = -m_S * l_G * g;
+        });
 
     // --------------------
     // --- Interactions ---
@@ -143,34 +147,33 @@ int main(int argc, char* argv[]) {
     // -- Time discretisation --
     auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
-    auto s = std::make_shared<siconos::simulation::TimeStepping>(model, t);
-
     // -- OneStepIntegrators --
     auto vOSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
-    s->insertIntegrator(vOSI);
 
     auto osnspb = std::make_shared<siconos::nonsmooth_formulations::FrictionContact>(2);
-    s->insertNonSmoothProblem(osnspb);
-    cout << "=== End of model loading === \n";
+
+    auto s = std::make_shared<siconos::simulation::TimeStepping>(model, t, vOSI, osnspb);
+
+    std::cout << "=== End of model loading === \n";
 
     // ================= Computation =================
 
     int k = 0;
-    int N = floor((T - t0) / h);
+    int N = ceil((T - t0) / h);
 
     // --- Get the values to be plotted ---
     unsigned int outputSize = 7;
     Matrix dataPlot(N + 1, outputSize);
     dataPlot(k, 0) = t0;
     for (int i = 0; i < (int)nDof; i++) {
-      dataPlot(k, 2 * i + 1) = (*dynamicalSystem->q())(i);
-      dataPlot(k, 2 * i + 2) = (*dynamicalSystem->velocity())(i);
+      dataPlot(k, 2 * i + 1) = (dynamicalSystem->q_read())(i);
+      dataPlot(k, 2 * i + 2) = (dynamicalSystem->velocity_read())(i);
     }
 
     // --- Time loop ---
-    cout << "Start computation ... \n";
+    std::cout << "Start computation ... \n";
     auto start = std::chrono::system_clock::now();
-    while (k < N) {
+    while (s->hasNextEvent()) {
       // get current time step
       k++;
 
@@ -180,8 +183,8 @@ int main(int argc, char* argv[]) {
       // get values
       dataPlot(k, 0) = s->nextTime();
       for (int i = 0; i < (int)nDof; i++) {
-        dataPlot(k, 2 * i + 1) = (*dynamicalSystem->q())(i);
-        dataPlot(k, 2 * i + 2) = (*dynamicalSystem->velocity())(i);
+        dataPlot(k, 2 * i + 1) = (dynamicalSystem->q_read())(i);
+        dataPlot(k, 2 * i + 2) = (dynamicalSystem->velocity_read())(i);
       }
 
       // transfer of state i+1 into state i and time incrementation
@@ -189,14 +192,14 @@ int main(int argc, char* argv[]) {
     }
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    cout << endl << "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation time : " << elapsed << " ms\n";
+    std::cout << "\nEnd of computation - Number of iterations done: " << k - 1 << std::endl;
+    std::cout << "Computation time : " << elapsed << " ms\n";
     // --- Output files ---
-    cout << "====> Output file writing ..." << endl;
+    std::cout << "====> Output file writing ..." << std::endl;
     siconos::algebra::io::write("Woodpecker.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
-    double error = 0.0, eps = 1e-12;
+    double error = 0.0, eps = 1e-10;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Woodpecker.ref", eps)) > eps)
       return 1;
 

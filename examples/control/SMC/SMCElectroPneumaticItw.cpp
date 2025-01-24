@@ -103,7 +103,7 @@ int main(int argc, char* argv[]) {
 
   // --- Simulation initialization ---
 
-  cout << "====> Simulation initialisation ..." << endl << endl;
+  cout << "====> Simulation initialisation ...\n\n";
   // initialise the process and the ControlManager
   simLsodar->initialize();
   //  (std::static_pointer_cast<LsodarOSI>(simLsodar->integrator()))->setJT(1);

@@ -20,8 +20,8 @@
 
 #include <BlockVector.hpp>
 #include <LagrangianScleronomousR.hpp>
-#include <SiconosVector.hpp>
 #include <SiconosMatrix.hpp>
+#include <SiconosVector.hpp>
 
 namespace user_defined {
 class RockingBlockR : public siconos::modeling::LagrangianScleronomousR {
@@ -29,31 +29,31 @@ class RockingBlockR : public siconos::modeling::LagrangianScleronomousR {
   double LengthBlock = 0.2;
   double HeightBlock = 0.1;
 
-  void computeh(const siconos::algebra::BlockVector& q, siconos::algebra::BlockVector& z,
-                siconos::algebra::SiconosVector& y) {
+  RockingBlockR() : LagrangianScleronomousR{} { hasJacobianhOver_q_dot_ = true; };
+
+  void computeh(const siconos::algebra::BlockVector& q,
+                Eigen::Ref<siconos::algebra::SiconosVector> y) {
     double q1 = q.getValue(1);
     double q2 = q.getValue(2);
     y.setValue(0, q1 - 0.5 * LengthBlock * sin(q2) - 0.5 * HeightBlock * cos(q2));
   }
 
-  void computeJacobianhOver_q(const siconos::algebra::BlockVector& q, siconos::algebra::BlockVector& z) {
+  void computeJacobianhOver_q(const siconos::algebra::BlockVector& q) {
     double q2 = q.getValue(2);
-    jacobianhOver_q_->setValue(0, 0, 0.0);
-    jacobianhOver_q_->setValue(0, 1, 1.0);
-    jacobianhOver_q_->setValue(0, 2, -0.5 * LengthBlock * cos(q2) + 0.5 * HeightBlock * sin(q2));
+    jacobianhOver_q_view_->setValue(0, 0, 0.0);
+    jacobianhOver_q_view_->setValue(0, 1, 1.0);
+    jacobianhOver_q_view_->setValue(
+        0, 2, -0.5 * LengthBlock * cos(q2) + 0.5 * HeightBlock * sin(q2));
   }
 
-  void computeDotJachq(const siconos::algebra::BlockVector& q,
-                       siconos::algebra::BlockVector& z,
-                       const siconos::algebra::BlockVector& qdot)
-
-  {
+  void computejacobianhOver_q_dot(const siconos::algebra::BlockVector& q,
+                                  const siconos::algebra::BlockVector& qdot) {
     double q2 = q.getValue(2);
     double qdot2 = qdot.getValue(2);
     jacobianhOver_q_dot_->setValue(0, 0, 0.0);
     jacobianhOver_q_dot_->setValue(0, 1, 0.0);
-    jacobianhOver_q_dot_->setValue(0, 2,
-                        (0.5 * LengthBlock * sin(q2) + 0.5 * HeightBlock * cos(q2)) * qdot2);
+    jacobianhOver_q_dot_->setValue(
+        0, 2, (0.5 * LengthBlock * sin(q2) + 0.5 * HeightBlock * cos(q2)) * qdot2);
   }
 };
 
@@ -62,29 +62,31 @@ class RockingBlockR2 : public siconos::modeling::LagrangianScleronomousR {
   double LengthBlock = 0.2;
   double HeightBlock = 0.1;
 
-  void computeh(const siconos::algebra::BlockVector& q, siconos::algebra::BlockVector& z,
-                siconos::algebra::SiconosVector& y) {
+  RockingBlockR2() : LagrangianScleronomousR{} { hasJacobianhOver_q_dot_ = true; };
+
+  void computeh(const siconos::algebra::BlockVector& q,
+                Eigen::Ref<siconos::algebra::SiconosVector> y) {
     double q1 = q.getValue(1);
     double q2 = q.getValue(2);
     y.setValue(0, q1 + 0.5 * LengthBlock * sin(q2) - 0.5 * HeightBlock * cos(q2));
   }
 
-  void computeJacobianhOver_q(const siconos::algebra::BlockVector& q, siconos::algebra::BlockVector& z) {
+  void computeJacobianhOver_q(const siconos::algebra::BlockVector& q) {
     double q2 = q.getValue(2);
-    jacobianhOver_q_->setValue(0, 0, 0.0);
-    jacobianhOver_q_->setValue(0, 1, 1.0);
-    jacobianhOver_q_->setValue(0, 2, 0.5 * LengthBlock * cos(q2) + 0.5 * HeightBlock * sin(q2));
+    jacobianhOver_q_view_->setValue(0, 0, 0.0);
+    jacobianhOver_q_view_->setValue(0, 1, 1.0);
+    jacobianhOver_q_view_->setValue(0, 2,
+                                    0.5 * LengthBlock * cos(q2) + 0.5 * HeightBlock * sin(q2));
   }
 
-  void computeDotJachq(const siconos::algebra::BlockVector& q,
-                       siconos::algebra::BlockVector& z,
-                       const siconos::algebra::BlockVector& qdot) {
+  void computeDotJachqcomputejacobianhOver_q_dot(const siconos::algebra::BlockVector& q,
+                                                 const siconos::algebra::BlockVector& qdot) {
     double q2 = q.getValue(2);
     double qdot2 = qdot.getValue(2);
     jacobianhOver_q_dot_->setValue(0, 0, 0.0);
     jacobianhOver_q_dot_->setValue(0, 1, 0.0);
-    jacobianhOver_q_dot_->setValue(0, 2,
-                        (-0.5 * LengthBlock * sin(q2) + 0.5 * HeightBlock * cos(q2)) * qdot2);
+    jacobianhOver_q_dot_->setValue(
+        0, 2, (-0.5 * LengthBlock * sin(q2) + 0.5 * HeightBlock * cos(q2)) * qdot2);
   }
 };
 }  // namespace user_defined

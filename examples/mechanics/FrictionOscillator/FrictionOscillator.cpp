@@ -185,7 +185,7 @@ int main(int argc, char* argv[]) {
     dataPlot(k, 8) = vectorfield->getValue(1);
 
     // ==== Simulation loop =====
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ... \n\n";
 
     // *z = *(myProcessInteraction->y(0)->getVectorPtr(0));
     // Simulation loop

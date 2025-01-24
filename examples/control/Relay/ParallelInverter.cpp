@@ -224,7 +224,7 @@ int main(int argc, char* argv[]) {
 
     // --- Simulation initialization ---
 
-    cout << "====> Simulation initialisation ..." << endl << endl;
+    cout << "====> Simulation initialisation ...\n\n";
 
     // --- Get the values to be plotted ---
     unsigned int outputSize = 17;         // number of required data
@@ -256,7 +256,7 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 16) = (*xProc)(1);
 
     // ==== Simulation loop =====
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ... \n\n";
 
     // *z = *(myProcessInteraction->y(0)->getVectorPtr(0));
     unsigned int k = 0;  // Current step

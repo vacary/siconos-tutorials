@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 10) = (*vplane)(1);
     dataPlot(0, 11) = (*reaction)(0);
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ... \n\n";
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
 

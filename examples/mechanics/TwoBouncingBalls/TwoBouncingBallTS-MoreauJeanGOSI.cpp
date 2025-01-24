@@ -33,8 +33,6 @@
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-using namespace std;
-
 int main(int argc, char* argv[]) {
   try {
     // ================= Creation of the model =======================
@@ -55,17 +53,16 @@ int main(int argc, char* argv[]) {
     // --- Dynamical systems ---
     // -------------------------
 
-    cout << "====> Model loading ..." << endl;
+    std::cout << "====> Model loading ...\n";
+    Matrix mass{nDof, nDof};
+    mass(0, 0) = m1;
+    mass(1, 1) = m1;
+    mass(2, 2) = 2. / 5 * m1 * R * R;
 
-    auto Mass = std::make_shared<Matrix>(nDof, nDof);
-    (*Mass)(0, 0) = m1;
-    (*Mass)(1, 1) = m1;
-    (*Mass)(2, 2) = 2. / 5 * m1 * R * R;
-
-    auto Mass2 = std::make_shared<Matrix>(nDof, nDof);
-    (*Mass2)(0, 0) = m2;
-    (*Mass2)(1, 1) = m2;
-    (*Mass2)(2, 2) = 2. / 5 * m2 * R * R;
+    Matrix mass2{nDof, nDof};
+    mass2(0, 0) = m2;
+    mass2(1, 1) = m2;
+    mass2(2, 2) = 2. / 5 * m2 * R * R;
 
     // -- Initial positions and velocities --
     Vector q0{nDof};
@@ -75,15 +72,14 @@ int main(int argc, char* argv[]) {
     v0.setZero();
     v0(0) = velocity_init;
 
-
-    auto q0_2 = std::make_shared<Vector>(nDof);
-    auto v0_2 = std::make_shared<Vector>(nDof);
-    (*q0_2)(0) = position_init + 2 * R + 0.001;
-    (*v0_2)(0) = velocity_init;
+    Vector q0_2{nDof};
+    Vector v0_2{nDof};
+    q0_2(0) = position_init + 2 * R + 0.001;
+    v0_2(0) = velocity_init;
 
     // -- The dynamical system --
     auto ball1 = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
-    auto ball2 = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0_2, v0_2, Mass2);
+    auto ball2 = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0_2, v0_2, mass2);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
@@ -168,7 +164,7 @@ int main(int argc, char* argv[]) {
     // auto osnspb=
     // std::make_shared<siconos::nonsmooth_formulations::GlobalFrictionContact>(3);
     assert(osnspb->numericsSolverOptions());
-    SolverOptions* options = osnspb->numericsSolverOptions().get();
+    auto options = osnspb->numericsSolverOptions();
     // solver_options_print(options);
     options->dparam[SICONOS_DPARAM_TOL] = 1e-13;
     // -- (4) Simulation setup with (1) (2) (3)
@@ -180,12 +176,12 @@ int main(int argc, char* argv[]) {
 
     // --- Simulation initialization ---
 
-    int N = ceil((T - t0) / h);  // Number of time steps
+    int N = ceil((T - t0) / h) + 1;  // Number of time steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 8;
-    Matrix dataPlot(N + 1, outputSize);
+    Matrix dataPlot(N, outputSize);
 
     auto q1 = ball1->q();
     auto v1 = ball1->velocity();
@@ -205,7 +201,7 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 6) = (*v2)(0);
     dataPlot(0, 7) = (*p2)(0);
     // --- Time loop ---
-    cout << "====> Start computation ... \n";
+    std::cout << "====> Start computation ... \n";
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
 
@@ -231,11 +227,10 @@ int main(int argc, char* argv[]) {
     }
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    cout << endl << "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation time : " << elapsed << " ms\n";
+    std::cout << "\nEnd of computation - Number of iterations done: " << k - 1 << std::endl;
+    std::cout << "Computation time : " << elapsed << " ms\n";
     // --- Output files ---
-    cout << "====> Output file writing ..." << endl;
-    dataPlot.resize(k, outputSize);
+    std::cout << "====> Output file writing ...\n";
     siconos::algebra::io::write("TwoBouncingBallTS-MoreauJeanGOSI.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);

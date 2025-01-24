@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
     //     //    relation0->setJacQH(H_block);
     //     //    relation0->setJacQHT(HT_block);
     //     //cout<<"main jacQH"<<endl;
-    //     //relation0->jacobianhOver_q()->display();
+    //     //relation0->H_NE()->display();
 
     // Version with my_NewtonEulerR()
     auto relation0 = std::make_shared<my_NewtonEulerR>(radius);

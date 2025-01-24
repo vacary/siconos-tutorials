@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2023 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,16 @@
  * limitations under the License.
  */
 
-/*!\file NE....cpp
-  \brief \ref EMNE_MULTIBODY - C++ input file, Time-Stepping version - O.B.
-
-  A multibody example.
-  Direct description of the model.
-  Simulation with a Time-Stepping scheme.
-*/
-
 #include <KneeJointR.hpp>
 #include <PrismaticJointR.hpp>
 #include <SiconosKernel.hpp>
 #include <chrono>
+#include <numbers>
 
 #include "GeomTools.h"
 
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
-
-using namespace std;
 
 int main(int argc, char *argv[]) {
   try {
@@ -47,7 +38,6 @@ int main(int argc, char *argv[]) {
     double t0 = 0;    // initial computation time
     double T = 10.0;  // final computation time
     double h = 0.01;  // time step
-    int N = 1000;
     double L1 = 1.0;
     double L2 = 1.0;
     double L3 = 1.0;
@@ -66,34 +56,32 @@ int main(int argc, char *argv[]) {
       fclose(pFile);
     }
 
-    cout << "====> Model loading ..." << endl << endl;
+    std::cout << "====> Model loading ...\n\n";
+
     // -- Initial positions and velocities --
 
     // First DS
-    auto q10 = std::make_shared<Vector>(qDim);
-    auto v10 = std::make_shared<Vector>(nDim);
-    auto I1 = std::make_shared<Matrix>(3, 3);
-    v10->setZero();
-    I1->setIdentity();
-    I1->setValue(0, 0, 0.1);
+    Vector q10{qDim};
+    Vector v10{nDim};
+    Matrix I1{3, 3};
+    v10.setZero();
+    I1.setIdentity();
+    I1.setValue(0, 0, 0.1);
     // Initial position of the center of gravity CG1
-    (*q10)(0) = 0.5 * L1 / sqrt(2.0);
-    (*q10)(1) = 0;
-    (*q10)(2) = -0.5 * L1 / sqrt(2.0);
+    q10.setZero();
+    q10(0) = 0.5 * L1 / sqrt(2.0);
+    q10(2) = -0.5 * L1 / sqrt(2.0);
     // Initial orientation (a quaternion that gives the rotation w.r.t the spatial frame)
     // angle of the rotation Pi/4
-    double angle = M_PI / 4;
-    Vector V1(3);
-    V1.setZero();
+    double angle = std::numbers::pi / 4;
     // vector of the rotation (Y-axis)
-    V1.setValue(0, 0);
-    V1.setValue(1, 1);
-    V1.setValue(2, 0);
+    Vector V1{3};
+    V1 << 0., 1., 0.;
     // construction of the quaternion
-    q10->setValue(3, cos(angle / 2));
-    q10->setValue(4, V1.getValue(0) * sin(angle / 2));
-    q10->setValue(5, V1.getValue(1) * sin(angle / 2));
-    q10->setValue(6, V1.getValue(2) * sin(angle / 2));
+    q10.setValue(3, cos(angle * 0.5));
+    q10.setValue(4, V1.getValue(0) * sin(angle * 0.5));
+    q10.setValue(5, V1.getValue(1) * sin(angle * 0.5));
+    q10.setValue(6, V1.getValue(2) * sin(angle * 0.5));
 
     // -- The dynamical system --
     auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1);
@@ -101,107 +89,87 @@ int main(int argc, char *argv[]) {
     Vector weight{nDof};
     weight.setZero();
     weight(2) = -m * g;
-    beam1->etConstantFExt(weight);
+    beam1->setConstantFext(weight);
 
     // second DS
-    auto q02 = std::make_shared<Vector>(qDim);
-    auto v02 = std::make_shared<Vector>(nDim);
-    auto I2 = std::make_shared<Matrix>(3, 3);
-    v02->setZero();
-    I2->setIdentity();
-    I2->setValue(0, 0, 0.1);
-    (*q02)(0) = L1 / sqrt(2.0) - 0.5 * L2 / sqrt(2.0);
-    (*q02)(1) = 0;
-    (*q02)(2) = -L1 / sqrt(2.0) - 0.5 * L2 / sqrt(2.0);
+    Vector q02{qDim};
+    Vector v02{nDim};
+    Matrix I2{3, 3};
+    v02.setZero();
+    I2.setIdentity();
+    I2.setValue(0, 0, 0.1);
+    q02.setZero();
+    q02(0) = L1 / sqrt(2.0) - 0.5 * L2 / sqrt(2.0);
+    q02(2) = -L1 / sqrt(2.0) - 0.5 * L2 / sqrt(2.0);
 
-    angle = -M_PI / 4;
-    V1.setZero();
-    V1.setValue(0, 0);
-    V1.setValue(1, 1);
-    V1.setValue(2, 0);
-    q02->setValue(3, cos(angle / 2));
-    q02->setValue(4, V1.getValue(0) * sin(angle / 2));
-    q02->setValue(5, V1.getValue(1) * sin(angle / 2));
-    q02->setValue(6, V1.getValue(2) * sin(angle / 2));
+    angle = -std::numbers::pi / 4;
+    q02.setValue(3, cos(angle / 2));
+    q02.setValue(4, V1.getValue(0) * sin(angle / 2));
+    q02.setValue(5, V1.getValue(1) * sin(angle / 2));
+    q02.setValue(6, V1.getValue(2) * sin(angle / 2));
 
     auto beam2 = std::make_shared<siconos::modeling::NewtonEulerDS>(q02, v02, m, I2);
     // -- Set external forces (weight) --
-     beam2->etConstantFExt(weight);
+    beam2->setConstantFext(weight);
 
-    auto q03 = std::make_shared<Vector>(qDim);
-    auto v03 = std::make_shared<Vector>(nDim);
-    auto I3 = std::make_shared<Matrix>(3, 3);
-    v03->setZero();
-    I3->setIdentity();
-    I3->setValue(0, 0, 0.1);
-    q03->setZero();
-    (*q03)(2) = -L1 * sqrt(2.0) - L1 / 2;
+    Vector q03{qDim};
+    Vector v03{nDim};
+    Matrix I3{3, 3};
+    v03.setZero();
+    I3.setIdentity();
+    I3.setValue(0, 0, 0.1);
+    q03.setZero();
+    q03(2) = -L1 * sqrt(2.0) - L1 / 2;
 
-    angle = M_PI / 2;
-    V1.setZero();
-    V1.setValue(0, 0);
-    V1.setValue(1, 1);
-    V1.setValue(2, 0);
-    q03->setValue(3, cos(angle / 2));
-    q03->setValue(4, V1.getValue(0) * sin(angle / 2));
-    q03->setValue(5, V1.getValue(1) * sin(angle / 2));
-    q03->setValue(6, V1.getValue(2) * sin(angle / 2));
+    angle = std::numbers::pi / 2;
+    q03.setValue(3, cos(angle / 2));
+    q03.setValue(4, V1.getValue(0) * sin(angle / 2));
+    q03.setValue(5, V1.getValue(1) * sin(angle / 2));
+    q03.setValue(6, V1.getValue(2) * sin(angle / 2));
 
     auto beam3 = std::make_shared<siconos::modeling::NewtonEulerDS>(q03, v03, m, I3);
     // -- Set external forces (weight) --
-     beam3->etConstantFExt(weight);
-
+    beam3->setConstantFext(weight);
     // --------------------
     // --- Interactions ---
     // --------------------
 
     // Interaction with the floor
     double e = 0.9;
-    auto H = std::make_shared<Matrix>(1, qDim);
-    auto eR = std::make_shared<Vector>(1);
-    eR->setValue(0, 2.3);
-    H->setZero();
-    (*H)(0, 2) = 1.0;
+    Matrix H{1, qDim};
+    Vector eR{1};
+    eR << 2.3;
+    H.setZero();
+    H(0, 2) = 1.0;
     auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
     auto relation0 = std::make_shared<siconos::modeling::NewtonEulerR>();
-    relation0->setJachq(H);
-    relation0->setE(eR);
+    relation0->setConstantH_NE(H);
+    relation0->setConstanteVector(eR);
 
     // Interactions
 
-    //
-    // auto H1= std::make_shared<Matrix>(KneeJointR::numberOfConstraints(), qDim);
-    // H1->setZero();
-    // auto H2= std::make_shared<Matrix>(KneeJointR::numberOfConstraints(), 2 * qDim);
-    // auto H3= std::make_shared<Matrix>(KneeJointR::numberOfConstraints(), 2 * qDim);
-    // H2->setZero();
-    // H3->setZero();
+    // --- Interactions ---
+    // --------------------
 
-    // auto nslaw3=
-    // std::make_shared<siconos::modeling::EqualityConditionNSL>KneeJointR::numberOfConstraints()();
-    auto P = std::make_shared<Vector>(3);
-    P->setZero();
-    // Building the first knee joint for beam1
-    // input  - the concerned DS : beam1
-    //        - a point in the spatial frame (absolute frame) where the knee is defined P
+    // Knee relations (point equality, i.e. ball joint)
+
+    Vector P{3};
+    P.setZero();
     auto relation1 = std::make_shared<siconos::joints::KneeJointR>(P, true, beam1);
 
     // Building the second knee joint for beam1 and beam2
     // input  - the first concerned DS : beam1
     // input  - the second concerned DS : beam2
     //        - a point in the spatial frame (absolute frame) where the knee is defined P
-    P->setZero();
-    P->setValue(0, L1 / 2);
+    P.setValue(0, L1 / 2);
     auto relation2 = std::make_shared<siconos::joints::KneeJointR>(P, false, beam1, beam2);
 
     // Building the third knee joint for beam2 and beam3
     // input  - the first concerned DS : beam2
     // input  - the second concerned DS : beam3
     //        - a point in the spatial frame (absolute frame) where the knee is defined P
-    P->setZero();
-    P->setValue(0, -L1 / 2);
+    P.setValue(0, -L1 / 2);
     auto relation3 = std::make_shared<siconos::joints::KneeJointR>(P, false, beam2, beam3);
-
     auto nslaw1 = std::make_shared<siconos::modeling::EqualityConditionNSL>(
         relation1->numberOfConstraints());
     auto nslaw2 = std::make_shared<siconos::modeling::EqualityConditionNSL>(
@@ -212,16 +180,9 @@ int main(int argc, char *argv[]) {
     // Building the prismatic joint for beam3
     // input  - the first concerned DS : beam3
     //        - an axis in the spatial frame (absolute frame)
-    // auto H4= std::make_shared<Matrix>(PrismaticJointR::numberOfConstraints(), qDim);
-    // H4->setZero();
-    auto axe1 = std::make_shared<Vector>(3);
-    axe1->setZero();
-    axe1->setValue(0, 1);
+    Vector axe1{3};
+    axe1 << 1, 0, 0;
     auto relation4 = std::make_shared<siconos::joints::PrismaticJointR>(axe1, false, beam3);
-    // relation1->setJachq(H1); // Remark V.A. Why do we need to set the Jacobian outside
-    // relation2->setJachq(H2);
-    // relation3->setJachq(H3);
-    // relation4->setJachq(H4);
     auto nslaw4 = std::make_shared<siconos::modeling::EqualityConditionNSL>(
         relation4->numberOfConstraints());
 
@@ -234,16 +195,19 @@ int main(int argc, char *argv[]) {
     // --- Model ---
     // -------------
     auto myModel = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
+
     // add the dynamical system in the non smooth dynamical system
     myModel->insertDynamicalSystem(beam1);
     myModel->insertDynamicalSystem(beam2);
     myModel->insertDynamicalSystem(beam3);
+
     // link the interaction and the dynamical system
     myModel->link(inter1, beam1);
     myModel->link(inter2, beam1, beam2);
     myModel->link(inter3, beam2, beam3);
     myModel->link(inter4, beam3);
     myModel->link(interFloor, beam3);
+
     // ------------------
     // --- Simulation ---
     // ------------------
@@ -280,27 +244,24 @@ int main(int argc, char *argv[]) {
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 15 + 7;
+    int N = 1000;
     Matrix dataPlot(N, outputSize);
     Matrix beam1Plot(2, 3 * N);
     Matrix beam2Plot(2, 3 * N);
     Matrix beam3Plot(2, 3 * N);
 
-    auto q1 = beam1->q();
-    auto q2 = beam2->q();
-    auto q3 = beam3->q();
+    auto q1 = beam1->q_read();
+    auto q2 = beam2->q_read();
+    auto q3 = beam3->q_read();
+
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl << endl;
+    std::cout << "====> Start computation ... \n\n";
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 0;
 
     auto start = std::chrono::system_clock::now();
-    auto yAux = std::make_shared<Vector>(3);
-    yAux->setValue(0, 1);
-    auto Jaux = std::make_shared<Matrix>(3, 3);
-    std::vector<unsigned int> dimIndex(2);
-    decltype(dimIndex) startIndex(4);
     fprintf(pFile, "double T[%d*%d]={", N + 1, outputSize);
-    double beamTipTrajectories[6];
+    std::vector<double> beamTipTrajectories(6);
 
     for (k = 0; k < N; k++) {
       // solve ...
@@ -308,30 +269,27 @@ int main(int argc, char *argv[]) {
 
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
-
-      dataPlot(k, 1) = (*q1)(0);
-      dataPlot(k, 2) = (*q1)(1);
-      dataPlot(k, 3) = (*q1)(2);
-      dataPlot(k, 4) = (*q1)(3);
-      dataPlot(k, 5) = (*q1)(4);
-      dataPlot(k, 6) = (*q1)(5);
-      dataPlot(k, 7) = (*q1)(6);
-
-      dataPlot(k, 8) = (*q2)(0);
-      dataPlot(k, 9) = (*q2)(1);
-      dataPlot(k, 10) = (*q2)(2);
-      dataPlot(k, 11) = (*q2)(3);
-      dataPlot(k, 12) = (*q2)(4);
-      dataPlot(k, 13) = (*q2)(5);
-      dataPlot(k, 14) = (*q2)(6);
-
-      dataPlot(k, 15) = (*q3)(0);
-      dataPlot(k, 16) = (*q3)(1);
-      dataPlot(k, 17) = (*q3)(2);
-      dataPlot(k, 18) = (*q3)(3);
-      dataPlot(k, 19) = (*q3)(4);
-      dataPlot(k, 20) = (*q3)(5);
-      dataPlot(k, 21) = (*q3)(6);
+      dataPlot(k, 1) = q1(0);
+      dataPlot(k, 2) = q1(1);
+      dataPlot(k, 3) = q1(2);
+      dataPlot(k, 4) = q1(3);
+      dataPlot(k, 5) = q1(4);
+      dataPlot(k, 6) = q1(5);
+      dataPlot(k, 7) = q1(6);
+      dataPlot(k, 8) = q2(0);
+      dataPlot(k, 9) = q2(1);
+      dataPlot(k, 10) = q2(2);
+      dataPlot(k, 11) = q2(3);
+      dataPlot(k, 12) = q2(4);
+      dataPlot(k, 13) = q2(5);
+      dataPlot(k, 14) = q2(6);
+      dataPlot(k, 15) = q3(0);
+      dataPlot(k, 16) = q3(1);
+      dataPlot(k, 17) = q3(2);
+      dataPlot(k, 18) = q3(3);
+      dataPlot(k, 19) = q3(4);
+      dataPlot(k, 20) = q3(5);
+      dataPlot(k, 21) = q3(6);
 
       geomtools::tipTrajectories(q1, beamTipTrajectories, L1);
       beam1Plot(0, 3 * k) = beamTipTrajectories[0];
@@ -376,7 +334,6 @@ int main(int argc, char *argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("NE_3DS_3Knee_1Prism_MLCP_MoreauJeanCombinedProjection.dat",
                                 dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);

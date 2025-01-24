@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
     dataPlotController(0, 8) = (*y)(1);
 
     // ==== Simulation loop =====
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ... \n\n";
 
     // *z = *(myProcessInteraction->y(0)->getVectorPtr(0));
     int k = 0;  // Current step

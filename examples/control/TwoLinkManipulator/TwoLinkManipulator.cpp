@@ -252,7 +252,7 @@ int main(int argc, char* argv[]) {
     dataPlot(k, 12) = (*z)(22);
     dataPlot(k, 13) = (*z)(23);
 
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ... \n\n";
 
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();

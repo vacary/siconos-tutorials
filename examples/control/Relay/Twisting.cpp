@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
     (*dataPlot)(0, 4) = -1.0;
 
     // ==== Simulation loop =====
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ... \n\n";
 
     // *z = *(myProcessInteraction->y(0)->getVectorPtr(0));
     unsigned int k = 0;  // Current step

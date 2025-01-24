@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-/*!\file BulletBouncingBoxDynamic.cpp
-  \brief C++ input file, a Bullet box bouncing on the ground
+/* A Bullet box bouncing on the ground
 
   A box bouncing on the ground with the use of Bullet collision
   detection.
@@ -27,44 +26,31 @@
   the graph.
 */
 
+#include <SolverOptions.h>
+
 #include <SiconosBulletCollisionManager.hpp>
 #include <SiconosCollision.hpp>
 #include <SiconosKernel.hpp>
 #include <chrono>
 #include <iostream>
-
-#include "SolverOptions.h"
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-auto makeBox(float g, float pos, float vel) {
+constexpr auto mass = 1.;
+
+auto makeBox(float g, Eigen::Ref<Vector> q0, Eigen::Ref<Vector> v0) {
   // -- Shape: cube with all dimensions=1.0
   auto box1 = std::make_shared<siconos::collision::SiconosBox>(1.0, 1.0, 1.0);
 
-  // -- Initial position and velocity
-  siconos::algebra::SiconosVector q0{7};
-  siconos::algebra::SiconosVector v0{6};
-  q0.setZero();
-  v0.setZero();
-
- q0(2) = pos;
- q0(3) = 1.0;
-  v0(2) = vel;
-
   // -- The dynamical system --
-  auto body = std::make_shared<siconos::collision::RigidBodyDS>(q0, v0, 1.0);
+  auto inertia = std::make_shared<siconos::algebra::SiconosMatrix>(3, 3);
+  inertia->setIdentity();
+  auto body = std::make_shared<siconos::collision::RigidBodyDS>(q0, v0, mass, *inertia);
 
   // -- add the box to the body's set of contactactors
   // -- by default, the contactor id is 0 with no position offset,
   //    see SiconosContactor.hpp for how to change these.
   body->contactors()->push_back(std::make_shared<siconos::collision::SiconosContactor>(box1));
-
-  // -- Set external forces (weight) --
-  Vector FExt{nDof};
-  FExt.setZero();
-  FExt(2) = -g * body->scalarMass();
-  body->setConstantFext(FExt);
-
   return body;
 }
 
@@ -88,15 +74,31 @@ int main() {
     // --- Init ---
     // ------------
 
-    std::cout << "====> Model loading ...\n";
+    std::cout << "====> Model loading ...\n\n";
 
     // -- OneStepIntegrators --
     auto osi = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
     // -- Model --
     auto model = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
+    Vector q0Body{7};
+    Vector v0Body{6};
+
+    // -- Initial position and velocity
+    // -- Initial position and velocity
+    q0Body.setZero();
+    v0Body.setZero();
+    q0Body(2) = position_init;
+    q0Body(3) = 1.0;
+    v0Body(2) = velocity_init;
+    // -- Set external forces (weight) --
+    // -- Set external forces (weight) --
+    Vector FExt{3};
+    FExt.setZero();
+    FExt(2) = -g * mass;
 
     // -- Moving object --
-    auto body = makeBox(g, position_init, velocity_init);
+    auto body = makeBox(g, q0Body, v0Body);
+    body->setConstantFext(FExt);
 
     // -- Add the dynamical system in the non smooth dynamical system
     model->insertDynamicalSystem(body);
@@ -138,7 +140,7 @@ int main() {
 
     // --- Simulation initialization ---
 
-    std::cout << "====> Simulation initialisation ...\n";
+    std::cout << "====> Simulation initialisation ...\n\n";
 
     int N = ceil((T - t0) / h);  // Number of time steps
 
@@ -177,7 +179,7 @@ int main() {
     simulation->insertIntegrator(osi);
     simulation->insertNonSmoothProblem(osnspb);
 
-    std::cout << "====> End of initialisation ..." << std::endl << std::endl;
+    std::cout << "====> End of initialisation ...\n\n";
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
@@ -185,24 +187,34 @@ int main() {
     Matrix dataPlot(N + 1, outputSize);
     dataPlot.setZero();
 
-    auto q = body->q();
-    auto v = body->velocity();
+    auto q = body->q_read();
+    auto v = body->twist_read();
 
     dataPlot(0, 0) = model->t0();
-    dataPlot(0, 1) = (*q)(2);
-    dataPlot(0, 2) = (*v)(2);
+    dataPlot(0, 1) = q(2);
+    dataPlot(0, 2) = v(2);
 
     // --- Time loop ---
 
     std::cout << "====> Start computation ... \n";
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
+    Vector q0{7};
+    Vector v0{6};
+
+    // -- Initial position and velocity
+    // -- Initial position and velocity
+    q0.setZero();
+    v0.setZero();
+    q0(2) = 3.;
+    q0(3) = 1.0;
 
     auto start = std::chrono::system_clock::now();
     while (simulation->hasNextEvent()) {
       // --- Add a dynamic object at step 100 of the simulation ---
       if (k == 100) {
-        auto ds = makeBox(g, 3.0, 0);
+        auto ds = makeBox(g, q0, v0);
+        ds->setConstantFext(FExt);
         simulation->nonSmoothDynamicalSystem()->insertDynamicalSystem(ds);
         simulation->associate(osi, ds);
       }
@@ -211,17 +223,16 @@ int main() {
 
       // --- Get values to be plotted ---
       dataPlot(k, 0) = simulation->nextTime();
-      dataPlot(k, 1) = (*q)(2);
-      dataPlot(k, 2) = (*v)(2);
+      dataPlot(k, 1) = q(2);
+      dataPlot(k, 2) = v(2);
 
       // If broadphase collision detection shows some contacts then we may
       // display contact forces.
       if ((collision_manager->statistics().new_interactions_created +
            collision_manager->statistics().existing_interactions_processed) > 0) {
-        // we *must* have an indexSet0, filled by Bullet broadphase
-        // collision detection and an indexSet1, filled by
-        // TimeStepping::updateIndexSet with the help of Bullet
-        // getDistance() function
+        // we *must* have an indexSet0, filled by Bullet broadphase collision
+        // detection and an indexSet1, filled by TimeStepping::updateIndexSet
+        // with the help of Bullet getDistance() function.
         if (model->topology()->numberOfIndexSet() == 2) {
           auto index1 = simulation->indexSet(1);
 

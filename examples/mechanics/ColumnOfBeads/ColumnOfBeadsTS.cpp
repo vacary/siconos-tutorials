@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
     // }
 
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ... \n\n";
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
 

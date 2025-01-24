@@ -15,19 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/*!\file NE....cpp
-  \brief \ref EMNE_MULTIBODY - C++ input file, Time-Stepping version - O.B.
-
-  A multibody example.
-  Direct description of the model.
-  Simulation with a Time-Stepping scheme.
-*/
-
-#include <KneeJointR.hpp>
 #include <PrismaticJointR.hpp>
 #include <SiconosKernel.hpp>
 #include <chrono>
+#include <numbers>
 
 #include "GeomTools.h"
 
@@ -47,7 +38,6 @@ int main(int argc, char *argv[]) {
     double t0 = 0;    // initial computation time
     double T = 10.0;  // final computation time
     double h = 0.01;  // time step
-    int N = 1000;
     double L1 = 1.0;
     double L2 = 1.0;
     double L3 = 1.0;
@@ -66,37 +56,51 @@ int main(int argc, char *argv[]) {
       fclose(pFile);
     }
 
-    cout << "====> Model loading ..." << endl << endl;
-    // -- Initial positions and velocities --
-    auto q03 = std::make_shared<Vector>(qDim);
-    auto v03 = std::make_shared<Vector>(nDim);
-    auto I3 = std::make_shared<Matrix>(3, 3);
-    v03->setZero();
-    I3->setIdentity();
-    I3->setValue(0, 0, 0.1);
-    q03->setZero();
-    (*q03)(2) = -L1 * sqrt(2.0) - L1 / 2;
+    std::cout << "====> Model loading ...\n";
 
-    double angle = M_PI / 2;
-    Vector V1(3);
-    V1.setZero();
-    V1.setValue(0, 0);
-    V1.setValue(1, 1);
-    V1.setValue(2, 0);
-    q03->setValue(3, cos(angle / 2));
-    q03->setValue(4, V1.getValue(0) * sin(angle / 2));
-    q03->setValue(5, V1.getValue(1) * sin(angle / 2));
-    q03->setValue(6, V1.getValue(2) * sin(angle / 2));
+    // -- Initial positions and velocities --
+    Vector q03{qDim};
+    Vector v03{nDim};
+    Matrix I3{3, 3};
+    v03.setZero();
+    q03.setZero();
+    I3.setIdentity();
+    I3(0, 0) = 0.1;
+    q03(2) = -L1 * sqrt(2.0) - L1 / 2;
+
+    double angle = std::numbers::pi / 2;
+    Vector V1{3};
+    V1 << 0, 1, 0;
+    q03.setValue(3, cos(angle / 2));
+    q03.setValue(4, V1.getValue(0) * sin(angle / 2));
+    q03.setValue(5, V1.getValue(1) * sin(angle / 2));
+    q03.setValue(6, V1.getValue(2) * sin(angle / 2));
 
     auto bouncingbeam = std::make_shared<siconos::modeling::NewtonEulerDS>(q03, v03, m, I3);
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
     weight(2) = -m * g;
-    bouncingbeam->etConstantFExt(weight);
-    bouncingbeam->setComputeFIntFunction("SimplePlugin", "fInt_beam1");
-    bouncingbeam->setComputeJacobianFIntqFunction("SimplePlugin", "jacobianFIntq_beam1");
-    bouncingbeam->setComputeJacobianFIntvFunction("SimplePlugin", "jacobianFIntv_beam1");
+    bouncingbeam->setConstantFext(weight);
+    bouncingbeam->setComputeFintFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &twist,
+           const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+           Eigen::Ref<siconos::algebra::MapVectorType> fint) {
+          auto i = 0;
+          fint(0) = 1e4 * q(0);
+          fint(1) = 0.0;
+          fint(2) = 1e4 * q(2);
+        });
+
+    bouncingbeam->setComputeJacobianFintOver_qFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &twist,
+           const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result.setZero();
+
+          result(0, 0) = 1e4;
+          result(2, 2) = 1e4;
+        });
 
     // --------------------
     // --- Interactions ---
@@ -104,21 +108,25 @@ int main(int argc, char *argv[]) {
 
     // Interaction with the floor
     double e = 0.9;
-    auto H = std::make_shared<Matrix>(1, qDim);
-    auto eR = std::make_shared<Vector>(1);
-    eR->setValue(0, 2.3);
-    H->setZero();
-    (*H)(0, 2) = 1.0;
+    Matrix H{1, qDim};
+    Vector eR{1};
+    eR << 2.3;
+    H.setZero();
+    H(0, 2) = 1.0;
     auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
     auto relation0 = std::make_shared<siconos::modeling::NewtonEulerR>();
-    relation0->setJachq(H);
-    relation0->setE(eR);
-    cout << "main jacQH\n";
-    relation0->jacobianhOver_q()->display();
+    relation0->setConstantH_NE(H);
+    relation0->setConstanteVector(eR);
 
-    auto axe1 = std::make_shared<Vector>(3);
-    axe1->setZero();
-    axe1->setValue(2, 1);
+    // Interactions
+    // Building the prismatic joint for bouncingbeam
+    // input  - the first concerned DS : bouncingbeam
+    //        - an axis in the spatial frame (absolute frame)
+    // auto H4= std::make_shared<Matrix>(PrismaticJointR::numberOfConstraints(), qDim);
+    // H4->setZero();
+
+    Vector axe1{3};
+    axe1 << 0., 0, 1.;
     auto relation4 =
         std::make_shared<siconos::joints::PrismaticJointR>(axe1, false, bouncingbeam);
     auto nslaw4 = std::make_shared<siconos::modeling::EqualityConditionNSL>(
@@ -163,36 +171,36 @@ int main(int argc, char *argv[]) {
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 15 + 7;
+    int N = 1000;
     Matrix dataPlot(N, outputSize);
     Matrix bouncingbeamPlot(2, 3 * N);
 
-    auto q3 = bouncingbeam->q();
+    auto q3 = bouncingbeam->q_read();
     auto y = interFloor->y(0);
     auto ydot = interFloor->y(1);
 
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl << endl;
+    std::cout << "====> Start computation ... \n\n";
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 0;
 
     auto start = std::chrono::system_clock::now();
     fprintf(pFile, "double T[%d*%d]={", N + 1, outputSize);
-    double beamTipTrajectories[6];
+    std::vector<double> beamTipTrajectories(6);
 
     for (k = 0; k < N; k++) {
       // solve ...
       s->advanceToEvent();
-
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
 
-      dataPlot(k, 1) = (*q3)(0);
-      dataPlot(k, 2) = (*q3)(1);
-      dataPlot(k, 3) = (*q3)(2);
-      dataPlot(k, 4) = (*q3)(3);
-      dataPlot(k, 5) = (*q3)(4);
-      dataPlot(k, 6) = (*q3)(5);
-      dataPlot(k, 7) = (*q3)(6);
+      dataPlot(k, 1) = q3(0);
+      dataPlot(k, 2) = q3(1);
+      dataPlot(k, 3) = q3(2);
+      dataPlot(k, 4) = q3(3);
+      dataPlot(k, 5) = q3(4);
+      dataPlot(k, 6) = q3(5);
+      dataPlot(k, 7) = q3(6);
 
       dataPlot(k, 8) = y->norm2();
       dataPlot(k, 9) = ydot->norm2();
@@ -223,7 +231,6 @@ int main(int argc, char *argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("NE_BouncingBeam.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);

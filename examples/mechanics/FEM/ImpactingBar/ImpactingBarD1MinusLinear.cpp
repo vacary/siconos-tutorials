@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
     //     std::cout <<"kineticEnergy ="<<kineticEnergy << std::endl;
 
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ... \n\n";
     // ==== Simulation loop - Writing without explicit event handling =====
 
     auto start = std::chrono::system_clock::now();

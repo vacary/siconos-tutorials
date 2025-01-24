@@ -112,12 +112,12 @@ int main(int argc, char* argv[]) {
 
   // --- Simulation initialization ---
 
-  cout << "====> Simulation initialisation ..." << endl << endl;
+  cout << "====> Simulation initialisation ...\n\n";
   // initialise the process and the ControlManager
   sim->initialize();
 
   // ==== Simulation loop =====
-  cout << "====> Start computation ... " << endl << endl;
+  cout << "====> Start computation ... \n\n";
   sim->run();
   // --- Output files ---
   cout << "====> Output file writing ...\n";

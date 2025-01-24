@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
-    cout << "====> Model loading ..." << endl << endl;
+    cout << "====> Model loading ...\n\n";
     // -------------
     // --- Model ---
     // -------------
@@ -236,7 +236,7 @@ int main(int argc, char* argv[]) {
     Matrix dataPlot(Npointsave, outputSize);
 
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ... \n\n";
     // ==== Simulation loop - Writing without explicit event handling =====
     bool nonSmooth = false;
     unsigned int NumberOfEvents = 0;

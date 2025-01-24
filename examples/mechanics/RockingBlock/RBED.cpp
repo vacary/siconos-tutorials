@@ -22,26 +22,27 @@
 #include <chrono>
 #include <numbers>
 
-#include "RockingR.hpp"
-
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 constexpr double GGearth = 9.8100;
 
 //---------------------------------------------------
-double LengthBlock = 0.2;                        // Length of the rocking block
-double HeightBlock = 0.1;                        // Height of the rocking block
+double LengthBlock = 1.;   // Length of the rocking block
+double HeightBlock = 1.5;  // Height of the rocking block
+double LBlock = 0.2;
+double HBlock = 0.1;
+
 unsigned int Nfreedom = 3;                       // Number of degrees of freedom
 unsigned int Ncontact = 2;                       // Number of contacts
 double MassBlock = 1.0;                          // Mass of the rocking block
 double PosXiniPointA = 0.0;                      // Initial coordinate X of the point A
-double PosYiniPointA = 0.0;                      // Initial coordinate Y of the point A
+double PosYiniPointA = 0.5;                      // Initial coordinate Y of the point A
 double AngleThetaIni = std::numbers::pi / 10.0;  // Initial angle theta of the block
 double VelXiniPointA = 0.0;                      // Initial relative velocity Vx of the point A
 double VelYiniPointA = 0.0;                      // Initial relative velocity Vy of the point A
-double RotVelBlockIni = -0.1;                    // Initial angular velocity of the block
-double e = 0.9;                                  // Restitution coefficient
+double RotVelBlockIni = 0.0;                     // Initial angular velocity of the block
+double e = 0.5;                                  // Restitution coefficient
 double TimeInitial = 0.0;                        // Initial time of the simulation
 double TimeFinal = 2.0;                          // Final time of the simulation
 double StepSize = 0.005;                         // Time step size
@@ -72,24 +73,25 @@ int main(int argc, char* argv[]) {
     //                     0.5 * HeightBlock * cos(AngleThetaIni);
     // (*PosIniBlock)(2) = AngleThetaIni;
 
-    (*PosIniBlock)(0) = 0.5;
-    (*PosIniBlock)(1) = 0.5;
-    (*PosIniBlock)(2) = 0.0;
+    (*PosIniBlock)(0) = 0.0;
+    (*PosIniBlock)(1) = 1.;
+    (*PosIniBlock)(2) = 0.2;
 
     // 3. Set the initial velocity of the block in function of the initial relative velocity of
     // the contact point A
     auto VelIniBlock = std::make_shared<Vector>(Nfreedom);
-    // (*VelIniBlock)(0) = VelXiniPointA - (0.5 * LengthBlock * sin(AngleThetaIni) +
-    //                                      0.5 * HeightBlock * cos(AngleThetaIni)) *
-    //                                         RotVelBlockIni;
-    // (*VelIniBlock)(1) = VelYiniPointA + (0.5 * LengthBlock * cos(AngleThetaIni) -
-    //                                      0.5 * HeightBlock * sin(AngleThetaIni)) *
-    //                                         RotVelBlockIni;
-    // (*VelIniBlock)(2) = RotVelBlockIni;
+    (*VelIniBlock)(0) = VelXiniPointA - (0.5 * LengthBlock * sin(AngleThetaIni) +
+                                         0.5 * HeightBlock * cos(AngleThetaIni)) *
+                                            RotVelBlockIni;
+    (*VelIniBlock)(1) = VelYiniPointA + (0.5 * LengthBlock * cos(AngleThetaIni) -
+                                         0.5 * HeightBlock * sin(AngleThetaIni)) *
+                                            RotVelBlockIni;
+    (*VelIniBlock)(2) = RotVelBlockIni;
+    /*
     (*VelIniBlock)(0) = 0.0;
     (*VelIniBlock)(1) = 0.0;
     (*VelIniBlock)(2) = 0.0;
-
+    */
     // 4. Instantiate the object of "LagrangianTIDS"
     auto RockingBlock = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
         *PosIniBlock, *VelIniBlock, *mass);
@@ -112,12 +114,49 @@ int main(int argc, char* argv[]) {
     // Impact law
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
     // Interaction at contact point 1
-    // auto relation1= std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H, *E));
-    auto relation1 = std::make_shared<user_defined::RockingBlockR>();
+    auto relation1 = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+    relation1->setComputehFunction([](const siconos::algebra::BlockVector& q,
+                                      Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y(0) = q(1) - 0.5 * LBlock * sin(q(2)) - 0.5 * HBlock * cos(q(2));
+    });
+
+    relation1->setComputeJacobianhOver_qFunction(
+        [](const siconos::algebra::BlockVector& q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result(0, 0) = 0.0;
+          result(0, 1) = 1.0;
+          result(0, 2) = -0.5 * LBlock * cos(q(2)) + 0.5 * HBlock * sin(q(2));
+        });
+
+    relation1->setComputejacobianhOver_q_dotFunction(
+        [](const siconos::algebra::BlockVector& q, const siconos::algebra::BlockVector& qdot,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result.setZero();
+          result(0, 2) = (0.5 * LBlock * sin(q(2)) + 0.5 * HBlock * cos(q(2))) * qdot(2);
+        });
+
     auto inter1 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation1);
     // Interaction at contact point 2
-    // auto relation2= std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H, *E));
-    auto relation2 = std::make_shared<user_defined::RockingBlockR2>();
+    auto relation2 = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+    relation2->setComputehFunction([](const siconos::algebra::BlockVector& q,
+                                      Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y(0) = q(1) + 0.5 * LBlock * sin(q(2)) - 0.5 * HBlock * cos(q(2));
+    });
+
+    relation2->setComputeJacobianhOver_qFunction(
+        [](const siconos::algebra::BlockVector& q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result(0, 0) = 0.0;
+          result(0, 1) = 1.0;
+          result(0, 2) = 0.5 * LBlock * cos(q(2)) + 0.5 * HBlock * sin(q(2));
+        });
+    relation2->setComputejacobianhOver_q_dotFunction(
+        [](const siconos::algebra::BlockVector& q, const siconos::algebra::BlockVector& qdot,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result.setZero();
+          result(0, 2) = (-0.5 * LBlock * sin(q(2)) + 0.5 * HBlock * cos(q(2))) * qdot(2);
+        });
+
     auto inter2 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation2);
     // Interactions for the whole dynamical system
     //================================================================================================================
@@ -168,7 +207,7 @@ int main(int argc, char* argv[]) {
     //-------------------- Save the output during simulation
     //---------------------------------------------------------
     unsigned int NpointSave = 400;  //
-    unsigned int SizeOutput = 7;    //
+    unsigned int SizeOutput = 9;    //
     Matrix DataPlot(NpointSave, SizeOutput);
     //------------- At the initial time
     //-----------------------------------------------------------------------------
@@ -179,6 +218,18 @@ int main(int argc, char* argv[]) {
     DataPlot(0, 4) = VelBlock(0);  // Velocity Vx
     DataPlot(0, 5) = VelBlock(1);  // Velocity Vy
     DataPlot(0, 6) = VelBlock(2);  // Angular velocity
+
+    Vector tmp{Nfreedom};
+    tmp = *mass * VelBlock;
+    double kineticEnergy = 0.5 * VelBlock.dot(tmp);
+    DataPlot(0, 7) = kineticEnergy;
+
+    Vector PosRef{Nfreedom};
+    PosRef.setZero();
+    PosRef(1) = HeightBlock / 2.0;
+    double potentialEnergy = -(PosBlock - PosRef).dot(ExternalForces);
+    DataPlot(0, 8) = potentialEnergy;
+
     //----------------------------------- Simulation starts
     //----------------------------------------------------------
     std::cout << "====> Start computation ... \n\n";
@@ -205,6 +256,13 @@ int main(int argc, char* argv[]) {
         DataPlot(k, 5) = RockingBlock->velocityMemory().getSiconosVector(1)(1);  // Velocity Vy
         DataPlot(k, 6) =
             RockingBlock->velocityMemory().getSiconosVector(1)(2);  // Angular velocity
+        tmp = *mass * VelBlock;
+        kineticEnergy = 0.5 * VelBlock.dot(tmp);
+        DataPlot(k, 7) = kineticEnergy;
+
+        potentialEnergy = -(PosBlock - PosRef).dot(ExternalForces);
+        DataPlot(k, 8) = potentialEnergy;
+
         // EDscheme->update(1);
         k++;
         ++NumberNSEvent;
@@ -219,6 +277,13 @@ int main(int argc, char* argv[]) {
       DataPlot(k, 4) = VelBlock(0);  // Velocity Vx
       DataPlot(k, 5) = VelBlock(1);  // Velocity Vy
       DataPlot(k, 6) = VelBlock(2);  // Velocity Vtheta
+
+      tmp = *mass * VelBlock;
+      kineticEnergy = 0.5 * VelBlock.dot(tmp);
+      DataPlot(k, 7) = kineticEnergy;
+
+      potentialEnergy = -(PosBlock - PosRef).dot(ExternalForces);
+      DataPlot(k, 8) = potentialEnergy;
       // go to the next time step
       k++;
     };
@@ -229,7 +294,7 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    siconos::algebra::io::write("RockingBlockED-noplugin.dat", DataPlot,
+    siconos::algebra::io::write("RockingBlockED.dat", DataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
@@ -237,10 +302,7 @@ int main(int argc, char* argv[]) {
         eps)
       return 1;
     return 0;
-  }
-  //============================== Catch exceptions
-  //===================================================================
-  catch (...) {
+  } catch (...) {
     siconos::exception::process();
     return 1;
   }

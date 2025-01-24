@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 6) = (*yProc)(1);
 
     // ==== Simulation loop =====
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ... \n\n";
 
     // *z = *(myProcessInteraction->y(0)->getVectorPtr(0));
     int k = 0;  // Current step

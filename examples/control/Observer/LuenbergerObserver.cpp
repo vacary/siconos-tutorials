@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
   // --- Dynamical systems ---
   // -------------------------
 
-  cout << "====> Model loading ..." << endl << endl;
+  cout << "====> Model loading ...\n\n";
 
   auto A = std::make_shared<Matrix>(nDof, nDof);
   A->setZero();
@@ -111,11 +111,11 @@ int main(int argc, char* argv[]) {
 
   // --- Simulation initialization ---
 
-  cout << "====> Initialisation ..." << endl << endl;
+  cout << "====> Initialisation ...\n\n";
   // Initialize the model and the controlManager
   sim->initialize();
   // --- Time loop ---
-  cout << "====> Start computation ... " << endl << endl;
+  cout << "====> Start computation ... \n\n";
   // ==== Simulation loop - Writing without explicit event handling =====
   sim->run();
   cout << endl << sim->dataLegend() << endl;

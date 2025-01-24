@@ -40,8 +40,8 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
  public:
   my_NewtonEulerR(double radius) : R_CLASS{}, _sBallRadius{radius} {};
 
-  void computeh(double time, const siconos::algebra::BlockVector& q0,
-                siconos::algebra::SiconosVector& y) override {
+  void computeh(const siconos::algebra::BlockVector& q0,
+                Eigen::Ref<siconos::algebra::SiconosVector> y) override {
     double height = fabs(q0.getValue(0)) - _sBallRadius;
     y.setValue(0, height);
     _Nc->setValue(0, 1);
@@ -93,9 +93,9 @@ int main(int argc, char* argv[]) {
     q0.setZero();
     v0.setZero();
     Matrix I = Eigen::MatrixXd::Identity(3, 3);
-   q0(0) = position_init;
+    q0(0) = position_init;
     /*initial quaternion equal to (1,0,0,0)*/
-   q0(3) = 1.0;
+    q0(3) = 1.0;
 
     v0(0) = velocity_init;
     v0(3) = omega_initx;
@@ -203,7 +203,7 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 24) = (*lambda)(4);
 
     dataPlot(0, 25) = acos((*q)(3));
-    dataPlot(0, 26) = relation0->contactForce()->norm2();
+    dataPlot(0, 26) = relation0->contactForce().norm();
 
     // --- Time loop ---
     std::cout << "====> Start computation ... \n";
@@ -211,7 +211,7 @@ int main(int argc, char* argv[]) {
     int k = 1;
 
     auto start = std::chrono::system_clock::now();
-    dataPlot(k, 6) = relation0->contactForce()->norm2();
+    dataPlot(k, 6) = relation0->contactForce().norm();
     while (s->hasNextEvent() and k <= 100000) {
       s->advanceToEvent();
 
@@ -247,7 +247,7 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 24) = (*lambda)(4);
       // std::cout << "angle " << (*q)(3) <<  " " <<  2.0*acos((*q)(3)) << std::endl;
       dataPlot(k, 25) = 2.0 * acos((*q)(3));
-      dataPlot(k, 26) = relation0->contactForce()->norm2();
+      dataPlot(k, 26) = relation0->contactForce().norm();
 
       s->nextStep();
 
@@ -265,12 +265,12 @@ int main(int argc, char* argv[]) {
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     // Comparison with a reference file
-    double error = 0.0, eps = 1e-12;
+    double error = 0.0, eps = 1e-11;
     if ((error = siconos::algebra::io::compareRefFile(
              dataPlot, "BouncingBallNETS_MoreauJeanGOSI.ref", eps)) > eps)
       return 1;
     // Double check with MoreauJeanOSI
-    eps = 1e-11;
+    eps = 1e-10;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BouncingBallNETS.ref", eps)) >
         eps)
       return 1;

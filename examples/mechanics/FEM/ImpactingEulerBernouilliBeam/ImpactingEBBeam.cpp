@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
     // --- Dynamical systems ---
     // -------------------------
 
-    cout << "====> Model loading ..." << endl << endl;
+    cout << "====> Model loading ...\n\n";
 
     double l = L / nElement;  // length of an element
 
@@ -317,7 +317,7 @@ int main(int argc, char* argv[]) {
     //    std::cout <<"kineticEnergy ="<<kineticEnergy << std::endl;
 
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ... \n\n";
     // ==== Simulation loop - Writing without explicit event handling =====
     k++;
 

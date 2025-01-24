@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
     double m = 1;            // Ball mass
     double g = 9.81;         // Gravity
 
-    cout << "====> Model loading ..." << endl << endl;
+    cout << "====> Model loading ...\n\n";
 
     siconos::algebra::SiconosMatrix mass{ndof, ndof};
     mass.setZero();
@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
 
   // --- Simulation initialization ---
 
-  cout << "====> Initialisation ..." << endl << endl;
+  cout << "====> Initialisation ...\n\n";
   bouncingBall->initialize();
 
   inter->y(0)->display();
@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
   dataPlot(0, 3) = (*p)(0);
   dataPlot(0, 4) = (*lambda)(0);
   // --- Time loop ---
-  cout << "====> Start computation ... " << endl << endl;
+  cout << "====> Start computation ... \n\n";
   // ==== Simulation loop - Writing without explicit event handling =====
   int k = 1;
   boost::progress_display show_progress(N);

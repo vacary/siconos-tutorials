@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
     DataPlot(0, 6) = (*VelBlock)(2);  // Angular velocity
     //----------------------------------- Simulation starts
     //----------------------------------------------------------
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ... \n\n";
     bool NSEvent = false;
     unsigned int NumberNSEvent = 0;
     unsigned int k = 1;
