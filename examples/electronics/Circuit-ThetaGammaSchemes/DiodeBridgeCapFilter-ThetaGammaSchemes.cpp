@@ -84,8 +84,6 @@ int main(int argc, char* argv[]) {
     LS1_A(1, 0) = 1.0 / Lvalue;
 
     LS1DiodeBridgeCapFilter->setConstantA(LS1_A);
-    LS1DiodeBridgeCapFilter->display();
-
     // --- Linear system 2 (load and filter) specification ---
     Vector init_stateLS2{1};
     init_stateLS2 << VinitLS2;
@@ -143,7 +141,7 @@ int main(int argc, char* argv[]) {
     // ------------------
 
     // -- (1) OneStepIntegrators --
-    double theta = 1.;
+    double theta = 0.5;
     double gamma = 0.5;
 
     auto aOSI = std::make_shared<siconos::integrators::EulerMoreauOSI>(theta, gamma);
@@ -233,7 +231,6 @@ int main(int argc, char* argv[]) {
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
-    std::cout << "Comparison with a reference file ...\n";
     std::vector<int> idx(4);
     for (auto i = 0; i < 4; i++) idx.push_back(i);
     double error = 0.0, eps = 1e-12;

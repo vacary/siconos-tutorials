@@ -230,7 +230,6 @@ int main(int argc, char* argv[]) {
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
-    std::cout << "Comparison with a reference file ...\n";
     std::vector<int> idx(4);
     for (auto i = 0; i < 4; i++) idx.push_back(i);
     double error = 0.0, eps = 1e-12;

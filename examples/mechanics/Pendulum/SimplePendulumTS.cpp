@@ -130,19 +130,20 @@ int main(int argc, char *argv[]) {
     // --- Simulation initialization ---
     int k = 0;
     int N = ceil((T - t0) / h);
-    std::cout << "Number of time step   " << N << "\n";
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 11;
     Matrix dataPlot(N + 1, outputSize);
     // For the initial time step:
     // time
+    auto q = simplependulum->q_read();
+    auto vel = simplependulum->velocity_read();
     dataPlot(k, 0) = Pendulum->t0();
-    dataPlot(k, 1) = (*simplependulum->q())(0);
-    dataPlot(k, 2) = (*simplependulum->velocity())(0);
-    dataPlot(k, 3) = l1 * sin((*simplependulum->q())(0));
-    dataPlot(k, 4) = -l1 * cos((*simplependulum->q())(0));
-    dataPlot(k, 5) = l1 * cos((*simplependulum->q())(0)) * ((*simplependulum->velocity())(0));
+    dataPlot(k, 1) = q(0);
+    dataPlot(k, 2) = vel(0);
+    dataPlot(k, 3) = l1 * sin(q(0));
+    dataPlot(k, 4) = -l1 * cos(q(0));
+    dataPlot(k, 5) = l1 * cos(q(0)) * vel(0);
     // --- Compute elapsed time ---
     auto start = std::chrono::system_clock::now();
     //    EventsManager eventsManager = s->eventsManager();
@@ -157,12 +158,12 @@ int main(int argc, char *argv[]) {
       s->advanceToEvent();
       // Data Output
       dataPlot(k, 0) = s->nextTime();
-      dataPlot(k, 1) = (*simplependulum->q())(0);
-      dataPlot(k, 2) = (*simplependulum->velocity())(0);
-      dataPlot(k, 3) = l1 * sin((*simplependulum->q())(0));
-      dataPlot(k, 4) = -l1 * cos((*simplependulum->q())(0));
-      dataPlot(k, 5) =
-          l1 * cos((*simplependulum->q())(0)) * ((*simplependulum->velocity())(0));
+      dataPlot(k, 1) = q(0);
+      dataPlot(k, 2) = vel(0);
+      dataPlot(k, 3) = l1 * sin(q(0));
+      dataPlot(k, 4) = -l1 * cos(q(0));
+      dataPlot(k, 5) = l1 * cos(q(0)) * vel(0);
+
       s->nextStep();
       siconos::tools::progressBar((double)k / N);
     }

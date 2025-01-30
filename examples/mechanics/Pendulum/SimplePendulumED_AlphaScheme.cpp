@@ -194,6 +194,12 @@ int main(int argc, char* argv[]) {
         DataPlot(k, 2) = qMemory(1);
         DataPlot(k, 3) = qdotMemory(0);
         DataPlot(k, 4) = qdotMemory(1);
+        DataPlot(k, 5) = (*_qddot)(0);   // Acceleration ax
+        DataPlot(k, 6) = (*_qddot)(1);   // Acceleration ay
+        DataPlot(k, 7) = (*_g)(0);       // Contraint in position
+        DataPlot(k, 8) = (*_gdot)(0);    // Constraint in velocity
+        DataPlot(k, 9) = (*_lambda)(0);  // Reaction force
+
         k++;
         ++NumberNSEvent;
 

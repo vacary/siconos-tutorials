@@ -48,13 +48,12 @@ class MyCollisionManager : public siconos::simulation::InteractionManager {
             std::static_pointer_cast<siconos::modeling::Lagrangian2d3DR>(inter->relation());
         auto ds1(std::dynamic_pointer_cast<siconos::modeling::LagrangianLinearTIDS>(
             indexSet0->properties(*ui).source));
-        auto rpc = r->pc1();
+        auto pc = r->pc1();
         auto nnc = r->nc();
-        auto q = ds1->q();
-        // double angle= (*q)(2);
-        //  std::cout << "angle = " << angle << std::endl;
-        (*rpc)(0) = -_R + (*q)(0);
-        (*rpc)(1) = (*q)(1);
+        // double angle = (*q)(2);
+        // std::cout << "angle = " << angle << std::endl;
+        (*pc)(0) = -_R + ds1->q_read()(0);
+        (*pc)(1) = 0.0 + ds1->q_read()(1);
         (*nnc)(0) = 1.0;
         (*nnc)(1) = 0.0;
       }
@@ -96,8 +95,7 @@ int main(int argc, char* argv[]) {
     q0.setZero();
     Vector v0{nDof};
     v0.setZero();
-   q0(0) = position_init;
-   q0(1) = 0.0;
+    q0(0) = position_init;
     v0(0) = velocity_init;
     v0(2) = rotation_init;
 
@@ -116,12 +114,6 @@ int main(int argc, char* argv[]) {
 
     // -- nslaw --
     double e = 0.9;
-
-    // // Interaction ball-floor
-    // //
-    // auto H= std::make_shared<Matrix>(1, nDof));
-    // (*H)(0, 0) = 1.0;
-    // auto relation= std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H));
 
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactRollingFrictionNSL>(
         e, 0.0, 0.1, 0., 3);
@@ -169,15 +161,15 @@ int main(int argc, char* argv[]) {
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    unsigned int outputSize = 10;
-    Matrix dataPlot(N + 1, outputSize);
+    unsigned int outputSize = 9;
+    Matrix dataPlot(N, outputSize);
 
     auto q = ball->q();
     auto v = ball->velocity();
     auto p = ball->p(1);
     auto lambda = inter->lambda(1);
 
-    dataPlot(0, 0) = s->nextTime();
+    dataPlot(0, 0) = bouncingBall->t0();
     dataPlot(0, 1) = (*q)(0);
     dataPlot(0, 2) = (*v)(0);
     dataPlot(0, 3) = (*v)(2);
@@ -194,10 +186,7 @@ int main(int argc, char* argv[]) {
     auto start = std::chrono::system_clock::now();
 
     while (s->hasNextEvent()) {
-      // osnspb->setNumericsVerboseMode(1);
-
       s->computeOneStep();
-      // osnspb->display();
 
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
@@ -210,7 +199,7 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 7) = (*q)(2);
       dataPlot(k, 8) = (*v)(1);
       s->nextStep();
-      // getchar();
+
       k++;
     }
     cout << "End of computation - Number of iterations done: " << k - 1 << endl;
@@ -221,14 +210,13 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
-    siconos::algebra::io::write("Ball_2d_with_kernel_only_with_rollingfriction.dat", dataPlot,
+    siconos::algebra::io::write("Ball2D_kernel_only_with_rollingfriction.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
     double error = 0.0, eps = 1e-12;
     if ((error = siconos::algebra::io::compareRefFile(
-             dataPlot, "Ball_2d_with_kernel_only_with_rollingfriction.ref", eps)) > eps)
+             dataPlot, "Ball2D_kernel_only_with_rollingfriction.ref", eps)) > eps)
       return 1;
     return 0;
   }

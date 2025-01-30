@@ -188,11 +188,11 @@ int main(int argc, char* argv[]) {
         DataPlot(k, 0) = EDscheme->startingTime();  // instant at non-smooth event
 
         const auto& qMemory = simplependulum->qMemory().getSiconosVector(1);
-        const auto& _qdotMemory = simplependulum->velocityMemory().getSiconosVector(1);
+        const auto& qdotMemory = simplependulum->velocityMemory().getSiconosVector(1);
         DataPlot(k, 1) = qMemory(0);
         DataPlot(k, 2) = qMemory(1);
-        DataPlot(k, 3) = _qdotMemory(0);
-        DataPlot(k, 4) = _qdotMemory(1);
+        DataPlot(k, 3) = qdotMemory(0);
+        DataPlot(k, 4) = qdotMemory(1);
         DataPlot(k, 5) = (*_qddot)(0);   // Acceleration ax
         DataPlot(k, 6) = (*_qddot)(1);   // Acceleration ay
         DataPlot(k, 7) = (*_g)(0);       // Contraint in position

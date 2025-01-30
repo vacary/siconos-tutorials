@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
     // --- Dynamical systems ---
     // -------------------------
 
-    cout << "====> Model loading ..." << endl;
+    std::cout << "====> Model loading ...\n";
 
     Matrix mass{nDof, nDof};
     mass.setZero();
@@ -93,10 +93,9 @@ int main(int argc, char* argv[]) {
     // -- Initial positions and velocities --
     Vector q0{nDof};
     q0.setZero();
-    q0(0) = position_init;
-    q0(1) = 0.0;
     Vector v0{nDof};
     v0.setZero();
+    q0(0) = position_init;
     v0(0) = velocity_init;
     v0(2) = rotation_init;
 
@@ -186,8 +185,6 @@ int main(int argc, char* argv[]) {
     auto start = std::chrono::system_clock::now();
 
     while (s->hasNextEvent()) {
-      // std::cout << "new time step : " << s->nextTime() <<  std::endl;
-
       s->computeOneStep();
 
       // --- Get values to be plotted ---

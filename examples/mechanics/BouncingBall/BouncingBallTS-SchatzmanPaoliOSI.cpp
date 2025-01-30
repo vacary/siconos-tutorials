@@ -36,15 +36,16 @@ int main(int argc, char *argv[]) {
 
     // User-defined main parameters
     unsigned int nDof = 3;       // degrees of freedom for the ball
-    double t0 = 0;               // initial computation time
-    double T = 10;               // final computation time
+    double t0 = 0.;              // initial computation time
+    double T = 10.;              // final computation time
     double h = 0.005;            // time step
     double position_init = 1.0;  // initial position for lowest bead.
     double velocity_init = 0.0;  // initial velocity for lowest bead.
-    double theta = 0.5;          // theta for integrator
+    double theta = 0.5;          // theta for the integrator
     double R = 0.1;              // Ball radius
     double m = 1;                // Ball mass
     double g = 9.81;             // Gravity
+
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------

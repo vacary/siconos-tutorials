@@ -59,7 +59,6 @@ int main(int argc, char* argv[]) {
   double Cfilt = 300.0e-9;       // filtering capacitor
   double VinitLS = 0.0;          // initial voltage Cfilt
   double DiodeThreshold = 0.21;  // Guess what ???
-  std::string Modeltitle = "DiodeBridgePowSup";
   double tinst;
   int k = 0;
 
@@ -145,7 +144,6 @@ int main(int argc, char* argv[]) {
     // --- Model creation ---
     auto DiodeBridgePowSup =
         std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
-    DiodeBridgePowSup->setTitle(Modeltitle);
     // add the dynamical system in the non smooth dynamical system
     DiodeBridgePowSup->insertDynamicalSystem(LSDiodeBridgePowSup);
     // link the interaction and the dynamical system
@@ -286,8 +284,8 @@ int main(int argc, char* argv[]) {
                                 siconos::algebra::io::WriteType::nodim);
 
     double error = 0.0, eps = 1e-12;
-    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "DB.ref", eps)) > eps)
-      return 1;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "DiodeBridgePowSup.ref", eps)) > eps)
+       return 1;
   }
   // --- Exceptions handling ---
   catch (...) {
