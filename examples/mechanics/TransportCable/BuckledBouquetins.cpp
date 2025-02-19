@@ -23,7 +23,6 @@
 #include <SiconosKernel.hpp>
 #include <chrono>
 #include <fstream>
-#include <ioVector.hpp>
 #include <string>
 
 int main()
@@ -50,7 +49,7 @@ int main()
     int nb_nodes = 50;   // Catenary, number of nodes per rope span
     double tol = 1e-10;  // Tol. used in Newton-Raphson for catenary equation
     int nmax = 20;       // Newton-Raphson, max number of iterations
-    profil->computeInitialProfil(nb_nodes, tol, nmax);
+    profil->computeInitialProfile(nb_nodes, tol, nmax);
 
     // Save ropeways variables into json file
     ojson out;
@@ -63,14 +62,14 @@ int main()
     // std::ifstream in("bouquetins_ref.json");
     // json reader;
     // in >> reader;
-    // auto qref1 = ioVector::readVectorFromJson(reader["rope1"]["q"]);
-    // auto qref2 = ioVector::readVectorFromJson(reader["rope2"]["q"]);
+    // auto qref1 = ioVector::readVectorFromJson(reader["ropes_up"]["q"]);
+    // auto qref2 = ioVector::readVectorFromJson(reader["ropes_down"]["q"]);
 
     // std::ifstream in2("ropes.json");
     // auto reader2 = nlohmann::json::parse()
     //  std::ifstream in("ropes.json");
-    // auto q1 = ioVector::readVectorFromJson(out["rope1"]["q"]);
-    // auto q2 = ioVector::readVectorFromJson(out["rope2"]["q"]);
+    // auto q1 = ioVector::readVectorFromJson(out["ropes_up"]["q"]);
+    // auto q2 = ioVector::readVectorFromJson(out["ropes_down"]["q"]);
 
     // std::cout << qref1->norm2() << " " << qref1->size() << std::endl;
 
