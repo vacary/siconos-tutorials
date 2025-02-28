@@ -24,31 +24,27 @@
 // Keywords: LagrangianDS, LagrangianLinear relation, MoreauJeanOSI TimeStepping, LCP.
 //
 // =============================================================================================
+
 #include <SolverOptions.h>
-#include <math.h>
 
 #include <SiconosKernel.hpp>
-#include <SiconosPointers.hpp>
 #include <chrono>
 
-#define PI 3.14159265
-
-#ifdef _MSC_VER
-double trunc(double d) { return (d > 0) ? floor(d) : ceil(d); }
-#endif
+#include "TwoLinksFlexiblePlugins.h"
 
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
+
+using namespace two_links_flexible_plugins;
 
 int main(int argc, char* argv[]) {
   try {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 4;  // degrees of freedom for robot arm
-    double t0 = 0;          // initial computation time
-    double T = 30;          // final computation time
-    double h = 1e-3;        // time step
+    double t0 = 0;    // initial computation time
+    double T = 30;    // final computation time
+    double h = 1e-3;  // time step
     double criterion = 1e-8;
     unsigned int maxIter = 20000;
     double e = 0.0;
@@ -74,61 +70,95 @@ int main(int argc, char* argv[]) {
     q0(1) = -1.5;
     q0(2) = 0.9;
     q0(3) = -1.5;
-    auto z = std::make_shared<Vector>(nDof * 5);
-    (*z)(0) = q0(0);
-    (*z)(1) = q0(1);
-    (*z)(2) = v0(0);
-    (*z)(3) = v0(1);
-    (*z)(4) = 0;
-    (*z)(5) = 0;
-    (*z)(6) = 0;
-    (*z)(7) = 0;
-    (*z)(8) = 0;
-    (*z)(9) = 0;
-    (*z)(10) = 0;
-    (*z)(11) = PI;
-    (*z)(12) = 0;
-    (*z)(13) = 0;
-    (*z)(14) = 0;  // q0(2);
-    (*z)(15) = 0;  // q0(3);
-    (*z)(16) = 0;  // v0(2);
-    (*z)(17) = 0;  // v0(3);
-    (*z)(18) = 0;
-    (*z)(19) = 0;
 
-    auto arm = std::make_shared<siconos::modeling::LagrangianDS>(
-        siconos::pointers::createSPtr(q0), siconos::pointers::createSPtr(v0));
+    param[0] = q0(0);
+    param[1] = q0(1);
+    param[2] = v0(0);
+    param[3] = v0(1);
+    param[11] = std::numbers::pi;
 
-    // external plug-in
-    arm->setComputeMassFunction("Two-linkFlexiblePlugin", "mass");
-    arm->setComputeFGyrFunction("Two-linkFlexiblePlugin", "FGyr");
-    arm->setComputeJacobianFGyrqDotFunction("Two-linkFlexiblePlugin", "jacobianVFGyr");
-    arm->setComputeJacobianFGyrqFunction("Two-linkFlexiblePlugin", "jacobianFGyrq");
-    arm->setComputeFIntFunction("Two-linkFlexiblePlugin", "U");
-    arm->setComputeJacobianFIntqDotFunction("Two-linkFlexiblePlugin", "jacobFintV");
-    arm->setComputeJacobianFIntqFunction("Two-linkFlexiblePlugin", "jacobFintQ");
-    arm->setzPtr(z);
+    auto arm = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
+    arm->setComputeMassFunction([](const Eigen::Ref<const siconos::algebra::SiconosVector>& q,
+                                   Eigen::Ref<siconos::algebra::MapType> mass) {
+      mass(0, 0) =
+          m1 * (l1 * l1 / 4) + I1 + I2 + m2 * (l1 * l1 + (l2 * l2 / 4) + l1 * l2 * cos(q(1)));
+      mass(1, 0) = I2 + m2 * l2 * l2 / 4 + m2 * l1 * l2 * cos(q(1)) / 2;
+      mass(0, 1) = I2 + m2 * l2 * l2 / 4 + m2 * l1 * l2 * cos(q(1)) / 2;
+      mass(1, 1) = I2 + m2 * l2 * l2 / 4;
+      mass(2, 2) = J1;
+      mass(3, 3) = J2;
+    });
 
+    arm->setComputeFgyrFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector>& velocity,
+           const Eigen::Ref<const siconos::algebra::SiconosVector>& q,
+           Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          result(0) = -m2 * l1 * l2 * sin(q(1)) *
+                          (velocity(0) * velocity(1) + velocity(1) * velocity(1) / 2) +
+                      K1 * (q(0) - q(2));
+          result(1) =
+              m2 * l1 * l2 * sin(q(1)) * velocity(0) * velocity(0) / 2 + K2 * (q(1) - q(3));
+          result(2) = K1 * (q(2) - q(0));
+          result(3) = K2 * (q(3) - q(1));
+        });
+    arm->setComputeJacobianFgyrOver_qFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector>& velocity,
+           const Eigen::Ref<const siconos::algebra::SiconosVector>& q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result.setZero();
+          result(0, 0) = K1;
+          result(2, 0) = -K1;
+          result(0, 1) = -m2 * l1 * l2 * cos(q(1)) *
+                         (velocity(0) * velocity(1) + velocity(1) * velocity(1) / 2);
+          result(1, 1) = m2 * l1 * l2 * cos(q(1)) * velocity(0) * velocity(0) / 2 + K2;
+          result(3, 1) = -K2;
+          result(0, 2) = -K1;
+          result(2, 2) = K1;
+          result(1, 3) = -K2;
+          result(3, 3) = K2;
+        });
+
+    arm->setComputeJacobianFgyrOver_velocityFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector>& velocity,
+           const Eigen::Ref<const siconos::algebra::SiconosVector>& q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result.setZero();
+          result(0, 0) = -m2 * l1 * l2 * sin(q(1)) * velocity(1);
+          result(1, 0) = m2 * l1 * l2 * sin(q(1)) * velocity(0);
+          result(0, 1) = -m2 * l1 * l2 * sin(q(1)) * (velocity(0) + velocity(1));
+        });
+
+    arm->setComputeFintFunction(u_func);
     // -------------------
     // --- Interactions---
     // -------------------
 
     //  - one with Lagrangian non linear relation to define contact with ground
     //  Both with newton impact nslaw.
-
     // -- relations --
 
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation1 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "Two-linkFlexiblePlugin:h01", "Two-linkFlexiblePlugin:G01");
-    auto inter1 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation1);
-    auto relation2 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "Two-linkFlexiblePlugin:h02", "Two-linkFlexiblePlugin:G02");
-    auto inter2 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation2);
-    //  Relation * relation0 = new
-    //  LagrangianScleronomousR("Two-linkFlexiblePlugin:h3","Two-linkFlexiblePlugin:G3");
-    //  Interaction * inter0 = new Interaction("wall-arm", allDS,1,2, nslaw, relation0);
+    auto relation01 = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+    auto inter01 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation01);
+    relation01->setComputehFunction([](const siconos::algebra::BlockVector& q,
+                                       Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y(0) = 2 + l1 * cos(q(0)) + l2 * cos(q(0) + q(1));
+    });
 
+    auto relation02 = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+
+    relation02->setComputehFunction([](const siconos::algebra::BlockVector& q,
+                                       Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y(0) = l1 * sin(q(0)) + l2 * sin(q(0) + q(1));
+    });
+
+    relation02->setComputeJacobianhOver_qFunction(
+        [](const siconos::algebra::BlockVector& q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result(0, 0) = l1 * cos(q(0)) + l2 * cos(q(0) + q(1));
+          result(0, 1) = l2 * cos(q(0) + q(1));
+        });
+    auto inter02 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation02);
     // -------------
     // --- Model ---
     // -------------
@@ -138,8 +168,8 @@ int main(int argc, char* argv[]) {
     Manipulator->insertDynamicalSystem(arm);
 
     // link the interaction and the dynamical system
-    Manipulator->link(inter1, arm);
-    Manipulator->link(inter2, arm);
+    Manipulator->link(inter01, arm);
+    Manipulator->link(inter02, arm);
 
     // ----------------
     // --- Simulation ---
@@ -165,7 +195,6 @@ int main(int argc, char* argv[]) {
     // =========================== End of model definition ===========================
 
     // ================================= Computation
-
     unsigned int k = 0;
     unsigned int N = ceil((T - t0) / h);  // Number of time steps
 
@@ -176,86 +205,80 @@ int main(int argc, char* argv[]) {
     // For the initial time step:
     // time
 
-    auto q = arm->q();
-    auto v = arm->velocity();
+    auto q = arm->q_read();
+    auto v = arm->velocity_read();
     auto p = arm->p(1);
 
     // Initialization of the dicrete parameter z needs the followinf first computations
-    arm->computeJacobianFIntq(t0);
-    arm->computeFint(*v, *q, t0);
-    arm->computeJacobianFIntqDot(t0);
-    inter1->computeOutput(t0, 0);
-    inter2->computeOutput(t0, 0);
+    arm->computeTotalForces(v, q, t0);
+    arm->computeJacobianTotalForcesOver_q(v, q, t0);
+    arm->computeJacobianTotalForcesOver_velocity(v, q, t0);
+    inter01->computeOutput(t0, 0);
+    inter02->computeOutput(t0, 0);
 
     // EventsManager * eventsManager = s->eventsManager();
 
     dataPlot(k, 0) = Manipulator->t0();
-    dataPlot(k, 1) = (*q)(0);
-    dataPlot(k, 2) = (*q)(1);
-    dataPlot(k, 3) = (*inter2->y(0))(0);
-    dataPlot(k, 4) = (*v)(0);
-    dataPlot(k, 5) = (*v)(1);
-    dataPlot(k, 6) = (*inter1->y(0))(0) - 2;
+    dataPlot(k, 1) = q(0);
+    dataPlot(k, 2) = q(1);
+    dataPlot(k, 3) = (*inter02->y(0))(0);
+    dataPlot(k, 4) = v(0);
+    dataPlot(k, 5) = v(1);
+    dataPlot(k, 6) = (*inter01->y(0))(0) - 2;
     dataPlot(k, 7) = nimpact;  //(*inter->y(1))(1);
-    dataPlot(k, 8) = (*z)(6);
-    dataPlot(k, 9) = (*z)(4);  // L
+    dataPlot(k, 8) = param[6];
+    dataPlot(k, 9) = param[4];
     dataPlot(k, 10) = test;
     dataPlot(k, 11) = (*p)(1);
-    dataPlot(k, 12) = (*z)(14);
-    dataPlot(k, 13) = (*z)(15);
+    dataPlot(k, 12) = param[14];
+    dataPlot(k, 13) = param[15];
 
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
+    std::cout << "====> Start computation ... \n\n";
 
-    while (k < N) {
-      (*z)(0) = (*q)(0);
-      (*z)(1) = (*q)(1);
-      (*z)(2) = (*v)(0);
-      (*z)(3) = (*v)(1);
-      // (*z)(14) = (*q)(2);
-      //         (*z)(15) = (*q)(3);
-      //  (*z)(16) = (*v)(2);
-      //         (*z)(17) = (*v)(3);
+    auto start = std::chrono::system_clock::now();
+    while (s->hasNextEvent()) {
+      param[0] = q(0);
+      param[1] = q(1);
+      param[2] = v(0);
+      param[3] = v(1);
 
       // get current time step
       k++;
 
       dataPlot(k, 0) = s->nextTime();
-      dataPlot(k, 1) = (*q)(0);
-      dataPlot(k, 2) = (*q)(1);
-      dataPlot(k, 3) = (*inter2->y(0))(0);
-      dataPlot(k, 4) = (*v)(0);
-      dataPlot(k, 5) = (*v)(1);
-      dataPlot(k, 6) = (*inter1->y(0))(0) - 2;
+      dataPlot(k, 1) = q(0);
+      dataPlot(k, 2) = q(1);
+      dataPlot(k, 3) = (*inter02->y(0))(0);
+      dataPlot(k, 4) = v(0);
+      dataPlot(k, 5) = v(1);
+      dataPlot(k, 6) = (*inter01->y(0))(0) - 2;
       dataPlot(k, 7) = nimpact;  //(*inter->y(1))(1);
-      dataPlot(k, 8) = (*z)(6);
+      dataPlot(k, 8) = param[6];
       if (test == 3)
-        dataPlot(k, 9) = (*z)(4) / h;
+        dataPlot(k, 9) = param[4] / h;
       else
-        dataPlot(k, 9) = (*z)(4);
+        dataPlot(k, 9) = param[4];
       dataPlot(k, 10) = test;
-      dataPlot(k, 12) = (*z)(14);
-      dataPlot(k, 13) = (*z)(15);
+      dataPlot(k, 12) = param[14];
+      dataPlot(k, 13) = param[15];
 
       s->advanceToEvent();
       dataPlot(k, 11) = (*p)(1);
-      (*z)(4) = (inter2->getLambda(1))(0);
+      param[4] = (inter02->getLambda(1))(0);
       s->nextStep();
 
       //    controller during impacts accumulation phase before the first impact
       if ((dataPlot(k, 13) <= 0.05) && (test == 0) && (dataPlot(k, 6) < 0.3)) {
-        (*z)(8) = dataPlot(k, 0);
-        (*z)(5) = (*z)(14);
-        // (*z)(10)= dataPlot(k,3);
-        (*z)(7) = (*z)(9);
-        arm->setComputeFIntFunction("Two-linkFlexiblePlugin", "U1");
+        param[8] = dataPlot(k, 0);
+        param[5] = param[14];
+        param[7] = param[9];
+        arm->setComputeFintFunction(u1_func);
         test = 1;
       }
 
       // controller during impacts accumulation phase after the first impact
       if ((dataPlot(k - 1, 11) > 0) && (test == 1)) {
-        //(*z)(8) = dataPlot(k-1,0);
-        arm->setComputeFIntFunction("Two-linkFlexiblePlugin", "U2");
+        arm->setComputeFintFunction(u2_func);
         test = 2;
       }
       if ((dataPlot(k, 11) > 0) && (test == 2)) nimpact = nimpact + 1;
@@ -264,38 +287,36 @@ int main(int argc, char* argv[]) {
       if ((dataPlot(k, 11) > 0) && (test == 2) &&
           (dataPlot(k, 7) - dataPlot(k - 1, 7) == 1))  //  && (fabs((*inter0->y(1))(0))<1e-6))
       {
-        // L= dataPlot(k,0)-(*z)(8);
-        (*z)(8) = dataPlot(k, 0);
-        arm->setComputeFIntFunction("Two-linkFlexiblePlugin", "U3");
+        param[8] = dataPlot(k, 0);
+        arm->setComputeFintFunction(u3_func);
         test = 3;
         nimpact = 0;
       }
 
       // change of control law with a particular design of the desired trajectory that
       // guarantee the take-off
-      if ((trunc((dataPlot(k, 0) + h) / (*z)(11)) > trunc((dataPlot(k, 0)) / (*z)(11))) &&
+      if ((trunc((dataPlot(k, 0) + h) / param[11]) > trunc((dataPlot(k, 0)) / param[11])) &&
           (test == 3)) {
-        (*z)(8) = dataPlot(k, 0) + h;
-        (*z)(10) = (*z)(12);
-        arm->setComputeFIntFunction("Two-linkFlexiblePlugin", "U4");
+        param[8] = dataPlot(k, 0) + h;
+        param[10] = param[12];
+        arm->setComputeFintFunction(u4_func);
         test = 4;
         // L = 0;
       }
 
       //  controller during free-motion phase
-      if (((*z)(13) - 0.01 >= 0) && (test == 4)) {
-        arm->setComputeFIntFunction("Two-linkFlexiblePlugin", "U");
+      if ((param[13] - 0.01 >= 0) && (test == 4)) {
+        arm->setComputeFintFunction(u_func);
         test = 0;
-        (*z)(13) = 0;
+        param[13] = 0;
       }
     }
     std::cout << "\nEnd of computation - Number of iterations done: " << k << "\n";
-    std::cout << "Computation Time \n";
-    end = std::chrono::system_clock::now();
+    auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "Computation time : " << elapsed << " ms\n";
+
     // --- Output files ---
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("TwoLinkManipulator_Flexible.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
@@ -314,110 +335,3 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 }
-
-// SiconosVector * z = new SiconosVector(nDof*4);
-//     (*z)(0) = q0(0);
-//     (*z)(1) = q0(1);
-//     (*z)(2) = v0(0);
-//     (*z)(3) = v0(1);
-//     (*z)(4) = 0;
-//     (*z)(5) = 0;
-//     (*z)(6) = 0;
-//     (*z)(7) = 0;
-//     (*z)(8) = 0;
-//     (*z)(9) = 0;
-//     (*z)(10) = 0;
-//     (*z)(11) = 0;
-//     (*z)(12) = 0;
-//     (*z)(13) = 0;
-//     // (*z)(14) = q0(2);
-// //     (*z)(15) = q0(3);
-
-//     LagrangianDS * arm = new LagrangianDS(1, q0, v0);
-
-//     // external plug-in
-//     arm->setComputeMassFunction("Two-linkFlexiblePlugin","mass");
-//     arm->setComputeFGyrFunction("Two-linkFlexiblePlugin","FGyr");
-//     arm->setComputeJacobianFGyrFunction(1,"Two-linkFlexiblePlugin","jacobianVFGyr");
-//     arm->setComputeJacobianFGyrFunction(0,"Two-linkFlexiblePlugin","jacobianFGyrq");
-//     arm->setComputeFextFunction("Two-linkFlexiblePlugin","U");
-//     arm->setzPtr(z);
-
-//     allDS.insert(arm);
-
-//     // -------------------
-//     // --- Interactions---
-//     // -------------------
-
-//     //  - one with Lagrangian non linear relation to define contact with ground
-//     //  Both with newton impact nslaw.
-
-//     InteractionsSet allInteractions;
-
-//     // -- relations --
-
-//     NonSmoothLaw * nslaw = new NewtonImpactNSL(e);
-//     Relation * relation = new
-//     LagrangianScleronomousR("Two-linkFlexiblePlugin:h0","Two-linkFlexiblePlugin:G0");
-//     Interaction * inter = new Interaction("floor-arm", allDS,0,2, nslaw, relation);
-
-//    //  SiconosMatrix H1(2,4);
-// //     SiconosVector b1(2);
-// //     H1.setZero();
-// //     H1(0,0) =-1;
-// //     H1(1,0) =1;
-
-// //     b1(0) = PI;
-// //     b1(1) = 0;
-
-// //     NonSmoothLaw * nslaw2 = new NewtonImpactNSL(e2);
-// //     Relation * relation1 = new LagrangianLinearTIR(H1,b1);
-// //     Interaction * inter1 =  new Interaction("floor-arm2", allDS,1,2, nslaw2, relation1);
-
-// //     SiconosMatrix H2(2,4);
-// //     SiconosVector b2(2);
-// //     H2.setZero();
-// //     H2(0,1) =-1;
-// //     H2(1,1) =1;
-
-// //     b2(0) = 0.0001;
-// //     b2(1) = PI-0.0001;
-
-// //     Relation * relation2 = new LagrangianLinearTIR(H2,b2);
-// //     Interaction * inter2 =  new Interaction("singular-points", allDS,2,2, nslaw2,
-// relation2);
-
-//     allInteractions.insert(inter);
-//    //  allInteractions.insert(inter1);
-// //     allInteractions.insert(inter2);
-
-// // Interaction * inter = new Interaction("floor-arm", allDS,0,4, nslaw, relation);
-
-// //     //  NonSmoothLaw * nslaw = new NewtonImpactNSL(e);
-// // //      Relation * relation = new
-// LagrangianScleronomousR("Two-linkPlugin:h0","Two-linkPlugin:G0");
-// // //      Interaction * inter = new Interaction("floor-arm", allDS,0,1, nslaw, relation);
-
-// //     allInteractions.insert(inter);
-// //     allInteractions.insert(inter1);
-// //     allInteractions.insert(inter2);
-//     // --------------------------------
-//     // --- NonSmoothDynamicalSystem ---
-//     // -------------------------------
-
-//     NonSmoothDynamicalSystem * nsds = new NonSmoothDynamicalSystem(allDS, allInteractions);
-
-//     // -------------
-//     // --- Model ---
-//     // -------------
-
-//     Model * Manipulator = new Model(t0,T);
-//     Manipulator->setNonSmoothDynamicalSystemPtr(nsds); // set NonSmoothDynamicalSystem of
-//     this model
-
-//     // ----------------
-//     // --- Simulation ---
-//     // ----------------
-
-//     // -- Time discretisation --
-//     TimeDiscretisation * t = new TimeDiscretisation(h,Manipulator);

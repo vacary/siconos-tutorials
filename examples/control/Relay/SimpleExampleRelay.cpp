@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     // == User-defined parameters ==
     unsigned int ndof = 2;  // number of degrees of freedom of your system
     double t0 = 0.0;
-    double T = 1;       // Total simulation time
+    double T = 0.8;       // Total simulation time
     double h = 1.0e-3;  // Time step
     double Vinit = 1.0;
 
@@ -52,16 +52,11 @@ int main(int argc, char* argv[]) {
     // x(0) = x0
     // Note: r = Blambda, B defines in relation below.
 
-    auto A = std::make_shared<Matrix>(ndof, ndof);
-    (*A)(0, 0) = 0.0;
-    (*A)(0, 1) = 0.0;
-    (*A)(1, 0) = 0.0;
-    (*A)(1, 1) = 0.0;
     auto x0 = std::make_shared<Vector>(ndof);
     (*x0)(0) = Vinit;
     (*x0)(1) = -Vinit;
-    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, *A);
-    //    process->setComputebFunction("ObserverLCSPlugin","uProcess");
+    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
+
     // --------------------
     // --- Interactions ---
     // --------------------
@@ -71,26 +66,16 @@ int main(int argc, char* argv[]) {
     // y = Cx + Dlambda
     // r = Blambda
     auto B = std::make_shared<Matrix>(ndof, ninter);
-    (*B)(0, 0) = 1.0;
-    (*B)(1, 0) = 0.0;
-    (*B)(0, 1) = 0.0;
-    (*B)(1, 1) = 1.0;
-    *B = 2.0 * (*B);
+    B->setZero();
+    (*B)(0, 0) = 2.0;
+    (*B)(1, 1) = 2.0;
     auto C = std::make_shared<Matrix>(ninter, ndof);
+    C->setZero();
     (*C)(0, 0) = 1.0;
-    (*C)(1, 0) = 0.0;
-    (*C)(0, 1) = 0.0;
     (*C)(1, 1) = 1.0;
-    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>(C, B);
-    auto D = std::make_shared<Matrix>(ninter, ninter);
-    (*D)(0, 0) = 0.0;
-    (*D)(0, 1) = 0.0;
-    (*D)(1, 0) = 0.0;
-    (*D)(1, 1) = 0.0;
-
-    myProcessRelation->setConstantD(*D);
-    // myProcessRelation->setComputeEFunction("ObserverLCSPlugin","computeE");
-
+    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>();
+    myProcessRelation->setConstantB(*B);
+    myProcessRelation->setConstantC(*C);
     // Second relation, related to the observer
     // haty = C hatX + D hatLambda + E
     // hatR = B hatLambda
@@ -136,7 +121,7 @@ int main(int argc, char* argv[]) {
 
     // --- Get the values to be plotted ---
     unsigned int outputSize = 7;          // number of required data
-    unsigned int N = ceil((T - t0) / h);  // Number of time steps
+    unsigned int N = ceil((T - t0) / h) + 1;  // Number of time steps
 
     Matrix dataPlot(N, outputSize);
 
@@ -164,7 +149,7 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
-    while (k < 800) {
+    while (s->hasNextEvent()) {
       k++;
       // cout << "step --> " << k << endl;
       //     osnspb->setNumericsVerboseMode(1);
@@ -187,15 +172,14 @@ int main(int argc, char* argv[]) {
     cout << "Computation time : " << elapsed << " ms\n";
     // --- Output files ---
     cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("SimpleExampleRelay.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
-    // double error = 0.0, eps = 1e-12;
-    // if ((error = siconos::algebra::io::compareRefFile(dataPlot, "SimpleExampleRelay.ref",
-    //                                                   eps)) > eps)
-    //   return 1;
+    double error = 0.0, eps = 1e-12;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "SimpleExampleRelay.ref",
+                                                      eps)) > eps)
+      return 1;
     return 0;
   }
 

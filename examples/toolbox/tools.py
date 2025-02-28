@@ -21,8 +21,8 @@ def plot_and_compare(mine, *others):
     num_cols = mine.shape[1]
     num_graphs = len(others) + 1
     colors = ["blue", "green", "orange", "purple", "brown"]
-    linestyles = ["-", "--", "-.", ":"]
-    markers = ["o", None, None, None, None]
+    linestyles = ["-.", ":", "-.", ":"]
+    markers = [None, None, None, None, None]
     for i in range(1, num_cols):
         fig, axes = plt.subplots(
             1, num_graphs, figsize=(6 * num_graphs, 6), sharex=True
@@ -33,7 +33,7 @@ def plot_and_compare(mine, *others):
 
         time = mine[:, 0]
         axes[0].plot(
-            time, mine[:, i], label=f"Mine - Col {i}", color="red", linestyle=":"
+            time, mine[:, i], label=f"Mine - Col {i}", color="red", linestyle="--"
         )
 
         for j, other in enumerate(others):

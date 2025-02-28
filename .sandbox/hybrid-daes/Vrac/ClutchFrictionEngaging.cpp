@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
         new SiconosVector({-1.0, T1 / J1, T2 / J2}));
 
     // Siconos smooth dynamical system
-    auto dyn(new FirstOrderLinearTIDS(init, A, b));
+    auto dyn(new FirstOrderLinearDS(init, A, b));
 
     // -------------------------
     // --- Complemetary Relation ---

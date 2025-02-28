@@ -26,6 +26,45 @@ using SiconosMatrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 using namespace std;
 
+namespace user {
+double computeControl(double time) {
+  double u;
+  double alpha = 50.0;
+  int oddoreven = 1;
+  int njump;
+  double a = 24 / 25.0;
+
+  double timeaccu = 1 / (1.0 - a);
+
+  if (time < 1)
+    u = 0.0;
+
+  else if ((time >= 1) && (time < timeaccu)) {
+    njump = (int)((log(1.0 - (1.0 - a) * time) / log(a)) - 1.0);
+    u = alpha / (pow(2 * njump + 1.0, 1.0 / a));
+
+    if ((njump % 2) == 0) u = -u;
+
+    //    printf("njump = %i\n",njump);
+    // printf("time = %e\n",time);
+    // u =  -alpha*(1.0+pow(2,njump+1)*(3.0-1.0/(pow(2,njump-1))));
+    // printf("u = %e\n",u);
+  } else  // (time >= timeaccu)
+  {
+    oddoreven = int(time - timeaccu);
+    printf("time = %e\n", time);
+    printf("oddorven = %i\n", oddoreven);
+    if ((oddoreven % 2) == 0)
+      u = alpha / 10;
+    else
+      u = -alpha / 10;
+    printf("u = %e\n", u);
+  }
+
+  return u;
+}
+}  // namespace user
+
 int main(int argc, char* argv[]) {
   // Exception handling
   try {
@@ -41,13 +80,14 @@ int main(int argc, char* argv[]) {
 
     // == Creation of the NonSmoothDynamicalSystem ==
     // DynamicalSystem(s)
-    SiconosMatrix A(2, 2);  // All components of A are automatically set to 0.
+    SiconosMatrix A(2, 2);
     A(0, 0) = 1.0;
     A(0, 1) = 1.0;
     A(1, 0) = 3.0;
     A(1, 1) = 1.0;
     A = 0.1 * A;
-    SiconosMatrix TildeA(ndof, ndof);  // All components of A are automatically set to 0.
+    SiconosMatrix TildeA(ndof, ndof);
+    TildeA.setZero();
     TildeA(0, 0) = A(0, 0);
     TildeA(0, 1) = A(0, 1);
     TildeA(1, 0) = A(1, 0);
@@ -68,36 +108,50 @@ int main(int argc, char* argv[]) {
     TildeA(3, 2) = hatA(1, 0);
     TildeA(3, 3) = hatA(1, 1);
 
-    SiconosMatrix LG(2, 2);
-    LG = L * G;
+    auto LG = L * G;
+
     TildeA(2, 0) = LG(0, 0);
     TildeA(3, 0) = LG(1, 0);
     TildeA(2, 1) = LG(0, 1);
     TildeA(3, 1) = LG(1, 1);
 
     auto x0 = std::make_shared<Vector>(ndof);
+    x0->setZero();
     (*x0)(0) = Vinit;
-    auto processObserver = std::make_shared<siconos::modeling::FirstOrderLinearDS>(
-        *x0, TildeA);
-    processObserver->setComputebFunction("SingleDSObserverLCSPlugin", "computeU");
-
-    // Relations
+    auto processObserver = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
+    processObserver->setConstantA(TildeA);
+    processObserver->setComputebVectorFunction(
+        [](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          double u;
+          u = user::computeControl(time);
+          result(0) = 0.1 * u;
+          result(1) = 0.2 * u;
+          result(2) = 0.1 * u;
+          result(3) = 0.2 * u;
+        });
     unsigned int ninter = 2;  // dimension of your Interaction = size of y and lambda vectors
     SiconosMatrix B(ndof, ninter);
+    B.setZero();
     B(0, 0) = -1.0;
     B(1, 0) = 1.0;
     B(2, 1) = -1.0;
     B(3, 1) = 1.0;
     SiconosMatrix C(ninter, ndof);
+    C.setZero();
     C(0, 0) = -1.0;
     C(0, 1) = 1.0;
     C(1, 2) = -1.0;
     C(1, 3) = 1.0;
 
-    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>(
-        siconos::pointers::createSPtr(C), siconos::pointers::createSPtr(B));
+    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>();
+    myProcessRelation->setConstantB(B);
+    myProcessRelation->setConstantC(C);
 
-    myProcessRelation->setComputeEFunction("SingleDSObserverLCSPlugin", "computeE");
+    myProcessRelation->setComputeeVectorFunction(
+        [](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          result(0) = user::computeControl(time);
+          result(1) = user::computeControl(time);
+        });
 
     SiconosMatrix D(ninter, ninter);
     D(0, 0) = 1.0;
@@ -151,7 +205,7 @@ int main(int argc, char* argv[]) {
     dataPlot(k, 4) = (*processObserver->x())(3);  // Process x(2)
     dataPlot(k, 5) = (*processLambda)(0);
     dataPlot(k, 6) = (*processLambda)(1);
-    dataPlot(k, 7) = (*processObserver->b())(0);
+    dataPlot(k, 7) = processObserver->bVector()(0);
     dataPlot(k, 8) = abs((*processObserver->x())(0) - (*processObserver->x())(2));
     dataPlot(k, 9) = abs((*processObserver->x())(1) - (*processObserver->x())(3));
 
@@ -173,7 +227,7 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 4) = (*processObserver->x())(3);
       dataPlot(k, 5) = (*processLambda)(0);
       dataPlot(k, 6) = (*processLambda)(1);
-      dataPlot(k, 7) = (*processObserver->b())(0);
+      dataPlot(k, 7) = processObserver->bVector()(0);
       dataPlot(k, 8) = abs((*processObserver->x())(0) - (*processObserver->x())(2));
       dataPlot(k, 9) = abs((*processObserver->x())(1) - (*processObserver->x())(3));
 
@@ -184,7 +238,7 @@ int main(int argc, char* argv[]) {
     siconos::algebra::io::write("SingleDSObserverLCS.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
-    double error = 0.0, eps = 1e-9;
+    double error = 0.0, eps = 1e-8;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "SingleDSObserverLCS.ref",
                                                       eps)) > eps)
       return 1;

@@ -101,7 +101,6 @@ int main(int argc, char* argv[]) {
 
     auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
     process->setConstantA(*A);
-    //    process->setComputebFunction("ObserverLCSPlugin","uProcess");
 
     // --------------------
     // --- Interactions ---

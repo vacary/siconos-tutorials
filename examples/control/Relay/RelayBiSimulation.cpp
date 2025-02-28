@@ -57,19 +57,23 @@ int main(int argc, char* argv[]) {
     // x(0) = x0
     // Note: r = Blambda, B defined in relation below.
 
-    auto A = std::make_shared<Matrix>(ndof, ndof);
-    (*A)(0, 0) = 0.0;
-    (*A)(0, 1) = 0.0;
-    (*A)(1, 0) = 0.0;
-    (*A)(1, 1) = 0.0;
     auto x0 = std::make_shared<Vector>(ndof);
     (*x0)(0) = Vinit;
     (*x0)(1) = -Vinit;
 
-    auto processDS = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, *A);
-    processDS->setComputebFunction("plugins", "computeB");
+    auto processDS = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
 
-    auto controllerDS = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, *A);
+    Vector sampledControl{2};
+    sampledControl.setZero();  // Will be updated in the time loop.
+
+    processDS->setComputebVectorFunction(
+        [&sampledControl](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          auto input = sin(50 * time);
+          result(0) = input + sampledControl(0);
+          result(1) = -input + sampledControl(1);
+        });
+
+    auto controllerDS = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
 
     // --------------------
     // --- Interactions ---
@@ -80,30 +84,17 @@ int main(int argc, char* argv[]) {
     // y = Cx + Dlambda
     // r = Blambda
     auto B = std::make_shared<Matrix>(ndof, ninter);
-    (*B)(0, 0) = 1.0;
-    (*B)(1, 0) = 0.0;
-    (*B)(0, 1) = 0.0;
-    (*B)(1, 1) = 1.0;
-    *B = 2.0 * (*B);
+    B->setZero();
+    (*B)(0, 0) = 2.0;
+    (*B)(1, 1) = 2.0;
     auto C = std::make_shared<Matrix>(ninter, ndof);
+    C->setZero();
     (*C)(0, 0) = 1.0;
-    (*C)(1, 0) = 0.0;
-    (*C)(0, 1) = 0.0;
     (*C)(1, 1) = 1.0;
 
-    auto D = std::make_shared<Matrix>(ninter, ninter);
-    (*D)(0, 0) = 0.0;
-    (*D)(0, 1) = 0.0;
-    (*D)(1, 0) = 0.0;
-    (*D)(1, 1) = 0.0;
-
-    //     auto myProcessRelation=
-    //     std::make_shared<siconos::modeling::FirstOrderLinearR>(C,B);
-    //     myProcessRelation->setConstantD(*D);
-    // myProcessRelation->setComputeEFunction("ObserverLCSPlugin","computeE");
-
-    auto myControllerRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>(C, B);
-    myControllerRelation->setConstantD(*D);
+    auto myControllerRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>();
+    myControllerRelation->setConstantB(*B);
+    myControllerRelation->setConstantC(*C);
 
     // NonSmoothLaw
     unsigned int nslawSize = 2;
@@ -112,8 +103,6 @@ int main(int argc, char* argv[]) {
     myNslaw->display();
 
     // The Interaction which involves the first DS (the process)
-    string nameInter = "processInteraction";  // Name
-
     auto myControllerInteraction =
         std::make_shared<siconos::modeling::Interaction>(myNslaw, myControllerRelation);
 
@@ -169,16 +158,13 @@ int main(int argc, char* argv[]) {
 
     // coupling the simulation
 
-    auto sampledControl = std::make_shared<Vector>(2);
-    processDS->setzPtr(sampledControl);
-
     // =========================== End of model definition ===========================
 
     // ================================= Computation =================================
 
     // --- Get the values to be plotted ---
-    unsigned int outputSize = 10;              // number of required data
-    unsigned int N = ceil((T - t0) / h) + 10;  // Number of time steps
+    unsigned int outputSize = 10;             // number of required data
+    unsigned int N = ceil((T - t0) / h);  // Number of time steps
     Matrix dataPlot(N, outputSize);
 
     auto xProc = processDS->x();
@@ -187,7 +173,7 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 0) = process->t0();  // Initial time of the model
     dataPlot(0, 1) = (*xProc)(0);
 
-    unsigned int Ncontroller = ceil((T - t0) / hcontroller) + 10;  // Number of time steps
+    unsigned int Ncontroller = ceil((T - t0) / hcontroller) + 1;  // Number of time steps
     Matrix dataPlotController(Ncontroller, outputSize);
 
     auto xController = controllerDS->x();
@@ -204,7 +190,7 @@ int main(int argc, char* argv[]) {
     dataPlotController(0, 8) = (*y)(1);
 
     // ==== Simulation loop =====
-    cout << "====> Start computation ... \n\n";
+    std::cout << "====> Start computation ... \n\n";
 
     // *z = *(myProcessInteraction->y(0)->getVectorPtr(0));
     int k = 0;  // Current step
@@ -222,7 +208,7 @@ int main(int argc, char* argv[]) {
       controllerSimulation->computeOneStep();
 
       //  input of the controller in the process thanks to z and sampledControl
-      *sampledControl = *B * *lambda;
+      sampledControl = *B * *lambda;
 
       while (processSimulation->hasNextEvent() &&
              processSimulation->nextTime() < controllerSimulation->nextTime()) {
@@ -250,22 +236,19 @@ int main(int argc, char* argv[]) {
 
       controllerSimulation->nextStep();
     }
-    cout << endl << "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation Time \n";
+    std::cout << endl << "End of computation - Number of iterations done: " << k - 1 << endl;
+    std::cout << "Computation Time \n";
     ;
     end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    cout << "Computation time : " << elapsed << " ms\n";
+    std::cout << "Computation time : " << elapsed << " ms\n";
     // --- Output files ---
-    cout << "====> Output file writing ...\n";
-    dataPlot.resize(k, outputSize);
-    dataPlotController.resize(kcontroller, outputSize);
+    std::cout << "====> Output file writing ...\n";
 
-    siconos::algebra::io::write("RelayBiSimulation-Controller.dat", dataPlotController,
+    siconos::algebra::io::write("RBS-Controller.dat", dataPlotController,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
-    siconos::algebra::io::write("RelayBiSimulation.dat", dataPlot,
-                                siconos::algebra::io::ASCII_OUT,
+    siconos::algebra::io::write("RBS.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
     double error = 0.0, eps = 1e-12;
@@ -275,14 +258,6 @@ int main(int argc, char* argv[]) {
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "RBS.ref", eps)) > eps)
       return 1;
     return 0;
-
-    double error = 0.0, eps = 1e-12;
-    if ((error = ioMatrix::compareRefFile(dataPlotController, "RBS-Controller.ref", eps)) >
-        eps)
-      return 1;
-    if ((error = ioMatrix::compareRefFile(dataPlot, "RBS.ref", eps)) > eps) return 1;
-    return 0;
-
   }
 
   catch (...) {

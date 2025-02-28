@@ -58,6 +58,7 @@ int main(int argc, char* argv[]) {
     // Note: r = Blambda, B defines in relation below.
 
     auto A = std::make_shared<Matrix>(ndof, ndof);
+    A->setZero();
     (*A)(0, 1) = 1.0;
     auto x0 = std::make_shared<Vector>(ndof);
     (*x0)(0) = Vinit;
@@ -73,6 +74,7 @@ int main(int argc, char* argv[]) {
     // y = Cx + Dlambda
     // r = Blambda
     auto B = std::make_shared<Matrix>(ndof, ninter);
+    B->setZero();
     (*B)(1, 0) = G;
     (*B)(1, 1) = G * beta;
     auto C = std::make_shared<Matrix>(ninter, ndof);
@@ -82,6 +84,7 @@ int main(int argc, char* argv[]) {
     // NonSmoothLaw
     unsigned int nslawSize = 2;
     auto H = std::make_shared<Matrix>(4, 2);
+    H->setZero();
     (*H)(0, 0) = 1.0;
     (*H)(1, 0) = -h / 2.0;
     (*H)(2, 0) = -1.0;
@@ -90,10 +93,7 @@ int main(int argc, char* argv[]) {
     (*H)(3, 1) = -1.0;
 
     auto K = std::make_shared<Vector>(4);
-    (*K)(0) = -1.0;
-    (*K)(1) = -1.0;
-    (*K)(2) = -1.0;
-    (*K)(3) = -1.0;
+    K->setConstant(-1.);
     auto nslaw = std::make_shared<siconos::modeling::NormalConeNSL>(nslawSize, H, K);
 
     auto twistingInteraction =
@@ -128,7 +128,7 @@ int main(int argc, char* argv[]) {
 
     // --- Get the values to be plotted ---
     unsigned outputSize = 5;               // number of required data
-    unsigned N = ceil((T - t0) / h) + 10;  // Number of time steps
+    unsigned N = ceil((T - t0) / h) + 1;  // Number of time steps
 
     auto dataPlot = std::make_shared<Matrix>(N, outputSize);
 
@@ -165,7 +165,6 @@ int main(int argc, char* argv[]) {
       (*dataPlot)(k, 4) = lambdaProc(1);
       s->nextStep();
     }
-    dataPlot->resize(k, dataPlot->size(1));
 
     cout << "End of computation - Number of iterations done: " << k - 1 << endl;
     end = std::chrono::system_clock::now();

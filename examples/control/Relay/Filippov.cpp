@@ -62,9 +62,8 @@ int main(int argc, char* argv[]) {
     auto x0 = std::make_shared<Vector>(ndof);
     (*x0)(0) = Vinit;
     (*x0)(1) = Vinit;
-    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, *A);
-    //    process->setComputebFunction("ObserverLCSPlugin","uProcess");
-
+    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
+    process->setConstantA(*A);
     double c = 25.0;
 
     // --------------------
@@ -86,7 +85,9 @@ int main(int argc, char* argv[]) {
     (*C)(1, 0) = 0.0;
     (*C)(0, 1) = 0.0;
     (*C)(1, 1) = 1.0;
-    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>(C, B);
+    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>();
+    myProcessRelation->setConstantB(*B);
+    myProcessRelation->setConstantC(*C);
     auto D = std::make_shared<Matrix>(ninter, ninter);
     (*D)(0, 0) = 0.0;
     (*D)(0, 1) = 0.0;

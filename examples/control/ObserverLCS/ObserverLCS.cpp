@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-/*!\file ObserverLCS.cpp
-  O. Huber.
+/*  O. Huber.
 
   The controlled plant is a double integrator
   */
@@ -30,6 +29,22 @@ using namespace std;
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 using namespace std;
+
+namespace user {
+double computeControl(double time) {
+  // double u;
+  // double alpha = 1.0;
+  // double T = 0.1;
+  // int oddoreven = int(time / T);
+
+  // if ((oddoreven / 2) == 0)
+  //   u = alpha;
+  // else
+  //   u = 0;
+  return 30. * sin(50. * time);
+  ;
+}
+}  // namespace user
 
 int main(int argc, char* argv[]) {
   // Exception handling
@@ -66,9 +81,16 @@ int main(int argc, char* argv[]) {
     (*A)(1, 0) = 3.0;
     (*A)(1, 1) = 1.0;
     auto x0 = std::make_shared<Vector>(ndof);
+    x0->setZero();
     (*x0)(0) = Vinit;
-    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, *A);
-    process->setComputebFunction("ObserverLCSPlugin", "uProcess");
+    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
+    process->setConstantA(*A);
+    process->setComputebVectorFunction(
+        [](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          double u = user::computeControl(time);
+          result(0) = u;
+          result(1) = 2.0 * u;
+        });
 
     // Second System, the observer:
     // dx/dt = A hatx + u(t) + L(y-haty)
@@ -78,11 +100,9 @@ int main(int argc, char* argv[]) {
 
     unsigned int noutput = 1;
     auto L = std::make_shared<Matrix>(ndof, noutput);
-    (*L)(0, 0) = 1.0;
-    (*L)(1, 0) = 1.0;
+    L->setConstant(1.);
     auto G = std::make_shared<Matrix>(noutput, ndof);
-    (*G)(0, 0) = 2.0;
-    (*G)(0, 1) = 2.0;
+    G->setConstant(2.);
 
     // hatA is initialized with A
     auto hatA = std::make_shared<Matrix>(ndof, ndof);
@@ -92,14 +112,23 @@ int main(int argc, char* argv[]) {
     (*hatA)(1, 1) = -1.0;
 
     auto obsX0 = std::make_shared<Vector>(ndof);
-    auto observer = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*obsX0, *hatA);
-    observer->setComputebFunction("ObserverLCSPlugin", "uObserver");
-    //    SiconosVector z= std::make_shared<Vector>(1);
-    observer->setzPtr(process->x());
-    // The set of all DynamicalSystems
-    // --------------------
-    // --- Interactions ---
-    // --------------------
+    obsX0->setZero();
+    auto param = process->x_read();
+    auto observer = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*obsX0);
+    observer->setConstantA(*hatA);
+    observer->setComputebVectorFunction(
+        [&param](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          double u = user::computeControl(time);
+          double coeff = 2 * (param(0) + param(1));
+          result(0) = u + coeff;
+          result(1) = 2.0 * u + coeff;
+        });
+
+    // observer->setzPtr(process->x());
+    //  The set of all DynamicalSystems
+    //  --------------------
+    //  --- Interactions ---
+    //  --------------------
     unsigned int ninter = 1;  // dimension of your Interaction = size of y and lambda vectors
 
     // First relation, related to the process
@@ -111,19 +140,31 @@ int main(int argc, char* argv[]) {
     auto C = std::make_shared<Matrix>(ninter, ndof);
     (*C)(0, 0) = -1.0;
     (*C)(0, 1) = 1.0;
-    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>(C, B);
+    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>();
+    myProcessRelation->setConstantC(*C);
+    myProcessRelation->setConstantB(*B);
     auto D = std::make_shared<Matrix>(ninter, ninter);
     (*D)(0, 0) = 1.0;
 
     myProcessRelation->setConstantD(*D);
-    myProcessRelation->setComputeEFunction("ObserverLCSPlugin", "computeE");
+
+    myProcessRelation->setComputeeVectorFunction(
+        [](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          result(0) = user::computeControl(time);
+        });
 
     // Second relation, related to the observer
     // haty = C hatX + D hatLambda + E
     // hatR = B hatLambda
-    auto myObserverRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>(C, B);
+    auto myObserverRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>();
+    myObserverRelation->setConstantC(*C);
+    myObserverRelation->setConstantB(*B);
+
     myObserverRelation->setConstantD(*D);
-    myObserverRelation->setComputeEFunction("ObserverLCSPlugin", "computeE");
+    myObserverRelation->setComputeeVectorFunction(
+        [](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          result(0) = user::computeControl(time);
+        });
 
     // NonSmoothLaw
     unsigned int nslawSize = 1;
@@ -178,7 +219,7 @@ int main(int argc, char* argv[]) {
     auto lambdaObs = myObserverInteraction->lambda(0);
     auto yProc = myProcessInteraction->y(0);
     auto yObs = myObserverInteraction->y(0);
-    auto z = observer->z();
+    auto z = process->x();
 
     myProcessInteraction->computeOutput(t0, 0);
 

@@ -77,12 +77,13 @@ int main(int argc, char* argv[]) {
   sim->addDynamicalSystem(doubleIntegrator);
 
   // use a controlSensor
-  auto C = std::make_shared<Matrix>(1, 2, 0);
+  auto C = std::make_shared<Matrix>(1, 2);
+  C->setZero();
   (*C)(0, 0) = 1;
   auto sens = std::make_shared<siconos::control::LinearSensor>(doubleIntegrator, C);
   sim->addSensor(sens, hControl);
   // add the PID controller
-  auto K = std::make_shared<Vector>(3, 0);
+  auto K = std::make_shared<Vector>(3);
   (*K)(0) = .25;
   (*K)(1) = .125;
   (*K)(2) = 2;
@@ -108,11 +109,11 @@ int main(int argc, char* argv[]) {
   // --- Output files ---
   cout << "====> Output file writing ...\n";
   auto& dataPlot = *sim->data();
-  siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+  siconos::algebra::io::write("PID.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                               siconos::algebra::io::WriteType::nodim);
   // Comparison with a reference file
   double error = 0.0, eps = 1e-12;
-  if ((error = siconos::algebra::io::compareRefFile(dataPlot, "result.ref", eps)) > eps)
+  if ((error = siconos::algebra::io::compareRefFile(dataPlot, "PID.ref", eps)) > eps)
     return 1;
   else
     return 0;

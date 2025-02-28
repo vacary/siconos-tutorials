@@ -48,7 +48,7 @@ C = [[1., 0]]  # we have to specify ndmin=2, so it's understood as
 K = [.25, .125, 2]
 
 # Declaration of the Dynamical System
-doubleIntegrator = sk.FirstOrderLinearTIDS(x0, A)
+doubleIntegrator = sk.FirstOrderLinearDS(x0, A)
 # Model
 process = sk.NonSmoothDynamicalSystem(t0, T)
 process.insertDynamicalSystem(doubleIntegrator)

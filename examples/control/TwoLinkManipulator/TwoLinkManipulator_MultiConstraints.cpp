@@ -25,31 +25,24 @@
 //
 // =============================================================================================
 
-#define _USE_MATH_DEFINES
-#include <math.h>
-
 #include <SiconosKernel.hpp>
-#include <SiconosPointers.hpp>
 #include <chrono>
 
-#define PI 3.14159265
-
-using namespace std;
+#include "TwoLinksMultiPlugins.h"
 
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-int main(int argc, char* argv[]) {
-  std::chrono::time_point<std::chrono::system_clock> start, end;
-  start = std::chrono::system_clock::now();
+using namespace two_links_multi_plugins;  // Where plugin functions (lambdas) are defined
+
+int main(int argc, char *argv[]) {
   try {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 2;  // degrees of freedom for robot arm
-    double t0 = 0;          // initial computation time
-    double T = 30;          // final computation time
-    double h = 1e-3;        // time step
+    double t0 = 0;    // initial computation time
+    double T = 30;    // final computation time
+    double h = 1e-3;  // time step
     double criterion = 1e-8;
     unsigned int maxIter = 200000;
     double e = 0.7;  // nslaw
@@ -75,41 +68,60 @@ int main(int argc, char* argv[]) {
     v0.setZero();
     q0(0) = 1.5;
     q0(1) = -0.9;
-    auto z = std::make_shared<Vector>(nDof * 12 + 1);
-    (*z)(0) = q0(0);
-    (*z)(1) = q0(1);
-    (*z)(2) = v0(0);
-    (*z)(3) = v0(1);
-    (*z)(4) = 0;
-    (*z)(5) = 0;
-    (*z)(6) = 0;
-    (*z)(7) = 0;
-    (*z)(8) = 0;
-    (*z)(9) = 0;
-    (*z)(10) = 0;
-    (*z)(11) = PI;
-    (*z)(12) = 0;
-    (*z)(13) = 0;
-    (*z)(14) = 0;
-    (*z)(15) = 0;
-    (*z)(16) = 0;
-    (*z)(17) = 0;
-    (*z)(22) = 0;
-    (*z)(23) = 0;
-    (*z)(24) = 0;
 
-    auto arm = std::make_shared<siconos::modeling::LagrangianDS>(
-        siconos::pointers::createSPtr(q0), siconos::pointers::createSPtr(v0));
+    param[0] = q0(0);
+    param[1] = q0(1);
+    param[2] = v0(0);
+    param[3] = v0(1);
+    param[11] = std::numbers::pi;
 
-    // external plug-in
-    arm->setComputeMassFunction("Two-linkMultiPlugin", "mass");
-    arm->setComputeFGyrFunction("Two-linkMultiPlugin", "FGyr");
-    arm->setComputeJacobianFGyrqDotFunction("Two-linkMultiPlugin", "jacobianVFGyr");
-    arm->setComputeJacobianFGyrqFunction("Two-linkMultiPlugin", "jacobianFGyrq");
-    arm->setComputeFIntFunction("Two-linkMultiPlugin", "U");
-    arm->setComputeJacobianFIntqDotFunction("Two-linkMultiPlugin", "jacobFintV");
-    arm->setComputeJacobianFIntqFunction("Two-linkMultiPlugin", "jacobFintQ");
-    arm->setzPtr(z);
+    auto arm = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
+
+    arm->setComputeMassFunction([](const Eigen::Ref<const siconos::algebra::SiconosVector> &q,
+                                   Eigen::Ref<siconos::algebra::MapType> mass) {
+      mass(0, 0) =
+          m1 * (l1 * l1 / 4) + I1 + I2 + m2 * (l1 * l1 + (l2 * l2 / 4) + l1 * l2 * cos(q(1)));
+      mass(1, 0) = I2 + m2 * l2 * l2 / 4 + m2 * l1 * l2 * cos(q(1)) / 2;
+      mass(0, 1) = I2 + m2 * l2 * l2 / 4 + m2 * l1 * l2 * cos(q(1)) / 2;
+      mass(1, 1) = I2 + m2 * l2 * l2 / 4;
+    });
+
+    arm->setComputeFgyrFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &velocity,
+           const Eigen::Ref<const siconos::algebra::SiconosVector> &q,
+           Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          result(0) = -m2 * l1 * l2 * sin(q(1)) *
+                      (velocity(0) * velocity(1) + velocity(1) * velocity(1) / 2);
+          result(1) = m2 * l1 * l2 * sin(q(1)) * velocity(0) * velocity(0) / 2;
+        });
+
+    // set 'random' value for jacobians, whatever fgyr is, just for tests
+    arm->setComputeJacobianFgyrOver_qFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &velocity,
+           const Eigen::Ref<const siconos::algebra::SiconosVector> &q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result(0, 0) = 0;
+          result(1, 0) = 0;
+          result(0, 1) = -m2 * l1 * l2 * cos(q(1)) *
+                         (velocity(0) * velocity(1) + velocity(1) * velocity(1) / 2);
+          result(1, 1) = m2 * l1 * l2 * cos(q(1)) * velocity(0) * velocity(0) / 2;
+        });
+
+    arm->setComputeJacobianFgyrOver_velocityFunction(
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &velocity,
+           const Eigen::Ref<const siconos::algebra::SiconosVector> &q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result(0, 0) = -m2 * l1 * l2 * sin(q(1)) * velocity(1);
+          result(1, 0) = m2 * l1 * l2 * sin(q(1)) * velocity(0);
+          result(0, 1) = -m2 * l1 * l2 * sin(q(1)) * (velocity(0) + velocity(1));
+          result(1, 1) = 0;
+        });
+
+    arm->setComputeFintFunction(u_func);
+
+    arm->setComputeJacobianFintOver_qFunction(jacobian_fint_over_q_func);
+
+    arm->setComputeJacobianFintOver_velocityFunction(jacobian_fint_over_v_func);
 
     // -------------------
     // --- Interactions---
@@ -117,45 +129,67 @@ int main(int argc, char* argv[]) {
 
     //  - one with Lagrangian non linear relation to define contact with ground
     //  Both with newton impact nslaw.
-
     // -- relations --
 
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    // auto relation=
-    // std::make_shared<siconos::modeling::LagrangianScleronomousR>("Two-linkMultiPlugin:h0",
-    // "Two-linkMultiPlugin:G0"); auto inter=
-    // std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
-    auto relation01 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "Two-linkMultiPlugin:h01", "Two-linkMultiPlugin:G01");
+    auto relation01 = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
     auto inter01 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation01);
-    auto relation02 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "Two-linkMultiPlugin:h02", "Two-linkMultiPlugin:G02");
+    relation01->setComputehFunction([](const siconos::algebra::BlockVector &q,
+                                       Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y(0) = 2 + l1 * cos(q(0)) + l2 * cos(q(0) + q(1));
+    });
+
+    auto relation02 = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+
+    relation02->setComputehFunction([](const siconos::algebra::BlockVector &q,
+                                       Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y(0) = l1 * sin(q(0)) + l2 * sin(q(0) + q(1));
+    });
+
+    relation02->setComputeJacobianhOver_qFunction(
+        [](const siconos::algebra::BlockVector &q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result(0, 0) = l1 * cos(q(0)) + l2 * cos(q(0) + q(1));
+          result(0, 1) = l2 * cos(q(0) + q(1));
+        });
     auto inter02 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation02);
 
-    auto relation31 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "Two-linkMultiPlugin:h31", "Two-linkMultiPlugin:G31");
+    auto relation31 = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+    relation31->setComputehFunction([](const siconos::algebra::BlockVector &q,
+                                       Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y(0) = 0.7 - l1 * cos(q(0)) - l2 * cos(q(0) + q(1));
+    });
+
+    relation31->setComputeJacobianhOver_qFunction(
+        [](const siconos::algebra::BlockVector &q,
+           Eigen::Ref<siconos::algebra::MapType> result) {
+          result(0, 0) = l1 * sin(q(0)) + l2 * sin(q(0) + q(1));
+          result(0, 1) = l2 * sin(q(0) + q(1));
+        });
+
     auto inter31 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation31);
-    auto relation32 = std::make_shared<siconos::modeling::LagrangianScleronomousR>(
-        "Two-linkMultiPlugin:h32", "Two-linkMultiPlugin:G32");
+    auto relation32 = std::make_shared<siconos::modeling::LagrangianScleronomousR>();
+    relation32->setComputehFunction([](const siconos::algebra::BlockVector &q,
+                                       Eigen::Ref<siconos::algebra::SiconosVector> y) {
+      y(0) = 2 + l1 * sin(q(0)) + l2 * sin(q(0) + q(1));
+    });
+
     auto inter32 = std::make_shared<siconos::modeling::Interaction>(nslaw, relation32);
 
     auto H10 = std::make_shared<Matrix>(1, 2);
     auto b10 = std::make_shared<Vector>(1);
     H10->setZero();
     (*H10)(0, 0) = -1;
-    (*b10)(0) = PI;
+    (*b10)(0) = std::numbers::pi;
 
     auto nslaw2 = std::make_shared<siconos::modeling::NewtonImpactNSL>(e2);
     auto relation10 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H10, *b10);
     auto inter10 = std::make_shared<siconos::modeling::Interaction>(nslaw2, relation10);
 
     auto H11 = std::make_shared<Matrix>(1, 2);
-    auto b11 = std::make_shared<Vector>(1);
     H11->setZero();
     (*H11)(0, 0) = 1;
-    (*b11)(0) = 0;
-
-    auto relation11 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H11, *b11);
+    auto relation11 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H11);
     auto inter11 = std::make_shared<siconos::modeling::Interaction>(nslaw2, relation11);
 
     auto H20 = std::make_shared<Matrix>(1, 2);
@@ -171,7 +205,7 @@ int main(int argc, char* argv[]) {
     auto b21 = std::make_shared<Vector>(1);
     H21->setZero();
     (*H21)(0, 1) = 1;
-    (*b21)(0) = PI - 0.0001;
+    (*b21)(0) = std::numbers::pi - 0.0001;
 
     auto relation21 = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H21, *b21);
     auto inter21 = std::make_shared<siconos::modeling::Interaction>(nslaw2, relation21);
@@ -211,12 +245,11 @@ int main(int argc, char* argv[]) {
     // -- OneStepNsProblem --
     auto osnspb = std::make_shared<siconos::nonsmooth_formulations::LCP>();
     s->insertNonSmoothProblem(osnspb);
-    cout << "=== End of model loading === \n";
+    std::cout << "=== End of model loading === \n";
 
     // =========================== End of model definition ===========================
 
     // ================================= Computation
-
     unsigned int k = 0;
     unsigned int N = ceil((T - t0) / h);  // Number of time steps
 
@@ -227,14 +260,14 @@ int main(int argc, char* argv[]) {
     // For the initial time step:
     // time
 
-    auto q = arm->q();
-    auto v = arm->velocity();
+    auto q = arm->q_read();
+    auto v = arm->velocity_read();
     auto p = arm->p(1);
 
     // Initialization of the dicrete parameter z needs the followinf first computations
-    arm->computeJacobianFIntq(t0);
-    arm->computeFint(*v, *q, t0);
-    arm->computeJacobianFIntqDot(t0);
+    arm->computeTotalForces(v, q, t0);
+    arm->computeJacobianTotalForcesOver_velocity(v, q, t0);
+    arm->computeJacobianTotalForcesOver_q(v, q, t0);
     inter01->computeOutput(t0, 0);
     inter02->computeOutput(t0, 0);
     inter31->computeOutput(t0, 0);
@@ -247,77 +280,79 @@ int main(int argc, char* argv[]) {
     // EventsManager * eventsManager = s->eventsManager();
 
     dataPlot(k, 0) = Manipulator->t0();
-    dataPlot(k, 1) = (*q)(0);
-    dataPlot(k, 2) = (*q)(1);
+    dataPlot(k, 1) = q(0);
+    dataPlot(k, 2) = q(1);
     dataPlot(k, 3) = (*inter02->y(0))(0);
-    dataPlot(k, 4) = (*v)(0);
-    dataPlot(k, 5) = (*v)(1);
+    dataPlot(k, 4) = v(0);
+    dataPlot(k, 5) = v(1);
     dataPlot(k, 6) = (*inter01->y(0))(0) - 2;
     dataPlot(k, 7) = nimpact;  //(*inter->y(1))(1);
-    dataPlot(k, 8) = (*z)(6);
-    dataPlot(k, 9) = (*z)(4);  // L
-    dataPlot(k, 10) = (*z)(24);
+    dataPlot(k, 8) = param[6];
+    dataPlot(k, 9) = param[4];
+    dataPlot(k, 10) = param[24];
     dataPlot(k, 11) = test;
     dataPlot(k, 12) = (*p)(1);
-    dataPlot(k, 13) = (*z)(22);
-    dataPlot(k, 14) = (*z)(23);
+    dataPlot(k, 13) = param[22];
+    dataPlot(k, 14) = param[23];
 
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
-    while (k < N) {
-      (*z)(0) = (*q)(0);
-      (*z)(1) = (*q)(1);
-      (*z)(2) = (*v)(0);
-      (*z)(3) = (*v)(1);
-      (*z)(16) = (*z)(14);
-      (*z)(17) = (*z)(15);
-      (*z)(20) = (*z)(18);
-      (*z)(21) = (*z)(19);
+    std::cout << "====> Start computation ... \n\n";
+
+    auto start = std::chrono::system_clock::now();
+    while (s->hasNextEvent()) {
+      param[0] = q(0);
+      param[1] = q(1);
+      param[2] = v(0);
+      param[3] = v(1);
+      param[16] = param[14];
+      param[17] = param[15];
+      param[20] = param[18];
+      param[21] = param[19];
 
       // get current time step
       k++;
 
       dataPlot(k, 0) = s->nextTime();
-      dataPlot(k, 1) = (*q)(0);
-      dataPlot(k, 2) = (*q)(1);
+      dataPlot(k, 1) = q(0);
+      dataPlot(k, 2) = q(1);
       dataPlot(k, 3) = (*inter02->y(0))(0);
-      dataPlot(k, 4) = (*v)(0);
-      dataPlot(k, 5) = (*v)(1);
+      dataPlot(k, 4) = v(0);
+      dataPlot(k, 5) = v(1);
       dataPlot(k, 6) = (*inter01->y(0))(0) - 2;
       dataPlot(k, 7) = nimpact;  //(*inter->y(1))(1);
-      dataPlot(k, 8) = (*z)(6);
+      dataPlot(k, 8) = param[6];
       if (test == 3)
-        dataPlot(k, 9) = (*z)(4) / h;
+        dataPlot(k, 9) = param[4] / h;
       else
-        dataPlot(k, 9) = (*z)(4);
+        dataPlot(k, 9) = param[4];
       if (test == 5)
-        dataPlot(k, 10) = (*z)(24) / h;
+        dataPlot(k, 10) = param[24] / h;
       else
-        dataPlot(k, 10) = (*z)(24);
+        dataPlot(k, 10) = param[24];
       dataPlot(k, 11) = test;
-      dataPlot(k, 13) = (*z)(22);
-      dataPlot(k, 14) = (*z)(23);
+      dataPlot(k, 13) = param[22];
+      dataPlot(k, 14) = param[23];
 
       s->advanceToEvent();
       // osnspb->display();
       dataPlot(k, 12) = (*p)(1);
-      (*z)(4) = (inter02->getLambda(1))(0);
-      (*z)(24) = (inter31->getLambda(1))(0);
+      param[4] = (inter02->getLambda(1))(0);
+      param[24] = (inter31->getLambda(1))(0);
       s->nextStep();
 
       //    controller during impacts accumulation phase before the first impact
       if ((dataPlot(k, 3) <= 0.01) && (test == 0) && (dataPlot(k, 6) < 0.3)) {
-        (*z)(8) = dataPlot(k, 0);
-        (*z)(5) = 0.7 + 0.5 * cos(PI / 2 + 2 * PI * ((*z)(8)) / (*z)(11));
-        (*z)(7) = (*z)(9);
-        arm->setComputeFIntFunction("Two-linkMultiPlugin", "U10");
+        param[8] = dataPlot(k, 0);
+        param[5] = 0.7 + 0.5 * cos(std::numbers::pi / 2 +
+                                   2 * std::numbers::pi * (param[8]) / param[11]);
+        param[7] = param[9];
+        arm->setComputeFintFunction(u10_func);
         test = 1;
       }
 
       //  controller during impacts accumulation phase after the first impact
       if ((dataPlot(k, 12) > 0) && (test == 1)) {
-        (*z)(8) = dataPlot(k, 0);
-        arm->setComputeFIntFunction("Two-linkMultiPlugin", "U11");
+        param[8] = dataPlot(k, 0);
+        arm->setComputeFintFunction(u11_func);
         test = 2;
       }
       if ((dataPlot(k, 12) > 0) && (test == 2)) nimpact = nimpact + 1;
@@ -326,51 +361,50 @@ int main(int argc, char* argv[]) {
       if ((dataPlot(k, 12) > 0) && (test == 2) && (dataPlot(k, 7) - dataPlot(k - 1, 7) == 1) &&
           (fabs((*inter02->y(0))(0)) < 1e-6)) {
         // L= dataPlot(k,0)-(*z)(8);
-        (*z)(8) = dataPlot(k, 0);
-        arm->setComputeFIntFunction("Two-linkMultiPlugin", "U20");
+        param[8] = dataPlot(k, 0);
+        arm->setComputeFintFunction(u20_func);
         test = 3;
         nimpact = 0;
       }
       //  controller during impacts accumulation phase after the first impact
-      if (((*z)(24) > 0) && (test == 3)) {
-        arm->setComputeFIntFunction("Two-linkMultiPlugin", "U21");
+      if ((param[24] > 0) && (test == 3)) {
+        arm->setComputeFintFunction(u21_func);
         test = 4;
       }
-      if (((*z)(24) > 0) && (test == 4)) nimpact = nimpact + 1;
+      if ((param[24] > 0) && (test == 4)) nimpact = nimpact + 1;
       // controller during constraint-motion phase.
-      if (((*z)(24) > 0) && (test == 4) &&
+      if ((param[24] > 0) && (test == 4) &&
           (dataPlot(k, 7) - dataPlot(k - 1, 7) == 1))  // && (fabs((*inter0->y(1))(0))<1e-6))
       {
-        (*z)(8) = dataPlot(k, 0);
-        arm->setComputeFIntFunction("Two-linkMultiPlugin", "U22");
+        param[8] = dataPlot(k, 0);
+        arm->setComputeFintFunction(u22_func);
         test = 5;
         nimpact = 0;
       }
       // change of control law with a particular design of the desired trajectory that
       // guarantee the take-off
-      if ((trunc((dataPlot(k, 0) + h) / (*z)(11)) > trunc((dataPlot(k, 0)) / (*z)(11))) &&
+      if ((trunc((dataPlot(k, 0) + h) / param[11]) > trunc((dataPlot(k, 0)) / param[11])) &&
           (test == 5)) {
-        (*z)(8) = dataPlot(k, 0) + h;
-        (*z)(10) = (*z)(12);
-        arm->setComputeFIntFunction("Two-linkMultiPlugin", "U3");
+        param[8] = dataPlot(k, 0) + h;
+        param[10] = param[12];
+        arm->setComputeFintFunction(u3_func);
         test = 6;
         // L = 0;
       }
 
       //  controller during free-motion phase
-      if (((*z)(13) - 0.1 >= 0) && (test == 6)) {
-        arm->setComputeFIntFunction("Two-linkMultiPlugin", "U");
+      if ((param[13] - 0.1 >= 0) && (test == 6)) {
+        arm->setComputeFintFunction(u_func);
         test = 0;
-        (*z)(13) = 0;
+        param[13] = 0;
       }
     }
-    cout << endl << "End of computation - Number of iterations done: " << k << endl;
-    cout << "Computation Time \n";
-    end = std::chrono::system_clock::now();
+    std::cout << "\nEnd of computation - Number of iterations done: " << k << "\n";
+    auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    cout << "Computation time : " << elapsed << " ms\n";
+    std::cout << "Computation time : " << elapsed << " ms\n";
+
     // --- Output files ---
-    dataPlot.resize(k, outputSize);
     siconos::algebra::io::write("TwoLinkManipulator_MultiConstraints.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);

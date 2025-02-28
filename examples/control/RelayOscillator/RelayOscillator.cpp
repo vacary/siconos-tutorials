@@ -64,22 +64,17 @@ int main(int argc, char* argv[]) {
     // Note: r = Blambda, B defines in relation below.
 
     auto A = std::make_shared<Matrix>(ndof, ndof);
-    (*A)(0, 0) = 0.0;
+    A->setZero();
     (*A)(0, 1) = 1.0;
-    (*A)(0, 2) = 0.0;
-    (*A)(1, 0) = 0.0;
-    (*A)(1, 1) = 0.0;
     (*A)(1, 2) = 1.0;
-    (*A)(2, 0) = 0.0;
     (*A)(2, 1) = -3.0;
     (*A)(2, 2) = -2.0;
     auto x0 = std::make_shared<Vector>(ndof);
-    (*x0)(0) = 0.0;
+    x0->setZero();
     (*x0)(1) = xinit;
-    (*x0)(2) = 0.0;
 
-    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, *A);
-    //    process->setComputebFunction("ObserverLCSPlugin","uProcess");
+    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
+    process->setConstantA(*A);
 
     // --------------------
     // --- Interactions ---
@@ -90,22 +85,15 @@ int main(int argc, char* argv[]) {
     // y = Cx + Dlambda
     // r = Blambda
     auto B = std::make_shared<Matrix>(ndof, ninter);
-    (*B)(0, 0) = 0.0;
-    (*B)(1, 0) = 0.0;
+    B->setZero();
     (*B)(2, 0) = 1.0;
 
     auto C = std::make_shared<Matrix>(ninter, ndof);
+    C->setZero();
     (*C)(0, 0) = 1.0;
-    (*C)(0, 1) = 0.0;
-    (*C)(0, 2) = 0.0;
-
-    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>(C, B);
-    auto D = std::make_shared<Matrix>(ninter, ninter);
-    (*D)(0, 0) = 0.0;
-
-    myProcessRelation->setConstantD(*D);
-    // myProcessRelation->setComputeEFunction("ObserverLCSPlugin","computeE");
-
+    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>();
+    myProcessRelation->setConstantB(*B);
+    myProcessRelation->setConstantC(*C);
     // Second relation, related to the observer
     // haty = C hatX + D hatLambda + E
     // hatR = B hatLambda
@@ -156,7 +144,7 @@ int main(int argc, char* argv[]) {
     unsigned int outputSize = 7;          // number of required data
     unsigned int N = ceil((T - t0) / h);  // Number of time steps
 
-    Matrix dataPlot(N, outputSize);
+    Matrix dataPlot{N + 1, outputSize};
 
     auto xProc = process->x();
     auto lambdaProc = myProcessInteraction->lambda(0);
@@ -176,9 +164,8 @@ int main(int argc, char* argv[]) {
 
     // *z = *(myProcessInteraction->y(0)->getVectorPtr(0));
     // Simulation loop
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
-    while (k < N - 1) {
+    auto start = std::chrono::system_clock::now();
+    while (s->hasNextEvent()) {
       k++;
 
       //  osnspb->setNumericsVerboseMode(1);
@@ -194,9 +181,7 @@ int main(int argc, char* argv[]) {
       s->nextStep();
     }
     cout << endl << "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation Time \n";
-    ;
-    end = std::chrono::system_clock::now();
+    auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     cout << "Computation time : " << elapsed << " ms\n";
     // --- Output files ---

@@ -88,7 +88,7 @@ b[number_of_cars - 1] = - jn / C
 b[number_of_cars] = w0 / (R * D)
 b[ndof - 1] = -jn / D
 
-RC = sk.FirstOrderLinearTIDS(q0, A, b)
+RC = sk.FirstOrderLinearDS(q0, A, b)
 
 # -- Interaction --
 # *** Linear time invariant relation (LTIR) ***

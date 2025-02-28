@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-/* !\file SMCExampleImplicitOT2.cpp
-  \brief Two independent systems of dimension one controlled to slide
+/* Two independent systems of dimension one controlled to slide
   on \f$x = 0\f$. The scheme from Su, Drakunov and Özgüner (2000) is used
   O. Huber
   */
@@ -30,17 +29,6 @@ using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 using namespace std;
 
-class MyDS : public siconos::modeling::FirstOrderLinearDS {
- public:
-  MyDS(auto x0, auto A) : FirstOrderLinearDS(x0, A) {
-    _b = std::make_shared<Vector>(x0->size());
-  };
-  void computeb(double time) override {
-    double t = sin(50 * time);
-    _b->setValue(0, t);
-    _b->setValue(1, -t);
-  };
-};
 // main program
 int main(int argc, char* argv[]) {
   // User-defined parameters
@@ -70,20 +58,29 @@ int main(int argc, char* argv[]) {
   // Note: r = Blambda, B defines in relation below.
 
   // Matrix declaration
-  auto A = std::make_shared<Matrix>(ndof, ndof, 0);
   auto x0 = std::make_shared<Vector>(ndof);
   (*x0)(0) = Xinit;
   (*x0)(1) = -Xinit;
   auto sensorC = std::make_shared<Matrix>(2, 2);
   sensorC->setIdentity();
-  auto sensorD = std::make_shared<Matrix>(2, 2, 0);
-  auto Csurface = std::make_shared<Matrix>(1, 2, 0);
+  auto sensorD = std::make_shared<Matrix>(2, 2);
+  sensorD->setZero();
+  auto Csurface = std::make_shared<Matrix>(1, 2);
+  Csurface->setZero();
   (*Csurface)(0, 1) = 1;
-  auto Brel = std::make_shared<Matrix>(2, 1, 0);
+  auto Brel = std::make_shared<Matrix>(2, 1);
+  Brel->setZero();
   (*Brel)(1, 0) = 2;
 
   // Dynamical Systems
-  auto processDS = std::make_shared<MyDS>(x0, A);
+  auto processDS = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
+  processDS->setComputebVectorFunction(
+      [](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+        auto t = sin(50 * time);
+        result(0) = t;
+        result(1) = -t;
+      });
+
   // -------------
   // --- Model process ---
   // -------------

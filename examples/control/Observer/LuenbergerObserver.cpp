@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-/*!\file LuenbergerObserver.cpp
-  \brief Academic example of a Luenberger Observer
+/* Academic example of a Luenberger Observer
   O. Huber.
 
   The controlled plant is a double integrator
@@ -58,6 +57,7 @@ int main(int argc, char* argv[]) {
   (*A)(1, 0) = -1;
 
   auto B = std::make_shared<Matrix>(nDof, 1);
+  B->setZero();
   (*B)(nDof - 1, 0) = 1.0;
   // -- Initial positions and velocities --
   auto x0 = std::make_shared<Vector>(nDof);
@@ -79,7 +79,8 @@ int main(int argc, char* argv[]) {
   // ------------------
 
   // use a controlSensor
-  auto C = std::make_shared<Matrix>(1, 2, 0);
+  auto C = std::make_shared<Matrix>(1, 2);
+  C->setZero();
   (*C)(0, 0) = 1;
   auto sens = std::make_shared<siconos::control::LinearSensor>(doubleIntegrator, C);
   sim->addSensor(sens, hControl);
@@ -94,7 +95,7 @@ int main(int argc, char* argv[]) {
   auto obs = std::make_shared<siconos::control::LuenbergerObserver>(sens, *xHat0, C, L);
   sim->addObserver(obs, hControl);
   // add the PID controller
-  auto K = std::make_shared<Vector>(3, 0);
+  auto K = std::make_shared<Vector>(3);
   (*K)(0) = .25;
   (*K)(1) = .125;
   (*K)(2) = 2;

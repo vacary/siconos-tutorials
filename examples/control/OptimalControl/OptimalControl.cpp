@@ -67,7 +67,7 @@ int main() {
 
   //  NBStep = 3;
   //*****BUILD THE DYNAMIC SYSTEM
-  auto aDS = std::make_shared<user_defined::MyDS>(x0);
+  auto aDS = std::make_shared<user_defined::MyDS>(*x0);
 
   //******BUILD THE RELATION
   auto aR = std::make_shared<user_defined::adjointInput>();
@@ -108,7 +108,7 @@ int main() {
   auto lambda = aI->lambda(0);
 
   unsigned int outputSize = 9;  // number of required data
-  Matrix dataPlot(NBStep + 10, outputSize);
+  Matrix dataPlot(NBStep + 1, outputSize);
 
   auto z = aDS->x();
 
@@ -153,7 +153,6 @@ int main() {
   }
 
   cout << "===== End of simulation. ==== \n";
-  dataPlot.resize(k + 1, 9);
 
   // --- Output files ---
   cout << "====> Output file writing ...\n";

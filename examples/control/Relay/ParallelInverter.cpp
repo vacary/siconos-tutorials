@@ -27,6 +27,7 @@
 
 #include <SiconosKernel.hpp>
 #include <chrono>
+#include <numbers>
 #include <string>
 
 using namespace std;
@@ -90,24 +91,16 @@ int main(int argc, char* argv[]) {
     // Note: r = Blambda, B defines in relation below.
 
     auto A = std::make_shared<Matrix>(ndof, ndof);
-    (*A)(0, 0) = 0;
+    A->setZero();
     (*A)(0, 1) = 1;
-    (*A)(0, 2) = 0;
-    (*A)(0, 3) = 0;
     (*A)(1, 0) = (-1 / (Cp * leq)) - (rl1 / (Cp * L1 * Rl));
     (*A)(1, 1) = (-rl1 / L1) - (1 / (Cp * Rl));
     (*A)(1, 2) = (rl1 / (Cp * L1)) - (rl2 / (Cp * L2));
     (*A)(1, 3) = (rl1 / (Cp * L1)) - (rl3 / (Cp * L3));
     (*A)(2, 0) = -1 / L2;
-    (*A)(2, 1) = 0;
     (*A)(2, 2) = -rl2 / L2;
-    (*A)(2, 3) = 0;
     (*A)(3, 0) = -1 / L3;
-    (*A)(3, 1) = 0;
-    (*A)(3, 2) = 0;
     (*A)(3, 3) = -rl3 / L3;
-
-    A->display();
 
     auto x0 = std::make_shared<Vector>(ndof);
     (*x0)(0) = 50;
@@ -115,9 +108,9 @@ int main(int argc, char* argv[]) {
     (*x0)(2) = 4;
     (*x0)(3) = 4;
 
-    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, *A);
-    auto zProc = std::make_shared<Vector>(1, 0);
-    process->setzPtr(zProc);
+    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
+    process->setConstantA(*A);
+    double zProc = 0.;
 
     // --------------------
     // --- Interactions ---
@@ -128,52 +121,32 @@ int main(int argc, char* argv[]) {
     // y = Cx + Dlambda +eDLS
     // r = Blambda
     auto B = std::make_shared<Matrix>(ndof, ninter);
-    (*B)(0, 0) = 0;
-    (*B)(0, 1) = 0;
-    (*B)(0, 2) = 0;
+    B->setZero();
     (*B)(1, 0) = E1 / (Cp * L1);
     (*B)(1, 1) = E2 / (Cp * L2);
     (*B)(1, 2) = E3 / (Cp * L3);
-    (*B)(2, 0) = 0;
     (*B)(2, 1) = E2 / L2;
-    (*B)(2, 2) = 0;
-    (*B)(3, 0) = 0;
-    (*B)(3, 1) = 0;
     (*B)(3, 2) = E3 / L3;
 
-    B->display();
-
-    *B = 1 * (*B);
     auto C = std::make_shared<Matrix>(ninter, ndof);
+    C->setZero();
     (*C)(0, 0) = (Cp * k1 / k2) + ((m - 1) / Rl);
     (*C)(0, 1) = m * Cp;
     (*C)(0, 2) = -m;
     (*C)(0, 3) = -m;
     (*C)(1, 0) = (Cp * k1 / k2) - (1 / Rl);
-    (*C)(1, 1) = 0;
     (*C)(1, 2) = m;
-    (*C)(1, 3) = 0;
     (*C)(2, 0) = (Cp * k1 / k2) - (1 / Rl);
-    (*C)(2, 1) = 0;
-    (*C)(2, 2) = 0;
     (*C)(2, 3) = m;
-    C->display();
-    //((*C)*(*B))->display();
-    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>(C, B);
-    auto D = std::make_shared<Matrix>(ninter, ninter);
-    (*D)(0, 0) = 0.0;
-    (*D)(0, 1) = 0.0;
-    (*D)(0, 2) = 0.0;
-    (*D)(1, 0) = 0.0;
-    (*D)(1, 1) = 0.0;
-    (*D)(1, 2) = 0.0;
-    (*D)(2, 0) = 0.0;
-    (*D)(2, 1) = 0.0;
-    (*D)(2, 2) = 0.0;
-    myProcessRelation->setComputeEFunction("plugins", "eLDS");
+    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>();
+    myProcessRelation->setConstantC(*C);
+    myProcessRelation->setConstantB(*B);
 
-    myProcessRelation->setConstantD(*D);
-    // myProcessRelation->setComputeEFunction("ObserverLCSPlugin","computeE");
+    myProcessRelation->setComputeeVectorFunction(
+        [&zProc](double t, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          zProc = 55 * sin(100 * std::numbers::pi * t);
+          result.setConstant(-zProc);
+        });
 
     // Second relation, related to the observer
     // haty = C hatX + D hatLambda + E
@@ -248,11 +221,11 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 8) = (*yProc)(0);
     dataPlot(0, 9) = (*yProc)(1);
     dataPlot(0, 10) = (*yProc)(2);
-    dataPlot(0, 11) = (*zProc)(0);       // v_ref
-    dataPlot(0, 12) = (*zProc)(0) / Rl;  // i_ref
-    dataPlot(0, 13) = 0;                 // voltage_error
-    dataPlot(0, 14) = 0;                 // current_error
-    dataPlot(0, 15) = 0;                 // il1
+    dataPlot(0, 11) = zProc;       // v_ref
+    dataPlot(0, 12) = zProc / Rl;  // i_ref
+    dataPlot(0, 13) = 0;           // voltage_error
+    dataPlot(0, 14) = 0;           // current_error
+    dataPlot(0, 15) = 0;           // il1
     dataPlot(0, 16) = (*xProc)(1);
 
     // ==== Simulation loop =====
@@ -275,28 +248,28 @@ int main(int argc, char* argv[]) {
       //    osnspb->setNumericsVerboseMode(1);
       //  *z = *(myProcessInteraction->y(0)->getVectorPtr(0));
       s->computeOneStep();
-      (*err)(0) = abs((*zProc)(0) - (*xProc)(0));                // voltage error
-      (*err)(1) = abs(((*zProc)(0) / Rl) - ((*xProc)(0) / Rl));  // current error
+      (*err)(0) = abs(zProc - (*xProc)(0));                // voltage error
+      (*err)(1) = abs((zProc / Rl) - ((*xProc)(0) / Rl));  // current error
       (*il1)(0) = ((*xProc)(0) / Rl) - ((*xProc)(2) + (*xProc)(3)) +
                   Cp * (*xProc)(1);  // current through L_1
 
       dataPlot(k, 0) = s->nextTime();
-      dataPlot(k, 1) = (*xProc)(0);        // output voltage v0
-      dataPlot(k, 2) = (*xProc)(0) / Rl;   // output current i0
-      dataPlot(k, 3) = (*xProc)(2);        // il2
-      dataPlot(k, 4) = (*xProc)(3);        // il3
-      dataPlot(k, 5) = (*lambdaProc)(0);   // u1
-      dataPlot(k, 6) = (*lambdaProc)(1);   // u2
-      dataPlot(k, 7) = (*lambdaProc)(2);   // u3
-      dataPlot(k, 8) = (*yProc)(0);        // y1
-      dataPlot(k, 9) = (*yProc)(1);        // y2
-      dataPlot(k, 10) = (*yProc)(2);       // y3
-      dataPlot(k, 11) = (*zProc)(0);       // v_ref
-      dataPlot(k, 12) = (*zProc)(0) / Rl;  // i_ref
-      dataPlot(k, 13) = (*err)(0);         // voltage_error
-      dataPlot(k, 14) = (*err)(1);         // current_error
-      dataPlot(k, 15) = (*il1)(0);         // il1
-      dataPlot(k, 16) = (*xProc)(1);       // v'0
+      dataPlot(k, 1) = (*xProc)(0);       // output voltage v0
+      dataPlot(k, 2) = (*xProc)(0) / Rl;  // output current i0
+      dataPlot(k, 3) = (*xProc)(2);       // il2
+      dataPlot(k, 4) = (*xProc)(3);       // il3
+      dataPlot(k, 5) = (*lambdaProc)(0);  // u1
+      dataPlot(k, 6) = (*lambdaProc)(1);  // u2
+      dataPlot(k, 7) = (*lambdaProc)(2);  // u3
+      dataPlot(k, 8) = (*yProc)(0);       // y1
+      dataPlot(k, 9) = (*yProc)(1);       // y2
+      dataPlot(k, 10) = (*yProc)(2);      // y3
+      dataPlot(k, 11) = zProc;            // v_ref
+      dataPlot(k, 12) = zProc / Rl;       // i_ref
+      dataPlot(k, 13) = (*err)(0);        // voltage_error
+      dataPlot(k, 14) = (*err)(1);        // current_error
+      dataPlot(k, 15) = (*il1)(0);        // il1
+      dataPlot(k, 16) = (*xProc)(1);      // v'0
       s->nextStep();
 
       //////////////////////////////////////////////////////////////////////////////////

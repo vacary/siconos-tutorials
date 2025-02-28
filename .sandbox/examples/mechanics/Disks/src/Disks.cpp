@@ -114,7 +114,7 @@ void Disks::init()
     std::cout << "====> Model loading ..." << std::endl << std::endl;
 
     _plans.reset(new SimpleMatrix("plans.dat", true));
-    if (_plans->size(0) == 0)
+    if (_plans->rows() == 0)
     {
       /* default plans */
       double A1 = P1A;
@@ -154,7 +154,7 @@ void Disks::init()
     }
 
     /* set center positions */
-    for (unsigned int i = 0 ; i < _plans->size(0); ++i)
+    for (unsigned int i = 0 ; i < _plans->rows(); ++i)
     {
       auto tmpr;
       tmpr.reset(new DiskPlanR(1, (*_plans)(i, 0), (*_plans)(i, 1), (*_plans)(i, 2),
@@ -190,7 +190,7 @@ void Disks::init()
     sim.reset(new TimeStepping(nsds, timedisc_));
     _sim = sim;
 
-    for (unsigned int i = 0; i < Disks->size(0); i++)
+    for (unsigned int i = 0; i < Disks->rows(); i++)
     {
       R = Disks->getValue(i, 2);
       m = Disks->getValue(i, 3);

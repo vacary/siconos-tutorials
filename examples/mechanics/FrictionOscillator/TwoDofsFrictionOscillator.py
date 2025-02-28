@@ -26,7 +26,7 @@
 import  numpy as np
 
 from numpy.linalg import norm
-from siconos.kernel import FirstOrderLinearTIDS, FirstOrderLinearDS, RelayNSL, Interaction, FirstOrderLinearR, NonSmoothDynamicalSystem,\
+from siconos.kernel import FirstOrderLinearDS, FirstOrderLinearDS, RelayNSL, Interaction, FirstOrderLinearR, NonSmoothDynamicalSystem,\
     EulerMoreauOSI, TimeDiscretisation, TimeStepping, Relay
 
 import siconos.numerics as sn
