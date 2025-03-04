@@ -248,10 +248,10 @@ int main() {
 
               // different version of bullet may not gives the same
               // contact points! So we only keep the summation.
-              dataPlot(k, 3) = index1->bundle(*iur)->lambda(1)->norm2() +
-                               index1->bundle(*++iur)->lambda(1)->norm2() +
-                               index1->bundle(*++iur)->lambda(1)->norm2() +
-                               index1->bundle(*++iur)->lambda(1)->norm2();
+              dataPlot(k, 3) = index1->bundle(*iur)->lambda(1)->norm() +
+                               index1->bundle(*++iur)->lambda(1)->norm() +
+                               index1->bundle(*++iur)->lambda(1)->norm() +
+                               index1->bundle(*++iur)->lambda(1)->norm();
             }
           }
         }

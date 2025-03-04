@@ -28,23 +28,23 @@ user_defined::NonlinearRelation::NonlinearRelation() : FirstOrderType2R{} {
                          const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
                          Eigen::Ref<siconos::algebra::SiconosVector> y) {
     DEBUG_PRINTF("user_defined::NonlinearRelation::computeh at time %e\n ", t);
-    DEBUG_EXPR(x.display());
-    DEBUG_EXPR(lambda.display());
-    y.setValue(0, 4.0 - state(0));
-    y.setValue(1, 4.0 - state(1));
-    y.setValue(2, 8.0 - state(0));
-    y.setValue(3, 8.0 - state(1));
-    DEBUG_EXPR(y.display());
+    DEBUG_EXPR(siconos::algebra::print(x));
+    DEBUG_EXPR(siconos::algebra::print(lambda));
+    y(0) = 4.0 - state(0);
+    y(1) = 4.0 - state(1);
+    y(2) = 8.0 - state(0);
+    y(3) = 8.0 - state(1);
+    DEBUG_EXPR(siconos::algebra::print(y));
   });
 
   setComputegFunction([](const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
                          siconos::algebra::BlockVector& res) {
-    DEBUG_EXPR(lambda.display());
+    DEBUG_EXPR(siconos::algebra::print(lambda));
 
-    res.setValue(0, 40.0 * (1 - lambda(2)) * (lambda(1)));
-    res.setValue(1, 40.0 * (lambda(0)) * (1 - lambda(3)));
+    res(0) = 40.0 * (1 - lambda(2)) * (lambda(1));
+    res(1) = 40.0 * (lambda(0)) * (1 - lambda(3));
 
-    DEBUG_EXPR(res.display());
+    DEBUG_EXPR(siconos::algebra::print(res));
   });
 
   setComputeJacobianhOver_stateFunction(
@@ -65,11 +65,11 @@ user_defined::NonlinearRelation::NonlinearRelation() : FirstOrderType2R{} {
         DEBUG_PRINTF(
             "user_defined::NonlinearRelation::compute jacobian g over lambda at time %e\n ",
             t);
-        DEBUG_EXPR(lambda.display());
+        DEBUG_EXPR(siconos::algebra::print(lambda));
         result.setValue(1, 0, 40.0 * (1 - lambda(3)));
         result.setValue(0, 1, 40.0 * (1 - lambda(2)));
         result.setValue(0, 2, -40.0 * lambda(1));
         result.setValue(1, 3, -40.0 * lambda(0));
-        DEBUG_EXPR(result.display());
+        DEBUG_EXPR(siconos::algebra::print(result));
       });
 }

@@ -104,13 +104,13 @@ int main(int argc, char* argv[]) {
     ForceExtern.setZero();
     ForceExtern(1) = -MassBlock * GGearth;
     RockingBlock->setConstantFext(ForceExtern);    cout << "Initial position of the rocking block:\n";
-    PosIniBlock->display();
+    siconos::algebra::print(*PosIniBlock);
     cout << "Initial velocity of the rocking block:\n";
-    VelIniBlock->display();
+    siconos::algebra::print(*VelIniBlock);
     cout << "Mass matrix of the rocking block:\n";
-    Mass->display();
+    siconos::algebra::print(*Mass);
     cout << "External force applied on the rocking block:" << endl;
-    ForceExtern->display();
+    siconos::algebra::print(*ForceExtern);
     //==================================================================================================================
     //              II: Declare the relation et interaction between dynamical systems
     //==================================================================================================================

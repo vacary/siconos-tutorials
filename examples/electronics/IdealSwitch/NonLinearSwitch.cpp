@@ -183,20 +183,20 @@ int main() {
     // std::cout << "BBBBB \n" << aR->jacobianhOver_lambda() << "\n CCCCC \n";
     //  std::cout << " \n" << aR->jacobiangOver_lambda() << "\n DDD \n";
     aS->computeOneStep();
-    // aMLCP->display();
+    // siconos::algebra::print(*aMLCP);
     aS->nextStep();
     x = aDS->x();
     lambda = aI->lambda(0);
 
 #ifdef CLSC_CIRCUIT
 
-    // std::cout<<"x="<<x->getValue(0)<<" Is="<<lambda->getValue(0)<<"
-    // Id="<<lambda->getValue(1)<<" V3="<<lambda->getValue(2); std::cout<<"
-    // V4="<<lambda->getValue(3)<<" V5="<<lambda->getValue(4)<<" l6="<<lambda->getValue(5)<<"
-    // l7="<<lambda->getValue(6); std::cout<<" l8="<<lambda->getValue(7)<<"
-    // l9="<<lambda->getValue(8)<<std::"\n";
+    // std::cout<<"x="<<(*x)(0)<<" Is="<<(*lambda)(0)<<"
+    // Id="<<(*lambda)(1)<<" V3="<<(*lambda)(2); std::cout<<"
+    // V4="<<(*lambda)(3)<<" V5="<<(*lambda)(4)<<" l6="<<(*lambda)(5)<<"
+    // l7="<<(*lambda)(6); std::cout<<" l8="<<(*lambda)(7)<<"
+    // l9="<<(*lambda)(8)<<std::"\n";
     stateChanged = false;
-    if (lambda->getValue(6) > 1) {
+    if ((*lambda)(6) > 1) {
       if (switchIsOn || k == 0) {
         switchIsOn = false;
         stateChanged = true;
@@ -207,7 +207,7 @@ int main() {
         stateChanged = true;
       }
     }
-    if (lambda->getValue(8) > 1) {
+    if ((*lambda)(8) > 1) {
       if (diodeIsOn || k == 0) {
         diodeIsOn = false;
         stateChanged = true;
@@ -230,9 +230,9 @@ int main() {
       std::cout << "\n";
     }
 
-    (*fout) << cmp << " " << x->getValue(0) << " " << lambda->getValue(0) << " "
-            << lambda->getValue(1) << " " << lambda->getValue(2) << " " << lambda->getValue(3)
-            << " " << lambda->getValue(4) << " " << lambda->getValue(5) << "\n";
+    (*fout) << cmp << " " << (*x)(0) << " " << (*lambda)(0) << " "
+            << (*lambda)(1) << " " << (*lambda)(2) << " " << (*lambda)(3)
+            << " " << (*lambda)(4) << " " << (*lambda)(5) << "\n";
     int cmpR;
     double xR;
     string sz;
@@ -240,17 +240,17 @@ int main() {
     (*fin) >> cmpR >> xR;
 
     getline(*fin, sz);
-    // cout << "==== difference = " <<fabs(xR - x->getValue(0))  <<"\n";
+    // cout << "==== difference = " <<fabs(xR - (*x)(0))  <<"\n";
 
-    if (fabs(xR - x->getValue(0)) > 10e-7) {
+    if (fabs(xR - (*x)(0)) > 10e-7) {
       cout << "==== simulation is stopped because of a too large difference with a referenced "
               "trajectory. ==== \n";
-      cout << "==== difference = " << fabs(xR - x->getValue(0)) << "\n";
+      cout << "==== difference = " << fabs(xR - (*x)(0)) << "\n";
       return 1;
     }
 #else
-    (*fout) << cmp << " " << x->getValue(0) << " " << lambda->getValue(0) << " "
-            << lambda->getValue(3) + sR1 << "\n";
+    (*fout) << cmp << " " << (*x)(0) << " " << (*lambda)(0) << " "
+            << (*lambda)(3) + sR1 << "\n";
 #endif
   }
   delete fout;

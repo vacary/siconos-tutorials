@@ -192,8 +192,8 @@ void Disks::init()
 
     for (unsigned int i = 0; i < Disks->rows(); i++)
     {
-      R = Disks->getValue(i, 2);
-      m = Disks->getValue(i, 3);
+      R = (*Disks)(i, 2);
+      m = (*Disks)(i, 3);
 
       std::shared_ptr<siconos::algebra::SiconosVector> qTmp;
       std::shared_ptr<siconos::algebra::SiconosVector> vTmp;

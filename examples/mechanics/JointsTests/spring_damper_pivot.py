@@ -75,7 +75,7 @@ class Ctrl(object):
         self.joint1.computehDoF(0, bv, angle, 0)
 
         setpoint = np.pi/4
-        ang_diff = setpoint - angle.getValue(0)
+        ang_diff = setpoint - angle(0)
         spring_torque = np.array(self.joint1.normalDoF(bv, 0)) * ang_diff * 500.0
 
         # Get the velocity of each body projected onto the DoF and

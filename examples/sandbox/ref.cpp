@@ -164,11 +164,11 @@ int main(int argc, char* argv[]) {
     // fext(1) = 112.2;
     // ball->setConstantVector2(fext);
 
-    // //ball->vector2()->display();
+    // //siconos::algebra::print(*ball->vector2());
     // ball->computeVector2(0.4);
-    // //ball->vector2()->display();
+    // //siconos::algebra::print(*ball->vector2());
 
-    // //ball->display();
+    // //siconos::algebra::print(*ball);
 
     std::cout << "Second test ... \n";
     // -- Set external forces (weight) --
@@ -185,47 +185,47 @@ int main(int argc, char* argv[]) {
 
     // ball2->computeVector2(0.);
     // if (ball2->hasVector2()) {
-    //   ball2->vector2()->display();
+    //   siconos::algebra::print(*ball2->vector2());
     // }
 
-    // //    ball2->display();
+    // //    siconos::algebra::print(*ball2);
     // ball2->setComputeVector2Function(myforces);
-    // // //ball2->display();
-    // // //ball2->vector2()->display();
+    // // //siconos::algebra::print(*ball2);
+    // // //siconos::algebra::print(*ball2->vector2());
     // ball2->computeVector2(0.);
-    // // //ball2->vector2()->display();
+    // // //siconos::algebra::print(*ball2->vector2());
     // ball2->computeVector2(1.);
-    // ball2->vector2()->display();
+    // siconos::algebra::print(*ball2->vector2());
     // if (ball2->hasVector2()) {
-    //   ball2->vector2()->display();
+    //   siconos::algebra::print(*ball2->vector2());
 
     //   auto res = 3 * ball2->vector2_view();
     //   std::cout << res << "\n";
     // }
-    // ball2->vector2()->display();
+    // siconos::algebra::print(*ball2->vector2());
 
     // /// ----- with vectorDirect -----
 
     // ball2->computeVectorDirect(0.);
     // // if (ball2->hasVectorDirect()) {
-    // //   ball2->vectorDirect()->display();
+    // //   siconos::algebra::print(*ball2->vectorDirect());
     // // }
 
-    // //    ball2->display();
+    // //    siconos::algebra::print(*ball2);
     // ball2->setComputeVectorDirectFunction(myforces);
-    // // //ball2->display();
-    // // //ball2->vectorDirect()->display();
+    // // //siconos::algebra::print(*ball2);
+    // // //siconos::algebra::print(*ball2->vectorDirect());
     // ball2->computeVectorDirect(0.);
-    // // //ball2->vectorDirect()->display();
+    // // //siconos::algebra::print(*ball2->vectorDirect());
     // ball2->computeVectorDirect(1.);
-    // // ball2->vectorDirect()->display();
+    // // siconos::algebra::print(*ball2->vectorDirect());
     // if (ball2->hasVectorDirect()) {
-    //   //   //   ball2->vectorDirect()->display();
+    //   //   //   siconos::algebra::print(*ball2->vectorDirect());
 
     //   auto res = 3 * ball2->vectorDirect_view();
     //   std::cout << res << "\n";
     }
-    // // ball2->vectorDirect()->display();
+    // // siconos::algebra::print(*ball2->vectorDirect());
     ////  --------------------------------
 
     // /// ----- with vectorSpan -----
@@ -240,24 +240,24 @@ int main(int argc, char* argv[]) {
 
     // ball2->computeVectorSpan(0.);
     // if (ball2->hasVectorSpan()) {
-    //   ball2->vectorSpan()->display();
+    //   siconos::algebra::print(*ball2->vectorSpan());
     // }
 
-    // //    ball2->display();
+    // //    siconos::algebra::print(*ball2);
     // ball2->setComputeVectorSpanFunction(myforces_span);
-    // // //ball2->display();
-    // // //ball2->vectorSpan()->display();
+    // // //siconos::algebra::print(*ball2);
+    // // //siconos::algebra::print(*ball2->vectorSpan());
     // ball2->computeVectorSpan(0.);
-    // // //ball2->vectorSpan()->display();
+    // // //siconos::algebra::print(*ball2->vectorSpan());
     // ball2->computeVectorSpan(1.);
-    // ball2->vectorSpan()->display();
+    // siconos::algebra::print(*ball2->vectorSpan());
     // if (ball2->hasVectorSpan()) {
-    //   ball2->vectorSpan()->display();
+    //   siconos::algebra::print(*ball2->vectorSpan());
 
     //   auto res = 3 * ball2->vectorSpan_view();
     //   std::cout << res << "\n";
     // }
-    // ball2->vectorSpan()->display();
+    // siconos::algebra::print(*ball2->vectorSpan());
     // ////  --------------------------------
 
     // siconos::algebra::SiconosMatrix mass{ndof, ndof};
@@ -269,7 +269,7 @@ int main(int argc, char* argv[]) {
 
     // ball2->setConstantMatrix1(mass);
 
-    // ball2->matrix1()->display();
+    // siconos::algebra::print(*ball2->matrix1());
 
     // auto mass_func = [m, g](Eigen::Ref<siconos::algebra::MapVectorType> pos, double time,
     //                         Eigen::Ref<siconos::algebra::MapType> result) {
@@ -284,13 +284,13 @@ int main(int argc, char* argv[]) {
     // };
 
     // ball2->setComputeMatrix1Function(mass_func);
-    // ball2->matrix1()->display();
+    // siconos::algebra::print(*ball2->matrix1());
 
     // Vector pos{ndof};
     // pos.setZero();
     // pos(1) = 8;
     // ball2->computeMatrix1(1., pos);
-    // ball2->matrix1()->display();
+    // siconos::algebra::print(*ball2->matrix1());
 
     // example();
 

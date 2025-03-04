@@ -42,7 +42,7 @@ class MyCollisionManager : public siconos::simulation::InteractionManager {
     auto indexSet0 = simulation->nonSmoothDynamicalSystem()->topology()->indexSet0();
     for (std::tie(ui, uiend) = indexSet0->vertices(); ui != uiend; ++ui) {
       auto inter = indexSet0->bundle(*ui);
-      // inter->display();
+      // siconos::algebra::print(*inter);
       if (inter->number() == 0) {
         auto r =
             std::static_pointer_cast<siconos::modeling::Lagrangian2d2DR>(inter->relation());

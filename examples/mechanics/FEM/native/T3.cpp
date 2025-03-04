@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Assembly time : " << elapsed << " ms\n";
 
     auto femodel = FEsolid->FEModel();
-    // FEsolid->K()->display();
+    // siconos::algebra::print(*FEsolid->K());
 
     /*------------------------------------------------- Applied forces  */
 
@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
     start = std::chrono::system_clock::now();
     while (s->hasNextEvent()) {
       s->computeOneStep();
-      // osnspb->display();
+      // siconos::algebra::print(*osnspb);
       //  --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(FEsolid->dimension() - 1);

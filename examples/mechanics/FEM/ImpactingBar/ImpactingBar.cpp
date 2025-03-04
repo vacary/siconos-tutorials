@@ -84,8 +84,8 @@ int main(int argc, char* argv[]) {
     massMatrix *= user::rho * user::S * l;
     stiffnessMatrix *= user::E * user::S / l;
 
-    //      massMatrix->display();
-    //      stiffnessMatrix->display();
+    //      siconos::algebra::print(*massMatrix);
+    //      siconos::algebra::print(*stiffnessMatrix);
 
     // -- Initial positions and velocities --
     Vector q0{ndof};
@@ -237,9 +237,9 @@ int main(int argc, char* argv[]) {
       s->computeOneStep();
 
       //       std::cout << "position"  << std::endl;
-      //       q->display();
+      //       siconos::algebra::print(*q);
       //       std::cout << "velocity"  << std::endl;
-      //       v->display();
+      //       siconos::algebra::print(*v);
 
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
@@ -264,7 +264,7 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 11) = impactEnergy;
 
       //      std::cout << "q" << std::endl;
-      //       q->display();
+      //       siconos::algebra::print(*q);
 
       //       std::cout <<"potentialEnergy ="<<potentialEnergy << std::endl;
       //       std::cout <<"kineticEnergy ="<<kineticEnergy << std::endl;

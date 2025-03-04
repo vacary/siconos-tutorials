@@ -87,15 +87,15 @@ int main(int argc, char* argv[]) {
     // cout << "Configuation of ball chains\n";
     // cout.precision(15);
     // cout << "Radius of balls: \n";
-    // RadiusBalls->display();
+    // siconos::algebra::print(*RadiusBalls);
     // cout << "Mass of balls: \n";
-    // MassBalls->display();
+    // siconos::algebra::print(*MassBalls);
     // cout << "Initial position of balls: \n";
-    // InitPosBalls->display();
+    // siconos::algebra::print(*InitPosBalls);
     // cout << "Initial velocity of balls: \n";
-    // InitVelBalls->display();
+    // siconos::algebra::print(*InitVelBalls);
     // cout << "Restitution coefficient at contacts:\n";
-    // ResCofContacts->display();
+    // siconos::algebra::print(*ResCofContacts);
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------

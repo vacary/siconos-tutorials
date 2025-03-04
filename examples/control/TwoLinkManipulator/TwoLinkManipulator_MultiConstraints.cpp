@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
       dataPlot(k, 14) = param[23];
 
       s->advanceToEvent();
-      // osnspb->display();
+      // siconos::algebra::print(*osnspb);
       dataPlot(k, 12) = (*p)(1);
       param[4] = (inter02->getLambda(1))(0);
       param[24] = (inter31->getLambda(1))(0);

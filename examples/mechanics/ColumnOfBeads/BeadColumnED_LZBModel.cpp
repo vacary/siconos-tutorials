@@ -121,17 +121,17 @@ int main(int argc, char* argv[]) {
     // cout << "Configuation of ball chains\n";
     // cout.precision(15);
     // cout << "Radius of balls: \n";
-    // RadiusBalls->display();
+    // siconos::algebra::print(*RadiusBalls);
     // cout << "Mass of balls: \n";
-    // MassBalls->display();
+    // siconos::algebra::print(*MassBalls);
     // cout << "Initial position of balls: \n";
-    // InitPosBalls->display();
+    // siconos::algebra::print(*InitPosBalls);
     // cout << "Initial velocity of balls: \n";
-    // InitVelBalls->display();
+    // siconos::algebra::print(*InitVelBalls);
     // cout << "Restitution coefficient at contacts:\n";
-    // ResCofContacts->display();
+    // siconos::algebra::print(*ResCofContacts);
     // cout<< "Stiffness at contacts: \n";
-    // StiffContacts->display();
+    // siconos::algebra::print(*StiffContacts);
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
@@ -283,7 +283,7 @@ int main(int argc, char* argv[]) {
       //
       s->processEvents();  // process events
       if (nonSmooth) {
-        // multiple_impact->display();
+        // siconos::algebra::print(*multiple_impact);
         dataPlot(k, 0) = s->startingTime();
         // Save state of the balls
         unsigned int col_pos = 1;

@@ -764,11 +764,11 @@ void BodiesViewer::mouseMoveEvent(QMouseEvent *e)
       //      Vec t = frame->translation();
       //      printf("translation : %g,%g,%g ; rotation : %g,%g,%g\n", t[0],t[1],t[2],r[0],r[2],r[3]);
 
-      fext->setValue(0, -((float)cpos[0] - q->getValue(0))*massValue * 30);
-      fext->setValue(1, -((float)cpos[1] - q->getValue(1))*massValue * 30);
+      (*fext)(0) = -((float)cpos[0] - (*q)(0))*massValue * 30;
+      (*fext)(1) = -((float)cpos[1] - (*q)(1))*massValue * 30;
       if (ask<ForNdof>(*shapes_[selectedName()]->DS()) > 3)
       {
-        fext->setValue(2, -((float)cpos[2] - q->getValue(2))*massValue * 30);
+        (*fext)(2) = -((float)cpos[2] - (*q)(2))*massValue * 30;
       }
 
     }

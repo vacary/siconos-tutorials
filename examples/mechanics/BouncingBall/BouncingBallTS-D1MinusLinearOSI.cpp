@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
     auto start = std::chrono::system_clock::now();
     while (s->hasNextEvent()) {
       s->advanceToEvent();
-      // ball->display();
+      // siconos::algebra::print(*ball);
       // --- Get values to be plotted ---
       //  if (fmod(s->nextTime(), hplot) < h)
       {

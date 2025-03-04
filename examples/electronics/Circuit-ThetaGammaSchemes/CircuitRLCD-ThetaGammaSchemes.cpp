@@ -65,8 +65,8 @@ int main(int argc, char *argv[]) {
   try {
     // --- Dynamical system specification ---
     auto init_state = std::make_shared<Vector>(2);
-    init_state->setValue(0, 1.0);
-    init_state->setValue(1, 1.0);
+    (*init_state)(0) = 1.0;
+    (*init_state)(1) = 1.0;
 
     auto LS_A = std::make_shared<Matrix>(2, 2);
     LS_A->setValue(0, 1, -1.0);
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     for (k = 1; k < N; ++k) {
       // solve ...
       StratCircuitRLCD->computeOneStep();
-      // LCP_RLCD->display();
+      // siconos::algebra::print(*LCP_RLCD);
       //  --- Get values to be plotted ---
       //  time
       dataPlot(k, 0) = StratCircuitRLCD->nextTime();

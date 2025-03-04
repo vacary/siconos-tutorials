@@ -61,22 +61,22 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
                 Eigen::Ref<siconos::algebra::SiconosVector> y) override {
     std::cout << "my_NewtonEulerR:: computeh \n";
     std::cout << "q0.size() = " << q0.size() << "\n";
-    double height = q0.getValue(0) - _sBallRadius - q0.getValue(7);
-    y.setValue(0, height);
-    _Nc->setValue(0, 1);
-    _Nc->setValue(1, 0);
-    _Nc->setValue(2, 0);
-    _Pc1->setValue(0, q0.getValue(0) - _sBallRadius);
-    _Pc1->setValue(1, q0.getValue(1));
-    _Pc1->setValue(2, q0.getValue(2));
+    double height = q0(0) - _sBallRadius - q0(7);
+    y(0) = height;
+    (*_Nc)(0) = 1;
+    (*_Nc)(1) = 0;
+    (*_Nc)(2) = 0;
+    (*_Pc1)(0) = q0(0) - _sBallRadius;
+    (*_Pc1)(1) = q0(1);
+    (*_Pc1)(2) = q0(2);
 
-    _Pc2->setValue(0, q0.getValue(7));
-    _Pc2->setValue(1, q0.getValue(8));
-    _Pc2->setValue(2, q0.getValue(9));
+    (*_Pc2)(0) = q0(7);
+    (*_Pc2)(1) = q0(8);
+    (*_Pc2)(2) = q0(9);
     // printf("my_NewtonEulerR N, Pc\n");
-    _Nc->display();
-    _Pc1->display();
-    _Pc2->display();
+    siconos::algebra::print(*_Nc);
+    siconos::algebra::print(*_Pc1);
+    siconos::algebra::print(*_Pc2);
     std::cout << "my_NewtonEulerR:: computeh ends" << std::endl;
   }
 };
@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
     Matrix dataPlot(N + 1, outputSize);
 
     auto q = ball->q();
-    auto v = ball->velocity();
+    auto v = ball->twist();
     auto p = ball->p(1);
 
     // auto lambda = inter->lambda(1);
@@ -216,7 +216,7 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 3) = (*p)(0);
     dataPlot(0, 4) = (*reaction)(0);
     dataPlot(0, 5) = acos((*q)(3));
-    // dataPlot(0, 6) = relation0->contactForce()->norm2();
+    // dataPlot(0, 6) = relation0->contactForce()->norm();
 
     dataPlot(0, 7) = (*q)(0);
     dataPlot(0, 8) = (*q)(1);
@@ -258,7 +258,7 @@ int main(int argc, char* argv[]) {
       } else {
         dataPlot(k, 5) = acos((*q)(3));
       }
-      // dataPlot(k, 6) = relation0->contactForce()->norm2();
+      // dataPlot(k, 6) = relation0->contactForce()->norm();
       dataPlot(k, 7) = (*q)(0);
       dataPlot(k, 8) = (*q)(1);
       dataPlot(k, 9) = (*q)(2);

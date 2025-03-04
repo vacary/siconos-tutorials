@@ -45,16 +45,16 @@ int main(int argc, char* argv[]) {
     auto xti = std::make_shared<Vector>(dimX);
     xti->setZero();
     if (argc == 1) {
-      xti->setValue(0, 1);
-      xti->setValue(1, 6);
+      (*xti)(0) = 1;
+      (*xti)(1) = 6;
       strncpy(&filename[5], "1.6.log", 7);
     } else if (argc == 3) {
       // printf("argv[0] %s\n", argv[0]);
       printf("xti(0) is set to %f\n", atof(argv[1]));
       printf("xti(1) is set to %f\n", atof(argv[2]));
 
-      xti->setValue(0, atof(argv[1]));
-      xti->setValue(1, atof(argv[2]));
+      (*xti)(0) = atof(argv[1]);
+      (*xti)(1) = atof(argv[2]);
       int sizeofargv1 = strlen(argv[1]);
       // printf("sizeofargv1 %i\n",sizeofargv1);
       strncpy(&filename[5], argv[1], sizeofargv1);
@@ -84,18 +84,18 @@ int main(int argc, char* argv[]) {
                                const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
                                Eigen::Ref<siconos::algebra::SiconosVector> y) {
       y.setZero();
-      y.setValue(0, state(0) - 4);
-      y.setValue(1, state(1) - 4);
-      y.setValue(2, state(0) - 8);
-      y.setValue(3, state(1) - 8);
+      y(0) = state(0) - 4;
+      y(1) = state(1) - 4;
+      y(2) = state(0) - 8;
+      y(3) = state(1) - 8;
     });
 
     aR->setComputegFunction([](const siconos::algebra::BlockVector& state, double time,
                                const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
                                siconos::algebra::BlockVector& res) {
       res.setZero();
-      res.setValue(0, 10.0 * (1 + lambda(2)) * (1 - lambda(1)));
-      res.setValue(1, 10.0 * (1 - lambda(0)) * (1 + lambda(3)));
+      res(0) = 10.0 * (1 + lambda(2)) * (1 - lambda(1));
+      res(1) = 10.0 * (1 - lambda(0)) * (1 + lambda(3));
     });
 
     siconos::algebra::SiconosMatrix jachx{user_defined::sNSLawSize, dimX};
@@ -122,18 +122,18 @@ int main(int argc, char* argv[]) {
     //                            const Eigen::Ref<const siconos::algebra::SiconosVector>&
     //                            lambda, Eigen::Ref<siconos::algebra::SiconosVector> y) {
     //   y.setZero();
-    //   y.setValue(0, 4.0 - state(0));
-    //   y.setValue(1, 4.0 - state(1));
-    //   y.setValue(2, 8.0 - state(0));
-    //   y.setValue(3, 8.0 - state(1));
+    //   y(0) = 4.0 - state(0);
+    //   y(1) = 4.0 - state(1);
+    //   y(2) = 8.0 - state(0);
+    //   y(3) = 8.0 - state(1);
     // });
 
     // aR->setComputegFunction([](const siconos::algebra::BlockVector& state, double time,
     //                            const Eigen::Ref<const siconos::algebra::SiconosVector>&
     //                            lambda, siconos::algebra::BlockVector& res) {
     //   res.setZero();
-    //   res.setValue(0, 10.0 * (1 - lambda(2)) * (1 + lambda(1)));
-    //   res.setValue(1, 10.0 * (1 + lambda(0)) * (1 - lambda(3)));
+    //   res(0) = 10.0 * (1 - lambda(2)) * (1 + lambda(1));
+    //   res(1) = 10.0 * (1 + lambda(0)) * (1 - lambda(3));
     // });
 
     // siconos::algebra::SiconosMatrix jachx{user_defined::sNSLawSize, dimX};
@@ -210,14 +210,14 @@ int main(int argc, char* argv[]) {
     std::cout << "=== Start of simulation: " << NBStep << " steps ===\n";
 
     dataPlot(0, 0) = aN->t0();
-    dataPlot(0, 1) = x->getValue(0);
-    dataPlot(0, 2) = x->getValue(1);
-    dataPlot(0, 3) = lambda->getValue(0);
-    dataPlot(0, 4) = lambda->getValue(1);
-    dataPlot(0, 5) = lambda->getValue(2);
-    dataPlot(0, 6) = lambda->getValue(3);
-    dataPlot(0, 7) = vectorfield->getValue(0);
-    dataPlot(0, 8) = vectorfield->getValue(1);
+    dataPlot(0, 1) = (*x)(0);
+    dataPlot(0, 2) = (*x)(1);
+    dataPlot(0, 3) = (*lambda)(0);
+    dataPlot(0, 4) = (*lambda)(1);
+    dataPlot(0, 5) = (*lambda)(2);
+    dataPlot(0, 6) = (*lambda)(3);
+    dataPlot(0, 7) = (*vectorfield)(0);
+    dataPlot(0, 8) = (*vectorfield)(1);
 
     auto start = std::chrono::system_clock::now();
     for (int k = 0; k < NBStep; k++) {
@@ -228,28 +228,28 @@ int main(int argc, char* argv[]) {
       aS->advanceToEvent();
 
       dataPlot(cmp, 0) = aS->nextTime();
-      dataPlot(cmp, 1) = x->getValue(0);
-      dataPlot(cmp, 2) = x->getValue(1);
-      dataPlot(cmp, 3) = lambda->getValue(0);
-      dataPlot(cmp, 4) = lambda->getValue(1);
-      dataPlot(cmp, 5) = lambda->getValue(2);
-      dataPlot(cmp, 6) = lambda->getValue(3);
+      dataPlot(cmp, 1) = (*x)(0);
+      dataPlot(cmp, 2) = (*x)(1);
+      dataPlot(cmp, 3) = (*lambda)(0);
+      dataPlot(cmp, 4) = (*lambda)(1);
+      dataPlot(cmp, 5) = (*lambda)(2);
+      dataPlot(cmp, 6) = (*lambda)(3);
 
       aDS->computeRhs(aS->nextTime());
 
       if (cmp == 1)  // tricks just for display to avoid the computation of the initial Rhs
       {
-        dataPlot(cmp - 1, 7) = vectorfield->getValue(0);
-        dataPlot(cmp - 1, 8) = vectorfield->getValue(1);
+        dataPlot(cmp - 1, 7) = (*vectorfield)(0);
+        dataPlot(cmp - 1, 8) = (*vectorfield)(1);
       }
 
-      dataPlot(cmp, 7) = vectorfield->getValue(0);
-      dataPlot(cmp, 8) = vectorfield->getValue(1);
+      dataPlot(cmp, 7) = (*vectorfield)(0);
+      dataPlot(cmp, 8) = (*vectorfield)(1);
 
       aS->nextStep();
 
-      // (*fout)<<cmp<<" "<<x->getValue(0)<<" "<<x->getValue(1)<<" "<<lambda->getValue(0)<<"
-      // "<<lambda->getValue(1)<<" "<<lambda->getValue(2)<<" "<<lambda->getValue(3)<<"\n";
+      // (*fout)<<cmp<<" "<<(*x)(0)<<" "<<(*x)(1)<<" "<<(*lambda)(0)<<"
+      // "<<(*lambda)(1)<<" "<<(*lambda)(2)<<" "<<(*lambda)(3)<<"\n";
     }
     std::cout << "Computational time = " << "\n";
     auto end = std::chrono::system_clock::now();

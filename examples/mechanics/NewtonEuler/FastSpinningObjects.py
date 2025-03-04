@@ -59,9 +59,9 @@ class UnstableRotation(NewtonEulerDS):
         if isinstance(mExt,SiconosVector):
             mExt.setZero()
             if (0 <= time < td):
-                mExt.setValue(0, 20.0)
+                mExt(0) = 20.0
             elif (td <= time <= td + h):
-                mExt.setValue(1, 1.0 / (5.0 * h))
+                mExt(1) = 1.0 / (5.0 * h)
         else:
             mExt[:]=0
             if (0 <= time < td):
@@ -101,11 +101,11 @@ class HeavyTop(NewtonEulerDS):
         r= np.zeros(3)
         E3 = SiconosVector(3)
         E3.setZero()
-        E3.setValue(2,1.0)
+        E3(2) = 1.0
         rotateAbsToBody(q,E3)
-        r[0] = E3.getValue(0)
-        r[1] = E3.getValue(1)
-        r[2] = E3.getValue(2)
+        r[0] = E3(0)
+        r[1] = E3(1)
+        r[2] = E3(2)
         return r
         
     def computeMInt(self, time, q, v, mInt=None):
@@ -114,9 +114,9 @@ class HeavyTop(NewtonEulerDS):
         if isinstance(mInt,SiconosVector):
             r = self.centermass(q)
             m =  self._Mg*self._l*np.cross(r,[0,0,1.0])
-            mInt.setValue(0,m[0])
-            mInt.setValue(1,m[1])
-            mInt.setValue(2,m[2])
+            mInt(0) = m[0]
+            mInt(1) = m[1]
+            mInt(2) = m[2]
             changeFrameAbsToBody(q,mInt)
             #print("mInt========")
             mInt.display()
@@ -126,16 +126,16 @@ class HeavyTop(NewtonEulerDS):
             m_sv = SiconosVector(m)
             changeFrameAbsToBody(q,m_sv)
             m_sv.display()
-            mInt[0] = m_sv.getValue(0) 
-            mInt[1] = m_sv.getValue(1) 
-            mInt[2] = m_sv.getValue(2) 
+            mInt[0] = m_sv(0) 
+            mInt[1] = m_sv(1) 
+            mInt[2] = m_sv(2) 
             print("mInt", mInt)
 
 
 
 rotationVector_init= SiconosVector(3)
 rotationVector_init.setZero()
-rotationVector_init.setValue(0,0.3)
+rotationVector_init(0) = 0.3
 x=SiconosVector(7)
 quaternionFromRotationVector(rotationVector_init,x)
 
@@ -231,16 +231,16 @@ angular_momentum = np.dot(ds.inertia(),omega)
 am= SiconosVector(angular_momentum)
 rewriteVectorFromBodyToAbsoluteFrame(q,am)
 
-dataPlot[k, 14] = am.getValue(0)
-dataPlot[k, 15] = am.getValue(1)
-dataPlot[k, 16] = am.getValue(2)
-dataPlot[k, 17] = am.norm2()
+dataPlot[k, 14] = am(0)
+dataPlot[k, 15] = am(1)
+dataPlot[k, 16] = am(2)
+dataPlot[k, 17] = am.norm()
 
 rotationVector = SiconosVector(3)
 rotationVectorFromQuaternion(q[3],q[4],q[5],q[6], rotationVector)
-dataPlot[k, 18] = rotationVector.getValue(0)
-dataPlot[k, 19] = rotationVector.getValue(1)
-dataPlot[k, 20] = rotationVector.getValue(2)
+dataPlot[k, 18] = rotationVector(0)
+dataPlot[k, 19] = rotationVector(1)
+dataPlot[k, 20] = rotationVector(2)
 
 
 dataPlot[k, 22] = h* omega[0]
@@ -283,24 +283,24 @@ while(s.hasNextEvent() and k < N):
     am= SiconosVector(angular_momentum)
     rewriteVectorFromBodyToAbsoluteFrame(q,am)
     a = np.zeros(1)
-    a[0] = am.getValue(0)
-    #a[1] = am.getValue(1)
+    a[0] = am(0)
+    #a[1] = am(1)
     # print "omega", omega
     # print "angular_momentum", angular_momentum,
     # print "q=", q
     # print " norm(a[1:2])", np.linalg.norm(a) 
     #raw_input()
-    dataPlot[k, 14] = am.getValue(0)
-    dataPlot[k, 15] = am.getValue(1)
-    dataPlot[k, 16] = am.getValue(2)
-    dataPlot[k, 17] = am.norm2()
+    dataPlot[k, 14] = am(0)
+    dataPlot[k, 15] = am(1)
+    dataPlot[k, 16] = am(2)
+    dataPlot[k, 17] = am.norm()
 
     
     rotationVector = SiconosVector(3)
     rotationVectorFromQuaternion(q[3],q[4],q[5],q[6], rotationVector)
-    dataPlot[k, 18] = rotationVector.getValue(0)
-    dataPlot[k, 19] = rotationVector.getValue(1)
-    dataPlot[k, 20] = rotationVector.getValue(2)
+    dataPlot[k, 18] = rotationVector(0)
+    dataPlot[k, 19] = rotationVector(1)
+    dataPlot[k, 20] = rotationVector(2)
     
     
     dataPlot[k, 22] = h* omega[0]

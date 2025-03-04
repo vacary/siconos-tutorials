@@ -80,10 +80,10 @@ int main(int argc, char *argv[]) {
     Vector V1{3};
     V1 << 0., 1., 0.;
     // construction of the quaternion
-    q10.setValue(3, cos(angle * 0.5));
-    q10.setValue(4, V1.getValue(0) * sin(angle * 0.5));
-    q10.setValue(5, V1.getValue(1) * sin(angle * 0.5));
-    q10.setValue(6, V1.getValue(2) * sin(angle * 0.5));
+    q10(3) = cos(angle * 0.5);
+    q10(4) = V1(0) * sin(angle * 0.5);
+    q10(5) = V1(1) * sin(angle * 0.5);
+    q10(6) = V1(2) * sin(angle * 0.5);
 
     // -- The dynamical system --
     auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1);
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
       beam1Plot(1, 3 * k + 1) = beamTipTrajectories[4];
       beam1Plot(1, 3 * k + 2) = beamTipTrajectories[5];
 
-      // printf("reaction1:%lf \n", interFloor->lambda(1)->getValue(0));
+      // printf("reaction1:%lf \n", (*interFloor->lambda(1))(0));
 
       for (unsigned int jj = 0; jj < outputSize; jj++) {
         if ((k || jj)) fprintf(pFile, ",");

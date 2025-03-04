@@ -60,19 +60,19 @@ int main(int argc, char* argv[]) {
     A->row(2) = SiconosVector({0.0, -1.0, 0.0});
 
     cout << "matrix A: " << endl;
-    A->display();
+    siconos::algebra::print(*A);
 
     auto E(new SimpleMatrix(dimX, dimX));
     (*E)(0, 0) = 1.0;
     (*E)(1, 1) = 1.0;
 
     cout << "matrix E: " << endl;
-    E->display();
+    siconos::algebra::print(*E);
 
     std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector({1.0, 0.0, 0.0}));
 
     cout << "vector b: " << endl;
-    b->display();
+    siconos::algebra::print(*b);
 
     // Siconos smooth dynamical system
     auto dyn(new FirstOrderLinearDS(init, A, b));
@@ -178,9 +178,9 @@ int main(int argc, char* argv[]) {
     double q_0;
     while (s->hasNextEvent()) {
       s->computeOneStep();
-      // osnspb->display();
-      M_00 = osnspb->M()->defaultMatrix()->getValue(0, 0);
-      q_0 = osnspb->q()->getValue(0);
+      // siconos::algebra::print(*osnspb);
+      M_00 = (*osnspb->M()->defaultMatrix())(0, 0);
+      q_0 = (*osnspb->q())(0);
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*x)(0);

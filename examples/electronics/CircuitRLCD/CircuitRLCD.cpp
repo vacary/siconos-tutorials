@@ -63,15 +63,14 @@ int main(int argc, char *argv[]) {
     // ================= Creation of the model =======================
     // --- Dynamical system specification ---
     auto init_state = std::make_shared<siconos::algebra::SiconosVector>(2);
-    init_state->setValue(0, Vinit);
-    init_state->setValue(1, 0.0);
+    (*init_state)(0) = Vinit;
+    (*init_state)(1) = 0.0;
 
     auto LS_A = std::make_shared<siconos::algebra::SiconosMatrix>(2, 2);
     LS_A->setValue(0, 1, -1.0 / Cvalue);
     LS_A->setValue(1, 0, 1.0 / Lvalue);
 
-    auto LSCircuitRLCD =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state);
+    auto LSCircuitRLCD = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state);
     LSCircuitRLCD->setConstantA(*LS_A);
     // --- Interaction between linear system and non smooth system ---
     auto Int_C = std::make_shared<siconos::algebra::SiconosMatrix>(1, 2);
@@ -105,7 +104,6 @@ int main(int argc, char *argv[]) {
     InterCircuitRLCD->computeInput(t0, 0);
 
     CircuitRLCD->display();
-
     // ------------------
     // --- Simulation ---
     // ------------------

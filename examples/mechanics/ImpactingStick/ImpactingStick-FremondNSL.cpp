@@ -234,7 +234,7 @@ int main(int argc, char* argv[]) {
       // 		<< " error:  : "
       // 		<< osnspb->numericsSolverOptions()->dparam[SICONOS_DPARAM_RESIDU]
       // 		<< std::endl;
-      // 	  osnspb->display();
+      // 	  siconos::algebra::print(*osnspb);
       // 	  std::cout << lambda(0) << std::endl;
       // 	  std::cout << u(0) << std::endl;
       // 	  std::cout << u_k(0) << std::endl;

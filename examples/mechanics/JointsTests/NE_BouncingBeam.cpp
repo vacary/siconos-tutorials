@@ -69,10 +69,10 @@ int main(int argc, char *argv[]) {
     double angle = std::numbers::pi / 2;
     Vector V1{3};
     V1 << 0, 1, 0;
-    q03.setValue(3, cos(angle / 2));
-    q03.setValue(4, V1.getValue(0) * sin(angle / 2));
-    q03.setValue(5, V1.getValue(1) * sin(angle / 2));
-    q03.setValue(6, V1.getValue(2) * sin(angle / 2));
+    q03(3) = cos(angle / 2);
+    q03(4) = V1(0) * sin(angle / 2);
+    q03(5) = V1(1) * sin(angle / 2);
+    q03(6) = V1(2) * sin(angle / 2);
 
     auto bouncingbeam = std::make_shared<siconos::modeling::NewtonEulerDS>(q03, v03, m, I3);
     // -- Set external forces (weight) --
@@ -181,8 +181,8 @@ int main(int argc, char *argv[]) {
       dataPlot(k, 6) = q3(5);
       dataPlot(k, 7) = q3(6);
 
-      dataPlot(k, 8) = y->norm2();
-      dataPlot(k, 9) = ydot->norm2();
+      dataPlot(k, 8) = y->norm();
+      dataPlot(k, 9) = ydot->norm();
 
       geomtools::tipTrajectories(q3, beamTipTrajectories, L3);
       bouncingbeamPlot(0, 3 * k) = beamTipTrajectories[0];
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
       bouncingbeamPlot(1, 3 * k + 1) = beamTipTrajectories[4];
       bouncingbeamPlot(1, 3 * k + 2) = beamTipTrajectories[5];
 
-      // printf("reaction1:%lf \n", interFloor->lambda(1)->getValue(0));
+      // printf("reaction1:%lf \n", (*interFloor->lambda(1))(0));
 
       for (unsigned int jj = 0; jj < outputSize; jj++) {
         if ((k || jj)) fprintf(pFile, ",");

@@ -92,8 +92,8 @@ int main(int argc, char* argv[]) {
     std::cout << "xsi:" << xsi * user::S / l << "\n";
     dampingMatrix *= xsi * user::S / l;
 
-    //      SparseMass->display();
-    //      SparseStiffness->display();
+    //      siconos::algebra::print(*SparseMass);
+    //      siconos::algebra::print(*SparseStiffness);
 
     // -- Initial positions and velocities --
     Vector q0{ndof};
@@ -224,9 +224,9 @@ int main(int argc, char* argv[]) {
       s->advanceToEvent();
       //      std::cout << "k = "  << k << std::endl;
       //       std::cout << "position"  << std::endl;
-      //       q->display();
+      //       siconos::algebra::print(*q);
       //       std::cout << "velocity"  << std::endl;
-      //       v->display();
+      //       siconos::algebra::print(*v);
 
       // --- Get values to be plotted ---
       const auto& lambdaplus = inter->lambdaMemory(2).getSiconosVector(0);
@@ -253,7 +253,7 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 6) = kineticEnergy;
 
       //      std::cout << "q" << std::endl;
-      //       q->display();
+      //       siconos::algebra::print(*q);
 
       //       std::cout <<"potentialEnergy ="<<potentialEnergy << std::endl;
       //       std::cout <<"kineticEnergy ="<<kineticEnergy << std::endl;

@@ -55,14 +55,14 @@ static void addElementaryStiffnessMatrix(
     for (unsigned int j = 1; j < 4; j++) (*Ke)(j, i) = (*Ke)(i, j);
   }
 
-  // Ke->display();
+  // siconos::algebra::print(*Ke);
   std::shared_ptr<siconos::algebra::SiconosMatrix> ElementStiffness(
       new SiconosMatrix(nDof, nDof, siconos::SPARSE, 10 * nDof));
   for (unsigned int i = 0; i < ndof_per_element; i++) {
     for (unsigned int j = 0; j < ndof_per_element; j++)
       ElementStiffness->setValue(i + dofStart, j + dofStart, (*Ke)(i, j));
   }
-  // ElementStiffness->display();
+  // siconos::algebra::print(*ElementStiffness);
 
   (*SparseStiffness) += (*ElementStiffness);
 }
@@ -101,7 +101,7 @@ static void addElementaryMassMatrix(
     (*Me)(3, 3) = alpha * elementLength * elementLength * 420.;
   }
 
-  // Me->display();
+  // siconos::algebra::print(*Me);
 
   std::shared_ptr<siconos::algebra::SiconosMatrix> ElementMass(
       new SiconosMatrix(nDof, nDof, siconos::SPARSE, 6 * nDof));
@@ -109,7 +109,7 @@ static void addElementaryMassMatrix(
     for (unsigned int j = 0; j < ndof_per_element; j++)
       ElementMass->setValue(i + dofStart, j + dofStart, (*Me)(i, j));
   }
-  // ElementStiffness->display();
+  // siconos::algebra::print(*ElementStiffness);
 
   (*SparseMass) += (*ElementMass);
 }
@@ -148,20 +148,20 @@ int main(int argc, char* argv[]) {
 
     *SparseMass *= rho * S * l / 420.;
     *SparseStiffness *= E * I / (l * l * l);
-    cout << "(*SparseMass)(0,0) = " << SparseMass->getValue(0, 0) << endl;
-    cout << "(*SparseMass)(0,1) = " << SparseMass->getValue(0, 1) << endl;
-    cout << "(*SparseMass)(1,0) = " << SparseMass->getValue(1, 0) << endl;
-    cout << "(*SparseMass)(1,1) = " << SparseMass->getValue(1, 1) << endl;
+    cout << "(*SparseMass)(0,0) = " << (*SparseMass)(0, 0) << endl;
+    cout << "(*SparseMass)(0,1) = " << (*SparseMass)(0, 1) << endl;
+    cout << "(*SparseMass)(1,0) = " << (*SparseMass)(1, 0) << endl;
+    cout << "(*SparseMass)(1,1) = " << (*SparseMass)(1, 1) << endl;
 
-    // SparseMass->display();
-    // SparseStiffness->display();
-    std::cout << " SparseMass nnz :" << SparseMass->nnz() << std::endl;
-    std::cout << " SparseStiffness nnz :" << SparseStiffness->nnz() << std::endl;
+    // siconos::algebra::print(*SparseMass);
+    // siconos::algebra::print(*SparseStiffness);
+    std::cout << " SparseMass nnz :" << SparseMass->nonZeros() << std::endl;
+    std::cout << " SparseStiffness nnz :" << SparseStiffness->nonZeros() << std::endl;
 
     // -- Initial positions and velocities --
     std::shared_ptr<siconos::algebra::SiconosVector> q0(new SiconosVector(nDof, 0.));
     std::shared_ptr<siconos::algebra::SiconosVector> v0(new SiconosVector(nDof, 0.));
-    // v0->setValue(0,-.1);
+    // (*v0)(0) = -.1;
     //  -- The dynamical system --
     auto beam(new LagrangianLinearTIDS(q0, v0, SparseMass));
 
@@ -172,10 +172,10 @@ int main(int argc, char* argv[]) {
     // std::shared_ptr<siconos::algebra::SiconosVector> weight(new SiconosVector(nDof,0.));
     // for (int i =0; i < nDof; i++)
     // {
-    //   weight->setValue(i,-g*rho*S/l);
+    //   (*weight)(i) = -g*rho*S/l;
     //   i++;
     // }
-    // weight->display();
+    // siconos::algebra::print(*weight);
     Vector weight{nDof};
     weight.setZero();
     beam->etConstantFExt(weight);
@@ -186,8 +186,8 @@ int main(int argc, char* argv[]) {
 
     std::shared_ptr<siconos::algebra::SiconosVector> bdPrescribedVelocity(
         new SiconosVector(2));
-    bdPrescribedVelocity->setValue(0, 0.0);
-    bdPrescribedVelocity->setValue(1, 0.0);
+    (*bdPrescribedVelocity)(0) = 0.0;
+    (*bdPrescribedVelocity)(1) = 0.0;
     auto bd(new BoundaryCondition(bdindex, bdPrescribedVelocity));
 
     beam->setBoundaryConditions(bd);
@@ -328,7 +328,7 @@ int main(int argc, char* argv[]) {
     while (k < N) {
       if (k % 100 == 0) std::cout << "k :" << k << "/" << N << std::endl;
       s->computeOneStep();
-      // osnspb->display();
+      // siconos::algebra::print(*osnspb);
       //  std::cout << "\nposition "  << (*q)(0) <<  std::endl;
       //  std::cout << "velocity "  << (*v)(0) <<  std::endl;
 
@@ -382,12 +382,12 @@ int main(int argc, char* argv[]) {
       //   std::cout <<"v ball before="<<dataPlot(k-1,13) << std::endl;
 
       //   getchar();
-      // osnspb->display();
+      // siconos::algebra::print(*osnspb);
       // getchar();
       // }
       if ((*lambda)(0) > 0) {
         max_impulse = fmax(max_impulse, (*lambda)(0));
-        // osnspb->display();
+        // siconos::algebra::print(*osnspb);
         // break;
       }
 
@@ -417,12 +417,12 @@ int main(int argc, char* argv[]) {
     // dataPlotRef.setZero();
     // ioMatrix::read("ImpactingBeam.ref", "ascii", dataPlotRef);
 
-    // double error = (dataPlot - dataPlotRef).normInf() ;
+    // double error = siconos::algebra::normInf(dataPlot - dataPlotRef) ;
     // cout << "Error = " << error << endl;
     // if(error > 1e-11)
     // {
     //   std::cout << "Warning. The result is rather different from the reference file." <<
-    //   std::endl; std::cout << "Error = "<< (dataPlot - dataPlotRef).normInf()<<std::endl;
+    //   std::endl; std::cout << "Error = "<< siconos::algebra::normInf(dataPlot - dataPlotRef)<<std::endl;
     //   return 1;
     // }
 

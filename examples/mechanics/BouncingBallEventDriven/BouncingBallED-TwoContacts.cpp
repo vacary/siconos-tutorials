@@ -67,7 +67,6 @@ int main(int argc, char *argv[]) {
     v0.setZero();
     v0(0) = velocity_init;
 
-
     // -- The dynamical system --
     auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
 

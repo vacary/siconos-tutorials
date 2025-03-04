@@ -76,10 +76,10 @@ int main(int argc, char *argv[]) {
     Vector V1(3);
     V1 << 0., 1., 0.;  // vector of the rotation (Y-axis)
     // construction of the quaternion
-    q10.setValue(3, cos(angle / 2));
-    q10.setValue(4, V1(0) * sin(angle / 2));
-    q10.setValue(5, V1(1) * sin(angle / 2));
-    q10.setValue(6, V1(2) * sin(angle / 2));
+    q10(3) = cos(angle / 2);
+    q10(4) = V1(0) * sin(angle / 2);
+    q10(5) = V1(1) * sin(angle / 2);
+    q10(6) = V1(2) * sin(angle / 2);
 
     // -- The dynamical system --
     auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1);

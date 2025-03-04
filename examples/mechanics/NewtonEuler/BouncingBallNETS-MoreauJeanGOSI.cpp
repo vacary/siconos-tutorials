@@ -48,21 +48,21 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
 
   void computeh(const siconos::algebra::BlockVector& q0,
                 Eigen::Ref<siconos::algebra::SiconosVector> y) override {
-    double height = fabs(q0.getValue(0)) - _sBallRadius;
-    y.setValue(0, height);
-    _Nc->setValue(0, 1);
-    _Nc->setValue(1, 0);
-    _Nc->setValue(2, 0);
-    _Pc1->setValue(0, height);
-    _Pc1->setValue(1, q0.getValue(1));
-    _Pc1->setValue(2, q0.getValue(2));
+    double height = fabs(q0(0)) - _sBallRadius;
+    y(0) = height;
+    (*_Nc)(0) = 1;
+    (*_Nc)(1) = 0;
+    (*_Nc)(2) = 0;
+    (*_Pc1)(0) = height;
+    (*_Pc1)(1) = q0(1);
+    (*_Pc1)(2) = q0(2);
 
-    //_Pc2->setValue(0,hpc);
-    //_Pc2->setValue(1,data[q0]->getValue(1));
-    //_Pc2->setValue(2,data[q0]->getValue(2));
+    //(*_Pc2)(0) = hpc;
+    //(*_Pc2)(1) = (*data[q0])(1);
+    //(*_Pc2)(2) = (*data[q0])(2);
     // printf("my_NewtonEulerR N, Pc\n");
-    //_Nc->display();
-    //_Pc1->display();
+    //siconos::algebra::print(*_Nc);
+    //siconos::algebra::print(*_Pc1);
   }
 };
 
@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
     //     //    relation0->setJacQH(H_block);
     //     //    relation0->setJacQHT(HT_block);
     //     //cout<<"main jacQH"<<endl;
-    //     //relation0->H_NE()->display();
+    //     //siconos::algebra::print(*relation0->H_NE());
 
     // Version with my_NewtonEulerR()
     auto relation0 = std::make_shared<my_NewtonEulerR>(radius);

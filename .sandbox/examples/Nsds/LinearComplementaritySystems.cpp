@@ -61,8 +61,8 @@ int main(int argc, char* argv[])
   {
     // --- Dynamical system specification ---
     std::shared_ptr<siconos::algebra::SiconosVector> x0(new SiconosVector(2));
-    x0->setValue(0, Vinit);
-    x0->setValue(1, 0.0);
+    (*x0)(0) = Vinit;
+    (*x0)(1) = 0.0;
 
     auto A(new SimpleMatrix(2, 2));
     A->setValue(0 , 1, -1.0 / Cvalue);
@@ -89,11 +89,10 @@ int main(int argc, char* argv[])
     // assert(lcs->relation());
     // assert(lcs->ds());
     // assert(lcs->nslaw());
-    // lcs->interaction()->display();
     lcs->interaction()->computeOutput(t0,0);
     lcs->interaction()->computeInput(t0,0);
 
-    //lcs->display();
+    //siconos::algebra::print(*lcs);
 
     // ------------------
     // --- Simulation ---

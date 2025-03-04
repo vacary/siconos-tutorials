@@ -71,10 +71,10 @@ int main(int argc, char *argv[]) {
     Vector V1{3};
     V1 << 0., 1., 0.;
     // construction of the quaternion
-    q10.setValue(3, cos(angle * 0.5));
-    q10.setValue(4, V1.getValue(0) * sin(angle * 0.5));
-    q10.setValue(5, V1.getValue(1) * sin(angle * 0.5));
-    q10.setValue(6, V1.getValue(2) * sin(angle * 0.5));
+    q10(3) = cos(angle * 0.5);
+    q10(4) = V1(0) * sin(angle * 0.5);
+    q10(5) = V1(1) * sin(angle * 0.5);
+    q10(6) = V1(2) * sin(angle * 0.5);
 
     // -- The dynamical system --
     auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1);
@@ -96,10 +96,10 @@ int main(int argc, char *argv[]) {
     q02(2) = -L1 / sqrt(2.0) - 0.5 * L2 / sqrt(2.0);
 
     angle = -std::numbers::pi / 4;
-    q02.setValue(3, cos(angle / 2));
-    q02.setValue(4, V1.getValue(0) * sin(angle / 2));
-    q02.setValue(5, V1.getValue(1) * sin(angle / 2));
-    q02.setValue(6, V1.getValue(2) * sin(angle / 2));
+    q02(3) = cos(angle / 2);
+    q02(4) = V1(0) * sin(angle / 2);
+    q02(5) = V1(1) * sin(angle / 2);
+    q02(6) = V1(2) * sin(angle / 2);
 
     auto beam2 = std::make_shared<siconos::modeling::NewtonEulerDS>(q02, v02, m, I2);
     // -- Set external forces (weight) --
@@ -115,10 +115,10 @@ int main(int argc, char *argv[]) {
     q03(2) = -L1 * sqrt(2.0) - L1 / 2;
 
     angle = std::numbers::pi / 2;
-    q03.setValue(3, cos(angle / 2));
-    q03.setValue(4, V1.getValue(0) * sin(angle / 2));
-    q03.setValue(5, V1.getValue(1) * sin(angle / 2));
-    q03.setValue(6, V1.getValue(2) * sin(angle / 2));
+    q03(3) = cos(angle / 2);
+    q03(4) = V1(0) * sin(angle / 2);
+    q03(5) = V1(1) * sin(angle / 2);
+    q03(6) = V1(2) * sin(angle / 2);
 
     auto beam3 = std::make_shared<siconos::modeling::NewtonEulerDS>(q03, v03, m, I3);
     // -- Set external forces (weight) --
@@ -151,14 +151,14 @@ int main(int argc, char *argv[]) {
     // input  - the first concerned DS : beam1
     // input  - the second concerned DS : beam2
     //        - a point in the spatial frame (absolute frame) where the knee is defined P
-    P.setValue(0, L1 / 2);
+    P(0) = L1 / 2;
     auto relation2 = std::make_shared<siconos::joints::KneeJointR>(P, false, beam1, beam2);
 
     // Building the third knee joint for beam2 and beam3
     // input  - the first concerned DS : beam2
     // input  - the second concerned DS : beam3
     //        - a point in the spatial frame (absolute frame) where the knee is defined P
-    P.setValue(0, -L1 / 2);
+    P(0) = -L1 / 2;
     auto relation3 = std::make_shared<siconos::joints::KneeJointR>(P, false, beam2, beam3);
     auto nslaw1 = std::make_shared<siconos::modeling::EqualityConditionNSL>(
         relation1->numberOfConstraints());

@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
     for (k = 1; k < N; ++k) {
       // solve ...
       aTS->computeOneStep();
-      //  aLCP->display();
+      //  siconos::algebra::print(*aLCP);
       // --- Get values to be plotted ---
       // time
       dataPlot(k, 0) = aTS->nextTime();

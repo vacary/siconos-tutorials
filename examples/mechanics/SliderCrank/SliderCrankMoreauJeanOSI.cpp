@@ -446,7 +446,6 @@ int main(int argc, char *argv[]) {
 
       // std::cout << "=============== Step k ="<< k<< std::endl;
       s->advanceToEvent();
-      //      slider->display(false);
       //   return 0;
       impact->setNumericsVerboseMode(0);
       // --- Get values to be plotted ---
@@ -489,14 +488,14 @@ int main(int argc, char *argv[]) {
       dataPlot(k, 26) = indexSet1->size();
 
       if (indexSet1->size() > 5) {
-        impact->display();
+        siconos::algebra::print(*impact);
       }
       //      if (s->nextTime() > 0.035 and (*inter1->lambda(1))(0) >0.0)
 #ifdef DISPLAY_INTER
       std::cout << "=============== Step k =" << k << std::endl;
       std::cout << "Time " << s->nextTime() << std::endl;
 
-      impact->display();
+      siconos::algebra::print(*impact);
       std::cout << " (*inter1->lambda(1))(0) " << (*inter1->lambda(1))(0) << std::endl;
       std::cout << " (*inter2->lambda(1))(0) " << (*inter2->lambda(1))(0) << std::endl;
       std::cout << " (*inter3->lambda(1))(0) " << (*inter3->lambda(1))(0) << std::endl;

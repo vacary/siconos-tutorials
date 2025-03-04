@@ -73,7 +73,7 @@ void DisksViewer::draw()
     InteractionsGraph::VIterator ui, uiend;
     for (boost::tie(ui, uiend) = I1->vertices(); ui != uiend; ++ui)
     {
-      lbdmax = fmax(I1->bundle(*ui)->lambdaOld(1)->getValue(0), lbdmax);
+      lbdmax = (*fmax(I1->bundle(*ui)->lambdaOld(1))(0), lbdmax);
     }
 
     for (boost::tie(ui, uiend) = I1->vertices(); ui != uiend; ++ui)
@@ -81,7 +81,7 @@ void DisksViewer::draw()
       interaction = I1->bundle(*ui);
       relation = interaction->relation();
       
-      lbd = interaction->lambdaOld(1)->getValue(0);
+      lbd = (*interaction->lambdaOld(1))(0);
 
       // screen width of interaction
       w = lbd / (2 * fmax(lbdmax, 1.)) + .03;
@@ -119,8 +119,8 @@ void DisksViewer::draw()
       else
       {
         std::shared_ptr<siconos::algebra::SiconosMatrix> jachq = ask<ForJachq>(*relation);
-        double jx = jachq->getValue(0, 0);
-        double jy = jachq->getValue(0, 1);
+        double jx = (*jachq)(0, 0);
+        double jy = (*jachq)(0, 1);
         double dj = hypot(jx, jy);
 
         glPushMatrix();

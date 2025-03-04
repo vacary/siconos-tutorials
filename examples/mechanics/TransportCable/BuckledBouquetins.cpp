@@ -71,7 +71,7 @@ int main()
     // auto q1 = ioVector::readVectorFromJson(out["ropes_up"]["q"]);
     // auto q2 = ioVector::readVectorFromJson(out["ropes_down"]["q"]);
 
-    // std::cout << qref1->norm2() << " " << qref1->size() << std::endl;
+    // std::cout << qref1->norm() << " " << qref1->size() << std::endl;
 
     // std::cout << ((*qref1) == (*q1)) << std::endl;
 
@@ -88,7 +88,7 @@ int main()
     out_ropes_fem << std::setw(4) << out << std::endl;
 
     auto positions = ioVector::readVectorFromJson(out["q"]);
-    std::cout << positions->norm2() << " " << positions->size() << std::endl;
+    std::cout << positions->norm() << " " << positions->size() << std::endl;
 
     std::cout << "PAR 2 \n";
     auto manager = std::make_shared<TransportCableManager>(modelFile);

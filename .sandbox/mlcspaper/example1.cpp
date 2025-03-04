@@ -147,26 +147,26 @@ double compute_error2ref(double h, SimpleMatrix* reference, SolverOptions* optio
 
     // Tested variables for convergence: (x1,x2)
     std::shared_ptr<siconos::algebra::SiconosVector> x_prev(new SiconosVector(2));
-    x_prev->setValue(0, x10);                  // x10
-    x_prev->setValue(1, B3 * lambda10 - u2k);  // x20
+    (*x_prev)(0) = x10;                  // x10
+    (*x_prev)(1) = B3 * lambda10 - u2k;  // x20
     std::shared_ptr<siconos::algebra::SiconosVector> x(new SiconosVector(2));
-    x->setValue(0, 0.0);
-    x->setValue(1, 0.0);
+    (*x)(0) = 0.0;
+    (*x)(1) = 0.0;
 
     // difference in between current pwl at t approx and reference
     std::shared_ptr<siconos::algebra::SiconosVector> x_diff(new SiconosVector(2));
-    x_diff->setValue(0, 0.0);
-    x_diff->setValue(1, 0.0);
+    (*x_diff)(0) = 0.0;
+    (*x_diff)(1) = 0.0;
 
     // direction of pwl approx
     std::shared_ptr<siconos::algebra::SiconosVector> a(new SiconosVector(2));
-    a->setValue(0, 0.0);
-    a->setValue(1, 0.0);
+    (*a)(0) = 0.0;
+    (*a)(1) = 0.0;
 
     // offset of pwl approx
     std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector(2));
-    b->setValue(0, 0.0);
-    b->setValue(1, 0.0);
+    (*b)(0) = 0.0;
+    (*b)(1) = 0.0;
 
     int j = 0;
     double error = -1.0;
@@ -212,7 +212,7 @@ double compute_error2ref(double h, SimpleMatrix* reference, SolverOptions* optio
         (*x_diff)(0) = (*reference)(j, 1) - (*a)(0) * (*reference)(j, 0) - (*b)(0);
         (*x_diff)(1) = (*reference)(j, 2) - (*a)(1) * (*reference)(j, 0) - (*b)(1);
 
-        current_error = x_diff->norm2();
+        current_error = x_diff->norm();
 
         if (error < current_error) {
           error = current_error;

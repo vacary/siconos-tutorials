@@ -160,14 +160,14 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 0) = columnOfBeads->t0();
 
     for (unsigned int i = 0; i < nBeads; i++) {
-      dataPlot(0, 1 + i * 2) = (beads[i]->q())->getValue(0);
-      dataPlot(0, 2 + i * 2) = (beads[i]->velocity())->getValue(0);
-      //      dataPlot(0,3+i*4) = (beads[i]->p(1))->getValue(0);
+      dataPlot(0, 1 + i * 2) = (*(beads[i]->q()))(0);
+      dataPlot(0, 2 + i * 2) = (*(beads[i]->velocity()))(0);
+      //      dataPlot(0,3+i*4) = (*(beads[i]->p(1)))(0);
     }
 
     // for (unsigned int i =1; i< nBeads; i++)
     // {
-    // dataPlot(0,4+i*4) = (interOfBeads[i-1]->lambda(1))->getValue(0);
+    // dataPlot(0,4+i*4) = (*(interOfBeads[i-1]->lambda(1)))(0);
     // }
 
     // --- Time loop ---
@@ -182,7 +182,7 @@ int main(int argc, char* argv[]) {
       // Rough contact detection
       for (unsigned int i = 0; i < nBeads - 1; i++) {
         // Between first bead and plane
-        if (abs(((beads[i])->q())->getValue(0) - R) < alert) {
+        if (abs((*(beads[i])->q())(0) - R) < alert) {
           if (!inter) {
             ncontact++;
             // std::cout << "Number of contact = " << ncontact << std::endl;
@@ -190,16 +190,12 @@ int main(int argc, char* argv[]) {
             inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
             columnOfBeads->link(inter, beads[0]);
 
-            assert(inter->y(0)->getValue(0) >= 0);
+            assert((*inter->y(0))(0) >= 0);
           }
         }
 
         // Between two beads
-        if (abs(((beads[i + 1])->q())->getValue(0) - ((beads[i])->q())->getValue(0) - 2 * R) <
-            alert) {
-          // std::cout << "Alert distance for declaring contact = ";
-          // std::cout << abs(((beads[i])->q())->getValue(0)-((beads[i+1])->q())->getValue(0))
-          // <<std::endl;
+        if (abs((*(beads[i + 1])->q())(0) - (*((beads[i])->q()))(0) - 2 * R) < alert) {
           if (!interOfBeads[i].get()) {
             ncontact++;
             // std::cout << "Number of contact = " << ncontact << std::endl;
@@ -211,7 +207,7 @@ int main(int argc, char* argv[]) {
 
             columnOfBeads->link(interOfBeads[i], beads[i], beads[i + 1]);
 
-            assert(interOfBeads[i]->y(0)->getValue(0) >= 0);
+            assert((*interOfBeads[i]->y(0))(0) >= 0);
           }
         }
       }
@@ -221,16 +217,16 @@ int main(int argc, char* argv[]) {
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
       for (unsigned int i = 0; i < nBeads; i++) {
-        dataPlot(k, 1 + i * 2) = (beads[i]->q())->getValue(0);
-        dataPlot(k, 2 + i * 2) = (beads[i]->velocity())->getValue(0);
+        dataPlot(k, 1 + i * 2) = (*(beads[i]->q()))(0);
+        dataPlot(k, 2 + i * 2) = (*(beads[i]->velocity()))(0);
       }
       // for (unsigned int i =1; i< nBeads; i++)
       // {
-      //   dataPlot(k,4+i*4) = (interOfBeads[i-1]->lambda(1))->getValue(0);
+      //   dataPlot(k,4+i*4) = (*(interOfBeads[i-1]->lambda(1)))(0);
       // }
       // for (unsigned int i =1; i< nBeads; i++)
       // {
-      //   std::cout <<  (interOfBeads[i-1]->y(0))->getValue(0) << std::endl ;
+      //   std::cout <<  (*(interOfBeads[i-1]->y(0)))(0) << std::endl ;
       // }
 
       s->nextStep();

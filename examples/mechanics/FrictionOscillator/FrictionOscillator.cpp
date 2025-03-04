@@ -180,8 +180,8 @@ int main(int argc, char* argv[]) {
     dataPlot(k, 2) = (*xProc)(1);
     dataPlot(k, 3) = (*lambdaProc)(0);
     dataPlot(k, 4) = (*yProc)(0);
-    dataPlot(k, 7) = vectorfield->getValue(0);
-    dataPlot(k, 8) = vectorfield->getValue(1);
+    dataPlot(k, 7) = (*vectorfield)(0);
+    dataPlot(k, 8) = (*vectorfield)(1);
 
     // ==== Simulation loop =====
     cout << "====> Start computation ... \n\n";
@@ -204,12 +204,12 @@ int main(int argc, char* argv[]) {
       process->computeRhs(s->nextTime());
       if (k == 1)  // tricks just for display to avoid the computation of the initial Rhs
       {
-        dataPlot(k - 1, 7) = vectorfield->getValue(0);
-        dataPlot(k - 1, 8) = vectorfield->getValue(1);
+        dataPlot(k - 1, 7) = (*vectorfield)(0);
+        dataPlot(k - 1, 8) = (*vectorfield)(1);
       }
 
-      dataPlot(k, 7) = vectorfield->getValue(0);
-      dataPlot(k, 8) = vectorfield->getValue(1);
+      dataPlot(k, 7) = (*vectorfield)(0);
+      dataPlot(k, 8) = (*vectorfield)(1);
       s->nextStep();
     }
     auto end = std::chrono::system_clock::now();

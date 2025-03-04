@@ -133,9 +133,9 @@ struct ForMassValue : public Question<double>
 {
   using SiconosVisitor::visit;
 
-  ANSWER(Disk, mass()->getValue(0, 0));
-  ANSWER(Circle, mass()->getValue(0, 0));
-  ANSWER(SphereLDS, mass()->getValue(0, 0));
+  ANSWER(Disk, (*mass())(0, 0));
+  ANSWER(Circle, (*mass())(0, 0));
+  ANSWER(SphereLDS, (*mass())(0, 0));
   ANSWER(SphereNEDS, scalarMass());
   ANSWER(RigidBodyDS, scalarMass());
   ANSWER(NewtonEulerDS, scalarMass());
@@ -169,24 +169,24 @@ struct ForContactForce : public Question<std::shared_ptr<siconos::algebra::Sicon
 
 
 
-#define GETX(C) ask<ForPosition>(*C)->getValue(0)
-#define GETY(C) ask<ForPosition>(*C)->getValue(1)
-#define GETZ(C) ask<ForPosition>(*C)->getValue(2)
-#define GETA1(C) ask<ForPosition>(*C)->getValue(3)
-#define GETA2(C) ask<ForPosition>(*C)->getValue(4)
-#define GETA3(C) ask<ForPosition>(*C)->getValue(5)
-#define GETA4(C) ask<ForPosition>(*C)->getValue(6)
-#define GETXFE(C) ask<ForFExt>(*C)->getValue(0)
-#define GETYFE(C) ask<ForFExt>(*C)->getValue(1)
-#define GETZFE(C) ask<ForFExt>(*C)->getValue(2)
+#define GETX(C) (*ask<ForPosition>(*C))(0)
+#define GETY(C) (*ask<ForPosition>(*C))(1)
+#define GETZ(C) (*ask<ForPosition>(*C))(2)
+#define GETA1(C) (*ask<ForPosition>(*C))(3)
+#define GETA2(C) (*ask<ForPosition>(*C))(4)
+#define GETA3(C) (*ask<ForPosition>(*C))(5)
+#define GETA4(C) (*ask<ForPosition>(*C))(6)
+#define GETXFE(C) (*ask<ForFExt>(*C))(0)
+#define GETYFE(C) (*ask<ForFExt>(*C))(1)
+#define GETZFE(C) (*ask<ForFExt>(*C))(2)
 
-#define GETVX(C) ask<ForVelocity>(*C)->getValue(0)
-#define GETVY(C) ask<ForVelocity>(*C)->getValue(1)
-#define GETVZ(C) ask<ForVelocity>(*C)->getValue(2)
+#define GETVX(C) (*ask<ForVelocity>(*C))(0)
+#define GETVY(C) (*ask<ForVelocity>(*C))(1)
+#define GETVZ(C) (*ask<ForVelocity>(*C))(2)
 
-#define GETVA1(C) ask<ForVelocity>(*C)->getValue(3)
-#define GETVA2(C) ask<ForVelocity>(*C)->getValue(4)
-#define GETVA3(C) ask<ForVelocity>(*C)->getValue(5)
+#define GETVA1(C) (*ask<ForVelocity>(*C))(3)
+#define GETVA2(C) (*ask<ForVelocity>(*C))(4)
+#define GETVA3(C) (*ask<ForVelocity>(*C))(5)
 
 #define GETRADIUS(C) ask<ForRadius>(*C)
 

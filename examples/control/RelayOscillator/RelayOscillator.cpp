@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
     unsigned int nslawSize = 1;
     auto myNslaw = std::make_shared<siconos::modeling::RelayNSL>(nslawSize);
 
-    myNslaw->display();
+    siconos::algebra::print(*myNslaw);
 
     // The Interaction which involves the first DS (the process)
     auto myProcessInteraction =

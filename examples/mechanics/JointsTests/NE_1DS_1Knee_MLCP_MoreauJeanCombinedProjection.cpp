@@ -75,10 +75,10 @@ int main(int argc, char *argv[]) {
     Vector V1{3};
     V1 << 0., 1., 0.;
     // construction of the quaternion
-    q10.setValue(3, cos(angle * 0.5));
-    q10.setValue(4, V1.getValue(0) * sin(angle * 0.5));
-    q10.setValue(5, V1.getValue(1) * sin(angle * 0.5));
-    q10.setValue(6, V1.getValue(2) * sin(angle * 0.5));
+    q10(3) = cos(angle * 0.5);
+    q10(4) = V1(0) * sin(angle * 0.5);
+    q10(5) = V1(1) * sin(angle * 0.5);
+    q10(6) = V1(2) * sin(angle * 0.5);
 
     // -- The dynamical system --
     auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1);
@@ -180,8 +180,8 @@ int main(int argc, char *argv[]) {
       // dataPlot(k, 11) = (*ydot)(0);
       // dataPlot(k, 12) = (*ydot)(1);
       // dataPlot(k, 13) = (*ydot)(2);
-      // dataPlot(k, 14) = y->norm2();
-      // dataPlot(k, 15) = ydot->norm2();
+      // dataPlot(k, 14) = y->norm();
+      // dataPlot(k, 15) = ydot->norm();
 
       geomtools::tipTrajectories(q1, beamTipTrajectories, L1);
       beam1Plot(0, 3 * k) = beamTipTrajectories[0];

@@ -89,8 +89,8 @@ void Spheres::init() {
     auto nsds(new NonSmoothDynamicalSystem(t0, T));
 
     for (unsigned int i = 0; i < Spheres->size(0); i++) {
-      R = Spheres->getValue(i, 3);
-      m = Spheres->getValue(i, 4);
+      R = (*Spheres)(i, 3);
+      m = (*Spheres)(i, 4);
 
       std::shared_ptr<siconos::algebra::SiconosVector> qTmp;
       std::shared_ptr<siconos::algebra::SiconosVector> vTmp;

@@ -80,8 +80,8 @@ int main(int argc, char* argv[])
     //femodel->display(true);
 
 
-    // FEsolid->K()->display();
-    // FEsolid->mass()->display();
+    // siconos::algebra::print(*FEsolid->K());
+    // siconos::algebra::print(*FEsolid->mass());
     // getchar();
 
     /* Applied forces  *******************************************************/
@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
     while(s->hasNextEvent())
     {
       s->computeOneStep();
-      // osnspb->display();
+      // siconos::algebra::print(*osnspb);
       // --- Get values to be plotted ---
       dataPlot(k, 0) =  s->nextTime();
       //std::cout << (*q)(0) << std::endl;

@@ -12,7 +12,7 @@ class BallR : public siconos::modeling::LagrangianScleronomousR {
   BallR() : LagrangianScleronomousR() {
     setComputehFunction([this](const siconos::algebra::BlockVector& q,
                                Eigen::Ref<siconos::algebra::MapVectorType> y) {
-      y.setValue(0, q.getValue(0) + alpha * q.getValue(1));
+      y(0) = q(0) + alpha * q(1);
     });
 
     setComputeJacobianhOver_qFunction([this](const siconos::algebra::BlockVector& q,

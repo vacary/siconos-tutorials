@@ -172,11 +172,11 @@ int main(int argc, char *argv[]) {
   Matrix fPWLmat(1, 2 * NBHYP);
 
   for (unsigned int i = 0; i < NBHYP; i++) {
-    vec1.setValue(i, 1.0);
-    vec2.setValue(i + NBHYP, 1.0);
+    vec1(i) = 1.0;
+    vec2(i + NBHYP) = 1.0;
 
-    vecHyp.setValue(i, limhyp[i]);
-    vecHyp.setValue(i + NBHYP, limhyp[i]);
+    vecHyp(i) = limhyp[i];
+    vecHyp(i + NBHYP) = limhyp[i];
 
     fPWLmat.setValue(0, i, varp[i]);
     fPWLmat.setValue(0, i + NBHYP, -varp[i]);
@@ -219,17 +219,17 @@ int main(int argc, char *argv[]) {
 
   Vector paramVin{SIZEZ_PAR + SIZEZ_INP};
 
-  paramVin.setValue(0, VlowRamp);
-  paramVin.setValue(1, VhighRamp);
-  paramVin.setValue(2, RampTD);
-  paramVin.setValue(3, RampTR);
-  paramVin.setValue(4, RampTF);
-  paramVin.setValue(5, RampPW);
-  paramVin.setValue(6, RampPER);
-  paramVin.setValue(7, Vref);
-  paramVin.setValue(8, VrefSettlingTime);
-  paramVin.setValue(9, AmpliGain / tauAmpli);
-  paramVin.setValue(10, -VthDN / L);
+  paramVin(0) = VlowRamp;
+  paramVin(1) = VhighRamp;
+  paramVin(2) = RampTD;
+  paramVin(3) = RampTR;
+  paramVin(4) = RampTF;
+  paramVin(5) = RampPW;
+  paramVin(6) = RampPER;
+  paramVin(7) = Vref;
+  paramVin(8) = VrefSettlingTime;
+  paramVin(9) = AmpliGain / tauAmpli;
+  paramVin(10) = -VthDN / L;
   //    SiconosMatrix* LS_T = new SiconosMatrix(SIZEX,3);
   //    LS_T->setValue(4,1,AmpliGain/tauAmpli);
   //    LSBuckConverter->setTPtr(LS_T);
@@ -306,7 +306,7 @@ int main(int argc, char *argv[]) {
   int_D_buck.setValue(NSLSIZE_BUCK - 1, NSLSIZE_BUCK - 2, 1.);
   int_D_buck.setValue(NSLSIZE_BUCK - 1, NSLSIZE_BUCK - 1, 0.);
 
-  //  int_D_buck.display();
+  //  siconos::algebra::print(int_D_buck);
   // getchar();
 
   Matrix int_F0_buck{NSLSIZE_BUCK, SIZEZ_PAR + SIZEZ_INP};
@@ -316,13 +316,13 @@ int main(int argc, char *argv[]) {
 
   Vector int_e_buck{NSLSIZE_BUCK};
   int_e_buck.setZero();
-  int_e_buck.setValue(0, X1Comp);
-  int_e_buck.setValue(1, X2Comp);
+  int_e_buck(0) = X1Comp;
+  int_e_buck(1) = X2Comp;
   int_e_buck.segment(2, vecHyp.size()) =
       (-Vt0P) * (vec1 + vec2) - VI * vec1 + VthDN * vec2 + vecHyp;
   int_e_buck.segment(2 + (2 * NBHYP), vecHyp.size()) =
       Vt0N * (vec1 + vec2) - VthDN * vec2 + vecHyp;
-  int_e_buck.setValue(NSLSIZE_BUCK - 2, VI + VthDP + VthDN);
+  int_e_buck(NSLSIZE_BUCK - 2) = VI + VthDP + VthDN;
 
   Matrix int_C_buck{NSLSIZE_BUCK, SIZEX};
   int_C_buck.setZero();
@@ -351,7 +351,7 @@ int main(int argc, char *argv[]) {
   auto InterBuckConverter_buck =
       std::make_shared<siconos::modeling::Interaction>(nslaw_buck, LTIRBuckConverter_buck);
 
-  //   InterBuckConverter_buck->display();
+  //   siconos::algebra::print(*InterBuckConverter_buck);
   // getchar();
 
   // --- Model creation ---
@@ -512,12 +512,12 @@ int main(int argc, char *argv[]) {
       k++;
       // solve ...
       StratBuckConverter->computeOneStep();
-      // LSBuckConverter->display();
-      // x->display();
+      // siconos::algebra::print(*LSBuckConverter);
+      // siconos::algebra::print(*x);
       // getchar();
-      // LCP_BuckConverter->display();
+      // siconos::algebra::print(*LCP_BuckConverter);
 
-      // InterBuckConverter_buck->display();
+      // siconos::algebra::print(*InterBuckConverter_buck);
       // getchar();
       // time
       dataPlot(k, 0) = k * h_step;

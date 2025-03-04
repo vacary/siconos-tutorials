@@ -55,10 +55,10 @@ int main() {
   auto x0 = std::make_shared<Vector>(dimX);
 
   // Point de départ hors arc singulier
-  x0->setValue(0, 3.4999939172);
-  x0->setValue(1, -2.2788416237);
-  x0->setValue(2, 1.1935988302);
-  x0->setValue(3, -0.6365413023);
+  (*x0)(0) = 3.4999939172;
+  (*x0)(1) = -2.2788416237;
+  (*x0)(2) = 1.1935988302;
+  (*x0)(3) = -0.6365413023;
 
   double sT = 10;
   double sStep = 2e-3;

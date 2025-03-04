@@ -166,7 +166,7 @@ public:
                osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_SEED] = i; // SEED 
                s->computeOneStep();
                diff = *x-xk;
-               norm_diff = diff.norm2();
+               norm_diff = diff.norm();
                if(norm_diff<norm)
                {
                     xsol = *x;
@@ -215,7 +215,7 @@ public:
             // temporary as SiconosVector({x1f, x2f}) is not accepted by IDE
             vector<double> tmp({x1f, x2f}); 
             SiconosVector xf = SiconosVector(tmp);
-            // diff.norm2()
+            // diff.norm()
             switch(problem->type) {
                 case SLIDING_CROSSING :
                     tmp = vector<double>({6.5*2./3.,6.5*2./3. + 1});
@@ -235,7 +235,7 @@ public:
             // cout << diff << endl;
             // cout << k-1 << endl;
             diff = diff - xf;
-            double current_error = diff.norm2();
+            double current_error = diff.norm();
             errors[i] = current_error;
             cout << current_error << endl;
         }

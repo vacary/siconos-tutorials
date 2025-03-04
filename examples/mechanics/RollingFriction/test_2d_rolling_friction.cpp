@@ -44,7 +44,7 @@ class MyCollisionManager : public siconos::simulation::InteractionManager {
     auto indexSet0 = simulation->nonSmoothDynamicalSystem()->topology()->indexSet0();
     for (std::tie(ui, uiend) = indexSet0->vertices(); ui != uiend; ++ui) {
       auto inter = indexSet0->bundle(*ui);
-      // inter->display();
+      // siconos::algebra::print(*inter);
       if (inter->number() == 0) {
         auto r =
             std::static_pointer_cast<siconos::modeling::Lagrangian2d3DR>(inter->relation());
@@ -58,7 +58,7 @@ class MyCollisionManager : public siconos::simulation::InteractionManager {
         (*pc)(0) = -_R + (*q)(0);
         (*pc)(1) = (*q)(1);
         // std::cout << "pc : "  << std::endl;
-        // pc->display();
+        // siconos::algebra::print(*pc);
         (*nnc)(0) = 1.0;
         (*nnc)(1) = 0.0;
       }
@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
       // osnspb->setNumericsVerboseMode(1);
 
       s->computeOneStep();
-      // osnspb->display();
+      // siconos::algebra::print(*osnspb);
 
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();

@@ -66,9 +66,9 @@ int main(int argc, char* argv[]) {
 
     auto LS_b = std::make_shared<Vector>(3);
 
-    LS_b->setValue(0, VCC / (Rc * C1));
-    LS_b->setValue(1, 1.0 / C2 * (VCC / Rc - VEE / Re));
-    LS_b->setValue(2, VCC / L);
+    (*LS_b)(0) = VCC / (Rc * C1);
+    (*LS_b)(1) = 1.0 / C2 * (VCC / Rc - VEE / Re);
+    (*LS_b)(2) = VCC / L;
 
     auto LSCollpitts =
         std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state, *LS_A, *LS_b);
@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
     for (k = 1; k < N; ++k) {
       // solve ...
       aTS->computeOneStep();
-      //  aLCP->display();
+      //  siconos::algebra::print(*aLCP);
       // --- Get values to be plotted ---
       // time
       dataPlot(k, 0) = aTS->nextTime();

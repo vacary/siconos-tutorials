@@ -220,7 +220,7 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 5) = (*q2)(0);
       dataPlot(k, 6) = (*v2)(0);
       dataPlot(k, 7) = (*p2)(0);
-      // osnspb->display();
+      // siconos::algebra::print(*osnspb);
       s->nextStep();
 
       k++;

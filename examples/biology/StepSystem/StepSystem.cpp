@@ -45,16 +45,16 @@ int main(int argc, char *argv[]) {
     auto xti = std::make_shared<Vector>(dimX);
     xti->setZero();
     if (argc == 1) {
-      xti->setValue(0, 1);
-      xti->setValue(1, 6);
+      (*xti)(0) = 1;
+      (*xti)(1) = 6;
       strncpy(&filename[5], "1.6.log", 7);
     } else if (argc == 3) {
       // printf("argv[0] %s\n", argv[0]);
       printf("xti(0) is set to %f\n", atof(argv[1]));
       printf("xti(1) is set to %f\n", atof(argv[2]));
 
-      xti->setValue(0, atof(argv[1]));
-      xti->setValue(1, atof(argv[2]));
+      (*xti)(0) = atof(argv[1]);
+      (*xti)(1) = atof(argv[2]);
       int sizeofargv1 = strlen(argv[1]);
       // printf("sizeofargv1 %i\n",sizeofargv1);
       strncpy(&filename[5], argv[1], sizeofargv1);
@@ -135,14 +135,14 @@ int main(int argc, char *argv[]) {
     std::cout << "=== Start of simulation: " << NBStep << " steps ===\n";
 
     dataPlot(0, 0) = aN->t0();
-    dataPlot(0, 1) = x->getValue(0);
-    dataPlot(0, 2) = x->getValue(1);
-    dataPlot(0, 3) = lambda->getValue(0);
-    dataPlot(0, 4) = lambda->getValue(1);
-    dataPlot(0, 5) = lambda->getValue(2);
-    dataPlot(0, 6) = lambda->getValue(3);
-    dataPlot(0, 7) = vectorfield->getValue(0);
-    dataPlot(0, 8) = vectorfield->getValue(1);
+    dataPlot(0, 1) = (*x)(0);
+    dataPlot(0, 2) = (*x)(1);
+    dataPlot(0, 3) = (*lambda)(0);
+    dataPlot(0, 4) = (*lambda)(1);
+    dataPlot(0, 5) = (*lambda)(2);
+    dataPlot(0, 6) = (*lambda)(3);
+    dataPlot(0, 7) = (*vectorfield)(0);
+    dataPlot(0, 8) = (*vectorfield)(1);
 
     auto start = std::chrono::system_clock::now();
     for (int k = 0; k < NBStep; k++) {
@@ -151,23 +151,23 @@ int main(int argc, char *argv[]) {
       aS->advanceToEvent();
 
       dataPlot(cmp, 0) = aS->nextTime();
-      dataPlot(cmp, 1) = x->getValue(0);
-      dataPlot(cmp, 2) = x->getValue(1);
-      dataPlot(cmp, 3) = lambda->getValue(0);
-      dataPlot(cmp, 4) = lambda->getValue(1);
-      dataPlot(cmp, 5) = lambda->getValue(2);
-      dataPlot(cmp, 6) = lambda->getValue(3);
+      dataPlot(cmp, 1) = (*x)(0);
+      dataPlot(cmp, 2) = (*x)(1);
+      dataPlot(cmp, 3) = (*lambda)(0);
+      dataPlot(cmp, 4) = (*lambda)(1);
+      dataPlot(cmp, 5) = (*lambda)(2);
+      dataPlot(cmp, 6) = (*lambda)(3);
 
       aDS->computeRhs(aS->nextTime());
 
       if (cmp == 1)  // tricks just for display to avoid the computation of the initial Rhs
       {
-        dataPlot(cmp - 1, 7) = vectorfield->getValue(0);
-        dataPlot(cmp - 1, 8) = vectorfield->getValue(1);
+        dataPlot(cmp - 1, 7) = (*vectorfield)(0);
+        dataPlot(cmp - 1, 8) = (*vectorfield)(1);
       }
 
-      dataPlot(cmp, 7) = vectorfield->getValue(0);
-      dataPlot(cmp, 8) = vectorfield->getValue(1);
+      dataPlot(cmp, 7) = (*vectorfield)(0);
+      dataPlot(cmp, 8) = (*vectorfield)(1);
 
       aS->nextStep();
     }

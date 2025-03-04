@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
   cout << "====> Initialisation ...\n\n";
   bouncingBall->initialize();
 
-  inter->y(0)->display();
+  siconos::algebra::print(*inter->y(0));
 
   return 0;
   int N = ceil((T - t0) / h);  // Number of time steps

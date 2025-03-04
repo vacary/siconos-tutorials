@@ -106,13 +106,13 @@ int main(int argc, char* argv[]) {
     ExternalForces(1) = -MassBlock * GGearth;
     RockingBlock->setConstantFext(ExternalForces);  //
     std::cout << "Initial position of the rocking block:\n";
-    PosIniBlock->display();
+    siconos::algebra::print(*PosIniBlock);
     std::cout << "Initial velocity of the rocking block:\n";
-    VelIniBlock->display();
+    siconos::algebra::print(*VelIniBlock);
     std::cout << "Mass matrix of the rocking block:\n";
-    mass->display();
+    siconos::algebra::print(*mass);
     std::cout << "External force applied on the rocking block:\n";
-    ExternalForces.display();
+    siconos::algebra::print(ExternalForces);
     //==================================================================================================================
     //              II: Declare the relation et interaction between dynamical systems
     //==================================================================================================================
@@ -340,22 +340,22 @@ int main(int argc, char* argv[]) {
       // std::cout << "********At the end of integation step***************"<< (k - 1) << "\n";
       // std::cout << "Information on Dynamical System\n";
       // std::cout << "Position: ";
-      // PosBlock->display();
+      // siconos::algebra::print(*PosBlock);
       // std::cout << "Velocity: ";
-      // VelBlock->display();
+      // siconos::algebra::print(*VelBlock);
       // std::cout << "Acceleration: ";
-      // AcceBlock->display();
+      // siconos::algebra::print(*AcceBlock);
       // std::cout << "Information on contacts\n";
       // for(std::tie(ui,uiend) = indexSet0->vertices(); ui!=uiend; ++ui)
       //   {
       //     auto inter = indexSet0->bundle(*ui);
       //     std::cout << "Contact number: " << inter->number() << "\n";
       //     std::cout << "Contact gap: ";
-      //     inter->y(0)->display();
+      //     siconos::algebra::print(*inter->y(0));
       //     std::cout << "Contact relative velocity: ";
-      //     inter->y(1)->display();
+      //     siconos::algebra::print(*inter->y(1));
       //     std::cout << "Contact Force: \n";
-      //     inter->lambda(2)->display();
+      //     siconos::algebra::print(*inter->lambda(2));
       //   }
     };
     auto end = std::chrono::system_clock::now();

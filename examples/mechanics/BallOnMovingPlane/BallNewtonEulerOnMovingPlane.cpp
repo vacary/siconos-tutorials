@@ -56,22 +56,22 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
 
   void computeh(const siconos::algebra::BlockVector& q0,
                 Eigen::Ref<siconos::algebra::SiconosVector> y) override {
-    double height = q0.getValue(0) - _sBallRadius - q0.getValue(7);
-    y.setValue(0, height);
-    _Nc->setValue(0, 1);
-    _Nc->setValue(1, 0);
-    _Nc->setValue(2, 0);
-    _Pc1->setValue(0, q0.getValue(0) - _sBallRadius);
-    _Pc1->setValue(1, q0.getValue(1));
-    _Pc1->setValue(2, q0.getValue(2));
+    double height = q0(0) - _sBallRadius - q0(7);
+    y(0) = height;
+    (*_Nc)(0) = 1;
+    (*_Nc)(1) = 0;
+    (*_Nc)(2) = 0;
+    (*_Pc1)(0) = q0(0) - _sBallRadius;
+    (*_Pc1)(1) = q0(1);
+    (*_Pc1)(2) = q0(2);
 
-    _Pc2->setValue(0, q0.getValue(7));
-    _Pc2->setValue(1, q0.getValue(8));
-    _Pc2->setValue(2, q0.getValue(9));
+    (*_Pc2)(0) = q0(7);
+    (*_Pc2)(1) = q0(8);
+    (*_Pc2)(2) = q0(9);
     // printf("my_NewtonEulerR N, Pc\n");
-    //_Nc->display();
-    //_Pc1->display();
-    //_Pc2->display();
+    //siconos::algebra::print(*_Nc);
+    //siconos::algebra::print(*_Pc1);
+    //siconos::algebra::print(*_Pc2);
     // std::cout <<"my_NewtonEulerR:: computeh ends" << std:: endl;
   }
 };
@@ -231,10 +231,10 @@ int main(int argc, char* argv[]) {
     Matrix dataPlot(N + 1, outputSize);
 
     auto q = ball->q();
-    auto v = ball->velocity();
+    auto v = ball->twist();
     auto p = ball->p(1);
     auto qplane = movingplane->q();
-    auto vplane = movingplane->velocity();
+    auto vplane = movingplane->twist();
     auto pplane = movingplane->p(1);
 
     auto lambda = inter->lambda(1);

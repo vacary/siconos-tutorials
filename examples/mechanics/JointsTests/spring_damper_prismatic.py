@@ -77,7 +77,7 @@ class Ctrl(object):
         self.joint1.computehDoF(0, bv, pos, 0)
 
         setpoint = 1.0
-        pos_diff = setpoint - pos.getValue(0)
+        pos_diff = setpoint - pos(0)
         spring_force = np.array(self.joint1.normalDoF(bv, 0)) * pos_diff * 100.0
 
         # Get the velocity of each body projected onto the DoF and

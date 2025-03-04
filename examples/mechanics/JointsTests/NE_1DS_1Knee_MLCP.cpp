@@ -78,10 +78,10 @@ int main(int argc, char *argv[]) {
     Vector V1{3};
     V1 << 0., 1., 0.;
     // construction of the quaternion
-    q10.setValue(3, cos(angle * 0.5));
-    q10.setValue(4, V1.getValue(0) * sin(angle * 0.5));
-    q10.setValue(5, V1.getValue(1) * sin(angle * 0.5));
-    q10.setValue(6, V1.getValue(2) * sin(angle * 0.5));
+    q10(3) = cos(angle * 0.5);
+    q10(4) = V1(0) * sin(angle * 0.5);
+    q10(5) = V1(1) * sin(angle * 0.5);
+    q10(6) = V1(2) * sin(angle * 0.5);
 
     // -- The dynamical system --
     auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1);
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
       // solve ...
       // s->newtonSolve(1e-4, 50);
       s->advanceToEvent();
-      //      beam1->display();
+      //      siconos::algebra::print(*beam1);
       //    return 0;
 
       // --- Get values to be plotted ---

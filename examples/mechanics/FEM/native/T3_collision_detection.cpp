@@ -76,8 +76,8 @@ class MyContactDetection : public siconos::simulation::InteractionManager {
     if (_contact_frame_dimension == 2)  // create tangent vertor
     {
       _tangent = std::make_shared<Vector>(2);
-      _tangent->setValue(0, -(*_normal)(1));
-      _tangent->setValue(1, (*_normal)(0));
+      (*_tangent)(0) = -(*_normal)(1);
+      (*_tangent)(1) = (*_normal)(0);
     }
   }
   virtual ~MyContactDetection() noexcept = default;
@@ -147,14 +147,14 @@ class MyContactDetection : public siconos::simulation::InteractionManager {
           pc2 = r->pc2();
         }
 
-        pc2->setValue(0, cn->_node->x() + displacement(node_idx));
-        pc2->setValue(1, -_initial_gap);
+        (*pc2)(0) = cn->_node->x() + displacement(node_idx);
+        (*pc2)(1) = -_initial_gap;
       } else  // create an interaction and link
       {
         // std::cout << "create interaction" << std::endl;
         auto pc2 = std::make_shared<Vector>(2);
-        pc2->setValue(0, cn->_node->x() + displacement(node_idx));
-        pc2->setValue(1, -_initial_gap);
+        (*pc2)(0) = cn->_node->x() + displacement(node_idx);
+        (*pc2)(1) = -_initial_gap;
         std::shared_ptr<Relation> relation;
         if (_contact_frame_dimension == 2) {
           relation = std::make_shared<siconos::mechanics::fem::NodeFem2d2DR>(
@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Assembly time : " << elapsed << " ms\n";
 
     auto femodel = FEsolid->FEModel();
-    // FEsolid->K()->display();
+    // siconos::algebra::print(*FEsolid->K());
 
     /*------------------------------------------------- Applied forces  */
 
@@ -263,8 +263,8 @@ int main(int argc, char* argv[]) {
     double initial_gap = Ly * 5e-4;
     auto displacement = FEsolid->q();
     auto normal = std::make_shared<Vector>(2);
-    normal->setValue(0, 0.0);
-    normal->setValue(1, 1.0);
+    (*normal)(0) = 0.0;
+    (*normal)(1) = 1.0;
     auto collision_detection = std::make_shared<MyContactDetection>(
         initial_gap, normal, nslaw, FEsolid);
 
@@ -327,7 +327,7 @@ int main(int argc, char* argv[]) {
     start = std::chrono::system_clock::now();
     while (s->hasNextEvent()) {
       s->computeOneStep();
-      // osnspb->display();
+      // siconos::algebra::print(*osnspb);
       //  --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(FEsolid->dimension() - 1);

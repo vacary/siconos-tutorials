@@ -51,14 +51,14 @@ user_defined::MyDS::MyDS(Eigen::Ref<siconos::algebra::SiconosVector> x0)
         result(0, 1) = jacXalpha(0, 1);
         result(1, 0) = jacXalpha(1, 0);
         result(1, 1) = jacXalpha(1, 1);
-        result(2, 0) = -Q->getValue(0, 0);
-        result(2, 1) = -Q->getValue(0, 1);
-        result(2, 2) = K1->getValue(0, 0);
-        result(2, 3) = K1->getValue(0, 1);
-        result(3, 0) = -Q->getValue(1, 0);
-        result(3, 1) = -Q->getValue(1, 1);
-        result(3, 2) = K1->getValue(1, 0);
-        result(3, 3) = K1->getValue(1, 1);
+        result(2, 0) = -(*Q)(0, 0);
+        result(2, 1) = -(*Q)(0, 1);
+        result(2, 2) = (*K1)(0, 0);
+        result(2, 3) = (*K1)(0, 1);
+        result(3, 0) = -(*Q)(1, 0);
+        result(3, 1) = -(*Q)(1, 1);
+        result(3, 2) = (*K1)(1, 0);
+        result(3, 3) = (*K1)(1, 1);
       });
 
   Q = std::make_shared<siconos::algebra::SiconosMatrix>(2, 2);
@@ -89,7 +89,7 @@ siconos::algebra::SiconosMatrix user_defined::JacobianXalpha(
 #ifdef SICONOS_DEBUG
   std::cout << "JacXalpha\n" << std::endl;
   ;
-  res.display();
+  siconos::algebra::print(res);
 #endif
   return res;
 }

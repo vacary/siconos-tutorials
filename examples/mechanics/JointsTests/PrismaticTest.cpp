@@ -61,10 +61,10 @@ int main(int argc, char *argv[]) {
     V1 << 3, 2, 1;
     V1.normalize();
     // construction of the quaternion
-    q10.setValue(3, cos(angle));
-    q10.setValue(4, V1(0) * sin(angle));
-    q10.setValue(5, V1(1) * sin(angle));
-    q10.setValue(6, V1(2) * sin(angle));
+    q10(3) = cos(angle);
+    q10(4) = V1(0) * sin(angle);
+    q10(5) = V1(1) * sin(angle);
+    q10(6) = V1(2) * sin(angle);
     // -- The dynamical system --
     auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1);
     // -- Set external forces (weight) --

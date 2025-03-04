@@ -27,10 +27,10 @@ namespace geomtools {
 void fromInertialToSpatialFrame(std::vector<double> &positionInInertialFrame,
                                 std::vector<double> &positionInSpatialFrame,
                                 const Eigen::Ref<const siconos::algebra::SiconosVector> &q) {
-  double q0 = q.getValue(3);
-  double q1 = q.getValue(4);
-  double q2 = q.getValue(5);
-  double q3 = q.getValue(6);
+  double q0 = q(3);
+  double q1 = q(4);
+  double q2 = q(5);
+  double q3 = q(6);
 
   boost::math::quaternion<double> quatQ(q0, q1, q2, q3);
   boost::math::quaternion<double> quatcQ(q0, -q1, -q2, -q3);
@@ -41,9 +41,9 @@ void fromInertialToSpatialFrame(std::vector<double> &positionInInertialFrame,
   // perform the rotation
   quatBuff = quatQ * quatpos * quatcQ;
 
-  positionInSpatialFrame[0] = quatBuff.R_component_2() + q.getValue(0);
-  positionInSpatialFrame[1] = quatBuff.R_component_3() + q.getValue(1);
-  positionInSpatialFrame[2] = quatBuff.R_component_4() + q.getValue(2);
+  positionInSpatialFrame[0] = quatBuff.R_component_2() + q(0);
+  positionInSpatialFrame[1] = quatBuff.R_component_3() + q(1);
+  positionInSpatialFrame[2] = quatBuff.R_component_4() + q(2);
 }
 void tipTrajectories(const Eigen::Ref<const siconos::algebra::SiconosVector> &q,
                      std::vector<double> &traj, double length) {

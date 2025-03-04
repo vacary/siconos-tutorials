@@ -86,8 +86,8 @@ class MyContactDetection : public InteractionManager {
     if (_contact_frame_dimension == 2)  // create tangent vertor
     {
       _tangent = std::make_shared<SiconosVector>(2);
-      _tangent->setValue(0, -(*_normal)(1));
-      _tangent->setValue(1, (*_normal)(0));
+      (*_tangent)(0) = -(*_normal)(1);
+      (*_tangent)(1) = (*_normal)(0);
     }
   }
   virtual ~MyContactDetection() {}
@@ -158,14 +158,14 @@ class MyContactDetection : public InteractionManager {
           pc2 = r->pc2();
         }
 
-        pc2->setValue(0, cn->_node->x() + displacement(node_idx));
-        pc2->setValue(1, -_initial_gap);
+        (*pc2)(0) = cn->_node->x() + displacement(node_idx);
+        (*pc2)(1) = -_initial_gap;
       } else  // create an interaction and link
       {
         // std::cout << "create interaction" << std::endl;
         std::shared_ptr<SiconosVector> pc2 = std::make_shared<SiconosVector>(2);
-        pc2->setValue(0, cn->_node->x() + displacement(node_idx));
-        pc2->setValue(1, -_initial_gap);
+        (*pc2)(0) = cn->_node->x() + displacement(node_idx);
+        (*pc2)(1) = -_initial_gap;
         std::shared_ptr<Relation> relation;
         if (_contact_frame_dimension == 2) {
           relation = std::make_shared<siconos::mechanics::fem::NodeFem2d2DR>(
@@ -215,8 +215,8 @@ int main(int argc, char* argv[]) {
     // FEsolid->display(true);
 
     std::shared_ptr<FiniteElementModel> femodel = FEsolid->FEModel();
-    // FEsolid->K()->display();
-    // FEsolid->mass()->display();
+    // siconos::algebra::print(*FEsolid->K());
+    // siconos::algebra::print(*FEsolid->mass());
     //  getchar();
 
     /*------------------------------------------------- Applied forces  */
@@ -227,7 +227,7 @@ int main(int argc, char* argv[]) {
     (*nodal_forces)(1) = -1e6;
     FEsolid->applyNodalForces(applied_force_tag, nodal_forces);
 
-    // FEsolid->fext()->display();
+    // siconos::algebra::print(*FEsolid->fext());
     // getchar();
 
     // /*------------------------------------------------- Boundary Conditions
@@ -271,8 +271,8 @@ int main(int argc, char* argv[]) {
     double initial_gap = 0.0;  // Ly*5e-05;
     std::shared_ptr<SiconosVector> displacement = FEsolid->q();
     std::shared_ptr<SiconosVector> normal = std::make_shared<SiconosVector>(2);
-    normal->setValue(0, 0.0);
-    normal->setValue(1, 1.0);
+    (*normal)(0) = 0.0;
+    (*normal)(1) = 1.0;
     std::shared_ptr<MyContactDetection> collision_detection =
         std::make_shared<MyContactDetection>(initial_gap, contact_condition_tag, normal, nslaw,
                                              FEsolid);
@@ -341,7 +341,7 @@ int main(int argc, char* argv[]) {
 
     while (s->hasNextEvent()) {
       s->computeOneStep();
-      // osnspb->display();
+      // siconos::algebra::print(*osnspb);
       //  --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
       // std::cout << (*q)(0) << std::endl;
@@ -357,12 +357,6 @@ int main(int argc, char* argv[]) {
 
       // dataPlot(k, 4) = (*lambda)(0);
       s->nextStep();
-      // std::cout << "y     " ;
-      // s->y(0,0)->display();
-      // std::cout << "ydot  ";
-      // s->y(1,0)->display();
-      // std::cout << "lambda";
-      // s->lambda(1,0)->display();
 
       double y_max = 0.0;
 

@@ -134,9 +134,9 @@ int main(int argc, char* argv[]) {
       s->computeOneStep();
 
       //       std::cout << "position"  << std::endl;
-      //       q->display();
+      //       siconos::algebra::print(*q);
       //       std::cout << "velocity"  << std::endl;
-      //       v->display();
+      //       siconos::algebra::print(*v);
 
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
       // dataPlot(k, 6) = kineticEnergy;
 
       //      std::cout << "q" << std::endl;
-      //       q->display();
+      //       siconos::algebra::print(*q);
 
       //       std::cout <<"potentialEnergy ="<<potentialEnergy << std::endl;
       //       std::cout <<"kineticEnergy ="<<kineticEnergy << std::endl;
@@ -173,13 +173,13 @@ int main(int argc, char* argv[]) {
     //     dataPlotRef.setZero();
     //     ioMatrix::read("ImpactingPunch.ref", "ascii", dataPlotRef);
 
-    //     double error = (dataPlot - dataPlotRef).normInf() ;
+    //     double error = siconos::algebra::normInf(dataPlot - dataPlotRef) ;
     // cout << "Error = " << error << endl;
     //     if (error > 1e-11)
     //     {
     //       std::cout << "Warning. The result is rather different from the reference file." <<
     //       std::endl; std::cout << "Error = "<< (dataPlot -
-    //       dataPlotRef).normInf()<<std::endl; return 1;
+    //       siconos::algebra::normInf(dataPlotRef)<<std::endl; return 1;
     //     }
 
   }

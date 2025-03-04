@@ -190,8 +190,8 @@ int main(int argc, char* argv[]) {
     while (s->hasNextEvent() && k < 5000) {
       s->computeOneStep();
       // std::cout << "y :"<< std::endl;
-      // y->display();
-      // osnspb->display();
+      // siconos::algebra::print(*y);
+      // siconos::algebra::print(*osnspb);
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(0);

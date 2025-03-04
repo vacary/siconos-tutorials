@@ -543,12 +543,6 @@ int main(int argc, char* argv[]) {
       s->advanceToEvent();
       // Solve problem
       // s->newtonSolve(criterion, maxIter); //2000000
-      // std::cout << "jachq:" <<std::endl;
-      // std::static_pointer_cast<LagrangianScleronomousR>(relation)->jacobianhOver_q()->display();
-      // std::cout << "=================================" << std::endl;
-      // std::cout << "jachq:" <<std::endl;
-      // std::static_pointer_cast<LagrangianScleronomousR>(relation1)->jacobianhOver_q()->display();
-      // std::cout << "*********************************" << std::endl;
       // Data Output
 
       tt = s->nextTime();

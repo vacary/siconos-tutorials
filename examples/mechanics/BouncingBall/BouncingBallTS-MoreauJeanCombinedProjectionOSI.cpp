@@ -177,8 +177,8 @@ int main(int argc, char *argv[]) {
 
       // dataPlot(k, 6) = (*lambda2)(0);
       s->nextStep();
-      // osnspb->display();
-      // osnspb_pos->display();
+      // siconos::algebra::print(*osnspb);
+      // siconos::algebra::print(*osnspb_pos);
       // std::cout <<" (*lambda1)(0) "  <<(*lambda1)(0)<< std::endl;
       siconos::tools::progressBar((double)k / N);
       k++;

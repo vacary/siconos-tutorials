@@ -420,10 +420,8 @@ int main(int argc, char *argv[]) {
       // std::cout << "dataPlot(k, 27)" << dataPlot(k, 27)  << std::endl;
       // std::cout << "dataPlot(k, 31)" << dataPlot(k, 31)  << std::endl;
 
-      // std::cout <<" q->display()" <<  std::endl;
-      // q->display();
-      // std::cout <<" v->display()" <<  std::endl;
-      // v->display();
+      // siconos::algebra::print(*q);
+      // siconos::algebra::print(*v);
 
       s->processEvents();
 
