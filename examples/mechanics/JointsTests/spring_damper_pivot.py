@@ -94,9 +94,9 @@ class Ctrl(object):
         self.ds1.setMExtPtr(torque1)
         self.ds2.setMExtPtr(torque2)
         
-options = sk.solver_options_create(sn.SICONOS_GENERIC_MECHANICAL_NSGS)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 1000
-options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-12
+options = sn.solver_options_create(sn.solver_ids.SICONOS_GENERIC_MECHANICAL_NSGS)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-12
         
 # Load and run the simulation
 with MechanicsHdf5Runner(mode='r+') as io:

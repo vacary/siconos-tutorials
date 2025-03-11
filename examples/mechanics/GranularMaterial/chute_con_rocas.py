@@ -100,10 +100,10 @@ class death_hook():
 dh = death_hook()
 
 # Create solver options
-options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 1000
-options.iparam[sn.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 10
-options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-3
+options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
+options.iparam[sn.solver_ids.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 10
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-3
 
 with MechanicsHdf5Runner(mode='w', io_filename=fn) as io:
     ch = chute.create_chute(io, box_height=box_height,

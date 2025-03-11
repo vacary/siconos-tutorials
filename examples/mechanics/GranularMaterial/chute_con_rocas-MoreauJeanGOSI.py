@@ -64,9 +64,9 @@ tolerance = 1e-03
 if not os.path.exists('Chute'):
     os.mkdir('Chute')
 
-options = sk.solver_options_create(sn.SICONOS_GLOBAL_FRICTION_3D_ADMM)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = itermax
-options.dparam[sn.SICONOS_DPARAM_TOL] = tolerance
+options = sn.solver_options_create(sn.solver_ids.SICONOS_GLOBAL_FRICTION_3D_ADMM)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = itermax
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = tolerance
 fileName = "./Chute/Chute"
 title = "Chute"
 description = """

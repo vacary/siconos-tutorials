@@ -84,7 +84,7 @@ with MechanicsHdf5Runner() as io:
 
 
     
-solver = sn.SICONOS_GLOBAL_FRICTION_3D_ADMM
+solver = sn.solver_ids.SICONOS_GLOBAL_FRICTION_3D_ADMM
 
 dump_probability = .02
 theta = 0.50
@@ -109,9 +109,9 @@ friction_contact_trace_params = FrictionContactTraceParams(
     fileName=fileName, title=title,
     description=description, mathInfo=mathInfo)
 
-options = sk.solver_options_create(solver)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = itermax
-options.dparam[sn.SICONOS_DPARAM_TOL] = tolerance
+options = sn.solver_options_create(solver)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = itermax
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = tolerance
     
 # Load and run the simulation
 with MechanicsHdf5Runner(mode='r+') as io:

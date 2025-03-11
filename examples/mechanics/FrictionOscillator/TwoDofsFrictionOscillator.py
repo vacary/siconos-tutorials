@@ -151,7 +151,7 @@ t = TimeDiscretisation(t0, h)
 
 # (3) one step non smooth problem
 osnspb = Relay()
-osnspb.setSolverId(sn.SICONOS_RELAY_LEMKE);
+osnspb.setSolverId(sn.solver_ids.SICONOS_RELAY_LEMKE);
 
 osnspb.numericsSolverOptions().dparam[0] = 1e-08;
 # (4) Simulation setup with (1) (2) (3)

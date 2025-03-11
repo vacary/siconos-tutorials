@@ -43,9 +43,9 @@ with MechanicsHdf5Runner() as io:
 
     io.add_Newton_impact_friction_nsl('contact', mu=0.3, e=0.9)
     
-options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 100000
-options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-8
+options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100000
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-8
 
 # Run the simulation from the inputs previously defined and add
 # results to the hdf5 file. The visualisation of the output may be done

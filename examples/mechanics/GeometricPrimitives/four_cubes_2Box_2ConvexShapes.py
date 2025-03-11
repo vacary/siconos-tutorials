@@ -104,9 +104,9 @@ with MechanicsHdf5Runner() as io:
 step = 1000
 hstep = 0.005
 
-options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 100
-options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-4
+options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-4
 
 with MechanicsHdf5Runner(mode='r+', collision_margin=0.05) as io:
 

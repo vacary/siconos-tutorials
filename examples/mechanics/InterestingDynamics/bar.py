@@ -111,9 +111,9 @@ def apply_forces(body):
 # results to the hdf5 file. The visualisation of the output may be done
 # with the vview command.
 # Create solver options
-options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 1000
-options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-14
+options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-14
 with MechanicsHdf5Runner(mode='r+', collision_margin=0.01) as io:
 
     # By default earth gravity is applied and the units are those

@@ -24,9 +24,9 @@ if test:
 else:
     T=3.
     
-options = sk.solver_options_create(sn.SICONOS_GENERIC_MECHANICAL_NSGS)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 10000
-options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-4
+options = sn.solver_options_create(sn.solver_ids.SICONOS_GENERIC_MECHANICAL_NSGS)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 10000
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-4
 
 with MechanicsHdf5Runner(mode='r+') as io:
     io.run(t0=0,

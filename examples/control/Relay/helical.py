@@ -69,7 +69,7 @@ myIntegrator = sk.EulerMoreauOSI(theta)
 simu.insertIntegrator(myIntegrator)
 
 # osns
-osnspb = sk.Relay(sn.SICONOS_RELAY_LEMKE)
+osnspb = sk.Relay(sn.solver_ids.SICONOS_RELAY_LEMKE)
 simu.insertNonSmoothProblem(osnspb)
 
 # -- Get the values to be plotted --

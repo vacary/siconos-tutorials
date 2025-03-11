@@ -10,9 +10,9 @@ import numpy
 # chains of contacts.
 
 
-options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 100
-options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-8
+options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-8
 
 from siconos.mechanics.collision.bullet import SiconosBulletOptions
 bullet_options = SiconosBulletOptions()
@@ -24,8 +24,8 @@ bullet_options.minimumPointsPerturbationThreshold = 3
 test=True
 if test:
     T=1.8
-    options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 100
-    options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-3
+    options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100
+    options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-3
 else:
     T=10.0
 

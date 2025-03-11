@@ -118,16 +118,16 @@ with MechanicsHdf5Runner() as io:
 # Run the simulation from the inputs previously defined and add
 # results to the hdf5 file. The visualisation of the output may be done
 # with the vview command.
-options = sk.solver_options_create(sn.SICONOS_GENERIC_MECHANICAL_NSGS)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 10000
-options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-8
-sk.solver_options_update_internal(options, 1, sn.SICONOS_FRICTION_3D_ONECONTACT_NSN)
+options = sn.solver_options_create(sn.solver_ids.SICONOS_GENERIC_MECHANICAL_NSGS)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 10000
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-8
+sk.solver_options_update_internal(options, 1, sn.solver_ids.SICONOS_FRICTION_3D_ONECONTACT_NSN)
 #options=None
 
 
-options_pos = sk.solver_options_create(sn.SICONOS_MLCP_ENUM)
-options_pos.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 10000
-options_pos.dparam[sn.SICONOS_DPARAM_TOL] = 1e-12
+options_pos = sn.solver_options_create(sn.solver_ids.SICONOS_MLCP_ENUM)
+options_pos.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 10000
+options_pos.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-12
 
 
 

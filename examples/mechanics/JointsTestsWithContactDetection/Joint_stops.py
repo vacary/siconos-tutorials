@@ -39,9 +39,9 @@ with MechanicsHdf5Runner() as io:
                  nslaws='stop', stops=[[0, 2.0, -1], [0, -2.0, 1]],
                  allow_self_collide=True)
 
-options = sk.solver_options_create(sn.SICONOS_GENERIC_MECHANICAL_NSGS)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 1000
-options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-4
+options = sn.solver_options_create(sn.solver_ids.SICONOS_GENERIC_MECHANICAL_NSGS)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-4
            # projection_itermax=3,
            # projection_tolerance=1e-5,
            # projection_tolerance_unilateral=1e-5,

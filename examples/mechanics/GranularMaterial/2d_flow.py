@@ -162,11 +162,11 @@ with MechanicsHdf5Runner() as io:
 # results to the hdf5 file. The visualisation of the output may be done
 # with the vview command.
 
-options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 1000
-options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-8
+options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-8
 fclocal = sk.solver_options_get_internal_solver(options, 0)
-fclocal.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 100
+fclocal.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100
 
 with MechanicsHdf5Runner(mode='r+') as io:
 
