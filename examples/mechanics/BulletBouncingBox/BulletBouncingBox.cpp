@@ -80,7 +80,7 @@ int main() {
     // -- add the box to the body's set of contactactors
     // -- by default, the contactor id is 0 with no position offset,
     //    see SiconosContactor.hpp for how to change these.
-    body->contactors()->push_back(
+    body->contactors()->append(
         std::make_shared<siconos::collision::SiconosContactor>(box1));
 
     // -- Set external forces (weight) --
@@ -155,8 +155,8 @@ int main() {
     //    set, this is a design choice allowing for re-use for more complex
     //    compound contactor sets.
     auto staticCtrSet = std::make_shared<siconos::collision::SiconosContactorSet>();
-    staticCtrSet->push_back(std::make_shared<siconos::collision::SiconosContactor>(ground));
-    collision_manager->addStaticBody(staticCtrSet, groundOffset);
+    staticCtrSet->append(std::make_shared<siconos::collision::SiconosContactor>(ground));
+    collision_manager->addStaticBody(staticCtrSet, *groundOffset);
 
     // -- MoreauJeanOSI Time Stepping with Bullet collision manager as
     // -- the interaction manager.
