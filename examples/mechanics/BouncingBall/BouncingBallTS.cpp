@@ -101,7 +101,6 @@ int main(int argc, char *argv[]) {
 
     // link the interaction and the dynamical system
     bouncingBall->link(inter, ball);
-
     // ------------------
     // --- Simulation ---
     // ------------------
