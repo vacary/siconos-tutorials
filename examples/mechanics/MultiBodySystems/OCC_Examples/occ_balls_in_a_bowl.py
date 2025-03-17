@@ -8,23 +8,19 @@
 
 #
 
+from math import pi
+
 from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
-from siconos import numerics
 import siconos.numerics as sn
-import siconos.kernel as sk
 
 # for osi specification:
-# from siconos import kernel
+from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox, BRepPrimAPI_MakeSphere
+from OCC.Core.gp import gp_Pnt, gp_Ax1, gp_Dir
 
-from OCC.BRepAlgoAPI import BRepAlgoAPI_Cut
-from OCC.BRepPrimAPI import BRepPrimAPI_MakeBox, BRepPrimAPI_MakeSphere
-from OCC.gp import gp_Pnt, gp_Ax1, gp_Dir
-
-from OCC.GProp import GProp_GProps
-from OCC.BRepGProp import brepgprop_VolumeProperties
-
-from math import pi
+from OCC.Core.GProp import GProp_GProps
+from OCC.Core.BRepGProp import brepgprop_VolumeProperties
 
 # original implementation with occ backend
 import siconos.io.mechanics_run

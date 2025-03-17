@@ -6,12 +6,10 @@
 
 from siconos.mechanics.collision.tools import Volume, Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
-from siconos import numerics
 import siconos.numerics as sn
-import siconos.kernel as sk
 import siconos.io.mechanics_run
-from OCC.BRepPrimAPI import BRepPrimAPI_MakeBox, BRepPrimAPI_MakeSphere
-from OCC.gp import gp_Pnt
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox, BRepPrimAPI_MakeSphere
+from OCC.Core.gp import gp_Pnt
 
 
 config_occ = siconos.io.mechanics_run.RunnerConfig(backend="occ")

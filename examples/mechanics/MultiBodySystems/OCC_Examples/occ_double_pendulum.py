@@ -7,12 +7,12 @@
 from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
 import siconos
-from OCC.BRepPrimAPI import (
+from OCC.Core.BRepPrimAPI import (
     BRepPrimAPI_MakeBox,
     BRepPrimAPI_MakeSphere,
     BRepPrimAPI_MakeCylinder,
 )
-from OCC.gp import gp_Pnt
+from OCC.Core.gp import gp_Pnt
 
 from math import pi
 import numpy as np

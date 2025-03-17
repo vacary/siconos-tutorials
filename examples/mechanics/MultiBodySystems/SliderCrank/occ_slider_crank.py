@@ -11,11 +11,10 @@
 
 from siconos.mechanics.collision.tools import Contactor, Shape
 from siconos.io.mechanics_run import MechanicsHdf5Runner
-from OCC.BRepPrimAPI import BRepPrimAPI_MakeCylinder
-from OCC.gp import gp_Pnt, gp_Ax2, gp_Dir
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCylinder
+from OCC.Core.gp import gp_Pnt, gp_Ax2, gp_Dir
 import siconos
 import siconos.numerics as sn
-import siconos.kernel as sk
 
 config_occ = siconos.io.mechanics_run.RunnerConfig(backend="occ")
 
