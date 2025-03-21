@@ -31,7 +31,11 @@ if do_plot:
         matplotlib.use("Agg")
     from matplotlib.pyplot import subplot, title, plot, grid, show, savefig, ylim
 
-from siconos.modeling import NewtonImpactFrictionNSL, NonSmoothDynamicalSystem
+from siconos.modeling import (
+    NewtonImpactFrictionNSL,
+    NonSmoothDynamicalSystem,
+    interactions,
+)
 from siconos.integrators import MoreauJeanOSI
 from siconos.nonsmooth_formulations import FrictionContact
 from siconos.simulation import TimeStepping, TimeDiscretisation
@@ -78,7 +82,8 @@ body = RigidBodyDS(initial_position, initial_velocity, 1.0, inertia)
 
 # Add the shape, wrapped in a SiconosContactor, to the body's
 # contactor set.
-contactor = SiconosContactor(box1)
+contactorOffset = np.array([0, 0, 0, 1, 0, 0, 0], dtype=np.float64)
+contactor = SiconosContactor(box1, contactorOffset)
 body.contactors().append(contactor)
 
 # set external forces
@@ -131,7 +136,7 @@ broadphase.insertNonSmoothLaw(nslaw, 0, 0)
 # The ground is a static object
 # we give it a group contactor id : 0
 scs = SiconosContactorSet()
-scs.append(SiconosContactor(ground))
+scs.append(SiconosContactor(ground, contactorOffset))
 broadphase.addStaticBody(scs, groundOffset)
 
 # (6) Simulation setup with (1) (2) (3) (4) (5)
@@ -178,13 +183,13 @@ while simulation.hasNextEvent():
         + broadphase.statistics().existing_interactions_processed
     ) > 0:
         if bouncingBox.topology().numberOfIndexSet() == 2:
-            index1 = sk.interactions(simulation.indexSet(1))
+            index1 = interactions(simulation.indexSet(1))
             if len(index1) == 4:
                 dataPlot[k, 3] = (
-                    norm(index1[0].lambda_(1))
-                    + norm(index1[1].lambda_(1))
-                    + norm(index1[2].lambda_(1))
-                    + norm(index1[3].lambda_(1))
+                    norm(index1[0].lambda_python(1))
+                    + norm(index1[1].lambda_python(1))
+                    + norm(index1[2].lambda_python(1))
+                    + norm(index1[3].lambda_python(1))
                 )
 
     k += 1
