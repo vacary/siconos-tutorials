@@ -1,11 +1,13 @@
 
 from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
-import siconos.kernel as Kernel
 import numpy as np
 
+from siconos.simulation import TimeSteppingDirectProjection
+from siconos.integrators import MoreauJeanDirectProjectionOSI
+
 import siconos.numerics as sn
-import siconos.kernel as sk
+
 
 # A demonstration of how to couple the two free axes of a
 # CylindricalJointR in order to construct a screw relation. (Coupled
@@ -29,9 +31,9 @@ with MechanicsHdf5Runner() as io:
     # Put two bars at equal 45' angles and let them drop
     io.add_object('bar1', [Contactor('LongBar')], [0,-1,0.5], mass=1)
     io.add_object('bar2', [Contactor('LongBar')], [c*0.4,-0.8,1+s*0.3], mass=1,
-                 orientation=[(0,1,0),np.pi/4])
+                 orientation=((0,1,0),np.pi/4))
     io.add_object('bar3', [Contactor('ShortBar')], [-c*0.15,-0.6,1+s*0.05], mass=1,
-                 orientation=[(0,1,0),-np.pi/4])
+                 orientation=((0,1,0),-np.pi/4))
 
     # Definition of the ground
     io.add_primitive_shape('Ground', 'Box', (2, 3, 0.1))
@@ -95,7 +97,7 @@ with MechanicsHdf5Runner(mode='r+') as io:
            projection_itermax=3,
            projection_tolerance=1e-5,
            projection_tolerance_unilateral=1e-5,
-           time_stepping=Kernel.TimeSteppingDirectProjection,
-           osi=Kernel.MoreauJeanDirectProjectionOSI,
+           time_stepping=TimeSteppingDirectProjection,
+           osi=MoreauJeanDirectProjectionOSI,
            verbose=True
     )
