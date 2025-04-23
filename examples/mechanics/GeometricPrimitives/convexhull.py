@@ -20,7 +20,7 @@ import math
 
 import random
 from siconos.mechanics.collision.tools import Contactor
-from siconos.mechanics.collision.convexhull import ConvexHull
+import siconos.mechanics.collision.convexhull
 from siconos.mechanics.collision.bullet import SiconosBulletOptions
 
 from siconos.io.mechanics_run import (
@@ -95,14 +95,18 @@ with MechanicsHdf5Runner() as io:
                     (0.0, 0.0, 10.0 * polyhedron_size_rand),
                 ]
                 print("polyhedron_vertices", polyhedron_vertices)
-                ch = ConvexHull(polyhedron_vertices)
+                ch = siconos.mechanics.collision.convexhull.ConvexHull(
+                    polyhedron_vertices
+                )
                 cm = ch.centroid()
                 print("cm", cm)
 
                 # correction of vertices such that o is the centroid
                 polyhedron_vertices = numpy.array(polyhedron_vertices)[:] - cm[:]
                 print("corrected polyhedron_vertices", polyhedron_vertices)
-                ch = ConvexHull(polyhedron_vertices)
+                ch = siconos.mechanics.collision.convexhull.ConvexHull(
+                    polyhedron_vertices
+                )
                 cm = ch.centroid()
                 print("cm", cm)
 

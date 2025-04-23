@@ -22,8 +22,7 @@
 from siconos.mechanics.collision.convexhull import ConvexHull2d
 from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
-from siconos.mechanics.collision.bullet import SiconosBulletOptions
-
+import siconos.mechanics.collision.bullet
 import siconos.numerics as sn
 import numpy as np
 import math
@@ -151,10 +150,10 @@ with MechanicsHdf5Runner() as io:
 # Run the simulation from the inputs previously defined and add
 # results to the hdf5 file. The visualisation of the output may be done
 # with the vview command.
-bullet_options = SiconosBulletOptions()
+bullet_options = siconos.mechanics.collision.bullet.SiconosBulletOptions()
 bullet_options.worldScale = 1.0
 bullet_options.contactBreakingThreshold = 0.04
-bullet_options.dimension = 1
+bullet_options.dimension = siconos.mechanics.collision.bullet.TwoD
 bullet_options.perturbationIterations = 3
 bullet_options.minimumPointsPerturbationThreshold = 3
 

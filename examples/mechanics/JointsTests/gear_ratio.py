@@ -1,4 +1,19 @@
-
+# Siconos is a program dedicated to modeling, simulation and control
+# of non smooth dynamical systems.
+#
+# Copyright 2025 INRIA.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
 import numpy as np
@@ -17,87 +32,128 @@ import siconos.numerics as sn
 with MechanicsHdf5Runner() as io:
 
     # Bouncy contact with the ground
-    io.add_Newton_impact_friction_nsl('contact', mu=0.3, e=0.9)
+    io.add_Newton_impact_friction_nsl("contact", mu=0.3, e=0.9)
 
-    c = np.cos(np.pi/4)
-    s = np.sin(np.pi/4)
+    c = np.cos(np.pi / 4)
+    s = np.sin(np.pi / 4)
 
     # Definition of a long and short bar
-    io.add_primitive_shape('LongBar', 'Box', (0.2, 0.2, 1))
-    io.add_primitive_shape('ShortBar', 'Box', (0.2, 0.2, 0.5))
+    io.add_primitive_shape("LongBar", "Box", (0.2, 0.2, 1))
+    io.add_primitive_shape("ShortBar", "Box", (0.2, 0.2, 0.5))
 
-    ## Rotating gear ratio demonstration
+    # Rotating gear ratio demonstration
 
     # Put two bars at equal 45' angles and let them drop
-    io.add_object('bar1', [Contactor('LongBar')], [0,-1,0.5], mass=1)
-    io.add_object('bar2', [Contactor('LongBar')], [c*0.4,-0.8,1+s*0.3], mass=1,
-                 orientation=((0,1,0),np.pi/4))
-    io.add_object('bar3', [Contactor('ShortBar')], [-c*0.15,-0.6,1+s*0.05], mass=1,
-                 orientation=((0,1,0),-np.pi/4))
+    io.add_object("bar1", [Contactor("LongBar")], [0, -1, 0.5], mass=1)
+    io.add_object(
+        "bar2",
+        [Contactor("LongBar")],
+        [c * 0.4, -0.8, 1 + s * 0.3],
+        mass=1,
+        orientation=((0, 1, 0), np.pi / 4),
+    )
+    io.add_object(
+        "bar3",
+        [Contactor("ShortBar")],
+        [-c * 0.15, -0.6, 1 + s * 0.05],
+        mass=1,
+        orientation=((0, 1, 0), -np.pi / 4),
+    )
 
     # Definition of the ground
-    io.add_primitive_shape('Ground', 'Box', (2, 3, 0.1))
-    io.add_object('ground', [Contactor('Ground')], [0,0,-0.05])
+    io.add_primitive_shape("Ground", "Box", (2, 3, 0.1))
+    io.add_object("ground", [Contactor("Ground")], [0, 0, -0.05])
 
     # Fix bar1 in place
-    io.add_joint('jnt1', 'bar1', None, None, None, 'FixedJointR')
+    io.add_joint("jnt1", "bar1", None, None, None, "FixedJointR")
 
     # Add a pivot joint from bar2 to bar1 and another from bar1 to bar3.
-    io.add_joint('jnt2','bar2','bar1',[[0,0,0.9]],[[0,1,0]],'PivotJointR',absolute=True)
-    io.add_joint('jnt3','bar1','bar3',[[0,0,0.9]],[[0,1,0]],'PivotJointR',absolute=True)
+    io.add_joint(
+        "jnt2", "bar2", "bar1", [[0, 0, 0.9]], [[0, 1, 0]], "PivotJointR", absolute=True
+    )
+    io.add_joint(
+        "jnt3", "bar1", "bar3", [[0, 0, 0.9]], [[0, 1, 0]], "PivotJointR", absolute=True
+    )
 
     # We specified a gear ratio of 2.0 between dof 0 of jnt2 and dof
     # 0 of jnt3.  The short bar must maintain an angle
     # theta3=2.0*theta2, and it therefore spins twice as fast.
-    io.add_joint('jnt4','bar2','bar3',None,None,'CouplerJointR',
-                coupled=[[0, 0, 2.0]], references=['jnt2','jnt3','bar1'])
+    io.add_joint(
+        "jnt4",
+        "bar2",
+        "bar3",
+        None,
+        None,
+        "CouplerJointR",
+        coupled=[[0, 0, 2.0]],
+        references=["jnt2", "jnt3", "bar1"],
+    )
 
-    ## Rotation-prismatic gear ratio demonstration
+    # Rotation-prismatic gear ratio demonstration
 
     # Put two bars at equal 45' angles and let them drop
-    io.add_object('bar4', [Contactor('LongBar')], [0,0.6,0.5], mass=1)
-    io.add_object('bar5', [Contactor('LongBar')], [0,0.8,1], mass=1)
-    io.add_object('bar6', [Contactor('ShortBar')], [0,1.0,1], mass=1
-                 , velocity=[0,0,0,10,10,10])
+    io.add_object("bar4", [Contactor("LongBar")], [0, 0.6, 0.5], mass=1)
+    io.add_object("bar5", [Contactor("LongBar")], [0, 0.8, 1], mass=1)
+    io.add_object(
+        "bar6",
+        [Contactor("ShortBar")],
+        [0, 1.0, 1],
+        mass=1,
+        velocity=[0, 0, 0, 10, 10, 10],
+    )
 
     # Fix bar1 in place
-    io.add_joint('jnt5', 'bar4', None, None, None, 'FixedJointR')
+    io.add_joint("jnt5", "bar4", None, None, None, "FixedJointR")
 
     # Add a slider joint from bar5 to bar4
-    io.add_joint('jnt6','bar4','bar5',None,[[0,0,1]],'PrismaticJointR',absolute=True)
+    io.add_joint(
+        "jnt6", "bar4", "bar5", None, [[0, 0, 1]], "PrismaticJointR", absolute=True
+    )
 
     # Add a pivot joint from bar6 to bar5
-    io.add_joint('jnt7','bar5','bar6',[[0,0.6,1]],[[0,1,0]],'PivotJointR',absolute=True)
+    io.add_joint(
+        "jnt7", "bar5", "bar6", [[0, 0.6, 1]], [[0, 1, 0]], "PivotJointR", absolute=True
+    )
 
     # We specified a gear ratio of 0.2 between dof 0 of jnt6 and dof
     # 0 of jnt7.  Since jnt6 must maintain an angle
     # theta6=2.0*dist7, bar6 therefore spins as bar5 drops.
-    io.add_joint('jnt8','bar4','bar6',None,None,'CouplerJointR',
-                coupled=[[0, 0, 3.0]], references=['jnt6','jnt7','bar5'])
+    io.add_joint(
+        "jnt8",
+        "bar4",
+        "bar6",
+        None,
+        None,
+        "CouplerJointR",
+        coupled=[[0, 0, 3.0]],
+        references=["jnt6", "jnt7", "bar5"],
+    )
 
-test=True
+test = True
 if test:
-    T=1.
+    T = 1.0
 else:
-    T=5.
+    T = 5.0
 
-            
+
 options = sn.solver_options_create(sn.solver_ids.SICONOS_GENERIC_MECHANICAL_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-12
 
 # Load and run the simulation
-with MechanicsHdf5Runner(mode='r+') as io:
-    io.run(t0=0,
-           T=T,
-           h=0.001,
-           theta=0.5,
-           Newton_max_iter=1,
-           solver_options=options,
-           projection_itermax=3,
-           projection_tolerance=1e-5,
-           projection_tolerance_unilateral=1e-5,
-           time_stepping=TimeSteppingDirectProjection,
-           osi=MoreauJeanDirectProjectionOSI,
-           verbose=True
+with MechanicsHdf5Runner(mode="r+") as io:
+    io.run(
+        t0=0,
+        T=T,
+        h=0.001,
+        theta=0.5,
+        Newton_max_iter=1,
+        solver_options=options,
+        projection_itermax=3,
+        projection_tolerance=1e-5,
+        projection_tolerance_unilateral=1e-5,
+        time_stepping=TimeSteppingDirectProjection,
+        osi=MoreauJeanDirectProjectionOSI,
+        output_contact_forces=True,
+        verbose=True,
     )

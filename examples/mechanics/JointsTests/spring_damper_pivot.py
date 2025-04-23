@@ -1,18 +1,27 @@
-
-from __future__ import print_function
-import os,sys
+# Siconos is a program dedicated to modeling, simulation and control
+# of non smooth dynamical systems.
+#
+# Copyright 2025 INRIA.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import numpy as np
-import math
-import siconos.kernel as Kernel
-np.set_printoptions(precision=3)
 
 from siconos.mechanics.collision.tools import Contactor
-from siconos.mechanics.joints import cast_PivotJointR
 from siconos.io.mechanics_run import MechanicsHdf5Runner
-from siconos.kernel import SiconosVector, BlockVector, changeFrameAbsToBody
-
 import siconos.numerics as sn
-import siconos.kernel as sk
+
+np.set_printoptions(precision=3)
+
 
 # An example of applying force to the axis of a joint, and applying
 # spring and virtual damping by measuring position and velocity along
@@ -30,30 +39,48 @@ import siconos.kernel as sk
 with MechanicsHdf5Runner() as io:
 
     # Definition of two bars connected by a prismatic joint
-    io.add_primitive_shape('Bar', 'Box', (1, 0.1, 0.1))
-    io.add_object('bar1', [Contactor('Bar')], [0,0,2],
-                 orientation=[(0,0,1),np.pi/2], mass=1.0, velocity=[0,0,0,0,0,1])
-    io.add_object('bar2', [Contactor('Bar',relative_translation=[0, 0.1,0]),
-                          Contactor('Bar',relative_translation=[0,-0.1,0])],
-                 [0,0,2],
-                 orientation=[(0,0,1),np.pi/2], mass=1.0)
-    io.add_joint('joint1', 'bar1', 'bar2', [[0,0,0]], [[0,1,0]], 'PivotJointR',
-                absolute=False)
+    io.add_primitive_shape("Bar", "Box", (1, 0.1, 0.1))
+    io.add_object(
+        "bar1",
+        [Contactor("Bar")],
+        [0, 0, 2],
+        orientation=((0, 0, 1), np.pi / 2),
+        mass=1.0,
+        velocity=[0, 0, 0, 0, 0, 1],
+    )
+    io.add_object(
+        "bar2",
+        [
+            Contactor("Bar", relative_translation=[0, 0.1, 0]),
+            Contactor("Bar", relative_translation=[0, -0.1, 0]),
+        ],
+        [0, 0, 2],
+        orientation=((0, 0, 1), np.pi / 2),
+        mass=1.0,
+    )
+    io.add_joint(
+        "joint1",
+        "bar1",
+        "bar2",
+        [[0, 0, 0]],
+        [[0, 1, 0]],
+        "PivotJointR",
+        absolute=False,
+    )
 
     # Definition of the ground
-    io.add_primitive_shape('Ground', 'Box', (5, 5, 0.1))
-    io.add_object('ground', [Contactor('Ground')], [0,0,-0.05])
-    io.add_Newton_impact_friction_nsl('contact', mu=0.3, e=0.0)
+    io.add_primitive_shape("Ground", "Box", (5, 5, 0.1))
+    io.add_object("ground", [Contactor("Ground")], [0, 0, -0.05])
+    io.add_Newton_impact_friction_nsl("contact", mu=0.3, e=0.0)
+
 
 class Ctrl(object):
     def initialize(self, io):
         self.count = 0
         self.topo = io._nsds.topology()
-        self.ds1 = Kernel.cast_NewtonEulerDS(self.topo.getDynamicalSystem('bar1'))
-        self.ds2 = Kernel.cast_NewtonEulerDS(self.topo.getDynamicalSystem('bar2'))
-        self.joint1 = cast_PivotJointR(
-            self.topo.getInteraction('joint1').relation())
-
+        self.ds1 = self.topo.getDynamicalSystem("bar1")
+        self.ds2 = self.topo.getDynamicalSystem("bar2")
+        self.joint1 = self.topo.getInteraction("joint1").relation()
         self.ds1.setIsMextExpressedInInertialFrame(True)
         self.ds2.setIsMextExpressedInInertialFrame(True)
 
@@ -74,7 +101,7 @@ class Ctrl(object):
         angle = SiconosVector(1)
         self.joint1.computehDoF(0, bv, angle, 0)
 
-        setpoint = np.pi/4
+        setpoint = np.pi / 4
         ang_diff = setpoint - angle(0)
         spring_torque = np.array(self.joint1.normalDoF(bv, 0)) * ang_diff * 500.0
 
@@ -86,25 +113,28 @@ class Ctrl(object):
         damping_torque = vel_diff * 5.0
 
         # Calculate total torques for each body
-        torque1 += - (spring_torque + damping_torque)/2
-        torque2 += + (spring_torque + damping_torque)/2
+        torque1 += -(spring_torque + damping_torque) / 2
+        torque2 += +(spring_torque + damping_torque) / 2
 
-        print('applying spring-damper torques', torque1, torque2)
+        print("applying spring-damper torques", torque1, torque2)
 
         self.ds1.setMExtPtr(torque1)
         self.ds2.setMExtPtr(torque2)
-        
+
+
 options = sn.solver_options_create(sn.solver_ids.SICONOS_GENERIC_MECHANICAL_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-12
-        
+
 # Load and run the simulation
-with MechanicsHdf5Runner(mode='r+') as io:
-    io.run(t0=0,
-           T=5,
-           h=0.001,
-           theta=0.5,
-           Newton_max_iter=1,
-           controller=Ctrl(),
-           solver_options=options,
-           output_frequency=1)
+with MechanicsHdf5Runner(mode="r+") as io:
+    io.run(
+        t0=0,
+        T=5,
+        h=0.001,
+        theta=0.5,
+        Newton_max_iter=1,
+        controller=Ctrl(),
+        solver_options=options,
+        output_frequency=1,
+    )

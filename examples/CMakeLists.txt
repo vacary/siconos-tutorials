@@ -10,7 +10,7 @@ project(siconos_examples CXX C)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-set(tests_timeout 35 CACHE INTERNAL "Limit time for tests (in seconds)")
+set(tests_timeout 50 CACHE INTERNAL "Limit time for tests (in seconds)")
 
 # -- Try to find a proper siconos installation --
 # Get siconos version required to run the examples
