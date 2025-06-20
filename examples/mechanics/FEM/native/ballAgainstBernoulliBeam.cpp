@@ -37,11 +37,11 @@ int main(int argc, char* argv[]) {
   try {
     double Ly = 1.0;
 
-    auto v0 = std::make_shared<MVertex>(0, 0.0, 0.0, 0.0);
-    auto vEnd = std::make_shared<MVertex>(0, 0.0, 4.0, 0.0);
+    auto p0 = std::make_shared<MVertex>(0, 0.0, 0.0, 0.0);
+    auto pEnd = std::make_shared<MVertex>(0, 0.0, 4.0, 0.0);
     int nbBeams = 4;
     int dim = 2;
-    auto mesh = createBeamMesh(v0, vEnd, nbBeams, 2);
+    auto mesh = createBeamMesh(p0, pEnd, nbBeams, 2);
     mesh->display(false);
 
             // siconos::mechanics::fem::writeMeshforPython(mesh);
@@ -52,20 +52,27 @@ int main(int argc, char* argv[]) {
 
             // std::shared_ptr<Material> mat1 = std::make_shared<Material>(1, 8*36/5.,
             // 1/5.); // material for  triangle_felippa.msh
-    double density = 7800.;
+    double density = 1080.;
     auto mat1 = std::make_shared<siconos::mechanics::fem::Material>(
-        density, 210e9, 1 / 3);
+        density, 500e7, 1 / 3);
     // auto mat1 = std::make_shared<siconos::mechanics::fem::Material>(
     //     1.0, 1.0, 1 / 3);
     std::map<unsigned int, std::shared_ptr<siconos::mechanics::fem::Material>>
         materials = {{bulk_material_tag, mat1},{boundary_condition_tag,mat1},{applied_force_tag,mat1}};
     auto start = std::chrono::system_clock::now();
     std::cout << "Creating beamTIDS... " << std::endl;
-    auto beam = std::make_shared<siconos::mechanics::fem::SolidLinearTIDS>(
-        mesh, materials, siconos::algebra::UblasType::SPARSE);
+    // auto beam = std::make_shared<siconos::mechanics::fem::SolidLinearTIDS>(
+    //     mesh, materials, siconos::algebra::UblasType::SPARSE);
+    // int nDof_Beam = beam->velocityDimension();
+
     // auto beam = std::make_shared<siconos::mechanics::fem::FiniteElementLinearTIDS>(
     //     mesh, materials, siconos::algebra::UblasType::SPARSE);
-    std::cout << "beamTIDS created!" << std::endl;
+    auto beam = std::make_shared<siconos::mechanics::fem::SolidLinearTIDS>(
+        mesh, materials, siconos::algebra::UblasType::SPARSE);
+    std::cout << "beam->n(): " << beam->n() << std::endl;
+    // int nDof_Beam = beam->n()/2;
+    int nDof_Beam = beam->velocityDimension();
+    std::cout << "beamTIDS created! ndofs: " << nDof_Beam << std::endl;
     auto femodel = beam->FEModel();
     /*------------------------------------------------- Applied forces  */
                                                                             //    (*nodal_forces)(0) = 1e6;
@@ -74,8 +81,8 @@ int main(int argc, char* argv[]) {
     auto nodal_forces = std::make_shared<Vector>(3);
     nodal_forces->zero();
     (*nodal_forces)(0) = -2e9;
-    beam->applyNodalForces(applied_force_tag, nodal_forces);
-    std::cout << "forces applied!" << std::endl;
+    // beam->applyNodalForces(applied_force_tag, nodal_forces);
+    // std::cout << "forces applied!" << std::endl;
     /*------------------------------------------------- Boundary Conditions  */
     /* This part should be hidden in a new BC function for a node number
      * and a dof index. */
@@ -95,10 +102,67 @@ int main(int argc, char* argv[]) {
             // --- Model ---
             // -------------
     double t0 = 0;       // initial computation time
-    double T = 1e-02;    // final computation time
+    double T = 4e-02;    // final computation time
     double h = 1e-05;    // time step
     double theta = 1.0;  // theta for MoreauJeanOSI integrator
     int N = ceil((T - t0) / h);  // Number of time steps
+
+
+
+    unsigned int nDof = 3;  // degrees of freedom for the ball
+    double position_init = 0.5;  // initial position for the block.
+    double velocity_init = -1000.0;  // initial velocity for the block.
+
+    double R = 3;              // Ball radius
+    double m1 = 300;               // Ball mass
+    auto Mass = std::make_shared<Matrix>(nDof, nDof);
+    (*Mass)(0, 0) = m1;
+    (*Mass)(1, 1) = m1;
+    (*Mass)(2, 2) = 2. / 5 * m1 * R * R;
+
+            // -- Initial positions and velocities --
+    auto q0 = std::make_shared<Vector>(nDof);
+    auto v0 = std::make_shared<Vector>(nDof);
+    (*q0)(0) = position_init;
+    (*v0)(0) = velocity_init;
+
+            // -- The block dynamical system --
+    auto block = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, Mass);
+
+
+    auto nslaw = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(0, 0, 0, 3);
+    // double e = 0;
+    // auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
+    // auto H_bb = std::make_shared<Matrix>(1, nDof + nDof_Beam);
+    // (*H_bb)(0, 9) = -1.0;
+    // // (*H_bb)(1, 10) = -1.0;
+    // // (*H_bb)(2, 11) = -1.0;
+    // (*H_bb)(0, 15) = 1.0;
+    // // (*H_bb)(1, 16) = 1.0;
+    // // (*H_bb)(2, 17) = 1.0;
+
+    // auto b_bb = std::make_shared<Vector>(1);
+    // (*b_bb)(0) = 0.0;
+    // // (*b_bb)(1) = 0.0;
+    // // (*b_bb)(2) = 0.0;
+
+
+    auto H_bb = std::make_shared<Matrix>(nDof, nDof + nDof_Beam);
+    (*H_bb)(0, 12) = -1.0;
+    (*H_bb)(1, 13) = -1.0;
+    (*H_bb)(2, 14) = -1.0;
+    (*H_bb)(0, 15) = 1.0;
+    (*H_bb)(1, 16) = 1.0;
+    (*H_bb)(2, 17) = 1.0;
+
+    auto b_bb = std::make_shared<Vector>(3);
+    (*b_bb)(0) = 0.0;
+    (*b_bb)(1) = 0.0;
+    (*b_bb)(2) = 0.0;
+
+    auto relation_bb = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H_bb, b_bb);
+
+    auto inter_bb = std::make_shared<siconos::modeling::Interaction>(nslaw, relation_bb);
 
 
     auto beamNSDS =
@@ -106,6 +170,10 @@ int main(int argc, char* argv[]) {
 
             // add the dynamical system in the non smooth dynamical system
     beamNSDS->insertDynamicalSystem(beam);
+    beamNSDS->insertDynamicalSystem(block);
+
+    beamNSDS->link(inter_bb, beam, block);
+
 
     auto OSI = std::make_shared<siconos::integrators::MoreauJeanGOSI>(theta);
     // auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
@@ -126,10 +194,12 @@ int main(int argc, char* argv[]) {
     std::string SOFAfilename = "beam.state";
     int k = 1;
     start = std::chrono::system_clock::now();
-    unsigned int outputSize = 4;
+    unsigned int outputSize = 6;
     Matrix dataPlot(N + 1, outputSize);
+    auto qball = block->q();
     auto q = beam->q();
     auto v = beam->velocity();
+    auto p1 = block->p(1);
 
     prepareWriteBeamPositionforSOFA(SOFAfilename);
     writeBeamPositionforSOFA(mesh, femodel, q, SOFAfilename,0);
@@ -147,15 +217,21 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 1) = (*q)(beam->dimension() - 3);
     dataPlot(0, 2) = (*q)(beam->dimension() - 2);
     dataPlot(0, 3) = (*q)(beam->dimension() - 1);
+    dataPlot(0, 4) = (*qball)(0);
+    dataPlot(0, 5) = (*p1)(0);
 
     std::cout << "About to start simulation" << std::endl;
     while (s->hasNextEvent()) {
+      std::cout << "Step number " << k << std::endl;
       s->computeOneStep();
+      std::cout << "computed! " << std::endl;
       //  --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(beam->dimension() - 3);
       dataPlot(k, 2) = (*q)(beam->dimension() - 2);
       dataPlot(k, 3) = (*q)(beam->dimension() - 1);
+      dataPlot(k, 4) = (*qball)(0);
+      dataPlot(k, 5) = (*p1)(0);
       vcnt = 0;
       // for (auto v : mesh->vertices()) {
       //   std::cout << v->num() << std::endl;
@@ -164,8 +240,11 @@ int main(int argc, char* argv[]) {
               //   pos(k,(vcnt)*2+1) = v->y() + (*q)((vcnt)*3+1);
               //   vcnt++;
               // }
+      std::cout << "writing beam pos for SOFA... " << std::endl;
+      q->display();
+      qball->display();
       writeBeamPositionforSOFA(mesh, femodel, q, SOFAfilename,k*0.01);
-
+      std::cout << "Done! " << std::endl;
       s->nextStep();
       k++;
 
@@ -176,19 +255,19 @@ int main(int argc, char* argv[]) {
                        .count();
 
 
-    siconos::algebra::io::write("bernoulliBeam-GOSI.dat", dataPlot,
+    siconos::algebra::io::write("ballAgainstBernoulliBeam.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
     double error = 0.0, eps = 1e-12;
-    if ((error = siconos::algebra::io::compareRefFile(
-             dataPlot, "bernoulliBeam.ref", eps)) >= eps)
-      return 1;
+    // if ((error = siconos::algebra::io::compareRefFile(
+    //          dataPlot, "bernoulliBeam.ref", eps)) >= eps)
+    //   return 1;
 
     return 0;
 
   } catch (...) {
-    std::cerr << "Exception caught in bernoulliBeam.cpp\n";
+    std::cerr << "Exception caught in ballAgainstBernoulliBeam.cpp\n";
     siconos::exception::process();
     return 1;
   }
