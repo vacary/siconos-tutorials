@@ -41,7 +41,6 @@ from siconos.nonsmooth_formulations import FrictionContact
 from siconos.simulation import TimeStepping, TimeDiscretisation
 import siconos.numerics as sn
 
-
 from siconos.mechanics.collision.bullet import SiconosBulletCollisionManager
 
 from siconos.mechanics.collision import (
@@ -198,10 +197,7 @@ while simulation.hasNextEvent():
 #
 # comparison with the reference file
 #
-from siconos.input import readMatrixFromFile
-from numpy.linalg import norm
-
-ref = readMatrixFromFile("result.ref")
+ref = np.loadtxt("result.ref", skiprows=1)
 
 print("norm(dataPlot - ref) = {0}".format(norm(dataPlot - ref)))
 if norm(dataPlot - ref) > 1e-11:

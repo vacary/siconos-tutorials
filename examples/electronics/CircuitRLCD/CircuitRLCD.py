@@ -18,7 +18,7 @@
 # limitations under the License.
 #
 #
-#-----------------------------------------------------------------------
+# -----------------------------------------------------------------------
 #
 #  CircuitRLCD  : sample of an electrical circuit involving :
 #  - a linear dynamical system consisting of an LC oscillator (1 µF , 10 mH)
@@ -43,7 +43,7 @@
 #  - a linear time invariant relation between the state variables and
 #    y and lambda (derived from Kirchhoff laws)
 #
-#-----------------------------------------------------------------------
+# -----------------------------------------------------------------------
 
 
 import siconos.modeling as sm
@@ -51,30 +51,30 @@ import siconos.integrators as si
 import siconos.simulation as ss
 import siconos.nonsmooth_formulations as snsf
 import numpy as np
-import siconos.input
 
 t0 = 0.0
-T = 5.0e-3       # Total simulation time
+T = 5.0e-3  # Total simulation time
 h_step = 10.0e-6  # Time step
-Lvalue = 1e-2    # inductance
-Cvalue = 1e-6    # capacitance
-Rvalue = 1e3     # resistance
-Vinit = 10.0     # initial voltage
+Lvalue = 1e-2  # inductance
+Cvalue = 1e-6  # capacitance
+Rvalue = 1e3  # resistance
+Vinit = 10.0  # initial voltage
 
 withPlot = True
-if (withPlot):
+if withPlot:
     import matplotlib
-    matplotlib.use('Agg')
+
+    matplotlib.use("Agg")
     from matplotlib.pyplot import subplot, title, plot, grid, savefig, show
 
 
 #
 # dynamical system
 #
-init_state = np.array([-1, 0], dtype=np.float64, order='F')
+init_state = np.array([-1, 0], dtype=np.float64, order="F")
 
-A = np.zeros((2, 2), dtype=np.float64, order='F')
-A.flat[...] = [0., -1.0 / Cvalue, 1.0 / Lvalue, 0.]
+A = np.zeros((2, 2), dtype=np.float64, order="F")
+A.flat[...] = [0.0, -1.0 / Cvalue, 1.0 / Lvalue, 0.0]
 
 LSCircuitRLCD = sm.FirstOrderLinearDS(init_state)
 LSCircuitRLCD.setConstantA(A)
@@ -83,11 +83,11 @@ LSCircuitRLCD.setConstantA(A)
 # Interactions
 #
 
-C = np.array([[-1., 0.]], dtype=np.float64, order='F')
+C = np.array([[-1.0, 0.0]], dtype=np.float64, order="F")
 
-D = np.array([[Rvalue]], dtype=np.float64, order='F')
+D = np.array([[Rvalue]], dtype=np.float64, order="F")
 
-B = np.array([[-1. / Cvalue], [0.]], dtype=np.float64, order='F')
+B = np.array([[-1.0 / Cvalue], [0.0]], dtype=np.float64, order="F")
 
 LTIRCircuitRLCD = sm.FirstOrderLinearTIR(C, B)
 LTIRCircuitRLCD.setConstantD(D)
@@ -166,51 +166,51 @@ dataPlot[k, 4] = lambda_[0]
 dataPlot[k, 5] = LSCircuitRLCD.r()[0]
 
 k += 1
-while (k < N):
+while k < N:
     aTS.computeOneStep()
-    #aLCP.display()
+    # aLCP.display()
     dataPlot[k, 0] = aTS.nextTime()
     #  inductor voltage
     dataPlot[k, 1] = x[0]
     # inductor current
     dataPlot[k, 2] = x[1]
     # diode  voltage
-    dataPlot[k, 3] = - y[0]
+    dataPlot[k, 3] = -y[0]
     # diode  current
     dataPlot[k, 4] = lambda_[0]
-    dataPlot[k, 5] = 0.
+    dataPlot[k, 5] = 0.0
     k += 1
     aTS.nextStep()
 
 # comparison with reference file
 
-ref = siconos.input.readMatrixFromFile("CircuitRLCD.ref")
+ref = np.loadtxt("CircuitRLCD.ref", skiprows=1)
 error = np.linalg.norm(dataPlot - ref)
 print("Error:", error)
-if  error > 1e-10:
+if error > 1e-10:
     print("Warning. The result is rather different from the reference file.")
     # raise ValueError("Results are different from reference.")
 
-#assert (np.linalg.norm(dataPlot - ref) < 1e-10)
+# assert (np.linalg.norm(dataPlot - ref) < 1e-10)
 
-if (withPlot):
+if withPlot:
     #
     # plots
     #
     subplot(411)
-    title('inductor voltage')
-    plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 1])
+    title("inductor voltage")
+    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 1])
     grid()
     subplot(412)
-    title('inductor current')
-    plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 2])
+    title("inductor current")
+    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 2])
     # plot(dataPlot[0:k - 1, 0], ref[0:k - 1, 2])
     grid()
     subplot(413)
-    title('diode  voltage')
-    plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 3])
+    title("diode  voltage")
+    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 3])
     subplot(414)
-    title('diode current')
-    plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 4])
+    title("diode current")
+    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 4])
     savefig("circuit_rlcd.png")
-    #show()
+    # show()

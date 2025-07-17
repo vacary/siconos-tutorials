@@ -43,7 +43,7 @@ auto makeBox(float g, Eigen::Ref<Vector> q0, Eigen::Ref<Vector> v0) {
   auto box1 = std::make_shared<siconos::collision::SiconosBox>(1.0, 1.0, 1.0);
 
   // -- The dynamical system --
-  auto inertia = std::make_shared<siconos::algebra::SiconosMatrix>(3, 3);
+  auto inertia = std::make_shared<siconos::algebra::SiconosMatrix33>();
   inertia->setIdentity();
   auto body = std::make_shared<siconos::collision::RigidBodyDS>(q0, v0, mass, *inertia);
 

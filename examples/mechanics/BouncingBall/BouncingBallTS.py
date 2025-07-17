@@ -22,7 +22,6 @@ import siconos.modeling as sm
 import siconos.integrators
 import siconos.simulation
 import siconos.nonsmooth_formulations
-import siconos.input
 import matplotlib
 import os
 import matplotlib.pyplot as plt
@@ -135,7 +134,7 @@ while s.hasNextEvent():
 #
 # comparison with the reference file
 #
-ref = siconos.input.readMatrixFromFile("BouncingBallTS.ref")
+ref = np.loadtxt("BouncingBallTS.ref", skiprows=1)
 error = np.linalg.norm(dataPlot - ref)
 print("Error:", error)
 if error > 1e-12:

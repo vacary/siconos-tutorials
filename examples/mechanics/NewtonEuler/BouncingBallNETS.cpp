@@ -63,8 +63,8 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
     //(*_Pc2)(1) = (*data[q0])(1);
     //(*_Pc2)(2) = (*data[q0])(2);
     // printf("my_NewtonEulerR N, Pc\n");
-    //siconos::algebra::print(*_Nc);
-    //siconos::algebra::print(*_Pc1);
+    // siconos::algebra::print(*_Nc);
+    // siconos::algebra::print(*_Pc1);
   }
 };
 
@@ -121,18 +121,6 @@ int main(int argc, char* argv[]) {
 
     // -- nslaw --
     double e = 0.9;
-
-    // Interaction ball-floor
-    //
-
-    //     vector<auto> vecMatrix1;
-    //     vecMatrix1.push_back(H);
-    //     auto H_block(new BlockMatrix(vecMatrix1,1,1);
-
-    //     auto HT= std::make_shared<Matrix>(1,nDim);
-    //     vector<auto> vecMatrix2;
-    //     vecMatrix2.push_back(HT);
-    //     auto HT_block(new BlockMatrix(vecMatrix2,1,1);
 
 #ifdef WITH_FC3D
     auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, e, 0.6, 3);

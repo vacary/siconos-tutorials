@@ -22,24 +22,24 @@ import siconos.modeling as sm
 import siconos.integrators
 import siconos.simulation
 import siconos.nonsmooth_formulations
-import siconos.input
 import matplotlib
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+
 havedisplay = "DISPLAY" in os.environ
 
 if not havedisplay:
-    matplotlib.use('Agg')
+    matplotlib.use("Agg")
 
 
-t0 = 0       # start time
-T = 10       # end time
-h = 0.005    # time step
-r = 0.1      # ball radius
-g = 9.81     # gravity
-m = 1        # ball mass
-e = 0.9      # restitution coeficient
+t0 = 0  # start time
+T = 10  # end time
+h = 0.005  # time step
+r = 0.1  # ball radius
+g = 9.81  # gravity
+m = 1  # ball mass
+e = 0.9  # restitution coeficient
 theta = 0.5  # theta scheme
 
 #
@@ -48,23 +48,24 @@ theta = 0.5  # theta scheme
 ndof = 3
 initial_position = np.array([1, 0, 0], dtype=np.float64)
 initial_velocity = np.array([0, 0, 0], dtype=np.float64)
-mass = np.eye(ndof, dtype=np.float64, order='F')
-mass[2, 2] = 2. / 5 * r * r
+mass = np.eye(ndof, dtype=np.float64, order="F")
+mass[2, 2] = 2.0 / 5 * r * r
 
 ball = sm.LagrangianLinearTIDS(initial_position, initial_velocity, mass)
 # set external forces with a plugin
 
 
 def external_forces(time, fext):
-    fext[:] = 0.
+    fext[:] = 0.0
     fext[0] = -m * g
-    #print("call external_force ...")
+    # print("call external_force ...")
+
 
 ball.setComputeFextFunction(external_forces)
 
 #
 # Interaction ball-floor
-H = np.array([[1, 0, 0]], dtype=np.float64, order='F')
+H = np.array([[1, 0, 0]], dtype=np.float64, order="F")
 
 nslaw = sm.NewtonImpactNSL(e)
 relation = sm.LagrangianLinearTIR(H)
@@ -93,7 +94,7 @@ t = siconos.simulation.TimeDiscretisation(t0, h)
 osnspb = siconos.nonsmooth_formulations.LCP()
 
 # (4) Simulation setup with (1) (2) (3)
-s = siconos.simulation.TimeStepping(bouncingBall,t, OSI, osnspb)
+s = siconos.simulation.TimeStepping(bouncingBall, t, OSI, osnspb)
 
 # the number of time steps
 N = int((T - t0) / h)
@@ -101,7 +102,7 @@ N = int((T - t0) / h)
 # Get the values to be plotted
 # ->saved in a matrix dataPlot
 
-dataPlot = np.zeros((N+1, 5))
+dataPlot = np.zeros((N + 1, 5))
 
 #
 # numpy pointers on dense Siconos vectors
@@ -139,10 +140,10 @@ while s.hasNextEvent():
 #
 # comparison with the reference file
 #
-ref = siconos.input.readMatrixFromFile("BouncingBallTS.ref")
+ref = np.loadtxt("BouncingBallTS.ref", skiprows=1)
 error = np.linalg.norm(dataPlot - ref)
 print("Error:", error)
-if  error > 1e-12:
+if error > 1e-12:
     print("Warning. The result is rather different from the reference file.")
     raise ValueError("Results are different from reference.")
 
@@ -150,20 +151,20 @@ if  error > 1e-12:
 # plots
 #
 plt.subplot(411)
-plt.title('position')
+plt.title("position")
 plt.plot(dataPlot[:, 0], dataPlot[:, 1])
 plt.grid()
 plt.subplot(412)
-plt.title('velocity')
+plt.title("velocity")
 plt.plot(dataPlot[:, 0], dataPlot[:, 2])
 plt.grid()
 plt.subplot(413)
 plt.plot(dataPlot[:, 0], dataPlot[:, 3])
-plt.title('reaction')
+plt.title("reaction")
 plt.grid()
 plt.subplot(414)
 plt.plot(dataPlot[:, 0], dataPlot[:, 4])
-plt.title('lambda')
+plt.title("lambda")
 plt.grid()
 
 if havedisplay:

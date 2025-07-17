@@ -30,10 +30,8 @@ import siconos.modeling as sm
 import siconos.integrators as si
 import siconos.simulation as ss
 import siconos.nonsmooth_formulations as snsf
-import siconos.pynumerics as sn
+import siconos.numerics as sn
 
-
-import siconos.input
 import math
 
 """
@@ -117,7 +115,7 @@ t = ss.TimeDiscretisation(t0, h)
 
 # (3) one step non smooth problem
 osnspb = snsf.Relay()
-osnspb.setSolverId(sn.Constants.SICONOS_RELAY_LEMKE)
+osnspb.setSolverId(sn.solver_ids.SICONOS_RELAY_LEMKE)
 
 osnspb.numericsSolverOptions().dparam[0] = 1e-08
 # (4) Simulation setup with (1) (2) (3)
@@ -172,7 +170,7 @@ while s.hasNextEvent():
 #
 # comparison with the reference file (produced by the cpp version)
 #
-ref = siconos.input.readMatrixFromFile("FrictionOscillator.ref")
+ref = np.loadtxt("FrictionOscillator.ref", skiprows=1)
 if norm(dataPlot[0:10000, 0:6] - ref[0:10000, 0:6]) > 1e-12:
     print(
         "Warning. The result is rather different from the reference file.",
