@@ -2,8 +2,9 @@
 
 from siconos.io.mechanics_run import MechanicsHdf5Runner, MechanicsHdf5Runner_run_options
 import siconos.numerics as sn
-import siconos.kernel as sk
+import siconos.simulation as simu
 from siconos.mechanics.collision.bullet import SiconosBulletOptions
+
 import chute
 import rocas
 import random
@@ -39,7 +40,7 @@ density = 2500
 plane_thickness = 0.2
 cube_size = 0.1
 
-test = True
+test = False
 if test:
     n_layer = 10
     n_row = 2
@@ -53,7 +54,7 @@ else:
     T = 20.
     hstep = 1e-4
 
-
+N = int(T/hstep)
 # A hook to remove body that to far from the hopper at the end of the iteration
 import numpy
 class death_hook():
@@ -66,11 +67,15 @@ class death_hook():
 
     def call(self, step):
         #print('call death hook at step', step)
-
+        #if step%100 ==0:
+        #    print('step', step, '/', N)
         # # First way (slow) : loop over the bodies
-        # nds= self._io._nsds.getNumberOfDS()
-        # print('nds =', nds)
-        # allds=self._io._nsds.dynamicalSystemsVector()
+        #nsds = self._io._nsds
+        #print(dir(nsds))
+        #print(nsds.displayDynamicalSystems())
+        #nds= self._io._nsds.getNumberOfDS()
+        #print('nds =', nds)
+        #allds=self._io._nsds.dynamicalSystemsVector()
 
         # for ds in allds:
         #     #ds.display()
@@ -84,12 +89,15 @@ class death_hook():
 
         # second way (faster) :  direct access to nsds positions
         positions  = self._io._io.positions(self._io._nsds)
-        if positions is not None:
-            z = positions[:,3]
+        #print('z', positions, positions.shape)
+        if positions.shape[1] >0:
+            #pass
+            z = positions[3,:]
+            
             # We search for the ds index that are below a given criteria
             ds_idx = numpy.nonzero(z < -2)[0]
             for i in ds_idx :
-                n_ds = int(positions[i,0])
+                n_ds = int(positions[0,i])
                 ds = self._io._nsds.dynamicalSystem(n_ds)
                 self._io._interman.removeBody(ds)
                 self._io._nsds.removeDynamicalSystem(ds)
@@ -102,7 +110,7 @@ dh = death_hook()
 # Create solver options
 options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
-options.iparam[sn.solver_ids.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 10
+options.iparam[sn.params.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 10
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-3
 
 with MechanicsHdf5Runner(mode='w', io_filename=fn) as io:
@@ -125,7 +133,7 @@ run_options['h']=hstep
 run_options['theta']=1.0
 
 bullet_options = SiconosBulletOptions()
-bullet_options.perturbationIterations = 0.
+bullet_options.perturbationIterations = 0
 #bullet_options.minimumPointsPerturbationThreshold = 0.
 
 run_options['bullet_options']=bullet_options
@@ -135,7 +143,7 @@ run_options['constraint_activation_threshold']=1e-05
 run_options['end_run_iteration_hook'] = dh
 
 
-run_options['Newton_options']=sk.SICONOS_TS_LINEAR
+run_options['Newton_options']=simu.LINEAR
 run_options['skip_last_update_output']=True
 run_options['skip_reset_lambdas']=True
 
