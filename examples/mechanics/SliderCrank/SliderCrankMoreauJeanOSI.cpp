@@ -45,10 +45,10 @@ int main(int argc, char *argv[]) {
     // ================= Creation of the model =======================
 
     // parameters according to Table 1
-    unsigned int nDof = 3;  // degrees of freedom for the slider crank
-    double t0 = 0.;         // initial computation time
-    double T = 0.2;         // final computation time
-    double h = 1e-5;        // time step : do not decrease, because of strong penetrations
+    int nDof = 3;     // degrees of freedom for the slider crank
+    double t0 = 0.;   // initial computation time
+    double T = 0.2;   // final computation time
+    double h = 1e-5;  // time step : do not decrease, because of strong penetrations
 
     // contact parameters
     double eN1 = 0.4;
@@ -488,7 +488,7 @@ int main(int argc, char *argv[]) {
       dataPlot(k, 26) = indexSet1->size();
 
       if (indexSet1->size() > 5) {
-        siconos::algebra::print(*impact);
+        impact->display();
       }
       //      if (s->nextTime() > 0.035 and (*inter1->lambda(1))(0) >0.0)
 #ifdef DISPLAY_INTER

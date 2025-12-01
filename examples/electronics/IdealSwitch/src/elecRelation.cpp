@@ -18,6 +18,8 @@
 
 #include "elecRelation.h"
 
+#include <BlockVector.hpp>
+
 #include "circuit.h"
 
 user_defined::elecRelation::elecRelation() : siconos::modeling::FirstOrderNonLinearR() {

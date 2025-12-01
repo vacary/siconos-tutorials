@@ -23,7 +23,7 @@
 #include <chrono>
 
 using namespace std;
-using Matrix = siconos::algebra::SiconosMatrix;
+using Matrix = siconos::algebra::SiconosDenseMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 int main(int argc, char* argv[]) {
@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 3;       // degrees of freedom for the ball
+    int nDof = 3;                // degrees of freedom for the ball
     double t0 = 0;               // initial computation time
     double T = 10;               // final computation time
     double h = 0.005;            // time step
@@ -47,11 +47,7 @@ int main(int argc, char* argv[]) {
 
     cout << "====> Model loading ..." << endl;
 
-    Matrix mass{nDof, nDof};
-    mass.setZero();
-    mass(0, 0) = m;
-    mass(1, 1) = m;
-    mass(2, 2) = 2. / 5 * m * R * R;
+    auto inertia = 2. / 5 * m * R * R;
 
     // -- Initial positions and velocities --
     Vector q0{nDof};
@@ -62,7 +58,8 @@ int main(int argc, char* argv[]) {
     v0(0) = velocity_init;
 
     // -- The dynamical system --
-    auto ball = std::make_shared<siconos::collision::RigidBody2dDS>(q0, v0, mass);
+
+    auto ball = std::make_shared<siconos::collision::RigidBody2dDS>(q0, v0, m, inertia);
 
     Vector q01{nDof};
     Vector v01{nDof};
@@ -71,7 +68,7 @@ int main(int argc, char* argv[]) {
     q01(0) = position_init + 2 * R + 0.1;
     v01(0) = velocity_init;
 
-    auto ball1 = std::make_shared<siconos::collision::RigidBody2dDS>(q01, v01, mass);
+    auto ball1 = std::make_shared<siconos::collision::RigidBody2dDS>(q01, v01, m, inertia);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};

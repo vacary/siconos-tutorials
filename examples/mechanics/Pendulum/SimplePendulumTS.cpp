@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 1;  // degrees of freedom for robot arm
+    int nDof = 1;  // degrees of freedom for robot arm
     double t0 = 0;          // initial computation time
     double T = 50.0;        // final computation time
     double h = 0.0005;      // time step
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     auto simplependulum = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
     Matrix mass{nDof, nDof};
     mass(0, 0) = m1 * l1;
-    simplependulum->setConstantMass(mass);
+    simplependulum->setConstantMassAlias(mass);
 
     simplependulum->setComputeFintFunction(
         [](const Eigen::Ref<const siconos::algebra::SiconosVector> &v,

@@ -29,7 +29,7 @@ int withLevel(unsigned int mylevel) {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 3;       // degrees of freedom for the ball
+    int nDof = 3;       // degrees of freedom for the ball
     double t0 = 0;               // initial computation time
     double T = 2.0;              // final computation time
     double h = 0.0005;           // time step

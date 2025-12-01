@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
   // ================= Creation of the model =======================
 
   // User-defined main parameters
-  unsigned int nDof = 2;  // degrees of freedom for the system
+  int nDof = 2;  // degrees of freedom for the system
   double t0 = 0;          // initial computation time
   double T = 100;         // final computation time
   double h = 0.05;        // time step

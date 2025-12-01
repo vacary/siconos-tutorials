@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
     // ================= Creation of the model =======================
 
     // parameters according to Table 1
-    unsigned int nDof = 3;  // degrees of freedom for the slider crank
+    int nDof = 3;  // degrees of freedom for the slider crank
     double t0 = 0;          // initial computation time
     double T = 0.2;         // final computation time
     double h = 1e-4;        // time step : do not decrease, because of strong penetrations

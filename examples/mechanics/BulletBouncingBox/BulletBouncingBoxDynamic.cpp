@@ -50,7 +50,7 @@ auto makeBox(float g, Eigen::Ref<Vector> q0, Eigen::Ref<Vector> v0) {
   // -- add the box to the body's set of contactactors
   // -- by default, the contactor id is 0 with no position offset,
   //    see SiconosContactor.hpp for how to change these.
-  body->contactors()->push_back(std::make_shared<siconos::collision::SiconosContactor>(box1));
+  body->contactors()->append(std::make_shared<siconos::collision::SiconosContactor>(box1));
   return body;
 }
 
@@ -106,9 +106,10 @@ int main() {
     auto ground = std::make_shared<siconos::collision::SiconosPlane>();
 
     // -- Create a Z-offset of -0.5 for the ground so that contact is at zero.
-    auto groundOffset = std::make_shared<Vector>(7);
-    (*groundOffset)(2) = -0.5;  // translation 0,0,-0.5
-    (*groundOffset)(3) = 1;     // orientation 1,0,0,0
+    Vector groundOffset{7};
+    groundOffset.setZero();
+    groundOffset(2) = -0.5;  // translation 0,0,-0.5
+    groundOffset(3) = 1;     // orientation 1,0,0,0
 
     // ------------------
     // --- Simulation ---
@@ -168,7 +169,7 @@ int main() {
     //    set, this is a design choice allowing for re-use for more complex
     //    compound contactor sets.
     auto staticCtrSet = std::make_shared<siconos::collision::SiconosContactorSet>();
-    staticCtrSet->push_back(std::make_shared<siconos::collision::SiconosContactor>(ground));
+    staticCtrSet->append(std::make_shared<siconos::collision::SiconosContactor>(ground));
     collision_manager->addStaticBody(staticCtrSet, groundOffset);
 
     // -- MoreauJeanOSI Time Stepping with Bullet collision manager as

@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 3;       // degrees of freedom for the ball
+    int nDof = 3;       // degrees of freedom for the ball
     double t0 = 0;               // initial computation time
     double T = 8.5;              // final computation time
     double h = 0.005;            // time step
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     mass(0, 0) = m;
     mass(1, 1) = m;
     mass(2, 2) = 2. / 5 * m * R * R;
-    ball->setConstantMass(mass);
+    ball->setConstantMassAlias(mass);
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();

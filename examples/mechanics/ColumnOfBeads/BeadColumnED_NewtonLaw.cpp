@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDofBall = 1;  // degrees of freedom of ball 1
+    int nDofBall = 1;  // degrees of freedom of ball 1
     double Height = 0.05;       // Distance between impactor balls and monodisperse balls
     // Balls in the tapered chain
     unsigned int NumberBalls = 10;  // Number

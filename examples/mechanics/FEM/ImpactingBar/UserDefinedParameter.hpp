@@ -4,7 +4,7 @@
 namespace user_defined_ref {
 
 // User-defined main parameters
-inline constexpr unsigned int nDof = 100;           // degrees of freedom for the beam
+inline constexpr int nDof = 100;           // degrees of freedom for the beam
 inline constexpr double t0 = 1e-8;                  // initial computation time
 inline constexpr double T = 0.0015;                 // final computation time
 inline constexpr double h = 2e-6;                   // time step
@@ -26,7 +26,7 @@ inline constexpr double g = 0.0;
 namespace user_defined {
 
 // User-defined main parameters
-inline constexpr unsigned int nDof = 10;            // degrees of freedom for the beam
+inline constexpr int nDof = 10;            // degrees of freedom for the beam
 inline constexpr double t0 = 1e-8;                  // initial computation time
 inline constexpr double T = 0.0015;                 // final computation time
 inline constexpr double h = 1e-7;                   // time step

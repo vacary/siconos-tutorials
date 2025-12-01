@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 21;           // degrees of freedom for robot
+    int nDof = 21;           // degrees of freedom for robot
     double t0 = 0;                   // initial computation time
     double T = 1.0;//0.005;                   // final computation time
     double h = 0.001;                // time step

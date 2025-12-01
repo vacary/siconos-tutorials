@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     // ================= Creation of the model =======================
 
     // parameters according to Table 1
-    unsigned int nDof = 3;  // degrees of freedom for robot arm
+    int nDof = 3;  // degrees of freedom for robot arm
     double t0 = 0;          // initial computation time
     double T = 3.0;         // final computation time
     double h = 1e-3;        // time step : do not decrease, because of strong penetrations

@@ -48,8 +48,10 @@ theta = 0.5  # theta scheme
 ndof = 3
 initial_position = np.array([1, 0, 0], dtype=np.float64)
 initial_velocity = np.array([0, 0, 0], dtype=np.float64)
+
 mass = np.eye(ndof, dtype=np.float64, order="F")
 mass[2, 2] = 2.0 / 5 * r * r
+
 
 ball = sm.LagrangianLinearTIDS(initial_position, initial_velocity, mass)
 # set external forces

@@ -30,7 +30,7 @@ using namespace user;
 
 int main(int argc, char *argv[]) {
   try {
-    unsigned int nDof = 3;  // nombre de degrés de liberté du yoyo
+    int nDof = 3;  // nombre de degrés de liberté du yoyo
     double t0 = 0;          //  instants initial et final de la simulation
     double T = 50;
     double h = 0.001;          // pas de discrétisation du temps
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
       // création et insertion  du système dynamique représentant la yoyo dans le récipient
       // allDS
       auto yoyo = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
-      yoyo->setConstantMass(mass_phase1);
+      yoyo->setConstantMassAlias(mass_phase1);
       yoyo->setConstantFext(fext1);
       // yoyo->setComputeFextFunction(
       //     [](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
         v0(1) = -r * v0(0) + v0(2);
 
         yoyo = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
-        yoyo->setConstantMass(mass_phase2);
+        yoyo->setConstantMassAlias(mass_phase2);
         yoyo->setConstantFext(fext2);
 
         yoyo->setComputeFintFunction(

@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 2;  // degrees of freedom for robot arm
+    int nDof = 2;  // degrees of freedom for robot arm
     double t0 = 0;          // initial computation time
     double T = 5.0;         // final computation time
     double h = 0.0005;      // time step

@@ -17,6 +17,8 @@
  */
 #include "NonlinearRelation.hpp"
 
+#include <BlockVector.hpp>
+
 // #include "const.h"
 
 // #define DEBUG_STDOUT

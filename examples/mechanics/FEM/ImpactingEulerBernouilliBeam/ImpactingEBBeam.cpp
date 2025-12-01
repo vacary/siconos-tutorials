@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
 
     cout << "beam length = " << l << endl;
 
-    unsigned int nDof = (nElement + 1) * 2;
+    int nDof = (nElement + 1) * 2;
     cout << "number of element = " << nElement << endl;
     cout << "number of dof = " << nDof << endl;
 

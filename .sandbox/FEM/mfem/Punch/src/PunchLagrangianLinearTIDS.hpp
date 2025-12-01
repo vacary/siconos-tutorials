@@ -145,7 +145,7 @@ public:
    }
 
 
-   unsigned int nDof = fespace->GetTrueVSize();
+   int nDof = fespace->GetTrueVSize();
    _ndof = nDof;
 
    cout << "Number of finite element unknowns: " << fespace->GetTrueVSize()

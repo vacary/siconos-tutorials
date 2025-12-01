@@ -1,5 +1,5 @@
 # Set minimum version for cmake
-cmake_minimum_required(VERSION 3.14) 
+cmake_minimum_required(VERSION 3.19) 
 
 cmake_policy(SET CMP0074 NEW) # find_package() uses <PackageName>_ROOT variables.
 cmake_policy(SET CMP0086 NEW) # UseSWIG honors SWIG_MODULE_NAME via -module flag.
@@ -46,11 +46,10 @@ include(SiconosTools)
 # 'HAS_PYTHON_WRAPPER' provided by siconosConfig.cmake
 # Check if python API has been generated and look for
 # some specific packages if required.
-if(HAS_PYTHON_WRAPPER)
+if(HAS_PYTHON_WRAPPER OR HAS_PYB11_WRAPPER)
   message("Siconos Python API is ON")
   include(FindPythonModule)
   find_python_module(matplotlib)
-  find_python_module(pyhull)
   if(SICONOS_HAS_OpenCASCADE)
     find_python_module(OCC REQUIRED)
   endif()
@@ -155,10 +154,6 @@ if(${mechanics_installed} GREATER -1)
   list(APPEND EXAMPLES_DIRECTORIES ${mechanics_examples})
   include(FindPythonModule)
 
-  if(HAS_PYB11_WRAPPER)
-    find_python_module(pyhull REQUIRED)
-  endif()
-
   if(SICONOS_HAS_BULLET)
     message(STATUS "add examples requiring bullet")
 
@@ -221,7 +216,7 @@ foreach(current_dir IN LISTS EXAMPLES_DIRECTORIES)
   # -- collect all source files for the current example dirs --
   # Each file found will be used to create a test.
   set(src_dir ${CMAKE_CURRENT_SOURCE_DIR}/${current_dir})
-  if(HAS_PYTHON_WRAPPER)
+  if(HAS_PYTHON_WRAPPER OR HAS_PYB11_WRAPPER)
     file(GLOB current_example_files ${src_dir}/*.cpp ${src_dir}/*.py)
   else()
     file(GLOB current_example_files ${src_dir}/*.cpp)

@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
     LinearElacticMaterial* mat = new LinearElacticMaterial(E, nu, rho);
     auto punch(new PunchLagrangianLinearTIDS(mesh_file, *mat));
 
-    unsigned int nDof = punch->dimension();
+    int nDof = punch->dimension();
 
     // -- Set external forces (weight) --
     siconos::algebra::SiconosVector weight{nDof};

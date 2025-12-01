@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     // ================= Model definition =================
 
     // User-defined main parameters
-    unsigned int nDof = 3;  // degrees of freedom
+    int nDof = 3;  // degrees of freedom
     double t0 = 0;          // initial computation time
     double T = 0.3;         // final computation time
     double h = 0.00002;     // time step

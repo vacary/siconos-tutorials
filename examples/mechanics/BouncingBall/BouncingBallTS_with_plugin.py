@@ -51,7 +51,7 @@ initial_velocity = np.array([0, 0, 0], dtype=np.float64)
 mass = np.eye(ndof, dtype=np.float64, order="F")
 mass[2, 2] = 2.0 / 5 * r * r
 
-ball = sm.LagrangianLinearTIDS(initial_position, initial_velocity, mass)
+ball = sm.LagrangianDS(initial_position, initial_velocity)
 # set external forces with a plugin
 
 
@@ -61,8 +61,24 @@ def external_forces(time, fext):
     # print("call external_force ...")
 
 
+def compute_mass(q, mat):
+    mat[1, 1] = 1
+    mat[0, 0] = 1
+    mat[2, 2] = 2.0 / 5 * r * r
+    # print("this is the mass")
+
+
 ball.setComputeFextFunction(external_forces)
 
+ball.setComputeMassFunction(compute_mass)
+ball.computeMass(initial_position)  # initialize
+# ball.computeFext(1.0)
+# ball.computeMass(initial_position)
+# print(ball)
+# print(ball.fext())
+# print(ball.mass)
+#
+#
 #
 # Interaction ball-floor
 H = np.array([[1, 0, 0]], dtype=np.float64, order="F")

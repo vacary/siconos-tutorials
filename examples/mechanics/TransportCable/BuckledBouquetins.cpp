@@ -18,7 +18,7 @@
 
 #include <TransportCableManager.h>
 #include <TransportCableModel.h>
-#include <TransportCableProfil.h>
+#include <TransportCableProfile.h>
 
 #include <SiconosKernel.hpp>
 #include <chrono>
@@ -42,7 +42,7 @@ int main()
     // Creates the profile, object which owns the model and the result and which
     // is responsible for the computation of the initial state/profile using
     // catenary and FEM.
-    auto profil = std::make_shared<TransportCableProfil>(*model, *results);
+    auto profil = std::make_shared<TransportCableProfile>(*model, *results);
 
     // -- Applies catenary equations to compute a first profile of the ropeways
     // --
@@ -52,7 +52,7 @@ int main()
     profil->computeInitialProfile(nb_nodes, tol, nmax);
 
     // Save ropeways variables into json file
-    ojson out;
+    nlohmann::ordered_json out;
     results->to_json(out, "ropeway");
     // results->to_json(out);
 
@@ -77,12 +77,12 @@ int main()
 
     // -- Fem part --
 
-    nb_nodes = 1400;  // FEM number of nodes
+    numberOfElements = 1400;  // FEM number of nodes
     double eps = 0.1;
     tol = 1e-3;  // tolerance used to activate constraints
-    profil->computeFEM(nb_nodes, eps, tol);
+    profil->initializeFEM(numberOfElements, eps, tol);
 
-    // ojson out;
+    // nlohmann::ordered_json out;
     results->to_json(out);
     std::ofstream out_ropes_fem("ropes_fem.json");
     out_ropes_fem << std::setw(4) << out << std::endl;
@@ -93,7 +93,7 @@ int main()
     std::cout << "PAR 2 \n";
     auto manager = std::make_shared<TransportCableManager>(modelFile);
     std::string outFile = "results.json";
-    ojson out2;
+    nlohmann::ordered_json out2;
     json args;
     auto res = manager->computeFEM(args, outFile, out2);
 
