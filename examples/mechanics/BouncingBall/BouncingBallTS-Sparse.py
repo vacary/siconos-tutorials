@@ -26,6 +26,7 @@ import matplotlib
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.sparse as sp
 
 havedisplay = "DISPLAY" in os.environ
 
@@ -48,37 +49,15 @@ theta = 0.5  # theta scheme
 ndof = 3
 initial_position = np.array([1, 0, 0], dtype=np.float64)
 initial_velocity = np.array([0, 0, 0], dtype=np.float64)
-mass = np.eye(ndof, dtype=np.float64, order="F")
-mass[2, 2] = 2.0 / 5 * r * r
+data = np.asarray([1.0, 1.0, 2.0 / 5 * r * r], dtype=np.float64)
+mass = sp.diags_array(data, format="csc")
 
-ball = sm.LagrangianDS(initial_position, initial_velocity)
-# set external forces with a plugin
+ball = sm.LagrangianSparseLinearTIDS(initial_position, initial_velocity, mass)
+# set external forces
+weight_np = np.array([-m * g, 0, 0], dtype=np.float64)
 
+ball.setConstantFext(weight_np)
 
-def external_forces(time, fext):
-    fext[:] = 0.0
-    fext[0] = -m * g
-    # print("call external_force ...")
-
-
-def compute_mass(q, mat):
-    mat[1, 1] = 1
-    mat[0, 0] = 1
-    mat[2, 2] = 2.0 / 5 * r * r
-    # print("this is the mass")
-
-
-ball.setComputeFextFunction(external_forces)
-
-ball.setComputeMassFunction(compute_mass)
-ball.computeMass(initial_position)  # initialize
-# ball.computeFext(1.0)
-# ball.computeMass(initial_position)
-# print(ball)
-# print(ball.fext())
-# print(ball.mass)
-#
-#
 #
 # Interaction ball-floor
 H = np.array([[1, 0, 0]], dtype=np.float64, order="F")

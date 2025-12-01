@@ -3,7 +3,7 @@
 # Siconos is a program dedicated to modeling, simulation and control
 # of non smooth dynamical systems.
 #
-# Copyright 2021 INRIA.
+# Copyright 2025 INRIA.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
 #  DiodeBridge  : sample of an electrical circuit involving :
 #    - a linear dynamical system consisting of an LC oscillator (1 µF , 10 mH)
 #    - a non smooth system (a 1000 Ohm resistor supplied through a 4
-#	diodes bridge) in parallel with the oscillator
+# 	diodes bridge) in parallel with the oscillator
 #
 #  Expected behavior :
 #
@@ -45,68 +45,79 @@
 #  for the reverse voltage across the diode or for the diode
 #  current (see figure in the template file)
 #    - a linear time invariant relation between the state variables and
-#	y and lambda (derived from Kirchhoff laws)
+# 	y and lambda (derived from Kirchhoff laws)
 #
 # -----------------------------------------------------------------------
 
+import siconos.modeling as sm
+import siconos.simulation
+import siconos.integrators
+import siconos.nonsmooth_formulations
+import numpy as np
+from numpy import linalg as LA
+
 t0 = 0.0
-T = 5.0e-3       # Total simulation time
+T = 5.0e-3  # Total simulation time
 h_step = 1.0e-6  # Time step
-Lvalue = 1e-2    # inductance
-Cvalue = 1e-6    # capacitance
-Rvalue = 1e3     # resistance
-Vinit = 10.0     # initial voltage
+Lvalue = 1e-2  # inductance
+Cvalue = 1e-6  # capacitance
+Rvalue = 1e3  # resistance
+Vinit = 10.0  # initial voltage
 Modeltitle = "DiodeBridge"
 
 withPlot = True
-if (withPlot):
+if withPlot:
     import matplotlib
-    matplotlib.use('Agg')
-    from matplotlib.pyplot import subplot, title, plot, grid, savefig
 
-from siconos.kernel import FirstOrderLinearDS, FirstOrderLinearTIR, \
-                           ComplementarityConditionNSL, Interaction,\
-                           NonSmoothDynamicalSystem, EulerMoreauOSI, TimeDiscretisation, LCP,  \
-                           TimeStepping
+    matplotlib.use("Agg")
+    from matplotlib.pyplot import subplot, title, plot, grid, savefig
 
 #
 # dynamical system
 #
-init_state = [Vinit, 0]
+init_state = np.asarray([Vinit, 0], dtype=np.float64)
 
-A = [[0,          -1.0/Cvalue],
-     [1.0/Lvalue, 0          ]]
+A = np.asarray([[0, -1.0 / Cvalue], [1.0 / Lvalue, 0]], dtype=np.float64, order="F")
 
-LSDiodeBridge = FirstOrderLinearDS(init_state, A)
+LSDiodeBridge = sm.FirstOrderLinearDS(init_state)
+LSDiodeBridge.setConstantA(A)
 
 #
 # Interactions
 #
 
-C = [[0.,   0.],
-     [0,    0.],
-     [-1.,  0.],
-     [1.,   0.]]
+C = np.asarray(
+    [[0.0, 0.0], [0, 0.0], [-1.0, 0.0], [1.0, 0.0]], order="F", dtype=np.float64
+)
 
-D = [[1./Rvalue, 1./Rvalue, -1.,  0.],
-     [1./Rvalue, 1./Rvalue,  0., -1.],
-     [1.,        0.,         0.,  0.],
-     [0.,        1.,         0.,  0.]]
+D = np.asarray(
+    [
+        [1.0 / Rvalue, 1.0 / Rvalue, -1.0, 0.0],
+        [1.0 / Rvalue, 1.0 / Rvalue, 0.0, -1.0],
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+    ],
+    order="F",
+    dtype=np.float64,
+)
 
-B = [[0.,        0., -1./Cvalue, 1./Cvalue],
-     [0.,        0.,  0.,        0.       ]]
+B = np.asarray(
+    [[0.0, 0.0, -1.0 / Cvalue, 1.0 / Cvalue], [0.0, 0.0, 0.0, 0.0]],
+    order="F",
+    dtype=np.float64,
+)
 
-LTIRDiodeBridge = FirstOrderLinearTIR(C, B)
+LTIRDiodeBridge = sm.FirstOrderLinearTIR(C, B)
 LTIRDiodeBridge.setConstantD(D)
 
-nslaw = ComplementarityConditionNSL(4)
-InterDiodeBridge = Interaction(nslaw, LTIRDiodeBridge)
+nslaw = sm.ComplementarityConditionNSL(4)
+InterDiodeBridge = sm.Interaction(nslaw, LTIRDiodeBridge)
 
 
 #
 # Model
 #
-DiodeBridge = NonSmoothDynamicalSystem(t0, T)
+DiodeBridge = sm.NonSmoothDynamicalSystem(t0, T)
 DiodeBridge.setTitle(Modeltitle)
 
 #   add the dynamical system in the non smooth dynamical system
@@ -122,17 +133,17 @@ DiodeBridge.link(InterDiodeBridge, LSDiodeBridge)
 # (1) OneStepIntegrators
 theta = 0.5
 gamma = 0.5
-aOSI = EulerMoreauOSI(theta, gamma)
-aOSI.setUseGammaForRelation(True)
+aOSI = siconos.integrators.EulerMoreauOSI(theta, gamma)
+aOSI.useGammaForRelation = True
 
 # (2) Time discretisation
-aTiDisc = TimeDiscretisation(t0, h_step)
+aTiDisc = siconos.simulation.TimeDiscretisation(t0, h_step)
 
 # (3) Non smooth problem
-aLCP = LCP()
+aLCP = siconos.nonsmooth_formulations.LCP()
 
 # (4) Simulation setup with (1) (2) (3)
-aTS = TimeStepping(DiodeBridge, aTiDisc, aOSI, aLCP)
+aTS = siconos.simulation.TimeStepping(DiodeBridge, aTiDisc, aOSI, aLCP)
 
 # end of model definition
 
@@ -150,14 +161,13 @@ print("Number of steps : ", N)
 # Get the values to be plotted
 # ->saved in a matrix dataPlot
 
-from numpy import zeros
-dataPlot = zeros([N, 10])
+dataPlot = np.zeros([N, 10])
 
 x = LSDiodeBridge.x()
 print("Initial state : ", x)
 y = InterDiodeBridge.y(0)
 print("First y : ", y)
-lambda_ = InterDiodeBridge.lambda_(0)
+lambda_ = InterDiodeBridge.lambda_python(0)
 
 # For the initial time step:
 # time
@@ -172,22 +182,18 @@ dataPlot[k, 2] = x[1]
 dataPlot[k, 3] = y[0]
 
 # diode R1 voltage
-dataPlot[k, 4] = - lambda_[0]
+dataPlot[k, 4] = -lambda_[0]
 
 # diode F2 voltage
-dataPlot[k, 5] = - lambda_[1]
+dataPlot[k, 5] = -lambda_[1]
 
 # diode F1 current
 dataPlot[k, 6] = lambda_[2]
 
-
-
-
-
 k += 1
-while (k < N):
+while k < N:
     aTS.computeOneStep()
-    #aLCP.display()
+    # aLCP.display()
     dataPlot[k, 0] = aTS.nextTime()
     #  inductor voltage
     dataPlot[k, 1] = x[0]
@@ -196,53 +202,51 @@ while (k < N):
     # diode R1 current
     dataPlot[k, 3] = y[0]
     # diode R1 voltage
-    dataPlot[k, 4] = - lambda_[0]
+    dataPlot[k, 4] = -lambda_[0]
     # diode F2 voltage
-    dataPlot[k, 5] = - lambda_[1]
+    dataPlot[k, 5] = -lambda_[1]
     # diode F1 current
     dataPlot[k, 6] = lambda_[2]
     k += 1
     aTS.nextStep()
 
-# comparison with reference file
-from siconos.kernel import SiconosMatrix, getMatrix
-from numpy.linalg import norm
 
-ref = getMatrix(SiconosMatrix("DiodeBridge.ref"))
+ref = np.loadtxt("DiodeBridge.ref", skiprows=1)
 
-error = norm(dataPlot[:,0:6] - ref[:,0:6])
-print("error = " , error)
+error = LA.norm(dataPlot[:, 0:6] - ref[:, 0:6])
 
-#assert (error < 1e-09)
+print("error = ", error)
+
+# assert (error < 1e-09)
 withRef = True
-if (withPlot):
+if withPlot:
     #
     # plots
     #
     subplot(411)
-    title('inductor voltage')
-    plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 1])
-    if (withRef):
-        plot(ref[0:k - 1, 0], ref[0:k - 1, 1])
+    title("inductor voltage")
+    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 1])
+    if withRef:
+        plot(ref[0 : k - 1, 0], ref[0 : k - 1, 1])
     grid()
     subplot(412)
-    title('inductor current')
-    plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 2])
-    if (withRef):
-        plot(ref[0:k - 1, 0], ref[0:k - 1, 2])
+    title("inductor current")
+    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 2])
+    if withRef:
+        plot(ref[0 : k - 1, 0], ref[0 : k - 1, 2])
     grid()
     subplot(413)
-    title('diode R1 (blue) and F2 (green) voltage')
-    plot(dataPlot[0:k - 1, 0], -dataPlot[0:k - 1, 4])
-    plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 5])
-    if (withRef):
-        plot(ref[0:k - 1, 0], -ref[0:k - 1, 4])
-        plot(ref[0:k - 1, 0], ref[0:k - 1, 5])
+    title("diode R1 (blue) and F2 (green) voltage")
+    plot(dataPlot[0 : k - 1, 0], -dataPlot[0 : k - 1, 4])
+    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 5])
+    if withRef:
+        plot(ref[0 : k - 1, 0], -ref[0 : k - 1, 4])
+        plot(ref[0 : k - 1, 0], ref[0 : k - 1, 5])
     grid()
     subplot(414)
-    title('resistor current')
-    plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 3] + dataPlot[0:k - 1, 6]  )
-    if (withRef):
-        plot(dataPlot[0:k - 1, 0], ref[0:k - 1, 3] + ref[0:k - 1, 6]  )
+    title("resistor current")
+    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 3] + dataPlot[0 : k - 1, 6])
+    if withRef:
+        plot(dataPlot[0 : k - 1, 0], ref[0 : k - 1, 3] + ref[0 : k - 1, 6])
     grid()
     savefig("diode_brige_tgs.png")
