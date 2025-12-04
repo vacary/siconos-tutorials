@@ -68,11 +68,6 @@ A[1, 0] = -stiffness / m
 
 oscillator = sm.FirstOrderLinearDS(x0)
 oscillator.setConstantA(A)
-# oscillator.display()
-
-# oscillator = FirstOrderLinearDS(x0, A)
-# oscillator.setComputebFunction("plugins", "TwoDofsOscillatorB")
-
 #
 # Interactions
 #
@@ -85,8 +80,8 @@ nslaw = sm.RelayNSL(1, -1, 1)
 
 # relation = sm.FirstOrderLinearR(C, B)
 relation = sm.FirstOrderLinearR()
-relation.setConstantB(B)
-relation.setConstantC(C)
+relation.setConstantBAlias(B)
+relation.setConstantCAlias(C)
 inter = sm.Interaction(nslaw, relation)
 
 print(inter)

@@ -83,9 +83,6 @@ int main(int argc, char* argv[]) {
     aR->setComputehFunction([](const siconos::algebra::BlockVector& state,
                                const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
                                Eigen::Ref<siconos::algebra::SiconosVector> y) {
-      // ([](const siconos::algebra::BlockVector& state, double time,
-      //                            const Eigen::Ref<const siconos::algebra::SiconosVector>&
-      //                            lambda, Eigen::Ref<siconos::algebra::SiconosVector> y) {
       y.setZero();
       y(0) = 8.0 - state(0);
       y(1) = 8.0 - state(1);
@@ -93,9 +90,6 @@ int main(int argc, char* argv[]) {
 
     aR->setComputegFunction([](const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
                                siconos::algebra::BlockVector& res) {
-      // ([](const siconos::algebra::BlockVector& state, double time,
-      //                            const Eigen::Ref<const siconos::algebra::SiconosVector>&
-      //                            lambda, siconos::algebra::BlockVector& res) {
       res.setZero();
       res(0) = 40.0 * (1 - lambda(0));
       res(1) = 40.0 * (1 - lambda(1));

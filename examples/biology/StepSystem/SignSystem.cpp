@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <FirstOrderType2R.hpp>
 #include <SiconosKernel.hpp>
 #include <chrono>
 #include <string>
@@ -78,9 +79,9 @@ int main(int argc, char* argv[]) {
     //******BUILD THE RELATION
 
     // A nonlinear, "with sign inversed" relation
-    auto aR = std::make_shared<siconos::modeling::FirstOrderNonLinearR>();
+    auto aR = std::make_shared<siconos::modeling::FirstOrderType2R>();
 
-    aR->setComputehFunction([](const siconos::algebra::BlockVector& state, double time,
+    aR->setComputehFunction([](const siconos::algebra::BlockVector& state,
                                const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
                                Eigen::Ref<siconos::algebra::SiconosVector> y) {
       y.setZero();
@@ -90,8 +91,7 @@ int main(int argc, char* argv[]) {
       y(3) = state(1) - 8;
     });
 
-    aR->setComputegFunction([](const siconos::algebra::BlockVector& state, double time,
-                               const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
+    aR->setComputegFunction([](const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
                                siconos::algebra::BlockVector& res) {
       res.setZero();
       res(0) = 10.0 * (1 + lambda(2)) * (1 - lambda(1));
@@ -107,14 +107,13 @@ int main(int argc, char* argv[]) {
     aR->setConstantJacobianhOver_state(jachx);
 
     aR->setComputeJacobiangOver_lambdaFunction(
-        [](const siconos::algebra::BlockVector& state, double time,
-           const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
            Eigen::Ref<siconos::algebra::MapType> result) {
           result.setZero();
-          result.setValue(1, 0, -10.0 * (1 + lambda(3)));
-          result.setValue(0, 1, -10.0 * (1 + lambda(2)));
-          result.setValue(0, 2, 10.0 * (1 - lambda(1)));
-          result.setValue(1, 3, 10.0 * (1 - lambda(0)));
+          result(1, 0) = -10.0 * (1 + lambda(3));
+          result(0, 1) = -10.0 * (1 + lambda(2));
+          result(0, 2) = 10.0 * (1 - lambda(1));
+          result(1, 3) = 10.0 * (1 - lambda(0));
         });
 
     // For the records, "sign version" of the relation
@@ -224,6 +223,8 @@ int main(int argc, char* argv[]) {
 #ifdef SICONOS_DEBUG
       std::std::cout << "-> Running step:" << k << "\n";
 #endif
+//      aR->display();
+
       cmp++;
       aS->advanceToEvent();
 

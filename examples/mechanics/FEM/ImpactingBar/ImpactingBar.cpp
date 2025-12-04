@@ -30,7 +30,6 @@
 
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
-
 using namespace std;
 namespace user =
     user_defined_ref;  // To choose the set of parameters used in the current simulation
@@ -83,9 +82,6 @@ int main(int argc, char* argv[]) {
 
     massMatrix *= user::rho * user::S * l;
     stiffnessMatrix *= user::E * user::S / l;
-
-    //      siconos::algebra::print(*massMatrix);
-    //      siconos::algebra::print(*stiffnessMatrix);
 
     // -- Initial positions and velocities --
     Vector q0{ndof};
@@ -234,7 +230,7 @@ int main(int argc, char* argv[]) {
     auto start = std::chrono::system_clock::now();
     //    while (s->nextTime() < T)
     while (k < N) {
-      s->computeOneStep();
+      s->advanceToEvent();
 
       //       std::cout << "position"  << std::endl;
       //       siconos::algebra::print(*q);
@@ -269,7 +265,7 @@ int main(int argc, char* argv[]) {
       //       std::cout <<"potentialEnergy ="<<potentialEnergy << std::endl;
       //       std::cout <<"kineticEnergy ="<<kineticEnergy << std::endl;
 
-      s->nextStep();
+      s->processEvents();
 
       k++;
     }

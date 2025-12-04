@@ -92,8 +92,6 @@ int main(int argc, char* argv[]) {
     std::cout << "xsi:" << xsi * user::S / l << "\n";
     dampingMatrix *= xsi * user::S / l;
 
-    //      siconos::algebra::print(*SparseMass);
-    //      siconos::algebra::print(*SparseStiffness);
 
     // -- Initial positions and velocities --
     Vector q0{ndof};

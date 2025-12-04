@@ -3,7 +3,6 @@ import siconos.modeling as sm
 import siconos.integrators
 import siconos.simulation
 import siconos.nonsmooth_formulations
-import siconos.input
 import matplotlib.pyplot as plt
 
 
@@ -113,7 +112,7 @@ lambda_ = inter.lambda_python(1)
 while s.hasNextEvent():
     s.computeOneStep()
     dataPlot[k, 0] = s.nextTime()
-    print("time=", dataPlot[k, 0])
+    # print("time=", dataPlot[k, 0])
     dataPlot[k, 1] = q[0]
     dataPlot[k, 2] = v[0]
     dataPlot[k, 3] = p[0] / h
