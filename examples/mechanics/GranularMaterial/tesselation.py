@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+from siconos.io.mechanics_run import MechanicsHdf5Runner, MechanicsHdf5Runner_run_options
 import siconos.numerics as sn
-import siconos.kernel as sk
-
+import siconos.nonsmooth_formulations as nsf
+import siconos.simulation as simu
 import read_tess
 
+import math
 import sys
 import numpy
 
@@ -68,7 +69,7 @@ with MechanicsHdf5Runner(mode='w', io_filename=fn) as io:
         vertices=list(set(vertices))
         #print('ver', vertices)
         if (len(vertices) <=  1):
-            print('the number of vertices must be mroe than 0')
+            print('the number of vertices must be more than 0')
         vertices_coordinates=[]
         for v in vertices:
             #print(v)
@@ -107,8 +108,10 @@ with MechanicsHdf5Runner(mode='w', io_filename=fn) as io:
 
     io.add_primitive_shape('Ground', 'Box', (4.0, 4.0, 0.2),
                            insideMargin=0.0, outsideMargin=0.0)
+    angle_ground=math.pi/4.
     io.add_object('ground', [Contactor('Ground')],
-                  translation=[0.5, 0.5, -0.5-0.5])
+                  translation=[0.5, 0.5, -0.5-0.5],
+                  orientation=[math.cos(angle_ground/2.), 0.0, math.sin(angle_ground/2.), 0.])
 
     io.add_Newton_impact_friction_nsl('contact', mu=1.0, e=0.0)
 
@@ -117,13 +120,28 @@ with MechanicsHdf5Runner(mode='w', io_filename=fn) as io:
 # Create solver options
 options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
+options.iparam[sn.params.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 10
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-3
+
+run_options=MechanicsHdf5Runner_run_options()
+run_options['t0']=0
+run_options['T']=T
+run_options['h']=hstep
+run_options['theta']=1.0
+
+run_options['verbose']=True
+run_options['with_timer']=True
+run_options['explode_Newton_solve']=True
+run_options['explode_computeOneStep']=False
+
+run_options['skip_reset_lambdas']=True
+run_options['osns_assembly_type']= nsf.REDUCED_DIRECT
+
+#run_options['Newton_options']=simu.LINEAR
+
+
+run_options['output_frequency']=10
+
+
 with MechanicsHdf5Runner(mode='r+', io_filename=fn) as io:
-    io.run(t0=0,
-           T=T,
-           h=hstep,
-           multipoints_iterations=True,
-           theta=1.0,
-           Newton_max_iter=1,
-           solver_options=options,
-           output_frequency=1)
+    io.run(run_options)
