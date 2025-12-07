@@ -1,3 +1,4 @@
+
 # Siconos is a program dedicated to modeling, simulation and control
 # of non smooth dynamical systems.
 #
@@ -130,7 +131,7 @@ run_options["osi"] = siconos.integrators.MoreauJeanGOSI
 run_options["verbose"] = True
 run_options["with_timer"] = True
 run_options["explode_Newton_solve"] = True
-run_options["explode_computeOneStep"] = True
+run_options["explode_computeOneStep"] = False
 
 
 # run_options['output_frequency']=output_frequency
