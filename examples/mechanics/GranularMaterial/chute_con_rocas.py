@@ -3,6 +3,7 @@
 from siconos.io.mechanics_run import MechanicsHdf5Runner, MechanicsHdf5Runner_run_options
 import siconos.numerics as sn
 import siconos.simulation as simu
+import siconos.nonsmooth_formulations as nsf
 from siconos.mechanics.collision.bullet import SiconosBulletOptions
 
 import chute
@@ -90,6 +91,7 @@ class death_hook():
         # second way (faster) :  direct access to nsds positions
         positions  = self._io._io.positions(self._io._nsds)
         #print('z', positions, positions.shape)
+
         if positions.shape[1] >0:
             #pass
             z = positions[3,:]
@@ -147,10 +149,10 @@ run_options['Newton_options']=simu.LINEAR
 run_options['skip_last_update_output']=True
 run_options['skip_reset_lambdas']=True
 
-#run_options['osns_assembly_type']= sk.REDUCED_DIRECT
+run_options['osns_assembly_type']= nsf.REDUCED_DIRECT
 
-run_options['verbose']=False
-run_options['with_timer']=False
+run_options['verbose']=True
+run_options['with_timer']=True
 run_options['explode_Newton_solve']=False
 run_options['explode_computeOneStep']=False
 
