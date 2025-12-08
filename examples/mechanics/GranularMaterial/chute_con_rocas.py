@@ -67,9 +67,10 @@ class death_hook():
         pass
 
     def call(self, step):
-        #print('call death hook at step', step)
-        #if step%100 ==0:
-        #    print('step', step, '/', N)
+        if step%100 ==0:
+            print('\n call death hook at step', step, '/', N)
+        else:
+            return
         # # First way (slow) : loop over the bodies
         #nsds = self._io._nsds
         #print(dir(nsds))
@@ -90,14 +91,21 @@ class death_hook():
 
         # second way (faster) :  direct access to nsds positions
         positions  = self._io._io.positions(self._io._nsds)
-        #print('z', positions, positions.shape)
+        #print(positions, positions.shape)
 
-        if positions.shape[1] >0:
+
+        height_filter =  -2.
+
+        if positions.shape[0] >0:
             #pass
             z = positions[3,:]
-            
+
+            if numpy.linalg.norm(z) > 1e+10:
+                print('WARNING Huge height')
+
+            #print('z', z)
             # We search for the ds index that are below a given criteria
-            ds_idx = numpy.nonzero(z < -2)[0]
+            ds_idx = numpy.nonzero(z < height_filter)[0]
             for i in ds_idx :
                 n_ds = int(positions[0,i])
                 ds = self._io._nsds.dynamicalSystem(n_ds)
@@ -107,12 +115,13 @@ class death_hook():
 
 
 
+
 dh = death_hook()
 
 # Create solver options
 options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
-options.iparam[sn.params.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 10
+options.iparam[sn.params.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 100
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-3
 
 with MechanicsHdf5Runner(mode='w', io_filename=fn) as io:
@@ -145,13 +154,19 @@ run_options['constraint_activation_threshold']=1e-05
 run_options['end_run_iteration_hook'] = dh
 
 
-run_options['Newton_options']=simu.LINEAR
+#run_options['Newton_options']=simu.LINEAR
+run_options['Newton_options']=simu.NONLINEAR
+run_options["Newton_max_iter"] = 10
+run_options["Newton_tolerance"] = 1e-8
+run_options["display_Newton_convergence"] = True
+
 run_options['skip_last_update_output']=True
 run_options['skip_reset_lambdas']=True
 
 run_options['osns_assembly_type']= nsf.REDUCED_DIRECT
 
 run_options['verbose']=True
+run_options['violation_verbose']=True
 run_options['with_timer']=True
 run_options['explode_Newton_solve']=False
 run_options['explode_computeOneStep']=False
@@ -159,12 +174,12 @@ run_options['explode_computeOneStep']=False
 #run_options['numerics_verbose']=True
 #run_options['numerics_verbose_level']=0
 
-run_options['output_frequency']=10
+run_options['output_frequency']=100
 
 run_options['time_stepping']=None
 
 
-    
-    
+
+
 with MechanicsHdf5Runner(mode='r+', io_filename=fn) as io:
     io.run(run_options)
