@@ -6,7 +6,7 @@ from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
 
 import siconos.numerics as sn
-import siconos.kernel as sk
+
 
 # 1 - build the heightmap as a numpy 2D array
 # The matrix consists of elevation (z) of the terrain point

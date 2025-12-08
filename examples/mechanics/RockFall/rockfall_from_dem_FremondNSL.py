@@ -10,7 +10,7 @@ from siconos.io.mechanics_run import MechanicsHdf5Runner, MechanicsHdf5Runner_ru
 from siconos.mechanics.collision.bullet import SiconosBulletOptions
 
 import siconos.numerics as sn
-import siconos.kernel as sk
+
 
 
 
@@ -100,7 +100,7 @@ with MechanicsHdf5Runner() as io:
     # into different collision groups so that there are object-terrain
     # collisions but no object-object collisions.
     io.add_Fremond_impact_friction_nsl('contact', mu=0.3, e=0.0,
-                                      collision_group1=0, collision_group2=1)
+                                       collision_group1=0, collision_group2=1)
     
     # Add a  polyhedron 
     obj_polyhedron=io.add_object('polyhedron', [Contactor('Polyhedron', collision_group=1)],
@@ -163,10 +163,12 @@ run_options['solver_options']=options
 #run_options['skip_reset_lambdas']=True
 #run_options['osns_assembly_type']= sk.REDUCED_DIRECT
 
+run_options["Newton_max_iter"] = 10
+run_options["Newton_tolerance"] = 1e-8
 
 run_options['verbose']=True
 run_options['with_timer']=True
-#run_options['explode_Newton_solve']=True
+run_options['explode_Newton_solve']=False
 #run_options['explode_computeOneStep']=True
 
 #run_options['violation_verbose'] = True
