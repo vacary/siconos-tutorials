@@ -92,30 +92,38 @@ with MechanicsHdf5Runner() as io:
     io.add_joint('joint12','bar4', 'bar5', [[0, 0, 0]], [[0, 1, 0]], 'PivotJointR', absolute=False)
 
     # # Harmonic oscillator on Y-axis angular velocity = a+b*cos(omega*time+phi))
-    # freq = 2
-    # amp = 0.2
-    # io.add_boundary_condition('vibration', 'bar1',
-    #                           indices=[4], # Y-angular axis is index 4 into ds->v
-    #                           bc_class='HarmonicBC',
-    #                           a =     [     0.0 ],
-    #                           b =     [     amp ],
-    #                           omega = [ pi*freq ],
-    #                           phi =   [     0.0 ])
+    freq = 2
+    amp = 0.2
+    io.add_boundary_condition('vibration', 'bar1',
+                              indices=[4], # Y-angular axis is index 4 into ds->v
+                              bc_class='HarmonicBC',
+                              a =     [     0.0 ],
+                              b =     [     amp ],
+                              omega = [ pi*freq ],
+                              phi =   [     0.0 ])
 
+forces_on_body = {}
+    
 def my_forces(body):
     g = 9.81
-    weight = numpy.array([0, 0, - body.scalarMass() * g, 0, 0, 0])
+    weight = numpy.array([0, 0, - body.scalarMass * g, 0, 0, 0])
     twist = numpy.array([0,0,0,0,300,0])
     push = numpy.array([0,0,0,0,0,0])
     force = weight
     if body.number() == bar1_id:
-        force = weight + push # + twist
-    body.setConstantFext(force)
+        #force = weight + push # + twist
+        forces_on_body[body.number()] = force + push
+    else:
+        forces_on_body[body.number()] = force
+    #print(forces_on_body[body.number()])
+        
+    body.setConstantFext(forces_on_body[body.number()])
+    
 
 # Run the simulation from the inputs previously defined and add
 # results to the hdf5 file. The visualisation of the output may be done
 # with the vview command.
-test =True
+test =False
 if test:
     T=1.
 else:
@@ -125,7 +133,7 @@ with MechanicsHdf5Runner(mode='r+') as io:
     io.run(with_timer=True,
            t0=0,
            T=T,
-           h=0.005,
+           h=0.0005,
            multipoints_iterations=True,
            theta=0.50001,
            Newton_max_iter=1,

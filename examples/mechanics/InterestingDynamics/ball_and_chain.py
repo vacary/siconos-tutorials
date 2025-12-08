@@ -8,7 +8,6 @@ from siconos.mechanics.collision.convexhull import ConvexHull
 import numpy as np
 
 import siconos.numerics as sn
-import siconos.kernel as sk
 # Shape parameters of a single link
 num_parts = 8
 radius = 0.1

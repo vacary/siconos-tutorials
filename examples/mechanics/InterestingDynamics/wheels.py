@@ -7,7 +7,6 @@
 from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
 import siconos.numerics as Numerics
-import siconos.kernel as Kernel
 import numpy as np
 
 bumpy_terrain = True  # false = flat ground
@@ -82,14 +81,18 @@ class roll(object):
         ang_force = 6.0
         self.io = io
         topo = io._nsds.topology()
-        self.wheels = [Kernel.cast_NewtonEulerDS(topo.getDynamicalSystem('wheel%d'%i)) for i in [1,2,3,4]]
-        self.wheel_force = np.array(self.wheels[0].fext())        
-        self.wheel_torque = Kernel.SiconosVector(3)
-        self.wheel_torque.setValue(1, ang_force)
+        i=1
+        self.wheels = [(topo.getDynamicalSystem('wheel%d'%i)) for i in [1,2,3,4]]
+        print(dir(self.wheels[0]))
+        print(self.wheels[0].fext())
 
+        self.wheel_force = np.array(self.wheels[0].fext())
+        self.wheel_torque = np.array([0, ang_force, 0.])
+        
         # Same force and torque to all wheels
         [w.setConstantFext(self.wheel_force) for w in self.wheels]
-        [w.setMExtPtr(self.wheel_torque) for w in self.wheels]
+        [w.setConstantMext(self.wheel_torque) for w in self.wheels]
+        input()
     def step(self):
         pass
 

@@ -6,8 +6,9 @@
 import siconos
 from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
+from siconos.mechanics.collision.bullet import SiconosBulletOptions
 
-bullet_options = siconos.mechanics.collision.bullet.SiconosBulletOptions()
+bullet_options = SiconosBulletOptions()
 bullet_options.worldScale = 0.01
 
 with MechanicsHdf5Runner() as io:
@@ -24,11 +25,11 @@ with MechanicsHdf5Runner() as io:
                   velocity=[0, 0, 0, 0, 2, 0.0001],
                   mass=1,
                   inertia=[1, 10, 11])
-test=True
+test=False
 if test:
     T=10
 else:
-    T=90
+    T=100
     
 with MechanicsHdf5Runner(mode='r+') as io:
 

@@ -8,7 +8,7 @@ from siconos.mechanics.collision.convexhull import ConvexHull
 
 from siconos.mechanics.collision.bullet import SiconosBulletOptions
 import siconos.numerics as sn
-import siconos.kernel as sk
+
 
 bullet_options = SiconosBulletOptions()
 bullet_options.worldScale = 1.0

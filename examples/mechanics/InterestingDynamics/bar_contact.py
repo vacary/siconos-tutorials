@@ -10,7 +10,7 @@ from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
 #sys.path.append('../..')
 import siconos.numerics as sn
-import siconos.kernel as sk
+
 
 # WARNING : in 3D by default z-axis is upward
 # this is very important to direct PLANx objects
@@ -105,11 +105,12 @@ hstep=0.001
 
 gravity_scale=1.0/scale
 import scipy.constants as constants
-
+body_weight = []
 def apply_forces(body):
   g = constants.g / gravity_scale
-  weight = [0, 0, - body.scalarMass() * g]
-  body.setConstantFext(weight)
+  body_weight.append(numpy.array([0, 0, - body.scalarMass * g]))
+  
+  body.setConstantFext(body_weight[-1])
 
 
 # Create solver options
