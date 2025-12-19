@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
     param[3] = v0(1);
     param[11] = std::numbers::pi;
 
-    auto arm = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
+    auto arm = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, siconos::algebra::alias_t);
     arm->setComputeMassFunction([](const Eigen::Ref<const siconos::algebra::SiconosVector>& q,
                                    Eigen::Ref<siconos::algebra::MapType> mass) {
       mass(0, 0) =

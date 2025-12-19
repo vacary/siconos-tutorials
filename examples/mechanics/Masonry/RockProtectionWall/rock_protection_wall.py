@@ -11,7 +11,7 @@ from siconos.mechanics.collision.convexhull import ConvexHull
 from siconos.io.mechanics_run import MechanicsHdf5Runner, MechanicsHdf5Runner_run_options
 from siconos.mechanics.collision.bullet import SiconosBulletOptions
 import siconos.numerics as sn
-import siconos.kernel as sk
+import siconos.modeling as sm
 import math, random
 import numpy as np
 # A collection of box stacks for stress-testing Siconos solver with
@@ -62,7 +62,7 @@ run_options['solver_options']=options
 
 #run_options['skip_last_update_output']=True
 #run_options['skip_reset_lambdas']=True
-run_options['osns_assembly_type']= sk.REDUCED_DIRECT
+run_options['osns_assembly_type']= siconos.nonsmooth_formulations.REDUCED_DIRECT
 
 
 run_options['verbose']=True

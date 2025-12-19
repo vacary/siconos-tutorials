@@ -9,7 +9,7 @@ from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
 
 import siconos.numerics as sn
-import siconos.kernel as sk
+import siconos.modeling as sm
 
 import math
 # Creation of the hdf5 file for input/output
@@ -76,7 +76,7 @@ def apply_gravity(body):
     g = 9.81
     weight = [body.scalarMass() * g * math.sin(angle), 0.,
               - body.scalarMass() * g * math.cos(angle)]
-    body.setConstantFext(weight)  # scalMass() dans quel bibli ?
+    body.setConstantFext(weight, sm.copy_t)  # scalMass() dans quel bibli ?
 
     
 # Run the simulation from the inputs previously defined and add

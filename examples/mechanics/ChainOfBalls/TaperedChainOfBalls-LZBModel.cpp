@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
       Vector FextBall{nDofBall};
       FextBall.setZero();
       FextBall(0) = -_massBall * g;
-      ball->setConstantFext(FextBall);
+      ball->setConstantFext(FextBall, siconos::algebra::alias_t);
 
 
       //

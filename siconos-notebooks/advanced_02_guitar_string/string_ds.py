@@ -5,12 +5,12 @@ Based on JSV Issanchou paper.
 """
 import math
 import numpy as np
-import siconos.kernel as sk
+import siconos.modeling as sm
 # import scipy.sparse as scs
 import numpywrappers as npw
 
 
-class StringDS(sk.LagrangianLinearTIDS):
+class StringDS(sm.LagrangianLinearTIDS):
     """Build a string as a LagrangianLinearTIDS
     """
     __damping_parameters_names = ['nu_air', 'rho_air', 'delta_ve', '1/qte']
@@ -116,7 +116,7 @@ class StringDS(sk.LagrangianLinearTIDS):
             bc_clamped_indices = [0, self.ndof - 1]
             # For each index in bc_clamped_indices
             # enforce velocity_index = 0.
-            boundaries = sk.FixedBC(bc_clamped_indices)
+            boundaries = sm.FixedBC(bc_clamped_indices)
             self.setBoundaryConditions(boundaries)
         else:
             raise AttributeError('Unknown boundary type')
@@ -126,7 +126,7 @@ class StringDS(sk.LagrangianLinearTIDS):
         K = Omega^2
         C = 2.Gamma
         """
-        mass = sk.SimpleMatrix(self.ndof, self.ndof, sk.SPARSE, self.ndof)
+        mass = sm.SimpleMatrix(self.ndof, self.ndof, sm.SPARSE, self.ndof)
         for i in range(self.ndof):
             mass.setValue(i, i, 1.)
         indices = np.arange(self.ndof)
@@ -135,15 +135,15 @@ class StringDS(sk.LagrangianLinearTIDS):
                                  for j in range(self.ndof)])
         coeff = (indices * math.pi * self.c0 / self.length) ** 2
         omega *= coeff
-        stiffness_mat = sk.SimpleMatrix(self.ndof, self.ndof,
-                                        sk.SPARSE, self.ndof)
+        stiffness_mat = sm.SimpleMatrix(self.ndof, self.ndof,
+                                        sm.SPARSE, self.ndof)
         for i in range(self.ndof):
             stiffness_mat.setValue(i, i, omega[i])
 
         # 2.S.Gamma.S-1
         sigma = self.compute_damping(np.sqrt(omega) / (2. * math.pi))
-        damping_mat = sk.SimpleMatrix(self.ndof, self.ndof,
-                                      sk.SPARSE, self.ndof)
+        damping_mat = sm.SimpleMatrix(self.ndof, self.ndof,
+                                      sm.SPARSE, self.ndof)
         for i in range(self.ndof):
             damping_mat.setValue(i, i, 2. * sigma[i])
         return mass, stiffness_mat, damping_mat

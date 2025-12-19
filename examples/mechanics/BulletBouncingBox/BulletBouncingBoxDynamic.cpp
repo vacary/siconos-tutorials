@@ -38,7 +38,7 @@ using Vector = siconos::algebra::SiconosVector;
 
 constexpr auto mass = 1.;
 
-auto makeBox(float g, Eigen::Ref<Vector> q0, Eigen::Ref<Vector> v0) {
+auto makeBox(Eigen::Ref<Vector> q0, Eigen::Ref<Vector> v0) {
   // -- Shape: cube with all dimensions=1.0
   auto box1 = std::make_shared<siconos::collision::SiconosBox>(1.0, 1.0, 1.0);
 
@@ -97,8 +97,8 @@ int main() {
     FExt(2) = -g * mass;
 
     // -- Moving object --
-    auto body = makeBox(g, q0Body, v0Body);
-    body->setConstantFext(FExt);
+    auto body = makeBox(q0Body, v0Body);
+    body->setConstantFext(FExt, siconos::algebra::alias_t);
 
     // -- Add the dynamical system in the non smooth dynamical system
     model->insertDynamicalSystem(body);
@@ -214,8 +214,8 @@ int main() {
     while (simulation->hasNextEvent()) {
       // --- Add a dynamic object at step 100 of the simulation ---
       if (k == 100) {
-        auto ds = makeBox(g, q0, v0);
-        ds->setConstantFext(FExt);
+        auto ds = makeBox(q0, v0);
+        ds->setConstantFext(FExt, siconos::algebra::alias_t);
         simulation->nonSmoothDynamicalSystem()->insertDynamicalSystem(ds);
         simulation->associate(osi, ds);
       }

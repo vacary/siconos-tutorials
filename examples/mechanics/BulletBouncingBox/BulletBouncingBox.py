@@ -23,7 +23,8 @@ try:
 except:
     do_plot = False
 if do_plot:
-    import os, sys
+    import os
+    import sys
 
     if sys.platform == "linux" and (
         not "DISPLAY" in os.environ or len(os.environ["DISPLAY"]) == 0
@@ -35,6 +36,7 @@ from siconos.modeling import (
     NewtonImpactFrictionNSL,
     NonSmoothDynamicalSystem,
     interactions,
+    alias_t,
 )
 from siconos.integrators import MoreauJeanOSI
 from siconos.nonsmooth_formulations import FrictionContact
@@ -87,7 +89,7 @@ body.contactors().append(contactor)
 
 # set external forces
 weight = np.array([0, 0, -body.scalarMass * g], dtype=np.float64)
-body.setConstantFext(weight)
+body.setConstantFext(weight, alias_t)
 
 #
 # Model
@@ -156,7 +158,7 @@ dataPlot = zeros((N + 1, 4))
 # numpy pointers on dense Siconos vectors
 #
 q = body.q()
-v = body.velocity()
+v = body.twist()
 
 #
 # initial data
@@ -232,3 +234,5 @@ if do_plot:
     grid()
     savefig("result.png")
     show()
+
+np.savetxt("BouncingBox-py.dat", dataPlot)

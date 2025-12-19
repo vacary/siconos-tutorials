@@ -56,7 +56,7 @@ ball = sm.LagrangianSparseLinearTIDS(initial_position, initial_velocity, mass)
 # set external forces
 weight_np = np.array([-m * g, 0, 0], dtype=np.float64)
 
-ball.setConstantFext(weight_np)
+ball.setConstantFext(weight_np, sm.alias_t)
 
 #
 # Interaction ball-floor

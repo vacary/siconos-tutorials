@@ -97,8 +97,8 @@ LS1_A = np.asarray(
     dtype=np.float64,
 )
 
-LS1DiodeBridgeCapFilter = sm.FirstOrderLinearDS(init_stateLS1)
-LS1DiodeBridgeCapFilter.setConstantA(LS1_A)
+LS1DiodeBridgeCapFilter = sm.FirstOrderLinearDS(init_stateLS1, sm.alias_t)
+LS1DiodeBridgeCapFilter.setConstantA(LS1_A, sm.alias_t)
 
 init_stateLS2 = np.asarray(
     [VinitLS2],
@@ -111,8 +111,8 @@ LS2_A = np.asarray(
     dtype=np.float64,
 )
 
-LS2DiodeBridgeCapFilter = sm.FirstOrderLinearDS(init_stateLS2)
-LS2DiodeBridgeCapFilter.setConstantA(LS2_A)
+LS2DiodeBridgeCapFilter = sm.FirstOrderLinearDS(init_stateLS2, sm.alias_t)
+LS2DiodeBridgeCapFilter.setConstantA(LS2_A, sm.alias_t)
 #
 # Interactions
 #

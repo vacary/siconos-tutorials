@@ -69,12 +69,12 @@ int main(int argc, char* argv[]) {
     Vector init_stateLS{1};
     init_stateLS << VinitLS;
     auto LSDiodeBridgePowSup =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS);
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS, siconos::algebra::alias_t);
 
     Matrix LS_A{1, 1};
     LS_A(0, 0) = -1.0 / (Rvalue * Cfilt);
 
-    LSDiodeBridgePowSup->setConstantA(LS_A);
+    LSDiodeBridgePowSup->setConstantA(LS_A, siconos::algebra::alias_t);
 
     // --- Interaction between linear system and non smooth system ---
 

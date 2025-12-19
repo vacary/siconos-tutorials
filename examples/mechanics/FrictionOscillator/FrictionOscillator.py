@@ -66,8 +66,8 @@ A[1, 0] = -stiffness / m
 # dynamical system
 #
 
-oscillator = sm.FirstOrderLinearDS(x0)
-oscillator.setConstantA(A)
+oscillator = sm.FirstOrderLinearDS(x0, sm.alias_t)
+oscillator.setConstantA(A, sm.alias_t)
 #
 # Interactions
 #
@@ -80,8 +80,8 @@ nslaw = sm.RelayNSL(1, -1, 1)
 
 # relation = sm.FirstOrderLinearR(C, B)
 relation = sm.FirstOrderLinearR()
-relation.setConstantBAlias(B)
-relation.setConstantCAlias(C)
+relation.setConstantB(B, sm.alias_t)
+relation.setConstantC(C, sm.alias_t)
 inter = sm.Interaction(nslaw, relation)
 
 print(inter)

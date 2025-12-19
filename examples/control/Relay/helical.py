@@ -4,13 +4,16 @@ http://www.irisa.fr/prive/Benoit.Caillaud/cours-hybride-2014/Cours_modelisation_
 """
 
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import matplotlib.pyplot as plt
-import siconos.kernel as sk
+import siconos.modeling as sm
 import siconos.numerics as sn
 from math import ceil
+import siconos.integrators
+import siconos.nonsmooth_formulations
 
 # == User-defined parameters ==
 ndof = 3  # number of degrees of freedom of your system
@@ -23,7 +26,7 @@ x01 = rho
 x02 = 0.0
 alpha = 0.05  # angle of the square helical
 beta = 0.01  # thread of the helical
-gamma = 0.  # thread variation
+gamma = 0.0  # thread variation
 
 # -- Dynamical system --
 # dx / dt = A.x + b + r
@@ -32,7 +35,7 @@ x0 = np.zeros(3, dtype=np.float64)
 x0.flat[...] = [x00, x01, x02]
 b = np.zeros_like(x0)
 b[2] = beta
-particle = sk.FirstOrderLinearDS(x0, A, b)
+particle = sm.FirstOrderLinearDS(x0, A, b)
 
 # -- Interaction --
 # y = C.x + D.lambda
@@ -47,29 +50,29 @@ B[2, 0] = gamma * 0.5
 B[2, 1] = gamma * 0.5
 
 C = np.zeros((ninter, ndof), dtype=np.float64)
-C[0, 0] = C[1, 1] = -1.
+C[0, 0] = C[1, 1] = -1.0
 
-particle_relation = sk.FirstOrderLinearR(C, B)
+particle_relation = sm.FirstOrderLinearR(C, B)
 
-nslaw = sk.RelayNSL(ninter)
+nslaw = sm.RelayNSL(ninter)
 
-particle_interaction = sk.Interaction(nslaw, particle_relation)
+particle_interaction = sm.Interaction(nslaw, particle_relation)
 
 # -- The Model --
-filippov = sk.NonSmoothDynamicalSystem(t0, T)
+filippov = sm.NonSmoothDynamicalSystem(t0, T)
 filippov.insertDynamicalSystem(particle)
 filippov.link(particle_interaction, particle)
 
 # -- Simulation --
-td = sk.TimeDiscretisation(t0, h)
-simu = sk.TimeStepping(filippov,td)
+td = siconos.simulation.TimeDiscretisation(t0, h)
+simu = siconos.simulation.TimeStepping(filippov, td)
 # osi
 theta = 0.5
-myIntegrator = sk.EulerMoreauOSI(theta)
+myIntegrator = siconos.integrators.EulerMoreauOSI(theta)
 simu.insertIntegrator(myIntegrator)
 
 # osns
-osnspb = sk.Relay(sn.solver_ids.SICONOS_RELAY_LEMKE)
+osnspb = siconos.nonsmooth_formulations.Relay(sn.solver_ids.SICONOS_RELAY_LEMKE)
 simu.insertNonSmoothProblem(osnspb)
 
 # -- Get the values to be plotted --
@@ -78,7 +81,7 @@ nb_time_steps = int((T - t0) / h) + 1
 data_plot = np.empty((nb_time_steps, output_size))
 data_plot[0, 0] = filippov.t0()
 data_plot[0, 1:4] = particle.x()
-data_plot[0, 4:] = 0.
+data_plot[0, 4:] = 0.0
 
 # time loop
 k = 1
@@ -93,7 +96,7 @@ while simu.hasNextEvent():
 
 
 # save to disk
-np.savetxt('helical.dat', data_plot)
+np.savetxt("helical.dat", data_plot)
 
 
 def plot_results():
@@ -101,13 +104,13 @@ def plot_results():
     with ds_state = [x, y, z]
     """
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
+    ax = fig.gca(projection="3d")
     x = data_plot[:, 1]
     y = data_plot[:, 2]
     z = data_plot[:, 3]
-    ax.plot(x, y, z, label='z = f(x, y)')
+    ax.plot(x, y, z, label="z = f(x, y)")
     ax.legend()
-    plt.savefig('helical.png')
+    plt.savefig("helical.png")
 
 
 # --- Uncomment lines below to plot interesting stuff ---
@@ -129,4 +132,3 @@ plot_results()
 # plot(data_plot[:,1], data_plot[:,2])
 # grid()
 # show()
-

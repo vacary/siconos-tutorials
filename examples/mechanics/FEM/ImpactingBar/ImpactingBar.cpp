@@ -24,12 +24,13 @@
 */
 
 #include <SiconosKernel.hpp>
+#include <SiconosMatrix.hpp>
+#include <SiconosVector.hpp>
 #include <chrono>
+#include <concepts>
 
 #include "UserDefinedParameter.hpp"
 
-using Matrix = siconos::algebra::SiconosMatrix;
-using Vector = siconos::algebra::SiconosVector;
 using namespace std;
 namespace user =
     user_defined_ref;  // To choose the set of parameters used in the current simulation
@@ -49,56 +50,52 @@ int main(int argc, char* argv[]) {
     auto ndof = user::nDof;
     double l = user::L / ndof;  // length of an element
 
-    // auto massMatrix =
-    //     std::make_shared<Matrix>(ndof, ndof, siconos::algebra::UblasType::SPARSE, ndof);
-    // auto stiffnessMatrix =
-    //     std::make_shared<Matrix>(ndof, ndof, siconos::algebra::UblasType::SPARSE, 3 * ndof);
-
-    Matrix massMatrix{ndof, ndof};
+    siconos::algebra::SiconosDenseMatrix massMatrix{ndof, ndof};
     massMatrix.setZero();
-    Matrix stiffnessMatrix{ndof, ndof};
+    siconos::algebra::SiconosDenseMatrix stiffnessMatrix{ndof, ndof};
     stiffnessMatrix.setZero();
 
-    massMatrix.setValue(0, 0, 1.0 / 3.0);
-    massMatrix.setValue(0, 1, 1.0 / 6.0);
-    stiffnessMatrix.setValue(0, 0, 1.0);
-    stiffnessMatrix.setValue(0, 1, -1.0);
+    massMatrix(0, 0) = 1.0 / 3.0;
+    massMatrix(0, 1) = 1.0 / 6.0;
+    stiffnessMatrix(0, 0) = 1.0;
+    stiffnessMatrix(0, 1) = -1.0;
 
     for (unsigned int i = 1; i < ndof - 1; i++) {
-      massMatrix.setValue(i, i, 2.0 / 3.0);
-      massMatrix.setValue(i, i - 1, 1.0 / 6.0);
-      massMatrix.setValue(i, i + 1, 1.0 / 6.0);
+      massMatrix(i, i) = 2.0 / 3.0;
+      massMatrix(i, i - 1) = 1.0 / 6.0;
+      massMatrix(i, i + 1) = 1.0 / 6.0;
 
-      stiffnessMatrix.setValue(i, i, 2.0);
-      stiffnessMatrix.setValue(i, i - 1, -1.0);
-      stiffnessMatrix.setValue(i, i + 1, -1.0);
+      stiffnessMatrix(i, i) = 2.0;
+      stiffnessMatrix(i, i - 1) = -1.0;
+      stiffnessMatrix(i, i + 1) = -1.0;
     }
 
-    massMatrix.setValue(ndof - 1, ndof - 1, 1.0 / 3.0);
-    massMatrix.setValue(ndof - 1, ndof - 2, 1.0 / 6.0);
+    massMatrix(ndof - 1, ndof - 1) = 1.0 / 3.0;
+    massMatrix(ndof - 1, ndof - 2) = 1.0 / 6.0;
 
-    stiffnessMatrix.setValue(ndof - 1, ndof - 2, -1.0);
-    stiffnessMatrix.setValue(ndof - 1, ndof - 1, 1.0);
+    stiffnessMatrix(ndof - 1, ndof - 2) = -1.0;
+    stiffnessMatrix(ndof - 1, ndof - 1) = 1.0;
 
     massMatrix *= user::rho * user::S * l;
     stiffnessMatrix *= user::E * user::S / l;
 
     // -- Initial positions and velocities --
-    Vector q0{ndof};
+    siconos::algebra::SiconosVector q0{ndof};
     q0.setConstant(user::position_init);
-    Vector v0{ndof};
+    siconos::algebra::SiconosVector v0{ndof};
     v0.setConstant(user::velocity_init);
 
     // -- The dynamical system --
-    auto bar = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, massMatrix);
+    auto bar = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
+        q0, v0, massMatrix, siconos::algebra::alias_t);
 
     // -- Set stiffness matrix (weight) --
-    bar->setStiffnessMatrix(stiffnessMatrix);
+    bar->setStiffnessMatrix(stiffnessMatrix, siconos::algebra::alias_t);
 
     // -- Set external forces (weight) --
-    Vector weight{ndof};
+    siconos::algebra::SiconosVector weight{ndof};
     weight.setZero();
-    bar->setConstantFext(weight);
+    bar->setConstantFext(weight, siconos::algebra::alias_t);
 
     // --------------------
     // --- Interactions ---
@@ -109,7 +106,7 @@ int main(int argc, char* argv[]) {
 
     // Interaction bar-floor
     //
-    auto H = std::make_shared<Matrix>(1, ndof);
+    auto H = std::make_shared<siconos::algebra::SiconosDenseMatrix>(1, ndof);
     (*H)(0, 0) = 1.0;
 
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
@@ -191,7 +188,7 @@ int main(int argc, char* argv[]) {
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 12;
-    Matrix dataPlot(N, outputSize);
+    siconos::algebra::SiconosDenseMatrix dataPlot(N, outputSize);
 
     auto q = bar->q_read();
     auto v = bar->velocity_read();
@@ -208,7 +205,7 @@ int main(int argc, char* argv[]) {
     dataPlot(0, 9) = q((ndof) / 2);
     dataPlot(0, 10) = v((ndof) / 2);
 
-    Vector tmp{ndof};
+    siconos::algebra::SiconosVector tmp{ndof};
     tmp = stiffnessMatrix * q;
     double potentialEnergy = q.dot(tmp);
     tmp = massMatrix * v;

@@ -141,23 +141,24 @@ with MechanicsHdf5Runner(mode="r+") as io:
 
     # By default earth gravity is applied and the units are those
     # of the International System of Units.
-    # io.run(verbose=True,
-    #     with_timer=False,
-    #        bullet_options=bullet_options,
-    #        face_class=None,
-    #        edge_class=None,
-    #        t0=0,
-    #        T=T,
-    #        h=0.001,
-    #        theta=0.50001,
-    #        Newton_max_iter=1,
-    #        set_external_forces=None,
-    #        solver_options=options,
-    #        numerics_verbose=True,
-    #        output_frequency=None,
-    #        Newton_options= sk.SICONOS_TS_LINEAR_IMPLICIT,
-    #        constraint_activation_threshold=1e-5,
-    #        osi=sk.MoreauJeanGOSI,
-    #        osns_assembly_type= sk.GLOBAL_REDUCED
-    #        )
-    io.run(run_options)
+    io.run(
+        verbose=True,
+        with_timer=True,
+        bullet_options=bullet_options,
+        face_class=None,
+        edge_class=None,
+        t0=0,
+        T=T,
+        h=hstep,
+        theta=0.50001,
+        Newton_max_iter=1,
+        set_external_forces=None,
+        solver_options=options,
+        numerics_verbose=True,
+        output_frequency=None,
+        Newton_options=siconos.simulation.LINEAR,
+        constraint_activation_threshold=1e-5,
+        osi=siconos.integrators.MoreauJeanGOSI,
+        osns_assembly_type=siconos.nonsmooth_formulations.GLOBAL_REDUCED,
+    )
+    # io.run(run_options)

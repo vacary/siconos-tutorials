@@ -53,7 +53,7 @@ initial_velocity = np.array([0, 0, 0], dtype=np.float64)
 mass = np.eye(ndof, dtype=np.float64, order="F")
 mass[2, 2] = 2.0 / 5 * r * r
 
-ball = sm.LagrangianDS(initial_position, initial_velocity)
+ball = sm.LagrangianDS(initial_position, initial_velocity, sm.alias_t)
 # set external forces with a plugin
 
 
@@ -79,7 +79,7 @@ ball.setComputeMassFunction(compute_mass)
 
 
 ball.computeMass(initial_position)  # initialize
-ball.setConstantMassAlias(mass)
+ball.setConstantMass(mass, sm.alias_t)
 
 # Interaction ball-floor
 H = np.array([[1, 0, 0]], dtype=np.float64, order="F")

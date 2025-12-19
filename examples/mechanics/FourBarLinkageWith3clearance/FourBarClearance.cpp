@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
     v0(1) = 0.0;
     v0(2) = 0.0;
 
-    auto fourbar = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
+    auto fourbar = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, siconos::algebra::alias_t);
     fourbar->setComputeMassFunction(
         [](const Eigen::Ref<const siconos::algebra::SiconosVector>& pos,
            Eigen::Ref<siconos::algebra::MapType> mass) {

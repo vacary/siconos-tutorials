@@ -100,12 +100,12 @@ int main(int argc, char* argv[]) {
 
     // 4. Instantiate the object of "LagrangianTIDS"
     auto RockingBlock = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
-        *PosIniBlock, *VelIniBlock, *mass);
+        *PosIniBlock, *VelIniBlock, *mass, siconos::algebra::alias_t);
     // 5. Set the external force
     Vector ExternalForces{Nfreedom};
     ExternalForces.setZero();
     ExternalForces(1) = -MassBlock * GGearth;
-    RockingBlock->setConstantFext(ExternalForces);  //
+    RockingBlock->setConstantFext(ExternalForces, siconos::algebra::alias_t);  //
     std::cout << "Initial position of the rocking block:\n";
     siconos::algebra::print(*PosIniBlock);
     std::cout << "Initial velocity of the rocking block:\n";

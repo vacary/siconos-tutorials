@@ -74,8 +74,8 @@ int main(int argc, char* argv[]) {
     Vector weight{nDof};
     weight.setZero();
     weight(0) = -m * g;
-    ball->setConstantFext(weight);
-    ball1->setConstantFext(weight);
+    ball->setConstantFext(weight, siconos::algebra::alias_t);
+    ball1->setConstantFext(weight, siconos::algebra::alias_t);
 
     // --------------------
     // --- Interactions ---

@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    int nDof = 3;       // degrees of freedom for the ball
+    int nDof = 3;                // degrees of freedom for the ball
     double t0 = 0;               // initial computation time
     double T = 10.0;             // final computation time
     double h = 0.005;            // time step
@@ -69,13 +69,14 @@ int main(int argc, char* argv[]) {
     v0(0) = velocity_init;
 
     // -- The dynamical system --
-    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
+    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
+        q0, v0, mass, siconos::algebra::alias_t);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
     weight(0) = -m * g;
-    ball->setConstantFext(weight);
+    ball->setConstantFext(weight, siconos::algebra::alias_t);
 
     // -- Moving Plane --
 
@@ -87,11 +88,12 @@ int main(int argc, char* argv[]) {
     v02(0) = -velocity_init;
 
     // -- The dynamical system --
-    auto movingplane = std::make_shared<siconos::modeling::LagrangianDS>(q02, v02);
-    movingplane->setConstantMassAlias(mass);
+    auto movingplane =
+        std::make_shared<siconos::modeling::LagrangianDS>(q02, v02, siconos::algebra::alias_t);
+    movingplane->setConstantMass(mass, siconos::algebra::alias_t);
 
     // -- Set external forces (weight) --
-    movingplane->setConstantFext(weight);
+    movingplane->setConstantFext(weight, siconos::algebra::alias_t);
 
     auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(
         siconos::modeling::BoundaryCondition::Indices{0});

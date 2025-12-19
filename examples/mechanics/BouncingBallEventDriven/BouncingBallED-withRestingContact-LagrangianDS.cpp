@@ -59,18 +59,18 @@ int main(int argc, char *argv[]) {
     v0(0) = velocity_init;
 
     // -- The dynamical system --
-    auto ball = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
+    auto ball = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, siconos::algebra::alias_t);
     Matrix mass{nDof, nDof};
     mass.setZero();
     mass(0, 0) = m;
     mass(1, 1) = m;
     mass(2, 2) = 2. / 5 * m * R * R;
-    ball->setConstantMassAlias(mass);
+    ball->setConstantMass(mass, siconos::algebra::alias_t);
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
     weight(0) = -m * g;
-    ball->setConstantFext(weight);
+    ball->setConstantFext(weight, siconos::algebra::alias_t);
 
     // --------------------
     // --- Interactions ---

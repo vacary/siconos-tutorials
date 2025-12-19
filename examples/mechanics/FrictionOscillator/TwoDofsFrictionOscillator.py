@@ -116,9 +116,9 @@ A[3, 3] = -d2
 # dynamical system
 #
 
-oscillator = sm.FirstOrderLinearDS(x)
-oscillator.setConstantA(A)
-oscillator.setConstantMMatrixAlias(M)
+oscillator = sm.FirstOrderLinearDS(x, sm.alias_t)
+oscillator.setConstantA(A, sm.alias_t)
+oscillator.setConstantMMatrix(M, sm.alias_t)
 
 
 def computeb(time, result):
@@ -145,8 +145,8 @@ nslaw = sm.RelayNSL(1, -μ * N, μ * N)
 
 
 relation = sm.FirstOrderLinearR()
-relation.setConstantCAlias(H)
-relation.setConstantBAlias(H.T)
+relation.setConstantC(H, sm.alias_t)
+relation.setConstantB(H.T, sm.alias_t)
 inter = sm.Interaction(nslaw, relation)
 
 print(inter)

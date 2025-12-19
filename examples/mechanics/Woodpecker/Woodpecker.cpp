@@ -30,11 +30,11 @@ int main(int argc, char* argv[]) {
     // ================= Model definition =================
 
     // User-defined main parameters
-    int nDof = 3;  // degrees of freedom
-    double t0 = 0;          // initial computation time
-    double T = 0.3;         // final computation time
-    double h = 0.00002;     // time step
-    double theta = 0.5;     // theta for MoreauJeanOSI integrator;
+    int nDof = 3;        // degrees of freedom
+    double t0 = 0;       // initial computation time
+    double T = 0.3;      // final computation time
+    double h = 0.00002;  // time step
+    double theta = 0.5;  // theta for MoreauJeanOSI integrator;
 
     // -------------------------
     // --- Dynamical systems ---
@@ -67,9 +67,9 @@ int main(int argc, char* argv[]) {
     velocity0(1) = omega_M_0;
     velocity0(2) = omega_S_0;
 
-    auto dynamicalSystem =
-        std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, velocity0, mass);
-    dynamicalSystem->setStiffnessMatrix(K);
+    auto dynamicalSystem = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
+        q0, velocity0, mass, siconos::algebra::alias_t);
+    dynamicalSystem->setStiffnessMatrix(K, siconos::algebra::alias_t);
 
     dynamicalSystem->setComputeFextFunction(
         [](double time, Eigen::Ref<siconos::algebra::MapVectorType> fext) {

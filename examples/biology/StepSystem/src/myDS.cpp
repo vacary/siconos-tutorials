@@ -24,7 +24,7 @@ using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 user_defined::MyDS::MyDS(Eigen::Ref<siconos::algebra::SiconosVector> x0)
-    : FirstOrderNonLinearDS(x0) {
+    : FirstOrderNonLinearDS(x0, siconos::algebra::alias_t) {
   setComputefVectorFunction([](const Eigen::Ref<const siconos::algebra::SiconosVector> &x,
                                double time,
                                Eigen::Ref<siconos::algebra::MapVectorType> result) {

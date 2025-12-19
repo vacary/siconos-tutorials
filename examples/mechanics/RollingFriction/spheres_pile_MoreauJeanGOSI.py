@@ -7,7 +7,7 @@
 from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
 import siconos.numerics as sn
-import siconos.kernel as sk
+import siconos.modeling as sm
 
 import math
 
@@ -117,7 +117,7 @@ with MechanicsHdf5Runner(mode='r+') as io:
            theta=0.50001,
            Newton_max_iter=1,
            set_external_forces=None,
-           osi=sk.MoreauJeanGOSI,
+           osi=siconos.integrators.MoreauJeanGOSI,
            solver_options=options,
            violation_verbose=False,
            numerics_verbose=False,

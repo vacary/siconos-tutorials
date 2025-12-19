@@ -19,30 +19,34 @@ Equations are ::
 """
 
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 import numpy as np
 import matplotlib.pyplot as plt
-import siconos.kernel as sk
+import siconos.modeling as sm
 from math import ceil
+import siconos.integrators
+import siconos.nonsmooth_formulations
+import siconos.simulation
 
 # == User-defined parameters ==
 number_of_cars = 3
 t0 = 0.0
 T = 10  # Total simulation times
 tau = 1e-3  # Time step
-tscale = 1.
+tscale = 1.0
 
 # Resistors (Ohm)
-R = 100.
-S = 10.
+R = 100.0
+S = 10.0
 
 # Capacitors (Farad)
-C = 1000.e-6
-D = 100.e-6
+C = 1000.0e-6
+D = 100.0e-6
 
 # Initial state
 u0 = 7.5  # C capacitors voltates (V)
-v0 = - u0  # D capacitors voltages (V)
+v0 = -u0  # D capacitors voltages (V)
 rho = 0.6667  # factor
 epsilon = rho * u0 / number_of_cars  # increment of capacitor voltages (V)
 
@@ -59,15 +63,14 @@ jn = 0.0  # current at the tail of the brake line
 # q(t0) = q0 = [ u0 ... u0 v0 ... v0 ]
 ndof = 2 * number_of_cars
 q0 = np.zeros(ndof, dtype=np.float64)
-q0[:number_of_cars] = (1. - rho) * u0 + epsilon * np.arange(number_of_cars)
-q0[number_of_cars:] = (1. - rho) * v0 -\
-    epsilon * np.arange(number_of_cars, ndof)
+q0[:number_of_cars] = (1.0 - rho) * u0 + epsilon * np.arange(number_of_cars)
+q0[number_of_cars:] = (1.0 - rho) * v0 - epsilon * np.arange(number_of_cars, ndof)
 
 A = np.zeros((ndof, ndof), dtype=np.float64)
-val = -2. / (R * C)
+val = -2.0 / (R * C)
 np.fill_diagonal(A[:number_of_cars, :number_of_cars], val)
 np.fill_diagonal(A[:number_of_cars, number_of_cars:ndof], val)
-val2 = -2. / (R * D)
+val2 = -2.0 / (R * D)
 np.fill_diagonal(A[number_of_cars:ndof, :number_of_cars], val2)
 np.fill_diagonal(A[number_of_cars:ndof, number_of_cars:ndof], val2)
 A[number_of_cars - 1, number_of_cars - 1] *= 0.5
@@ -76,19 +79,19 @@ A[ndof - 1, number_of_cars - 1] *= 0.5
 A[ndof - 1, ndof - 1] *= 0.5
 # extra-diag values
 for i in range(1, number_of_cars):
-    A[i, i - 1] = A[i - 1, i] = 1. / (R * C)
-    A[i, i + number_of_cars - 1] = A[i - 1, i + number_of_cars] = 1. / (R * C)
-    A[i + number_of_cars, i - 1] = A[i + number_of_cars - 1, i] = 1. / (R * D)
-    A[i + number_of_cars, i + number_of_cars - 1] = 1. / (R * D)
-    A[i + number_of_cars - 1, i + number_of_cars] = 1. / (R * D)
+    A[i, i - 1] = A[i - 1, i] = 1.0 / (R * C)
+    A[i, i + number_of_cars - 1] = A[i - 1, i + number_of_cars] = 1.0 / (R * C)
+    A[i + number_of_cars, i - 1] = A[i + number_of_cars - 1, i] = 1.0 / (R * D)
+    A[i + number_of_cars, i + number_of_cars - 1] = 1.0 / (R * D)
+    A[i + number_of_cars - 1, i + number_of_cars] = 1.0 / (R * D)
 
 b = np.zeros(ndof, np.float64)
 b[0] = w0 / (R * C)
-b[number_of_cars - 1] = - jn / C
+b[number_of_cars - 1] = -jn / C
 b[number_of_cars] = w0 / (R * D)
 b[ndof - 1] = -jn / D
 
-RC = sk.FirstOrderLinearDS(q0, A, b)
+RC = sm.FirstOrderLinearDS(q0, A, b)
 
 # -- Interaction --
 # *** Linear time invariant relation (LTIR) ***
@@ -99,37 +102,37 @@ RC = sk.FirstOrderLinearDS(q0, A, b)
 
 ninter = number_of_cars
 B = np.zeros((ndof, ninter), dtype=np.float64)
-np.fill_diagonal(B[number_of_cars:, :number_of_cars], -1. / D)
+np.fill_diagonal(B[number_of_cars:, :number_of_cars], -1.0 / D)
 
 M = np.zeros((ninter, ninter), dtype=np.float64)
 np.fill_diagonal(M[:number_of_cars, :number_of_cars], S)
 
 N = np.zeros((ninter, ndof), dtype=np.float64)
-np.fill_diagonal(N[:number_of_cars, number_of_cars:], -1.)
+np.fill_diagonal(N[:number_of_cars, number_of_cars:], -1.0)
 
-relation = sk.FirstOrderLinearTIR(N, B)
+relation = sm.FirstOrderLinearTIR(N, B)
 relation.setConstantD(M)
 
-nslaw = sk.ComplementarityConditionNSL(ninter)
+nslaw = sm.ComplementarityConditionNSL(ninter)
 
-interaction = sk.Interaction(nslaw, relation)
+interaction = sm.Interaction(nslaw, relation)
 
 # -- The Model --
-circuit = sk.NonSmoothDynamicalSystem(t0, T)
-circuit.setTitle('train')
+circuit = sm.NonSmoothDynamicalSystem(t0, T)
+circuit.setTitle("train")
 circuit.insertDynamicalSystem(RC)
 circuit.link(interaction, RC)
 
 # -- Simulation --
-td = sk.TimeDiscretisation(t0, tau)
-simu = sk.TimeStepping(circuit, td)
+td = siconos.simulation.TimeDiscretisation(t0, tau)
+simu = siconos.simulation.TimeStepping(circuit, td)
 # osi
 theta = 0.50000000000001
-osi = sk.EulerMoreauOSI(theta)
+osi = siconos.integrators.EulerMoreauOSI(theta)
 simu.insertIntegrator(osi)
 
 # osns
-osnspb = sk.LCP()
+osnspb = siconos.nonsmooth_formulations.LCP()
 simu.insertNonSmoothProblem(osnspb)
 
 
@@ -157,7 +160,7 @@ while simu.hasNextEvent():
 
 
 # save to disk
-np.savetxt('train_tslcp.dat', data_plot)
+np.savetxt("train_tslcp.dat", data_plot)
 
 
 def plot_results():
@@ -166,15 +169,15 @@ def plot_results():
     """
     plt.subplot(211)
     time = data_plot[:, 0]
-    q = data_plot[:, 1:number_of_cars + 1]
-    v = data_plot[:, number_of_cars + 1:]
-    plt.plot(time, q, label='u')
-    plt.ylabel('u')
+    q = data_plot[:, 1 : number_of_cars + 1]
+    v = data_plot[:, number_of_cars + 1 :]
+    plt.plot(time, q, label="u")
+    plt.ylabel("u")
     plt.subplot(212)
-    plt.plot(time, v, label='v')
-    plt.ylabel('v')
-    plt.xlabel('time')
-    plt.savefig('train_brakes.png')
+    plt.plot(time, v, label="v")
+    plt.ylabel("v")
+    plt.xlabel("time")
+    plt.savefig("train_brakes.png")
 
 
 # --- Uncomment lines below to plot interesting stuff ---

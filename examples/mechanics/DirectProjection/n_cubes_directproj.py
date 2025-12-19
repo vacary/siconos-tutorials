@@ -7,13 +7,15 @@
 
 from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
+import siconos.mechanics.collision.bullet
 
 import siconos.numerics as sn
-import siconos.kernel as sk
-
+import siconos.simulation
+import siconos.integrators
 import random
 
 import siconos
+
 bullet_options = siconos.mechanics.collision.bullet.SiconosBulletOptions()
 bullet_options.worldScale = 1.0
 bullet_options.perturbationIterations = 7
@@ -28,21 +30,25 @@ with MechanicsHdf5Runner() as io:
         for j in range(n_col):
             for n in range(n_cube):
                 # Definition of a cube as a convex shape
-                io.add_convex_shape('CubeCS'+str(n)+'_'+str(i)+'_'+str(j),
-                                    [(-1.0, 1.0, -1.0),
-                                     (-1.0, -1.0, -1.0),
-                                     (-1.0, -1.0, 1.0),
-                                     (-1.0, 1.0, 1.0),
-                                     (1.0, 1.0, 1.0),
-                                     (1.0, 1.0, -1.0),
-                                     (1.0, -1.0, -1.0),
-                                     (1.0, -1.0, 1.0)])
+                io.add_convex_shape(
+                    "CubeCS" + str(n) + "_" + str(i) + "_" + str(j),
+                    [
+                        (-1.0, 1.0, -1.0),
+                        (-1.0, -1.0, -1.0),
+                        (-1.0, -1.0, 1.0),
+                        (-1.0, 1.0, 1.0),
+                        (1.0, 1.0, 1.0),
+                        (1.0, 1.0, -1.0),
+                        (1.0, -1.0, -1.0),
+                        (1.0, -1.0, 1.0),
+                    ],
+                )
 
     # Alternative to the previous convex shape definition.
     # io.add_primitive_shape('CubePrim', 'Box', (2, 2, 2))
 
     # Definition of the ground shape
-    io.add_primitive_shape('Ground', 'Box', (200, 200, .5))
+    io.add_primitive_shape("Ground", "Box", (200, 200, 0.5))
 
     # Definition of the left shape
     # io.add_primitive_shape('Left', 'Box', (100, 0.5, 50.))
@@ -58,7 +64,7 @@ with MechanicsHdf5Runner() as io:
 
     # Definition of a non smooth law. As no group ids are specified it
     # is between contactors of group id 0.
-    io.add_Newton_impact_friction_nsl('contact', mu=0.3)
+    io.add_Newton_impact_friction_nsl("contact", mu=0.3)
 
     # The cube object made with an unique Contactor : the cube shape.
     # As a mass is given, it is a dynamic system involved in contact
@@ -67,14 +73,20 @@ with MechanicsHdf5Runner() as io:
     for i in range(n_row):
         for j in range(n_col):
             for n in range(n_cube):
-                io.add_object('cubeCS'+str(n)+'_'+str(i)+'_'+str(j),
-                              [Contactor(
-                                  'CubeCS'+str(n)+'_'+str(i)+'_'+str(j))],
-                              translation=[3.0*i, 3.0*j, 2.05*(n+1)],
-                              velocity=[10*(1.0+2.0*(random.random()-1.0)/2.0),
-                                        10*(1.0+2.0*(random.random()-1.0)/2.0),
-                                        0, 1, 1, 1],
-                              mass=1)
+                io.add_object(
+                    "cubeCS" + str(n) + "_" + str(i) + "_" + str(j),
+                    [Contactor("CubeCS" + str(n) + "_" + str(i) + "_" + str(j))],
+                    translation=[3.0 * i, 3.0 * j, 2.05 * (n + 1)],
+                    velocity=[
+                        10 * (1.0 + 2.0 * (random.random() - 1.0) / 2.0),
+                        10 * (1.0 + 2.0 * (random.random() - 1.0) / 2.0),
+                        0,
+                        1,
+                        1,
+                        1,
+                    ],
+                    mass=1,
+                )
 
     # io.add_object('cube2', [Contactor('CubePrim')], translation=[0, 3, 2],
     #              velocity=[10, 0, 0, 1, 1, 1],
@@ -83,8 +95,7 @@ with MechanicsHdf5Runner() as io:
     # the ground object made with the ground shape. As the mass is
     # not given, it is a static object only involved in contact
     # detection.
-    io.add_object('ground', [Contactor('Ground')],
-                  translation=[50, 50, 0])
+    io.add_object("ground", [Contactor("Ground")], translation=[50, 50, 0])
     # io.add_object('left', [Contactor('Left')],
     #              translation=[0, 50., 25.])
     # io.add_object('right', [Contactor('Right')],
@@ -100,38 +111,39 @@ options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-4
 
-test=True
+test = True
 if test:
     nstep = 100
 else:
     nstep = 2000
 
 step = 0.005
-with MechanicsHdf5Runner(mode='r+') as io:
+with MechanicsHdf5Runner(mode="r+") as io:
 
     # By default earth gravity is applied and the units are those
     # of the International System of Units.
     # Because of fixed collision margins used in the collision detection,
     # sizes of small objects may need to be expressed in cm or mm.
-    io.run(with_timer=False,
-           time_stepping=sk.TimeSteppingDirectProjection,
-           osi=sk.MoreauJeanDirectProjectionOSI,
-           body_class=None,
-           shape_class=None,
-           face_class=None,
-           edge_class=None,
-           gravity_scale=1,
-           bullet_options=bullet_options,
-           t0=0,
-           T=nstep*step,
-           h=step,
-           theta=0.50001,
-           Newton_max_iter=1,
-           set_external_forces=None,
-           solver_options=options,
-           numerics_verbose=False,
-           output_frequency=1,
-           projection_itermax=5,
-           projection_tolerance=1e-8,
-           projection_tolerance_unilateral=1e-8,
+    io.run(
+        with_timer=False,
+        time_stepping=siconos.simulation.TimeSteppingDirectProjection,
+        osi=siconos.integrators.MoreauJeanDirectProjectionOSI,
+        body_class=None,
+        shape_class=None,
+        face_class=None,
+        edge_class=None,
+        gravity_scale=1,
+        bullet_options=bullet_options,
+        t0=0,
+        T=nstep * step,
+        h=step,
+        theta=0.50001,
+        Newton_max_iter=1,
+        set_external_forces=None,
+        solver_options=options,
+        numerics_verbose=False,
+        output_frequency=1,
+        projection_itermax=5,
+        projection_tolerance=1e-8,
+        projection_tolerance_unilateral=1e-8,
     )

@@ -40,8 +40,8 @@ int main(int argc, char* argv[]) {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    int nDofBall = 1;  // degrees of freedom of ball 1
-    double Height = 0.05;       // Distance between impactor balls and monodisperse balls
+    int nDofBall = 1;      // degrees of freedom of ball 1
+    double Height = 0.05;  // Distance between impactor balls and monodisperse balls
     // Balls in the tapered chain
     unsigned int NumberBalls = 10;  // Number
     double R_base_taper = 0.005;    // Base radii of the tapered chain
@@ -166,8 +166,8 @@ int main(int argc, char* argv[]) {
       q0Ball[id](0) = InitPosBalls(id);
 
       VecOfallDS[id] = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
-          q0Ball[id], vel0Ball[id], MassBall[id]);
-      VecOfallDS[id]->setConstantFext(FextBall[id]);
+          q0Ball[id], vel0Ball[id], MassBall[id], siconos::algebra::alias_t);
+      VecOfallDS[id]->setConstantFext(FextBall[id], siconos::algebra::alias_t);
       BallChain->insertDynamicalSystem(VecOfallDS[id]);
     }
     // --------------------

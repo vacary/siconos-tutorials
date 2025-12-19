@@ -80,8 +80,8 @@ init_state = np.array([Vinit, 0], dtype=np.float64)
 A = np.zeros((2, 2), dtype=np.float64, order="F")
 A.flat[...] = [0.0, -1.0 / Cvalue, 1.0 / Lvalue, 0.0]
 
-LSDiodeBridge = sm.FirstOrderLinearDS(init_state)
-LSDiodeBridge.setConstantA(A)
+LSDiodeBridge = sm.FirstOrderLinearDS(init_state, sm.alias_t)
+LSDiodeBridge.setConstantA(A, sm.alias_t)
 
 #
 # Interactions

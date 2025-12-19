@@ -37,8 +37,10 @@ theta = 0.5  # theta scheme
 #
 # dynamical system
 #
-initial_position = np.asarray([0, 0, 0, 1.0, 0, 0, 0])  # initial configuration
-initial_twist = np.zeros(6)
+# initial configuration
+initial_position = np.zeros(7, dtype=np.float64)
+initial_position[3] = 1.0
+initial_twist = np.zeros(6, dtype=np.float64)
 inertia = np.zeros((3, 3), dtype=np.float64, order="F")
 inertia[0, 0] = 5.0
 inertia[1, 1] = 10.0
@@ -55,7 +57,10 @@ def compute_mext(time, mExt):
         mExt[1] = 1.0 / (5.0 * h)
 
 
-unstableRotation = sm.NewtonEulerDS(initial_position, initial_twist, mass, inertia)
+unstableRotation = sm.NewtonEulerDS(
+    initial_position, initial_twist, mass, inertia, sm.alias_t
+)
+
 unstableRotation.setComputeMextFunction(compute_mext)
 unstableRotation.setIsMextExpressedInInertialFrame(True)
 
@@ -93,7 +98,11 @@ def compute_mint(twist, pos, time, mint):
 
 
 heavytop = sm.NewtonEulerDS(
-    initial_position_heavy_top, initial_twist_heavy_top, mass_heavytop, inertia_heavytop
+    initial_position_heavy_top,
+    initial_twist_heavy_top,
+    mass_heavytop,
+    inertia_heavytop,
+    sm.alias_t,
 )
 heavytop.setComputeJacobianMintOver_q_byFD(True)
 

@@ -74,12 +74,13 @@ int main(int argc, char *argv[]) {
     q03(5) = V1(1) * sin(angle / 2);
     q03(6) = V1(2) * sin(angle / 2);
 
-    auto bouncingbeam = std::make_shared<siconos::modeling::NewtonEulerDS>(q03, v03, m, I3);
+    auto bouncingbeam = std::make_shared<siconos::modeling::NewtonEulerDS>(
+        q03, v03, m, I3, siconos::algebra::alias_t);
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
     weight(2) = -m * g;
-    bouncingbeam->setConstantFext(weight);
+    bouncingbeam->setConstantFext(weight, siconos::algebra::alias_t);
 
     // --------------------
     // --- Interactions ---

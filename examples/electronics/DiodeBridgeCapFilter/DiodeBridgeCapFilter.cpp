@@ -77,23 +77,23 @@ int main(int argc, char* argv[]) {
     init_stateLS1 << VinitLS1, 0.;
 
     auto LS1DiodeBridgeCapFilter =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS1);
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS1, siconos::algebra::alias_t);
     Matrix LS1_A{2, 2};
     LS1_A.setZero();
     LS1_A(0, 1) = -1.0 / Cvalue;
     LS1_A(1, 0) = 1.0 / Lvalue;
 
-    LS1DiodeBridgeCapFilter->setConstantA(LS1_A);
+    LS1DiodeBridgeCapFilter->setConstantA(LS1_A, siconos::algebra::alias_t);
     LS1DiodeBridgeCapFilter->display();
 
     // --- Linear system 2 (load and filter) specification ---
     Vector init_stateLS2{1};
     init_stateLS2 << VinitLS2;
     auto LS2DiodeBridgeCapFilter =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS2);
+        std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_stateLS2, siconos::algebra::alias_t);
     Matrix LS2_A{1, 1};
     LS2_A(0, 0) = -1.0 / (Rvalue * Cfilt);
-    LS2DiodeBridgeCapFilter->setConstantA(LS2_A);
+    LS2DiodeBridgeCapFilter->setConstantA(LS2_A, siconos::algebra::alias_t);
 
     // --- Interaction between linear systems and non smooth system ---
     Matrix int_C{4, 3};

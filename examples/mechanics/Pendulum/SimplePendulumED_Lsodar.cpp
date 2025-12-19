@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
   try {
     // ================= Creation of the model =======================
     // User-defined main parameters
-    int nDof = 2;                      // degrees of freedom for robot arm
+    int nDof = 2;                               // degrees of freedom for robot arm
     double t0 = 0;                              // initial computation time
     double T = 10.0;                            // final computation time
     double h = 0.01;                            // time step
@@ -66,13 +66,13 @@ int main(int argc, char* argv[]) {
 
     mass(0, 0) = m;
     mass(1, 1) = m;
-    auto simplependulum =
-        std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
+    auto simplependulum = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
+        q0, v0, mass, siconos::algebra::alias_t);
 
     Vector ForceExtern{nDof};
     ForceExtern.setZero();
     ForceExtern(1) = m * gravity;
-    simplependulum->setConstantFext(ForceExtern);
+    simplependulum->setConstantFext(ForceExtern, siconos::algebra::alias_t);
 
     // -------------------
     // --- Interactions---

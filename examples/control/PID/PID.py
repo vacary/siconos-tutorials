@@ -18,20 +18,24 @@
 # limitations under the License.
 #
 
-import siconos.kernel as sk
+import siconos.modeling as sm
 from siconos.control.simulation import ControlManager
 from siconos.control.sensor import LinearSensor
 from siconos.control.controller import PID
+import siconos.integrators
+import siconos.nonsmooth_formulations
+import siconos.simulation
 
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 from matplotlib.pyplot import subplot, title, plot, grid, savefig
 from numpy import array, eye, empty, zeros, savetxt
 from math import ceil
 from numpy.linalg import norm
 
 # variable declaration
-t0 = 0.0   # start time
+t0 = 0.0  # start time
 T = 100.0  # end time
 h = 0.05  # time step
 xFinal = 0.0  # target position
@@ -43,22 +47,22 @@ outputSize = 5  # number of variable to store at each time step
 A = zeros((2, 2))
 A[0, 1] = 1
 B = [[0], [1]]
-x0 = [10., 10.]
-C = [[1., 0]]  # we have to specify ndmin=2, so it's understood as
-K = [.25, .125, 2]
+x0 = [10.0, 10.0]
+C = [[1.0, 0]]  # we have to specify ndmin=2, so it's understood as
+K = [0.25, 0.125, 2]
 
 # Declaration of the Dynamical System
-doubleIntegrator = sk.FirstOrderLinearDS(x0, A)
+doubleIntegrator = sm.FirstOrderLinearDS(x0, A)
 # Model
-process = sk.NonSmoothDynamicalSystem(t0, T)
+process = sm.NonSmoothDynamicalSystem(t0, T)
 process.insertDynamicalSystem(doubleIntegrator)
 # Declaration of the integrator
-OSI = sk.EulerMoreauOSI(theta)
+OSI = siconos.integrators.EulerMoreauOSI(theta)
 # time discretisation
-t = sk.TimeDiscretisation(t0, h)
-tSensor = sk.TimeDiscretisation(t0, h)
-tActuator = sk.TimeDiscretisation(t0, h)
-s = sk.TimeStepping(process, t, 0)
+t = siconos.simulation.TimeDiscretisation(t0, h)
+tSensor = siconos.simulation.TimeDiscretisation(t0, h)
+tActuator = siconos.simulation.TimeDiscretisation(t0, h)
+s = siconos.simulation.TimeStepping(process, t, 0)
 s.insertIntegrator(OSI)
 
 # Actuator, Sensor & ControlManager
@@ -75,7 +79,7 @@ act.setRef(xFinal)
 act.setK(K)
 act.setDeltaT(h)
 # This is not working right now
-#eventsManager = s.eventsManager()
+# eventsManager = s.eventsManager()
 
 # Matrix for data storage
 dataPlot = zeros((3 * N + 3, outputSize))
@@ -88,9 +92,9 @@ if doubleIntegrator.b() is not None:
 
 # Main loop
 k = 1
-while(s.hasNextEvent()):
-    #print("iteration k", k)
-    if (s.eventsManager().nextEvent() == 1):
+while s.hasNextEvent():
+    # print("iteration k", k)
+    if s.eventsManager().nextEvent() == 1:
         s.computeOneStep()
         dataPlot[k, 0] = s.nextTime()
         dataPlot[k, 1] = doubleIntegrator.x()[0]
@@ -101,19 +105,19 @@ while(s.hasNextEvent()):
         k += 1
     s.nextStep()
 # Save to disk
-savetxt('output.txt', dataPlot)
+savetxt("output.txt", dataPlot)
 # Plot interesting data
 subplot(211)
-title('position')
+title("position")
 plot(dataPlot[:, 0], dataPlot[:, 1])
 grid()
 subplot(212)
-title('velocity')
+title("velocity")
 plot(dataPlot[:, 0], dataPlot[:, 2])
 grid()
 savefig("pid.png")
 # TODO
 # compare with the reference
-#ref = getMatrix(SiconosMatrix("result.ref"))
-#if (norm(dataPlot - ref[1:,:]) > 1e-12):
+# ref = getMatrix(SiconosMatrix("result.ref"))
+# if (norm(dataPlot - ref[1:,:]) > 1e-12):
 #    print("Warning. The result is rather different from the reference file.")

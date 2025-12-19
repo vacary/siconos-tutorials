@@ -223,7 +223,7 @@ int main(int argc, char* argv[]) {
 #ifdef SICONOS_DEBUG
       std::std::cout << "-> Running step:" << k << "\n";
 #endif
-//      aR->display();
+      //      aR->display();
 
       cmp++;
       aS->advanceToEvent();

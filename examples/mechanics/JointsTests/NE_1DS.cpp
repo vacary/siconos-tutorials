@@ -82,12 +82,12 @@ int main(int argc, char *argv[]) {
     q10(6) = V1(2) * sin(angle / 2);
 
     // -- The dynamical system --
-    auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1);
+    auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1, siconos::algebra::alias_t);
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
     weight(2) = -m * g;
-    beam1->setConstantFext(weight);
+    beam1->setConstantFext(weight, siconos::algebra::alias_t);
 
     // -------------
     // --- Model ---

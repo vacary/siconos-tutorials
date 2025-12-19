@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     // -------------------------
     std::cout << "====> Model loading ...\n\n";
 
-    auto slider = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
+    auto slider = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, siconos::algebra::alias_t);
     slider->setComputeMassFunction(
         [](const Eigen::Ref<const siconos::algebra::SiconosVector> &q,
            Eigen::Ref<siconos::algebra::MapType> mass) {

@@ -63,8 +63,8 @@ int main(int argc, char* argv[]) {
     auto x0 = std::make_shared<Vector>(ndof);
     (*x0)(0) = Vinit;
     (*x0)(1) = Vinit;
-    auto doubleIntegrator = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
-    doubleIntegrator->setConstantA(*A);
+    auto doubleIntegrator = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, siconos::algebra::alias_t);
+    doubleIntegrator->setConstantA(*A, siconos::algebra::alias_t);
     // --------------------
     // --- Interactions ---
     // --------------------

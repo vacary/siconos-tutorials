@@ -55,8 +55,8 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
     //(*_Pc2)(1) = (*data[q0])(1);
     //(*_Pc2)(2) = (*data[q0])(2);
     // printf("my_NewtonEulerR N, Pc\n");
-    //siconos::algebra::print(*_Nc);
-    //siconos::algebra::print(*_Pc1);
+    // siconos::algebra::print(*_Nc);
+    // siconos::algebra::print(*_Pc1);
   }
 };
 
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    int nDof = 3;       // degrees of freedom for the ball
+    int nDof = 3;                // degrees of freedom for the ball
     unsigned int qDim = 7;       // degrees of freedom for the ball
     unsigned int nDim = 6;       // degrees of freedom for the ball
     double t0 = 0;               // initial computation time
@@ -101,13 +101,14 @@ int main(int argc, char* argv[]) {
     v0(3) = omega_initx;
     v0(5) = omega_initz;
     // -- The dynamical system --
-    auto ball = std::make_shared<siconos::modeling::NewtonEulerDS>(q0, v0, m, I);
+    auto ball = std::make_shared<siconos::modeling::NewtonEulerDS>(q0, v0, m, I,
+                                                                   siconos::algebra::alias_t);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
     weight(0) = -m * g;
-    ball->setConstantFext(weight);
+    ball->setConstantFext(weight, siconos::algebra::alias_t);
 
     // --------------------
     // --- Interactions ---

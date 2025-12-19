@@ -87,7 +87,7 @@ int main() {
     Vector FExt{3};
     FExt.setZero();
     FExt(2) = -g * body->scalarMass();
-    body->setConstantFext(FExt);
+    body->setConstantFext(FExt, siconos::algebra::alias_t);
 
     // -- Add the dynamical system in the non smooth dynamical system
     model->insertDynamicalSystem(body);

@@ -66,8 +66,8 @@ int main(int argc, char* argv[]) {
   (*x0)(1) = velocity_init;
 
   // -- The dynamical system --
-  auto doubleIntegrator = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
-  doubleIntegrator->setConstantA(*A);
+  auto doubleIntegrator = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, siconos::algebra::alias_t);
+  doubleIntegrator->setConstantA(*A, siconos::algebra::alias_t);
   // -------------
   // --- Model ---
   // -------------

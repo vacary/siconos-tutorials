@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # A tippe-top with Coulomb friction only & JeanMoreau time stepping.
 
 from siconos.mechanics.collision.tools import Contactor
@@ -27,13 +25,13 @@ from matplotlib import pyplot as plt
 # different results as the divergence or deadening was weakened."
 
 mu = 0.3
-m = 6*1e-3     # kg
-r1 = 1.5       # cm
-r2 = 0.5       # cm
-a1 = 0.3       # cm
-a2 = 1.6       # cm
-I1 = 8*1e-3    # kg . cm^2
-I3 = 7*1e-3    # kg . cm^2
+m = 6 * 1e-3  # kg
+r1 = 1.5  # cm
+r2 = 0.5  # cm
+a1 = 0.3  # cm
+a2 = 1.6  # cm
+I1 = 8 * 1e-3  # kg . cm^2
+I3 = 7 * 1e-3  # kg . cm^2
 
 # Bullet: do not generate extra contact points for convex pairs by
 # rotational purterbation method.
@@ -43,45 +41,53 @@ bullet_options.minimumPointsPerturbationThreshold = 0
 
 with MechanicsHdf5Runner() as io:
 
-    io.add_primitive_shape('Body1', 'Sphere', (r1,))
-    io.add_primitive_shape('Body2', 'Cylinder', (r2, a2))
-    io.add_primitive_shape('Body3', 'Sphere', (r2,))
-    io.add_primitive_shape('Ground', 'Box', (100, 100, .5))
+    io.add_primitive_shape("Body1", "Sphere", (r1,))
+    io.add_primitive_shape("Body2", "Cylinder", (r2, a2))
+    io.add_primitive_shape("Body3", "Sphere", (r2,))
+    io.add_primitive_shape("Ground", "Box", (100, 100, 0.5))
 
-    io.add_Newton_impact_friction_nsl('contact', mu=mu)
-    io.add_object('ground', [Contactor('Ground')], translation=[0, 0, 0])
+    io.add_Newton_impact_friction_nsl("contact", mu=mu)
+    io.add_object("ground", [Contactor("Ground")], translation=[0, 0, 0])
 
-    io.add_object('tippe-top', [Contactor('Body1',
-                                          relative_translation=[0, 0, a1]),
-                                Contactor('Body2',
-                                          relative_orientation=([1, 0, 0],
-                                                                pi/2),
-                                          relative_translation=[0, 0, a2/2.]),
-                                Contactor('Body3',
-                                          relative_orientation=([1, 0, 0],
-                                                                pi/2),
-                                          relative_translation=[0, 0, a2])],
-                  # we need to avoid contact at first step, so we let the top
-                  # fall. This is not what is done in Leine & Glocker.
-                  translation=[0, 0, r1-a1 + r1-a1],
-                  orientation=([0, 1, 0], 0.1),
-                  velocity=[0, 0, 0, .0, .0, 180],
-                  mass=m)
+    io.add_object(
+        "tippe-top",
+        [
+            Contactor("Body1", relative_translation=[0, 0, a1]),
+            Contactor(
+                "Body2",
+                relative_orientation=([1, 0, 0], pi / 2),
+                relative_translation=[0, 0, a2 / 2.0],
+            ),
+            Contactor(
+                "Body3",
+                relative_orientation=([1, 0, 0], pi / 2),
+                relative_translation=[0, 0, a2],
+            ),
+        ],
+        # we need to avoid contact at first step, so we let the top
+        # fall. This is not what is done in Leine & Glocker.
+        translation=[0, 0, r1 - a1 + r1 - a1],
+        orientation=([0, 1, 0], 0.1),
+        velocity=[0, 0, 0, 0.0, 0.0, 180],
+        mass=m,
+    )
 
-test =True
+test = True
 if test:
-    T=0.2
+    T = 0.2
 else:
-    T=20.
+    T = 20.0
 
-with MechanicsHdf5Runner(mode='r+') as io:
+with MechanicsHdf5Runner(mode="r+") as io:
 
-    io.run(with_timer=True,
-           bullet_options=bullet_options,
-           t0=0,
-           T=T,
-           h=0.0001,
-           Newton_max_iter=20)
+    io.run(
+        with_timer=True,
+        bullet_options=bullet_options,
+        t0=0,
+        T=T,
+        h=0.0001,
+        Newton_max_iter=20,
+    )
 
     # plot of theta Euler angle.
     # to be compared with fig 12

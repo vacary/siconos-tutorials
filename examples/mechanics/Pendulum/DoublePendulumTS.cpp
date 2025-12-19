@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
     q0(1) = 0.2;
 
     /*REGULAR PLUGINS - uncomment to use*/
-    auto doublependulum = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
+    auto doublependulum = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, siconos::algebra::alias_t);
     doublependulum->setComputeMassFunction(
         [](const Eigen::Ref<const siconos::algebra::SiconosVector> &q,
            Eigen::Ref<siconos::algebra::MapType> mass) {

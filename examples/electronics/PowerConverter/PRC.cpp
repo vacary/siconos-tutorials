@@ -17,7 +17,6 @@
  */
 #include <SiconosKernel.hpp>
 #include <chrono>
-#include <string>
 
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
@@ -61,8 +60,9 @@ int main(int argc, char* argv[]) {
     (*LS_A)(3, 2) = 1.0 / Cfvalue;
     (*LS_A)(3, 3) = -1.0 / (Rvalue * Cfvalue);
 
-    auto LSPRC = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state);
-    LSPRC->setConstantA(*LS_A);
+    auto LSPRC = std::make_shared<siconos::modeling::FirstOrderLinearDS>(
+        *init_state, siconos::algebra::alias_t);
+    LSPRC->setConstantA(*LS_A, siconos::algebra::alias_t);
 
     auto z = 1.0 / Lrvalue;
     LSPRC->setComputebVectorFunction(

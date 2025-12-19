@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight(1) = -m * g;
-    stick->setConstantFext(weight);
+    stick->setConstantFext(weight, siconos::algebra::alias_t);
 
     // --------------------
     // --- Interactions ---

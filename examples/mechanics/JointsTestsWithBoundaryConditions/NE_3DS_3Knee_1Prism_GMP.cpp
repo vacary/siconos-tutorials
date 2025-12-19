@@ -86,12 +86,12 @@ int main(int argc, char *argv[]) {
     q10(6) = V1(2) * sin(angle * 0.5);
 
     // -- The dynamical system --
-    auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1);
+    auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1, siconos::algebra::alias_t);
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
     weight(2) = -m * g;
-    beam1->setConstantFext(weight);
+    beam1->setConstantFext(weight, siconos::algebra::alias_t);
 
     // second DS
     Vector q02{qDim};
@@ -110,9 +110,9 @@ int main(int argc, char *argv[]) {
     q02(5) = V1(1) * sin(angle / 2);
     q02(6) = V1(2) * sin(angle / 2);
 
-    auto beam2 = std::make_shared<siconos::modeling::NewtonEulerDS>(q02, v02, m, I2);
+    auto beam2 = std::make_shared<siconos::modeling::NewtonEulerDS>(q02, v02, m, I2, siconos::algebra::alias_t);
     // -- Set external forces (weight) --
-    beam2->setConstantFext(weight);
+    beam2->setConstantFext(weight, siconos::algebra::alias_t);
 
     Vector q03{qDim};
     Vector v03{nDim};
@@ -129,9 +129,9 @@ int main(int argc, char *argv[]) {
     q03(5) = V1(1) * sin(angle / 2);
     q03(6) = V1(2) * sin(angle / 2);
 
-    auto beam3 = std::make_shared<siconos::modeling::NewtonEulerDS>(q03, v03, m, I3);
+    auto beam3 = std::make_shared<siconos::modeling::NewtonEulerDS>(q03, v03, m, I3, siconos::algebra::alias_t);
     // -- Set external forces (weight) --
-    beam3->setConstantFext(weight);
+    beam3->setConstantFext(weight, siconos::algebra::alias_t);
     // --------------------
     // --- Interactions ---
     // --------------------

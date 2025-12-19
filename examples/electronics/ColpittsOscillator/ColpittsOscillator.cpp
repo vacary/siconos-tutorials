@@ -70,8 +70,8 @@ int main(int argc, char* argv[]) {
     (*LS_b)(1) = 1.0 / C2 * (VCC / Rc - VEE / Re);
     (*LS_b)(2) = VCC / L;
 
-    auto LSCollpitts =
-        std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state, *LS_A, *LS_b);
+    auto LSCollpitts = std::make_shared<siconos::modeling::FirstOrderLinearDS>(
+        *init_state, *LS_A, *LS_b, siconos::algebra::alias_t);
 
     // --- Interaction between linear system and non smooth system ---
     auto Int_C = std::make_shared<Matrix>(2, 3);
@@ -212,8 +212,10 @@ int main(int argc, char* argv[]) {
                                 siconos::algebra::io::WriteType::nodim);
 
     // double error = 0.0, eps = 1e-12;
-    // if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts.ref", eps)) > eps) {
-    //   if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts-sol2.ref", eps)) >
+    // if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts.ref", eps)) > eps)
+    // {
+    //   if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Colpitts-sol2.ref", eps))
+    //   >
     //       eps)
     //     return 1;
     // }

@@ -40,8 +40,8 @@ int main(int argc, char* argv[]) {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    int nDofBall = 1;  // degrees of freedom of ball 1
-    double Height = 0.2;        // Distance between impactor balls and monodisperse balls
+    int nDofBall = 1;     // degrees of freedom of ball 1
+    double Height = 0.2;  // Distance between impactor balls and monodisperse balls
     double V_impact = 1.0;
     // Balls in the tapered chain
     unsigned int NumberBalls = 10;  // Number
@@ -165,9 +165,7 @@ int main(int argc, char* argv[]) {
       Vector FextBall{nDofBall};
       FextBall.setZero();
       FextBall(0) = -_massBall * g;
-      ball->setConstantFext(FextBall);
-
-
+      ball->setConstantFext(FextBall, siconos::algebra::alias_t);
 
       //
       VecOfallDS.push_back(ball);

@@ -110,13 +110,13 @@ int main(int argc, char* argv[]) {
     v0(2) = rotation_init;
 
     // -- The dynamical system --
-    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
+    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass, siconos::algebra::alias_t);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
     weight(0) = -m * g;
-    ball->setConstantFext(weight);
+    ball->setConstantFext(weight, siconos::algebra::alias_t);
 
     // --------------------
     // --- Interactions ---

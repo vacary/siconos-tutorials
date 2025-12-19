@@ -2,7 +2,7 @@
 
 from siconos.io.mechanics_run import MechanicsHdf5Runner
 import siconos.numerics as sn
-import siconos.kernel as sk
+import siconos.modeling as sm
 
 # Run the simulation from the inputs previously defined and add
 # results to the hdf5 file. The visualisation of the output may be done

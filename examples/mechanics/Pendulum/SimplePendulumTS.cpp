@@ -62,10 +62,10 @@ int main(int argc, char *argv[]) {
     v0.setZero();
     q0(0) = 1;
 
-    auto simplependulum = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0);
+    auto simplependulum = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, siconos::algebra::alias_t);
     Matrix mass{nDof, nDof};
     mass(0, 0) = m1 * l1;
-    simplependulum->setConstantMassAlias(mass);
+    simplependulum->setConstantMass(mass, siconos::algebra::alias_t);
 
     simplependulum->setComputeFintFunction(
         [](const Eigen::Ref<const siconos::algebra::SiconosVector> &v,

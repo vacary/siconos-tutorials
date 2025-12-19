@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
   // --- Dynamical system creation ---
   auto init_stateLS = std::make_shared<Vector>(SIZEX);
   auto LSBuckConverter =
-      std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_stateLS);
+      std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_stateLS, siconos::algebra::alias_t);
 
   Matrix LS_A{SIZEX, SIZEX};
   LS_A.setZero();
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
   LS_A(4, 3) = AmpliGain / (alpha * R21 * tauAmpli);
   LS_A(4, 4) = -((AmpliGain / (alpha * R21)) + 1.0) / tauAmpli;
 
-  LSBuckConverter->setConstantA(LS_A);
+  LSBuckConverter->setConstantA(LS_A, siconos::algebra::alias_t);
 
   //     SiconosVector LS_b(SIZEX);
   //     LS_b(1) = -VthDN/L;

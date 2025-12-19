@@ -4,6 +4,7 @@ import siconos.integrators
 import siconos.simulation
 import siconos.nonsmooth_formulations
 import matplotlib.pyplot as plt
+from scipy.sparse import csc_array
 
 
 # User-defined main parameters
@@ -26,33 +27,33 @@ rho = 7800.0  # specific mass
 g = 9.81  # Gravity
 g = 0.0
 
-mass = np.zeros((ndof, ndof), dtype=np.float64, order="F")
-stiffness = np.zeros((ndof, ndof), dtype=np.float64, order="F")
 
-stiffness[0, 0] = 1.0 * E * S / elem_length
-stiffness[0, 1] = -1.0 * E * S / elem_length
-mass[0, 0] = 1 / 3.0 * rho * S * elem_length
-mass[0, 1] = 1 / 6.0 * rho * S * elem_length
+# mass= SiconosMatrix(ndof,ndof,SPARSE,ndof)
+# stiffness= SiconosMatrix(ndof,ndof,SPARSE,ndof)
+nnz = 2 * (ndof - 1) + ndof
+diag = 2.0 / 3.0 * rho * S * elem_length * np.ones(ndof, dtype=np.float64)
+diag[0] *= 0.5
+diag[-1] *= 0.5
+upper = 1.0 / 6.0 * rho * S * elem_length * np.ones(ndof - 1, dtype=np.float64)
+mass = csc_array((ndof, ndof), dtype=np.float64)
+mass.setdiag(diag)
+mass.setdiag(upper, 1)
+mass.setdiag(upper, -1)
 
-for i in range(1, ndof - 1):
-    stiffness[i, i] = 2.0 * E * S / elem_length
-    stiffness[i, i - 1] = -1.0 * E * S / elem_length
-    stiffness[i, i + 1] = -1.0 * E * S / elem_length
-    mass[i, i] = 2 / 3.0 * rho * S * elem_length
-    mass[i, i - 1] = 1 / 6.0 * rho * S * elem_length
-    mass[i, i + 1] = 1 / 6.0 * rho * S * elem_length
-
-
-stiffness[ndof - 1, ndof - 2] = -1.0 * E * S / elem_length
-stiffness[ndof - 1, ndof - 1] = 1.0 * E * S / elem_length
-mass[ndof - 1, ndof - 2] = 1 / 6.0 * rho * S * elem_length
-mass[ndof - 1, ndof - 1] = 1 / 3.0 * rho * S * elem_length
-
+diag = 2.0 * E * S / elem_length * np.ones(ndof, dtype=np.float64)
+diag[0] *= 0.5
+diag[-1] *= 0.5
+upper = -E * S / elem_length * np.ones(ndof - 1, dtype=np.float64)
+stiffness = csc_array((ndof, ndof), dtype=np.float64)
+stiffness.setdiag(diag)
+stiffness.setdiag(upper, 1)
+stiffness.setdiag(upper, -1)
 
 q0 = np.full((ndof), position_init)
 v0 = np.full((ndof), velocity_init)
 
-bar = sm.LagrangianLinearTIDS(q0, v0, mass, sm.alias_t)
+bar = sm.LagrangianSparseLinearTIDS(q0, v0, sm.alias_t)
+bar.setConstantMass(mass, sm.alias_t)
 bar.setStiffnessMatrix(stiffness, sm.alias_t)
 # bar.display()
 
@@ -144,6 +145,7 @@ while k < N:
 
 ref = np.loadtxt("ImpactingBar.ref", skiprows=1)
 assert np.allclose(ref, dataPlot)
+
 
 fig_size = [14, 14]
 plt.rcParams["figure.figsize"] = fig_size

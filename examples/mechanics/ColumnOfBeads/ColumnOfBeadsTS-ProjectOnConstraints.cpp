@@ -76,9 +76,9 @@ int withLevel(unsigned int mylevel) {
 
     std::vector<std::shared_ptr<siconos::modeling::LagrangianLinearTIDS>> beads(nBeads);
     for (unsigned int i = 0; i < nBeads; i++) {
-      beads[i] = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0[i], v0[i], mass);
+      beads[i] = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0[i], v0[i], mass, siconos::algebra::alias_t);
       // -- Set external forces (weight) --
-      beads[i]->setConstantFext(weight);
+      beads[i]->setConstantFext(weight, siconos::algebra::alias_t);
     }
 
     // --------------------

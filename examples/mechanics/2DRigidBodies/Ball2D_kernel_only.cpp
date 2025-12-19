@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    int nDof = 3;       // degrees of freedom for the ball
+    int nDof = 3;                // degrees of freedom for the ball
     double t0 = 0;               // initial computation time
     double T = 10;               // final computation time
     double h = 0.005;            // time step
@@ -59,21 +59,23 @@ int main(int argc, char* argv[]) {
     v0(0) = velocity_init;
 
     // -- The dynamical system --
-    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
+    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
+        q0, v0, mass, siconos::algebra::alias_t);
 
     Vector q01{nDof};
     Vector v01{nDof};
     q01(0) = position_init + 2 * R + 0.1;
     v01(0) = velocity_init;
 
-    auto ball1 = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q01, v01, mass);
+    auto ball1 = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
+        q01, v01, mass, siconos::algebra::alias_t);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
     weight(0) = -m * g;
-    ball->setConstantFext(weight);
-    ball1->setConstantFext(weight);
+    ball->setConstantFext(weight, siconos::algebra::alias_t);
+    ball1->setConstantFext(weight, siconos::algebra::alias_t);
     // --------------------
     // --- Interactions ---
     // --------------------

@@ -453,7 +453,7 @@ n_step = 2000
 options = sn.solver_options_create(sn.solver_ids.SICONOS_GENERIC_MECHANICAL_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 10000
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-4
-sk.solver_options_update_internal(
+sn.solver_options_update_internal(
     options, 1, sn.solver_ids.SICONOS_FRICTION_3D_ONECONTACT_NSN
 )
 

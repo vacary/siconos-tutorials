@@ -32,10 +32,9 @@
 
 #include "UserDefinedParameter.hpp"
 
-#define TS_VELOCITY_LEVEL
 using namespace std;
 namespace user =
-    user_defined;  // To choose the set of parameters used in the current simulation
+    user_defined_ref;  // To choose the set of parameters used in the current simulation
 
 // #define TS_PROJ
 // #define TS_COMBINED
@@ -76,18 +75,11 @@ int main(int argc, char* argv[]) {
     stiffnessMatrix.insert(ndof - 1, ndof - 2) = -1.0;
     stiffnessMatrix.insert(ndof - 1, ndof - 1) = 1.0;
 
-    // Matrix dampingMatrix{ndof, ndof};
-    // dampingMatrix.setZero();
-    // auto SparseDamping = std::make_shared<Matrix>(*SparseStiffness);
-
     massMatrix *= user::rho * user::S * l;
     stiffnessMatrix *= user::E * user::S / l;
+
     massMatrix.makeCompressed();
     stiffnessMatrix.makeCompressed();
-
-    double xsi = 1000.0;
-    std::cout << "xsi:" << xsi * user::S / l << "\n";
-    // dampingMatrix *= xsi * user::S / l;
 
     // -- Initial positions and velocities --
     siconos::algebra::SiconosVector q0{ndof};
@@ -109,7 +101,6 @@ int main(int argc, char* argv[]) {
         stiffnessMatrix.nonZeros(),      stiffnessMatrix.outerIndexPtr(),
         stiffnessMatrix.innerIndexPtr(), stiffnessMatrix.valuePtr()};
     bar->setStiffnessMatrix(mapK, siconos::algebra::alias_t);
-    //    bar->setDampingMatrix(dampingMatrix);
 
     // -- Set external forces (weight) --
     siconos::algebra::SiconosVector weight{ndof};
@@ -150,15 +141,21 @@ int main(int argc, char* argv[]) {
     // ------------------
 
     // -- (1) OneStepIntegrators --
-
-#ifdef TS_VELOCITY_LEVEL
-    auto OSI = std::make_shared<siconos::integrators::D1MinusLinearOSI>(
-        siconos::integrators::D1MinusLinearOSI::Type::halfexplicit_velocity_level);
-
+#ifdef TS_PROJ
+    auto OSI =
+        std::make_shared<siconos::integrators::MoreauJeanDirectProjectionOSI>(user::theta);
+    OSI->setDeactivateYPosThreshold(1e-05);
+    OSI->setDeactivateYVelThreshold(0.0);
+    OSI->setActivateYPosThreshold(1e-09);
+    OSI->setActivateYVelThreshold(100.0);
 #else
-    auto OSI = std::make_shared<siconos::integrators::D1MinusLinearOSI>();
+#ifdef TS_COMBINED
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanCombinedProjectionOSI>(theta);
+#else
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(user::theta, 0.0);
+    // OSI->setConstraintActivationThreshold(1e-05);
 #endif
-
+#endif
     // -- (2) Time discretisation --
     auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(user::t0, user::h);
 
@@ -166,23 +163,41 @@ int main(int argc, char* argv[]) {
     auto osnspb = std::make_shared<siconos::nonsmooth_formulations::LCP>();
 
     // -- (4) Simulation setup with (1) (2) (3)
-    auto impact = std::make_shared<siconos::nonsmooth_formulations::LCP>();
-    auto force = std::make_shared<siconos::nonsmooth_formulations::LCP>();
+#ifdef TS_PROJ
+    auto position =
+        std::make_shared<siconos::nonsmooth_formulations::MLCPProjectOnConstraints>();
+    auto s = std::make_shared<siconos::simulation::TimeSteppingDirectProjection>(
+        impactingBar, t, OSI, osnspb, position, 0);
+    s->setProjectionMaxIteration(10);
+    s->setConstraintTolUnilateral(1e-10);
+    s->setConstraintTol(1e-10);
 
-    auto s = std::make_shared<siconos::simulation::TimeSteppingD1Minus>(impactingBar, t, 2);
-    s->insertIntegrator(OSI);
-    s->insertNonSmoothProblem(impact, siconos::simulation::SICONOS_OSNSP_TS_VELOCITY);
-    s->insertNonSmoothProblem(force, siconos::simulation::SICONOS_OSNSP_TS_VELOCITY + 1);
+#else
+#ifdef TS_COMBINED
+    auto position =
+        std::make_shared<siconos::nonsmooth_formulations::MLCPProjectOnConstraints>(
+            SICONOS_MLCP_ENUM);
+    auto s = std::make_shared<siconos::simulation::TimeSteppingCombinedProjection>(
+        impactingBar, t, OSI, osnspb, position, 2);
+    s->setProjectionMaxIteration(500);
+    s->setConstraintTolUnilateral(1e-10);
+    s->setConstraintTol(1e-10);
+#else
+    auto s = std::make_shared<siconos::simulation::TimeStepping>(impactingBar, t, OSI, osnspb);
+#endif
+#endif
 
     // =========================== End of model definition ===========================
 
     // ================================= Computation =================================
 
+    // --- Simulation initialization ---
+
     int N = floor((user::T - user::t0) / user::h);  // Number of time steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    unsigned int outputSize = 13;
+    unsigned int outputSize = 12;
     siconos::algebra::SiconosDenseMatrix dataPlot(N, outputSize);
 
     auto q = bar->q_read();
@@ -190,59 +205,51 @@ int main(int argc, char* argv[]) {
     auto p = bar->p_read(1);
     auto lambda = inter->lambda(1);
 
-    auto y = inter->y(0);
-    int k = 0;
-    dataPlot(k, 0) = impactingBar->t0();
-    dataPlot(k, 1) = q(0);
-    dataPlot(k, 2) = v(0);
-    dataPlot(k, 3) = p(0);
-    dataPlot(k, 4) = (*lambda)(0);
-    dataPlot(k, 11) = 0.0; /* not yet initialized (*lambdaminus)(0); // lambda1_{k+1}^- */
-    dataPlot(k, 12) = 0.0;
-
-    dataPlot(k, 7) = q(ndof - 1);
-    dataPlot(k, 8) = v(ndof - 1);
-    dataPlot(k, 9) = q((ndof) / 2);
-    dataPlot(k, 10) = v((ndof) / 2);
+    dataPlot(0, 0) = impactingBar->t0();
+    dataPlot(0, 1) = q(0);
+    dataPlot(0, 2) = v(0);
+    dataPlot(0, 3) = p(0);
+    dataPlot(0, 4) = (*lambda)(0);
+    dataPlot(0, 7) = q(ndof - 1);
+    dataPlot(0, 8) = v(ndof - 1);
+    dataPlot(0, 9) = q((ndof) / 2);
+    dataPlot(0, 10) = v((ndof) / 2);
 
     siconos::algebra::SiconosVector tmp{ndof};
     tmp = stiffnessMatrix * q;
     double potentialEnergy = q.dot(tmp);
     tmp = massMatrix * v;
     double kineticEnergy = v.dot(tmp);
+    double impactEnergy = 0.0;
 
-    dataPlot(k, 5) = potentialEnergy;
-    dataPlot(k, 6) = kineticEnergy;
+    dataPlot(0, 5) = potentialEnergy;
+    dataPlot(0, 6) = kineticEnergy;
+    dataPlot(0, 11) = impactEnergy;
 
     //    std::cout <<"potentialEnergy ="<<potentialEnergy << std::endl;
-    //     std::cout <<"kineticEnergy ="<<kineticEnergy << std::endl;
+    //    std::cout <<"kineticEnergy ="<<kineticEnergy << std::endl;
 
     // --- Time loop ---
     cout << "====> Start computation ... \n\n";
     // ==== Simulation loop - Writing without explicit event handling =====
+    int k = 1;
 
     auto start = std::chrono::system_clock::now();
     //    while (s->nextTime() < T)
-    while ((s->hasNextEvent())) {
+    while (k < N) {
       s->advanceToEvent();
-      //      std::cout << "k = "  << k << std::endl;
+
       //       std::cout << "position"  << std::endl;
       //       siconos::algebra::print(*q);
       //       std::cout << "velocity"  << std::endl;
       //       siconos::algebra::print(*v);
 
       // --- Get values to be plotted ---
-      const auto& lambdaplus = inter->lambdaMemory(2).getSiconosVector(0);
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = q(0);
       dataPlot(k, 2) = v(0);
-      dataPlot(k, 3) = p(0);
+      dataPlot(k, 3) = p(0) / user::h;
       dataPlot(k, 4) = (*lambda)(0);
-
-      dataPlot(k, 11) = (*inter->lambda(2))(0);  // lambda1_{k+1}^-
-      dataPlot(k, 12) = lambdaplus(0);
-      ;
-
       dataPlot(k, 7) = q(ndof - 1);
       dataPlot(k, 8) = v(ndof - 1);
       dataPlot(k, 9) = q((ndof) / 2);
@@ -255,6 +262,10 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 5) = potentialEnergy;
       dataPlot(k, 6) = kineticEnergy;
 
+      double v_p_theta = user::theta * v(0) + (1 - user::theta) * dataPlot(k - 1, 2);
+      impactEnergy = v_p_theta * (*lambda)(0);
+      dataPlot(k, 11) = impactEnergy;
+
       //      std::cout << "q" << std::endl;
       //       siconos::algebra::print(*q);
 
@@ -265,6 +276,12 @@ int main(int argc, char* argv[]) {
 
       k++;
     }
+    double totalImpactEnergy = 0.0;
+    for (int p = 0; p < k; p++) {
+      totalImpactEnergy = totalImpactEnergy + dataPlot(p, 11);
+    }
+    printf("totalImpactEnergy = %e", totalImpactEnergy);
+
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
@@ -272,12 +289,11 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    siconos::algebra::io::write("ImpactingBarD1MinusLinear.dat", dataPlot,
-                                siconos::algebra::io::ASCII_OUT,
+    siconos::algebra::io::write("ImpactingBar.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
-    double error = 0.0, eps = 1e-11;
-    if ((error = siconos::algebra::io::compareRefFile(
-             dataPlot, "ImpactingBarD1MinusLinear.ref", eps)) >= eps)
+    double error = 0.0, eps = 1e-9;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "ImpactingBar.ref", eps)) >=
+        eps)
       return 1;
 
     return 0;

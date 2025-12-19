@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 
     // User-defined main parameters
     unsigned int dsNumber = 1;    // the Follower and the ground
-    int nDof = 1;        // degrees of freedom for the ball
+    int nDof = 1;                 // degrees of freedom for the ball
     double t0 = 0;                // initial computation time
     double T = 1;                 // final computation time
     double h = 0.0001;            // time step
@@ -66,11 +66,12 @@ int main(int argc, char *argv[]) {
     q0(0) = position_init;
     velocity0.setZero();
     velocity0(0) = velocity_init;
-    auto lds = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, velocity0, Mass);
+    auto lds = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
+        q0, velocity0, Mass, siconos::algebra::alias_t);
     Matrix K{nDof, nDof};
     K.setZero();
     K(0, 0) = 1430.8;
-    lds->setStiffnessMatrix(K);
+    lds->setStiffnessMatrix(K, siconos::algebra::alias_t);
     lds->setComputeFextFunction(
         [mass = user_defined::mass, gravity = user_defined::gravity](
             double time, Eigen::Ref<siconos::algebra::MapVectorType> fext) {

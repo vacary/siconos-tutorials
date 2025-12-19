@@ -67,14 +67,14 @@ int main(int argc, char* argv[]) {
     // --- Dynamical system specification ---
     Vector init_state{2};
     init_state << Vinit, 0.;
-    auto LSDiodeBridge = std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_state);
+    auto LSDiodeBridge = std::make_shared<siconos::modeling::FirstOrderLinearDS>(init_state, siconos::algebra::alias_t);
 
     Matrix LS_A{2, 2};
     LS_A.setZero();
     LS_A(0, 1) = -1.0 / Cvalue;
     LS_A(1, 0) = 1.0 / Lvalue;
 
-    LSDiodeBridge->setConstantA(LS_A);
+    LSDiodeBridge->setConstantA(LS_A, siconos::algebra::alias_t);
 
     // --- Interaction between linear system and non smooth system ---
     Matrix int_C{4, 2};

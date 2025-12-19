@@ -19,6 +19,7 @@ import numpy as np
 from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
 import siconos.numerics as sn
+import siconos.modeling as sm
 
 # An example of applying force to the axis of a joint, and applying
 # spring and virtual damping by measuring position and velocity along
@@ -111,8 +112,8 @@ class Ctrl(object):
         # Calculate total torques for each body
         torque1 += -(spring_torque + damping_torque) / 2
         torque2 += +(spring_torque + damping_torque) / 2
-        self.ds1.setConstantMext(torque1)
-        self.ds2.setConstantMext(torque2)
+        self.ds1.setConstantMext(torque1, sm.copy_t)
+        self.ds2.setConstantMext(torque2, sm.copy_t)
 
 
 options = sn.solver_options_create(sn.solver_ids.SICONOS_GENERIC_MECHANICAL_NSGS)
@@ -123,7 +124,7 @@ options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-12
 with MechanicsHdf5Runner(mode="r+") as io:
     io.run(
         t0=0,
-        T=5.,
+        T=5.0,
         h=0.001,
         theta=0.5,
         Newton_max_iter=1,

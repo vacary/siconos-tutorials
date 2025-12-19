@@ -10,7 +10,7 @@ from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
 
 import siconos.numerics as sn
-import siconos.kernel as sk
+import siconos.modeling as sm
 
 
 edge_length = 0.1

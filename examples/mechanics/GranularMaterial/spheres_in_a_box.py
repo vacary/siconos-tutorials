@@ -11,7 +11,7 @@ from siconos.io.mechanics_run import MechanicsHdf5Runner
 from siconos.io.FrictionContactTrace import FrictionContactTraceParams
 
 import siconos.numerics as sn
-import siconos.kernel as sk
+import siconos.modeling as sm
 
 from siconos.mechanics.collision.bullet import SiconosBulletOptions
 from math import pi

@@ -69,9 +69,9 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
     (*_Pc2)(1) = q0(8);
     (*_Pc2)(2) = q0(9);
     // printf("my_NewtonEulerR N, Pc\n");
-    //siconos::algebra::print(*_Nc);
-    //siconos::algebra::print(*_Pc1);
-    //siconos::algebra::print(*_Pc2);
+    // siconos::algebra::print(*_Nc);
+    // siconos::algebra::print(*_Pc1);
+    // siconos::algebra::print(*_Pc2);
     // std::cout <<"my_NewtonEulerR:: computeh ends" << std:: endl;
   }
 };
@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    int nDof = 3;       // degrees of freedom for the ball
+    int nDof = 3;                // degrees of freedom for the ball
     unsigned int qDim = 7;       // degrees of freedom for the ball
     unsigned int nDim = 6;       // degrees of freedom for the ball
     double t0 = 0;               // initial computation time
@@ -118,12 +118,13 @@ int main(int argc, char* argv[]) {
     v0(3) = omega_initx;
     v0(5) = omega_initz;
     // -- The dynamical system --
-    auto ball = std::make_shared<siconos::modeling::NewtonEulerDS>(q0, v0, m, I);
+    auto ball = std::make_shared<siconos::modeling::NewtonEulerDS>(q0, v0, m, I,
+                                                                   siconos::algebra::alias_t);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight(0) = -m * g;
-    ball->setConstantFext(weight);
+    ball->setConstantFext(weight, siconos::algebra::alias_t);
 
     // -- Moving Plane --
 
@@ -134,10 +135,11 @@ int main(int argc, char* argv[]) {
     q02.setZero();
     q02(3) = 1.0;
     // -- The dynamical system --
-    auto movingplane = std::make_shared<siconos::modeling::NewtonEulerDS>(q02, v02, m, I);
+    auto movingplane = std::make_shared<siconos::modeling::NewtonEulerDS>(
+        q02, v02, m, I, siconos::algebra::alias_t);
 
     // // -- Set external forces (weight) --
-    movingplane->setConstantFext(weight);
+    movingplane->setConstantFext(weight, siconos::algebra::alias_t);
 
     auto bd = std::make_shared<siconos::modeling::BoundaryCondition>(
         siconos::modeling::BoundaryCondition::Indices{0});

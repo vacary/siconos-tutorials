@@ -70,8 +70,9 @@ int main(int argc, char *argv[]) {
     LS_A->setValue(0, 1, -1.0 / Cvalue);
     LS_A->setValue(1, 0, 1.0 / Lvalue);
 
-    auto LSCircuitRLCD = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*init_state);
-    LSCircuitRLCD->setConstantA(*LS_A);
+    auto LSCircuitRLCD = std::make_shared<siconos::modeling::FirstOrderLinearDS>(
+        *init_state, siconos::algebra::alias_t);
+    LSCircuitRLCD->setConstantA(*LS_A, siconos::algebra::alias_t);
     // --- Interaction between linear system and non smooth system ---
     auto Int_C = std::make_shared<siconos::algebra::SiconosMatrix>(1, 2);
     Int_C->setValue(0, 0, -1.0);

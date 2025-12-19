@@ -38,8 +38,8 @@ int main(int argc, char* argv[]) {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    int nDof = 3;  // degrees of freedom for the ball
-    double t0 = 0;          // initial computation time
+    int nDof = 3;   // degrees of freedom for the ball
+    double t0 = 0;  // initial computation time
     double T = 3.0;
     double h = 0.001;            // time step
     double position_init = 0.1;  // initial position for lowest bead.
@@ -78,19 +78,21 @@ int main(int argc, char* argv[]) {
     v0_2(0) = velocity_init;
 
     // -- The dynamical system --
-    auto ball1 = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass);
-    auto ball2 = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0_2, v0_2, mass2);
+    auto ball1 = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
+        q0, v0, mass, siconos::algebra::alias_t);
+    auto ball2 = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
+        q0_2, v0_2, mass2, siconos::algebra::alias_t);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
     weight(0) = -m1 * g;
-    ball1->setConstantFext(weight);
+    ball1->setConstantFext(weight, siconos::algebra::alias_t);
 
     Vector weight2{nDof};
     weight2.setZero();
     weight2(0) = -m2 * g;
-    ball2->setConstantFext(weight2);
+    ball2->setConstantFext(weight2, siconos::algebra::alias_t);
 
     // --------------------
     // --- Interactions ---
