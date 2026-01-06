@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     int cmp = 0;
     int dimX = 2;
 
-    char filename[50] = "simu.";
+    char filename[50] = "simu-reduced.";
 
     //***** Set the initial condition
     auto xti = std::make_shared<Vector>(dimX);
