@@ -9,33 +9,33 @@
 #  - radii      : radii-<nb generated spheres>.txt
 
 
-
-
 import numpy
-try:
-    from pylmgc90 import pre
-except:
-    print('pylmgc90 is not found !!!, exit')
-    exit(0)
-
 import sys
+
+if __name__ == "__main__":
+    try:
+        from pylmgc90 import pre
+
+    except ImportError:
+        print("pylmgc90 is not found !!!, exit")
+        exit(0)
 
 radius_min = 0.001
 radius_max = 0.0025
-lx = .02
-ly = .02
-lz = .02
+lx = 0.02
+ly = 0.02
+lz = 0.02
 
 print(sys.argv)
 
 
 if __name__ == "__main__":
-    if (len(sys.argv) >1):
+    if len(sys.argv) > 1:
         nbp = int(sys.argv[1])
     else:
         nbp = 20
     radii = pre.granulo_Random(nbp, radius_min, radius_max)
     [nbpl, coors] = pre.depositInBox3D(radii, lx, ly, lz)
 
-    numpy.savetxt('coors-{0}.txt'.format(nbpl), coors[0:nbpl*3])
-    numpy.savetxt('radii-{0}.txt'.format(nbpl), radii[0:nbpl])
+    numpy.savetxt("coors-{0}.txt".format(nbpl), coors[0 : nbpl * 3])
+    numpy.savetxt("radii-{0}.txt".format(nbpl), radii[0:nbpl])
