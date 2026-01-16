@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Siconos is a program dedicated to modeling, simulation and control
 # of non smooth dynamical systems.
 #
@@ -52,7 +50,9 @@ initial_velocity = np.array([0, 0, 0], dtype=np.float64)
 data = np.asarray([1.0, 1.0, 2.0 / 5 * r * r], dtype=np.float64)
 mass = sp.diags_array(data, format="csc")
 
-ball = sm.LagrangianSparseLinearTIDS(initial_position, initial_velocity, mass)
+ball = sm.LagrangianSparseLinearTIDS(
+    initial_position, initial_velocity, mass, siconos.modeling.copy_t
+)
 # set external forces
 weight_np = np.array([-m * g, 0, 0], dtype=np.float64)
 

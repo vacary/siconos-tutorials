@@ -37,10 +37,10 @@ int main(int argc, char* argv[]) {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    int nDof = 7;  // degrees of freedom for robot arm
-    double t0 = 0;          // initial computation time
-    double T = 1.0;         // final computation time
-    double h = 1e-4;        // time step
+    int nDof = 7;     // degrees of freedom for robot arm
+    double t0 = 0;    // initial computation time
+    double T = 1.0;   // final computation time
+    double h = 1e-4;  // time step
     // T = 2*h;
     // double criterion = 1e-6;
     // unsigned int maxIter = 2000;
@@ -118,7 +118,8 @@ int main(int argc, char* argv[]) {
     v0(1) = 0.0;
     v0(2) = 0.0;
 
-    auto fourbar = std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, siconos::algebra::alias_t);
+    auto fourbar =
+        std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, siconos::algebra::alias_t);
     fourbar->setComputeMassFunction(
         [](const Eigen::Ref<const siconos::algebra::SiconosVector>& pos,
            Eigen::Ref<siconos::algebra::MapType> mass) {

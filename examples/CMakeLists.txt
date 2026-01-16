@@ -155,6 +155,8 @@ if(${mechanics_installed} GREATER -1)
     )
   list(APPEND EXAMPLES_DIRECTORIES ${mechanics_examples})
   include(FindPythonModule)
+  
+  list(APPEND EXCLUDE_PATTERN_FROM_TESTS meshio_prepost matplotlib_post_2d) 
 
   if(SICONOS_HAS_BULLET)
     message(STATUS "add examples requiring bullet")
@@ -178,7 +180,7 @@ if(${mechanics_installed} GREATER -1)
     find_python_module(pylmgc90)
   endif()    
   if(NOT pylmgc90_FOUND)
-    list(APPEND EXCLUDE_PATTERN_FROM_TESTS mkspheres spheres_in_a_box)
+    list(APPEND EXCLUDE_PATTERN_FROM_TESTS mkspheres)
   endif()
 
   endif()
@@ -238,7 +240,15 @@ foreach(current_dir IN LISTS EXAMPLES_DIRECTORIES)
   file(MAKE_DIRECTORY ${working_dir})
   
   # collect data files for the current example dirs
-  file(GLOB current_example_data ${src_dir}/*.ref ${src_dir}/*/*.mat ${src_dir}/*.tess)
+  file(GLOB current_example_data ${src_dir}/*.ref ${src_dir}/*/*.mat
+       ${src_dir}/*.tess ${src_dir}/coor*.txt ${src_dir}/rad*.txt)
+  file(GLOB_RECURSE gmsh_files RELATIVE ${src_dir} ${src_dir}/*.msh*)
+
+  foreach(datafile IN LISTS gmsh_files)
+    configure_file(${src_dir}/${datafile} ${working_dir}/${datafile} COPYONLY)
+  endforeach()
+
+
   # Copy data files into the working directory.
   foreach(datafile IN LISTS current_example_data)
     configure_file(${datafile} ${working_dir} COPYONLY)

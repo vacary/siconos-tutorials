@@ -212,7 +212,7 @@ int main(int argc, char* argv[]) {
     // --- Model ---
     // -------------
     double t0 = 0;     // initial computation time
-    double T = 1e-02;  // final computation time
+    double T = 5e-03;  // final computation time
 
     auto solid = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
 

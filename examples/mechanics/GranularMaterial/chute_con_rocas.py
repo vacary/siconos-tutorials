@@ -60,7 +60,7 @@ density = 2500
 planethickness_ = 0.2
 cube_size = 0.1
 
-test = False
+test = True
 if test:
     n_layer = 10
     n_row = 2

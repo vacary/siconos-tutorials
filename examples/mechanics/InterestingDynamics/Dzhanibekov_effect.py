@@ -23,7 +23,7 @@ with MechanicsHdf5Runner() as io:
         mass=1,
         inertia=[1, 10, 11],
     )
-test = False
+test = True
 if test:
     T = 10
 else:
