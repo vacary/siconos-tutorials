@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2024 INRIA.
+ * Copyright 2025 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@
   - Simulation with a Time-Stepping scheme.
 */
 
+#include <LagrangianSparseDS.hpp>
 #include <SiconosKernel.hpp>
 #include <chrono>
 
@@ -33,7 +34,7 @@
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   try {
     // ================= Creation of the model =======================
 
@@ -55,11 +56,12 @@ int main(int argc, char *argv[]) {
 
     std::cout << "====> Model loading ...\n";
 
-    Matrix mass{nDof, nDof};
-    mass.setZero();
-    mass(0, 0) = m;
-    mass(1, 1) = m;
-    mass(2, 2) = 2. / 5 * m * R * R;
+    siconos::algebra::SiconosSparseMatrix mass{nDof, nDof};
+
+    mass.insert(0, 0) = m;
+    mass.insert(1, 1) = m;
+    mass.insert(2, 2) = 2. / 5 * m * R * R;
+    mass.makeCompressed();
 
     // -- Initial positions and velocities --
     Vector q0{nDof};
@@ -70,10 +72,13 @@ int main(int argc, char *argv[]) {
     v0(0) = velocity_init;
 
     // -- The dynamical system --
-    auto ball =
-        std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, siconos::algebra::alias_t);
+    auto ball = std::make_shared<siconos::modeling::LagrangianSparseDS>(
+        q0, v0, siconos::algebra::alias_t);
+    Eigen::Map<siconos::algebra::SiconosSparseMatrix> mass_map(
+        mass.rows(), mass.cols(), mass.nonZeros(), mass.outerIndexPtr(), mass.innerIndexPtr(),
+        mass.valuePtr());
 
-    ball->setConstantMass(mass, siconos::algebra::alias_t);
+    ball->setConstantMass(mass_map, siconos::algebra::alias_t);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};

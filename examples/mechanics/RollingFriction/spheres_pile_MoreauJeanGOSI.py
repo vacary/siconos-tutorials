@@ -1,13 +1,31 @@
-#!/usr/bin/env python
-
+# Siconos is a program dedicated to modeling, simulation and control
+# of non smooth dynamical systems.
+#
+# Copyright 2026 INRIA.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 #
 # Example of one object under gravity with one contactor and a ground
 #
 
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 import siconos.numerics as sn
-
+import siconos.integrators
 import math
 
 import random
@@ -40,9 +58,11 @@ with MechanicsHdf5Runner() as io:
     box_y_scale = 30 * diameter
     box_z_scale = 2 * diameter
 
-    # We use a convex hull rather than a box primitive. With the box primitive, the outside margin
-    # are not taken into account. With multipoints_iterations=False, i.e, only one contact point
-    # the spheres are slowly penetrating the ground. This is a well-known issue with bullet collision
+    # We use a convex hull rather than a box primitive. With the box primitive,
+    # the outside margin are not taken into account.
+    # With multipoints_iterations=False, i.e, only one contact point
+    # the spheres are slowly penetrating the ground.
+    # This is a well-known issue with bullet collision
     # engine between Sphere and Box
 
     # io.add_primitive_shape('Ground', 'Box', (50*diameter,50*diameter , diameter))
@@ -118,27 +138,23 @@ options.iparam[sn.params.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 20
 # Run the simulation from the inputs previously defined and add
 # results to the hdf5 file. The visualisation of the output may be done
 # with the vview command.
+
+
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0.0
+run_options["T"] = T
+run_options["h"] = 1e-3
+run_options["theta"] = 0.50001
+run_options["solver_options"] = options
+run_options["Newton_max_iter"] = 1
+run_options["output_frequency"] = 50
+run_options["constraint_activation_threshold"] = 1e-8
+run_options["osi"] = siconos.integrators.MoreauJeanGOSI
+
 with MechanicsHdf5Runner(mode="r+") as io:
 
     # By default earth gravity is applied and the units are those
     # of the International System of Units.
     # Because of fixed collision margins used in the collision detection,
     # sizes of small objects may need to be expressed in cm or mm.
-    io.run(
-        with_timer=False,
-        multipoints_iterations=False,
-        gravity_scale=1,
-        t0=0,
-        T=T,
-        h=1e-3,
-        theta=0.50001,
-        Newton_max_iter=1,
-        set_external_forces=None,
-        osi=siconos.integrators.MoreauJeanGOSI,
-        solver_options=options,
-        violation_verbose=False,
-        numerics_verbose=False,
-        numerics_verbose_level=0,
-        output_frequency=50,
-        constraint_activation_threshold=1e-08,
-    )
+    io.run(run_options)

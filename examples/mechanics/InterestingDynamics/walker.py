@@ -1,3 +1,19 @@
+# Siconos is a program dedicated to modeling, simulation and control
+# of non smooth dynamical systems.
+#
+# Copyright 2026 INRIA.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 # A simple walking mechanism (in progress, does not work!)
 #
@@ -5,7 +21,7 @@
 from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
 import math
-import numpy
+import numpy as np
 import siconos.modeling as sm
 
 pi = math.pi
@@ -30,7 +46,7 @@ with MechanicsHdf5Runner() as io:
     io.add_primitive_shape("Bar1", "Box", (10, 1, 1))
     io.add_primitive_shape("Bar2", "Box", (12.67, 1, 1))
 
-    ## Core
+    # Core
     bar1 = io.add_object(
         "bar1",
         [
@@ -51,7 +67,7 @@ with MechanicsHdf5Runner() as io:
     )
     bar1_id = bar1.attrs["id"]
 
-    ## Legs
+    # Legs
     io.add_object(
         "bar2",
         [Contactor("Bar1")],
@@ -121,7 +137,7 @@ with MechanicsHdf5Runner() as io:
         absolute=False,
     )
 
-    ## Stabilizing leg links to body
+    # Stabilizing leg links to body
 
     # See mech.spbstu.ru/Dzenushko_Dainis:_Walking_mechanisms_survey
     # for a survey of better walking mechanisms
@@ -236,10 +252,10 @@ forces_on_body = {}
 
 def my_forces(body):
     g = 9.81
-    weight = numpy.array([0, 0, -body.scalarMass * g, 0, 0, 0])
-    # twist = numpy.array([0, 0, 0, 0, 300, 0])
-    push = numpy.array([0, 0, 0, 0, 0, 0])
-    force = weight
+    weight = np.array([0, 0, -body.scalarMass * g])
+    # twist = np.array([0, 0, 0, 0, 300, 0])
+    push = np.zeros(3, dtype=np.float64)
+    force = weight.copy()
     if body.number() == bar1_id:
         force = weight + push  # + twist
     body.setConstantFext(force, sm.copy_t)
@@ -248,7 +264,7 @@ def my_forces(body):
 # Run the simulation from the inputs previously defined and add
 # results to the hdf5 file. The visualisation of the output may be done
 # with the vview command.
-test = False
+test = True
 
 if test:
     T = 1.0

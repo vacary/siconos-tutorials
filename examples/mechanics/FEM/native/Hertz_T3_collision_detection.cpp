@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2018 INRIA.
+ * Copyright 2026 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,293 +16,252 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
+#include <SolverOptions.h>
 
+#include <FENode.hpp>
+#include <FemTools.hpp>
+#include <FiniteElementLinearTIDS.hpp>
+#include <FiniteElementModel.hpp>
+#include <Material.hpp>
+#include <Mesh.hpp>
+#include <MeshUtils.hpp>
+#include <NodeFem1d2DR.hpp>
+#include <NodeFem2d2DR.hpp>
 #include <SiconosKernel.hpp>
+#include <SiconosMatrix.hpp>
+#include <SiconosVector.hpp>
 #include <chrono>
-#include <memory>
+#include <cmath>  // for fabs
 
-#include "FiniteElementLinearTIDS.hpp"
-#include "MeshUtils.hpp"
-#include "NewtonImpactFrictionNSL.hpp"
-#include "NodeFem1d2DR.hpp"
-#include "NodeFem2d2DR.hpp"
-#include "NumericsVerbose.h"
-#include "SolverOptions.h"
+// class MyContactDetection : public siconos::simulation::InteractionManager {
+//  protected:
+//   double _initial_gap{0.};
+//   ;
 
-using namespace std;
-using namespace siconos::mechanics::fem::native;
+//   unsigned int _contact_condition_tag;
 
-class MyContactDetection : public InteractionManager {
- protected:
-  double _initial_gap;
+//   std::shared_ptr<Vector> _normal{nullptr};
 
-  unsigned int _contact_condition_tag;
+//   std::shared_ptr<Vector> _tangent{nullptr};
 
-  std::shared_ptr<SiconosVector> _normal;
+//   std::shared_ptr<siconos::modeling::NonSmoothLaw> _nslaw{nullptr};
+//   unsigned int _contact_frame_dimension = 1;
 
-  std::shared_ptr<SiconosVector> _tangent;
+//   std::shared_ptr<siconos::mechanics::fem::FiniteElementModel> _femodel{nullptr};
 
-  std::shared_ptr<NonSmoothLaw> _nslaw;
-  unsigned int _contact_frame_dimension = 1;
+//   std::shared_ptr<siconos::mechanics::fem::FiniteElementLinearTIDS> _fesolid;
+//   std::list<std::shared_ptr<siconos::mechanics::fem::FENode> > _contacting_node_zone;
 
-  std::shared_ptr<FiniteElementModel> _femodel;
+//   struct contacting_node {
+//     std::shared_ptr<siconos::mechanics::fem::FENode> _node{nullptr};
+//     std::shared_ptr<siconos::modeling::Interaction> _inter{nullptr};
+//     unsigned int _node_index{0};
 
-  std::shared_ptr<FiniteElementLinearTIDS> _fesolid;
-  std::list<std::shared_ptr<FENode> > _contacting_node_zone;
+//     contacting_node(std::shared_ptr<siconos::mechanics::fem::FENode> node,
+//                     unsigned int node_index)
+//         : _node(node), _node_index(node_index) {}
+//   };
 
-  struct contacting_node {
-    std::shared_ptr<FENode> _node;
-    std::shared_ptr<Interaction> _inter;
-    unsigned int _node_index;
+//   std::list<contacting_node*> _contacting_nodes;
 
-    contacting_node(std::shared_ptr<FENode> node, unsigned int node_index)
-        : _node(node), _node_index(node_index) {}
-  };
+//  public:
+//   MyContactDetection(double initial_gap, int contact_condition_tag,
+//                      std::shared_ptr<siconos::algebra::SiconosVector> normal,
+//                      std::shared_ptr<siconos::modeling::NonSmoothLaw> nslaw,
+//                      std::shared_ptr<siconos::mechanics::fem::FiniteElementLinearTIDS>
+//                      fesolid)
+//       : InteractionManager(),
+//         _initial_gap(initial_gap),
+//         _contact_condition_tag(contact_condition_tag),
+//         _nslaw(nslaw),
+//         _normal(normal),
+//         _fesolid(fesolid)
 
-  std::list<contacting_node*> _contacting_nodes;
+//   {
+//     _femodel = _fesolid->FEModel();
 
- public:
-  MyContactDetection(double initial_gap, int contact_condition_tag,
-                     std::shared_ptr<SiconosVector> normal,
-                     std::shared_ptr<NonSmoothLaw> nslaw,
-                     std::shared_ptr<FiniteElementLinearTIDS> fesolid)
-      : InteractionManager(),
-        _initial_gap(initial_gap),
-        _contact_condition_tag(contact_condition_tag),
-        _nslaw(nslaw),
-        _normal(normal),
-        _fesolid(fesolid)
+//     _contacting_node_zone = *_femodel->contactingNodes(_contact_condition_tag);
 
-  {
-    _femodel = _fesolid->FEModel();
+//     auto nslaw_with_friction =
+//         std::dynamic_pointer_cast<siconos::modeling::NewtonImpactFrictionNSL>(nslaw);
 
-    _contacting_node_zone = *_femodel->contactingNodes(_contact_condition_tag);
+//     if (nslaw_with_friction) _contact_frame_dimension = 2;
 
-    std::shared_ptr<NewtonImpactFrictionNSL> nslaw_with_friction =
-        std::dynamic_pointer_cast<NewtonImpactFrictionNSL>(nslaw);
-    if (nslaw_with_friction) _contact_frame_dimension = 2;
+//     if (_contact_frame_dimension == 2)  // create tangent vertor
+//     {
+//       _tangent = std::make_shared<Vector>(2);
+//       (*_tangent)(0) = -(*_normal)(1);
+//       (*_tangent)(1) = (*_normal)(0);
+//     }
+//   }
+//   virtual ~MyContactDetection() noexcept = default;
 
-    if (_contact_frame_dimension == 2)  // create tangent vertor
-    {
-      _tangent = std::make_shared<SiconosVector>(2);
-      (*_tangent)(0) = -(*_normal)(1);
-      (*_tangent)(1) = (*_normal)(0);
-    }
-  }
-  virtual ~MyContactDetection() {}
+//   // shoud be done with find and a lambda function
+//   contacting_node* find_contacting_node(unsigned int node_index) {
+//     for (contacting_node* cnn : _contacting_nodes) {
+//       if (cnn->_node_index == node_index) {
+//         // std::cout << "existing interaction" << std::endl;
+//         return cnn;
+//       }
+//     }
+//     return nullptr;
+//   }
 
-  // shoud be done with find and a lambda function
-  contacting_node* find_contacting_node(unsigned int node_index) {
-    for (contacting_node* cnn : _contacting_nodes) {
-      if (cnn->_node_index == node_index) {
-        // std::cout << "existing interaction" << std::endl;
-        return cnn;
-      }
-    }
-    return nullptr;
-  }
+//   /** Called by Simulation after updating positions prior to starting
+//    * the Newton loop. */
+//   void updateInteractions(std::shared_ptr<siconos::simulation::Simulation> simulation) {
+//     // std::cout<< "\nCall to updateInteractions in MyContactDetection" <<
+//     // std::endl;
 
-  /** Called by Simulation after updating positions prior to starting
-   * the Newton loop. */
-  void updateInteractions(std::shared_ptr<Simulation> simulation) {
-    // std::cout<< "\nCall to updateInteractions in MyContactDetection" <<
-    // std::endl;
+//     Vector& displacement = *(_fesolid->q());
+//     auto solid = simulation->nonSmoothDynamicalSystem();
 
-    SiconosVector& displacement = *(_fesolid->q());
-    std::shared_ptr<NonSmoothDynamicalSystem> solid = simulation->nonSmoothDynamicalSystem();
+//     // update the list of contacting node by brute contact detection
+//     //_contacting_nodes.clear();
 
-    // update the list of contacting node by brute contact detection
-    //_contacting_nodes.clear();
+//     for (auto n : _contacting_node_zone) {
+//       // std::cout << "n->num() is: " << n->num() << std::endl;
+//       if (fabs(n->y()) <= 1e-01)  // and fabs(n->x()) >= 1e-05)
+//       {
+//         // std::cout << "contact node number : " << n->num() << " " << n->y() <<
+//         // std::endl;
+//         contacting_node* cn = new contacting_node(n, n->global_dof_index()[0]);
+//         if (!find_contacting_node(cn->_node_index)) {
+//           // std::cout << "add contact node number : " << n->num() << " is
+//           // contacting list " <<  std::endl;
+//           _contacting_nodes.push_back(cn);
+//         }
+//       } else {
+//         contacting_node* cn = find_contacting_node(n->global_dof_index()[0]);
+//         if (cn) {
+//           // std::cout << "remove contact node number : " << n->num() << " is
+//           // contacting list " <<  std::endl;
+//           _contacting_nodes.remove(cn);
+//         }
+//       }
+//     }
 
-    for (std::shared_ptr<FENode> n : _contacting_node_zone) {
-      // std::cout << "n->num() is: " << n->num() << std::endl;
-      if (fabs(n->y()) <= 1e-01)  // and fabs(n->x()) >= 1e-05)
-      {
-        // std::cout << "contact node number : " << n->num() << " " << n->y() <<
-        // std::endl;
-        contacting_node* cn = new contacting_node(n, (*n->dofIndex())[0]);
-        if (!find_contacting_node(cn->_node_index)) {
-          // std::cout << "add contact node number : " << n->num() << " is
-          // contacting list " <<  std::endl;
-          _contacting_nodes.push_back(cn);
-        }
-      } else {
-        contacting_node* cn = find_contacting_node((*n->dofIndex())[0]);
-        if (cn) {
-          // std::cout << "remove contact node number : " << n->num() << " is
-          // contacting list " <<  std::endl;
-          _contacting_nodes.remove(cn);
-        }
-      }
-    }
+//     // update/create Interaction for contacting points
+//     for (contacting_node* cn : _contacting_nodes) {
+//       auto n = cn->_node;
+//       unsigned int node_idx = n->global_dof_index()[0];
+//       if (cn->_inter)  // update interaction->relation
+//       {
+//         // std::cout << "update interaction" << std::endl;
 
-    // update/create Interaction for contacting points
-    for (contacting_node* cn : _contacting_nodes) {
-      std::shared_ptr<FENode> n = cn->_node;
-      unsigned int node_idx = (*n->dofIndex())[0];
-      if (cn->_inter)  // update interaction->relation
-      {
-        // std::cout << "update interaction" << std::endl;
+//         std::shared_ptr<Vector> pc2;
+//         if (_contact_frame_dimension == 2) {
+//           std::shared_ptr<siconos::mechanics::fem::NodeFem2d2DR> r =
+//               std::static_pointer_cast<siconos::mechanics::fem::NodeFem2d2DR>(
+//                   cn->_inter->relation());
+//           pc2 = r->pc2();
+//         } else {
+//           std::shared_ptr<siconos::mechanics::fem::NodeFem1d2DR> r =
+//               std::static_pointer_cast<siconos::mechanics::fem::NodeFem1d2DR>(
+//                   cn->_inter->relation());
+//           pc2 = r->pc2();
+//         }
 
-        std::shared_ptr<SiconosVector> pc2;
-        if (_contact_frame_dimension == 2) {
-          std::shared_ptr<siconos::mechanics::fem::NodeFem2d2DR> r =
-              std::static_pointer_cast<siconos::mechanics::fem::NodeFem2d2DR>(
-                  cn->_inter->relation());
-          pc2 = r->pc2();
-        } else {
-          std::shared_ptr<siconos::mechanics::fem::NodeFem1d2DR> r =
-              std::static_pointer_cast<siconos::mechanics::fem::NodeFem1d2DR>(
-                  cn->_inter->relation());
-          pc2 = r->pc2();
-        }
-
-        (*pc2)(0) = cn->_node->x() + displacement(node_idx);
-        (*pc2)(1) = -_initial_gap;
-      } else  // create an interaction and link
-      {
-        // std::cout << "create interaction" << std::endl;
-        std::shared_ptr<SiconosVector> pc2 = std::make_shared<SiconosVector>(2);
-        (*pc2)(0) = cn->_node->x() + displacement(node_idx);
-        (*pc2)(1) = -_initial_gap;
-        std::shared_ptr<Relation> relation;
-        if (_contact_frame_dimension == 2) {
-          relation = std::make_shared<siconos::mechanics::fem::NodeFem2d2DR>(
-              cn->_node, pc2, _normal, _tangent);
-        } else {
-          relation =
-              std::make_shared<siconos::mechanics::fem::NodeFem1d2DR>(cn->_node, pc2, _normal);
-        }
-        std::shared_ptr<Interaction> inter = std::make_shared<Interaction>(_nslaw, relation);
-        cn->_inter = inter;
-        // link the interaction and the dynamical system
-        solid->link(inter, _fesolid);
-      }
-    }
-    // std::cout << "end to updateInteractions in MyContactDetection" <<
-    // std::endl;
-  }
-};
+//         (*pc2)(0) = cn->_node->x() + displacement(node_idx);
+//         (*pc2)(1) = -_initial_gap;
+//       } else  // create an interaction and link
+//       {
+//         // std::cout << "create interaction" << std::endl;
+//         auto pc2 = std::make_shared<Vector>(2);
+//         (*pc2)(0) = cn->_node->x() + displacement(node_idx);
+//         (*pc2)(1) = -_initial_gap;
+//         std::shared_ptr<siconos::modeling::Relation> relation;
+//         if (_contact_frame_dimension == 2) {
+//           relation = std::make_shared<siconos::mechanics::fem::NodeFem2d2DR>(
+//               cn->_node, pc2, _normal, _tangent);
+//         } else {
+//           relation =
+//               std::make_shared<siconos::mechanics::fem::NodeFem1d2DR>(cn->_node, pc2,
+//               _normal);
+//         }
+//         auto inter = std::make_shared<siconos::modeling::Interaction>(_nslaw, relation);
+//         cn->_inter = inter;
+//         // link the interaction and the dynamical system
+//         solid->link(inter, _fesolid);
+//       }
+//     }
+//     // std::cout << "end to updateInteractions in MyContactDetection" <<
+//     // std::endl;
+//   }
+// };
 
 int main(int argc, char* argv[]) {
-  double Ly = 1.0;
-  string gmsh_filename = "./mesh_data/hertz.msh2";
-
-  std::shared_ptr<Mesh> mesh(createMeshFromGMSH2(gmsh_filename));
-  // mesh->display(false);
-
-  writeMeshforPython(mesh);
-
-  int bulk_material_tag = 6;
-  int contact_condition_tag = 4;
-  int applied_force_tag = 5;
-
-  double density = 7800.;
-  // a very soft materila is used to postprocess large deformations.
-  std::shared_ptr<Material> mat1 = std::make_shared<Material>(density, 210e6, 1 / 3.);
-  std::map<unsigned int, std::shared_ptr<Material> > materials = {{bulk_material_tag, mat1}};
-
   try {
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
-    std::shared_ptr<FiniteElementLinearTIDS> FEsolid =
-        std::make_shared<FiniteElementLinearTIDS>(mesh, materials, Siconos::SPARSE);
-    end = std::chrono::system_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    cout << "Assembly time : " << elapsed << " ms" << endl;
-    std::cout << " " << std::endl;
-    // FEsolid->display(true);
+    double Ly = 1.0;
+    auto gmsh_filename = "./mesh_data/hertz.msh2";
+    // Applied forces
+    siconos::algebra::SiconosVector nodal_forces{2};
+    nodal_forces << 0., -1e6;
 
-    std::shared_ptr<FiniteElementModel> femodel = FEsolid->FEModel();
-    // siconos::algebra::print(*FEsolid->K());
-    // siconos::algebra::print(*FEsolid->mass());
-    //  getchar();
+    siconos::mechanics::fem::Tags tags;
+    tags[siconos::mechanics::fem::MeshTags::bulk_material] = 6;
+    tags[siconos::mechanics::fem::MeshTags::applied_forces] = 5;
+    // No BC
 
-    /*------------------------------------------------- Applied forces  */
+    siconos::mechanics::fem::Material mat{7800, 210e6, 1. / 3};
 
-    std::shared_ptr<SiconosVector> nodal_forces = std::make_shared<SiconosVector>(2);
-    nodal_forces->setZero();
-    //(*nodal_forces)(0) = 1e6;
-    (*nodal_forces)(1) = -1e6;
-    FEsolid->applyNodalForces(applied_force_tag, nodal_forces);
-
-    // siconos::algebra::print(*FEsolid->fext());
-    // getchar();
-
-    // /*------------------------------------------------- Boundary Conditions
-    // */
-    // /* This part should be hidden in a new BC function for a node number
-    //  * and a dof index. */
-
-    // std::shared_ptr<IndexInt> node_dof_index = std::make_shared<IndexInt>(0);
-    // node_dof_index->push_back(0);
-    // node_dof_index->push_back(1);
-
-    // FEsolid->applyDirichletBoundaryConditions(boundary_condition_tag,
-    // node_dof_index); FEsolid->boundaryConditions()->display();
+    auto FEsolid = siconos::mechanics::fem::build_dynamicalsystem_from_gmsh(
+        gmsh_filename, tags, mat, nodal_forces, {});
 
     // -------------
     // --- Model ---
     // -------------
-    double t0 = 0;       // initial computation time
-    double T = 1e-02;    // final computation time
-    double h = 1e-05;    // time step
-    double theta = 1.0;  // theta for MoreauJeanOSI integrator
+    double t0 = 0;     // initial computation time
+    double T = 1e-02;  // final computation time
 
-    std::shared_ptr<NonSmoothDynamicalSystem> solid =
-        std::make_shared<NonSmoothDynamicalSystem>(t0, T);
+    auto solid = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
 
     // add the dynamical system in the non smooth dynamical system
     solid->insertDynamicalSystem(FEsolid);
 
     /*------------------------------------------------- Contact Conditions  */
-
     double e = 0.0;
-#define WITH_FRICTION
-#ifdef WITH_FRICTION
     double mu = 1.0;
-    std::shared_ptr<NonSmoothLaw> nslaw =
-        std::make_shared<NewtonImpactFrictionNSL>(e, 0.0, mu, 2);
-#else
-    std::shared_ptr<NonSmoothLaw> nslaw = std::make_shared<NewtonImpactNSL>(e);
-#endif
+    auto nslaw = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, 0.0, mu, 2);
 
     double initial_gap = 0.0;  // Ly*5e-05;
-    std::shared_ptr<SiconosVector> displacement = FEsolid->q();
-    std::shared_ptr<SiconosVector> normal = std::make_shared<SiconosVector>(2);
+    auto displacement = FEsolid->q();
+    auto normal = std::make_shared<siconos::algebra::SiconosVector>(2);
     (*normal)(0) = 0.0;
     (*normal)(1) = 1.0;
-    std::shared_ptr<MyContactDetection> collision_detection =
-        std::make_shared<MyContactDetection>(initial_gap, contact_condition_tag, normal, nslaw,
-                                             FEsolid);
+    int contact_condition_tag = 4;
+
+    auto contact_condition = [](const siconos::mechanics::fem::FENode& node) {
+      return (fabs(node.y()) <= 1e-01);  // and fabs(n->x()) >= 1e-05));
+    };
+
+    auto collision_detection = std::make_shared<siconos::mechanics::fem::ContactDetection>(
+        initial_gap, normal, nslaw, FEsolid, contact_condition, contact_condition_tag);
 
     // ------------------
     // --- Simulation ---
     // ------------------
+    double h = 1e-05;    // time step
+    double theta = 1.0;  // theta for MoreauJeanOSI integrator
 
     // -- (1) OneStepIntegrators --
-    std::shared_ptr<MoreauJeanOSI> OSI = std::make_shared<MoreauJeanOSI>(theta);
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
     OSI->setIsWSymmetricDefinitePositive(true);
     OSI->setGamma(0.0);
 
     // -- (2) Time discretisation --
-    std::shared_ptr<TimeDiscretisation> t = std::make_shared<TimeDiscretisation>(t0, h);
+    auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
     // -- (3) one step non smooth problem
-#ifdef WITH_FRICTION
-    std::shared_ptr<OneStepNSProblem> osnspb = std::make_shared<FrictionContact>(2);
-#else
-    std::shared_ptr<OneStepNSProblem> osnspb = std::make_shared<LCP>();
-#endif
-    SolverOptions* options = osnspb->numericsSolverOptions().get();
+    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::FrictionContact>(2);
+    auto options = osnspb->numericsSolverOptions();
 
     options->dparam[SICONOS_DPARAM_TOL] = 1e-10;
     // numerics_set_verbose(2);
     // solver_options_print(options);
 
     // -- (4) Simulation setup with (1) (2) (3)
-    std::shared_ptr<TimeStepping> s = std::make_shared<TimeStepping>(solid, t, OSI, osnspb);
+    auto s = std::make_shared<siconos::simulation::TimeStepping>(solid, t, OSI, osnspb);
 
     s->insertInteractionManager(collision_detection);
 
@@ -317,39 +276,41 @@ int main(int argc, char* argv[]) {
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 5;
-    SiconosMatrix dataPlot(N + 1, outputSize);
+    siconos::algebra::SiconosDenseMatrix dataPlot(N + 1, outputSize);
 
-    std::shared_ptr<SiconosVector> q = FEsolid->q();
-    std::shared_ptr<SiconosVector> v = FEsolid->velocity();
-    std::shared_ptr<SiconosVector> p = FEsolid->p(1);
-    // std::shared_ptr<SiconosVector> lambda = inter->lambda(1);
+    auto q = FEsolid->q_read();
+    auto v = FEsolid->velocity_read();
+    auto p = FEsolid->p_read(1);
+    // auto lambda = inter->lambda(1);
 
     dataPlot(0, 0) = solid->t0();
-    dataPlot(0, 1) = (*q)(FEsolid->dimension() - 1);
-    dataPlot(0, 2) = (*v)(FEsolid->dimension() - 1);
-    dataPlot(0, 3) = (*p)(0);
+    dataPlot(0, 1) = q(FEsolid->dimension() - 1);
+    dataPlot(0, 2) = v(FEsolid->dimension() - 1);
+    dataPlot(0, 3) = p(0);
     // dataPlot(0, 4) = (*lambda)(0);
 
-    std::string filename = prepareWriteDisplacementforPython("T3");
-    writeDisplacementforPython(mesh, femodel, q, filename);
+    auto filename = siconos::mechanics::fem::prepareWriteDisplacementforPython(
+        "Hertz_T3_collision_detection");
+    auto femodel = FEsolid->FEModel();
+    auto mesh = femodel->mesh();
+    siconos::mechanics::fem::writeDisplacementforPython(*mesh, *femodel, q, filename);
 
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl;
+    std::cout << "====> Start computation ... \n";
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
-    start = std::chrono::system_clock::now();
-
+    auto start = std::chrono::system_clock::now();
     while (s->hasNextEvent()) {
       s->computeOneStep();
       // siconos::algebra::print(*osnspb);
       //  --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
-      // std::cout << (*q)(0) << std::endl;
-      dataPlot(k, 1) = (*q)(FEsolid->dimension() - 1);
-      dataPlot(k, 2) = (*v)(FEsolid->dimension() - 1);
-      dataPlot(k, 3) = (*p)(0);
+      dataPlot(k, 1) = q(FEsolid->dimension() - 1);
+      dataPlot(k, 2) = v(FEsolid->dimension() - 1);
+      dataPlot(k, 3) = p(0);
 
-      if (k % 1 == 0) writeDisplacementforPython(mesh, femodel, q, filename);
+      if (k % 1 == 0)
+        siconos::mechanics::fem::writeDisplacementforPython(*mesh, *femodel, q, filename);
 
       std::cout << "numerics -- "
                 << " iterations: " << options->iparam[SICONOS_IPARAM_ITER_DONE]
@@ -358,37 +319,31 @@ int main(int argc, char* argv[]) {
       // dataPlot(k, 4) = (*lambda)(0);
       s->nextStep();
 
-      double y_max = 0.0;
+      // double y_max = 0.0;
 
-      auto y_max = (s->y(0, 0))->minCoeff();
-      std::cout << "y_max violation " << std::max(y_max, 0.0) << std::endl;
+      // auto y_max = (s->y(0, 0))->minCoeff();
+      // std::cout << "y_max violation " << std::max(y_max, 0.0) << std::endl;
       k++;
       // progressBar((double)k/N);
     }
-    end = std::chrono::system_clock::now();
-    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    cout << endl << "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation time : " << elapsed << " ms" << endl;
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
+    std::cout << "\nComputation time : " << elapsed << " ms\n";
 
     // --- Output files ---
-    cout << "====> Output file writing ..." << endl;
-    dataPlot.resize(k, outputSize);
-    ioMatrix::write("Hertz_T3_1612.dat", "ascii", dataPlot, "noDim");
+    std::cout << "====> Output file writing ...\n";
+    dataPlot.conservativeResize(k, outputSize);
+    siconos::algebra::io::write("Hertz_T3_1612.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
-#ifdef WITH_FRICTION
-    if ((error = ioMatrix::compareRefFile(dataPlot, "Hertz_T3_1612_with_friction.ref", eps)) >=
-            0.0 &&
+    if ((error = siconos::algebra::io::compareRefFile(
+             dataPlot, "Hertz_T3_1612_with_friction.ref", eps)) >= 0.0 &&
         error > eps)
       return 1;
-#else
-    if ((error = ioMatrix::compareRefFile(dataPlot, "Hertz_T3_1612.ref", eps)) >= 0.0 &&
-        error > eps)
-      return 1;
-#endif
-
   } catch (...) {
-    cerr << "Exception caught in T3.cpp" << endl;
-    Siconos::exception::process();
+    std::cerr << "Exception caught in Hertz_T3_collision_detection.cpp\n";
+    siconos::exception::process();
     return 1;
   }
 }

@@ -1,15 +1,33 @@
+# Siconos is a program dedicated to modeling, simulation and control
+# of non smooth dynamical systems.
+#
+# Copyright 2026 INRIA.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 from siconos.io.mechanics_run import (
     MechanicsHdf5Runner,
     MechanicsHdf5Runner_run_options,
 )
 import siconos.numerics as sn
 import siconos.nonsmooth_formulations as nsf
-import siconos.simulation as simu
 import read_tess
 
 import math
 import sys
 import numpy
+from siconos.mechanics.collision.tools import Contactor
+from siconos.mechanics.collision.convexhull import ConvexHull
 
 if len(sys.argv) < 2:
     dist = "uniform"
@@ -46,8 +64,6 @@ tesselation = read_tess.read_tesselation(filename)
 
 # print(tesselation)
 # input()
-from siconos.mechanics.collision.tools import Contactor
-from siconos.mechanics.collision.convexhull import ConvexHull
 
 with MechanicsHdf5Runner(mode="w", io_filename=fn) as io:
 

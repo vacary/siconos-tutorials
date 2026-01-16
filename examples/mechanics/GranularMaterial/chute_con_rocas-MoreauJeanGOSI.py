@@ -10,20 +10,20 @@ from siconos.io.FrictionContactTrace import FrictionContactTraceParams
 random.seed(0)
 
 unscaled_cube_size = 0.1
-unscaled_plan_thickness = unscaled_cube_size
+unscaled_planthickness_ = unscaled_cube_size
 unscaled_density = 2500
 
 scale = 1.0 / unscaled_cube_size * 10.0
 
 cube_size = unscaled_cube_size * scale
-plane_thickness = unscaled_plan_thickness * scale
+planethickness_ = unscaled_planthickness_ * scale
 density = unscaled_density / (scale**3)
 
 box_height = 3.683
 box_length = 6.900
 box_width = 3.430
 
-plane_thickness = 0.2
+planethickness_ = 0.2
 
 test = True
 if test:
@@ -48,7 +48,7 @@ with MechanicsHdf5Runner(mode="w") as io:
         box_height=box_height,
         box_length=box_length,
         box_width=box_width,
-        plane_thickness=plane_thickness,
+        planethickness_=planethickness_,
         scale=1,
         trans=[-0.6, -1.8, -1],
     )

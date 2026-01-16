@@ -1,35 +1,29 @@
-# An attempt to an light weight implementation of FEM in siconos
+# Tests of finit element model implemented in Siconos
 
-## source code ./src
+Available examples :
 
-This directory contains soure code of the light wieght implementation of FEM in siconos. Its implement simple isoparametric element (T3 and TH4 for the moment)
+- T3...*.cpp : 2D mesh (square domain) with T3 elements.
+- TH4.cpp : 3D (box) mesh with TH4 elements
+- Hertz_... : 2D disk (T3 elems), placed on a plane and then compressed in one direction.
 
-### Mesh.* (.hpp .cpp)
-
-A class for storing the geometrical properties of the Mesh (vertices, elements).
-
-### MeshUtils.*
-
-Some function to handle meshes:
-
-- createMeshFromGMSH2 a reader of gmsh v2 file (for other version or mesh data format you can use meshio python module to convert into GMSH v2)
-- prepareWriteDisplacementforPython, writeDisplacementforPython output of displacement and mesh to read it in python
-  
+Some utilities functions are available in src/native_fem_utils.*
 
 
-### FiniteElementLinearTIDS
+All examples are built using gmsh input files.
 
-Finite Element discretization of elastic solids that inherits from Lagrangian Linear Systems with time invariant coefficients
-  - $M\dot v + Cv + Kq = F_{ext}(t,z) + p $
- 
-  
-### FiniteElementModel
+Results and post-processing :
 
-A class that build elementary matrices from isoparametric FEM.
+```
+siconos XX.cpp 
+````
 
-## Simple Examples
+results in:
+- XX.dat to be compared with some reference file (check in cpp file for the name of the ref file)
+- outputs/YY.py (mesh file) if YY.msh has been used
+- outputs/XX_displacement.py to be used as input for meshio processing:
 
-### T3.cpp
-
-### TH4.cpp
+```
+python meshio_prepost.py --mesh_file="outputs/mesh_data/YY.msh" --simulation_name="XX"
+```
+will generate vtk files in ./vtk/XX... than can be viewed with Paraview.
 

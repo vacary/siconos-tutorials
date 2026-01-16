@@ -22,7 +22,10 @@
 #
 
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 
 import siconos.numerics as sn
 
@@ -79,20 +82,16 @@ if test:
 else:
     T = 20.0
 
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0.0
+run_options["T"] = T
+run_options["h"] = 0.005
+run_options["theta"] = 0.50001
+run_options["solver_options"] = options
+run_options["multipoints_iterations"] = True
+
 with MechanicsHdf5Runner(mode="r+") as io:
 
     # By default earth gravity is applied and the units are those
     # of the International System of Units.
-    io.run(
-        with_timer=False,
-        t0=0,
-        T=T,
-        h=0.005,
-        multipoints_iterations=True,
-        theta=0.50001,
-        Newton_max_iter=20,
-        set_external_forces=None,
-        solver_options=options,
-        numerics_verbose=False,
-        output_frequency=None,
-    )
+    io.run(run_options)

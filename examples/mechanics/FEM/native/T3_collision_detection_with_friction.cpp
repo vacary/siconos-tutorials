@@ -65,7 +65,8 @@ int main(int argc, char* argv[]) {
     solid->insertDynamicalSystem(FEsolid);
     // Contact Conditions
     double e = 0.0;
-    auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
+    double mu = 1.0;
+    auto nslaw = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, 0.0, mu, 2);
     double initial_gap = Ly * 5e-4;
     auto normal = std::make_shared<siconos::algebra::SiconosVector>(2);
     (*normal)(0) = 0.0;
@@ -92,7 +93,7 @@ int main(int argc, char* argv[]) {
     auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
     // -- (3) one step non smooth problem
-    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::LCP>();
+    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::FrictionContact>(2);
 
     // -- (4) Simulation setup with (1) (2) (3)
     auto simulation =
@@ -100,10 +101,11 @@ int main(int argc, char* argv[]) {
     simulation->insertInteractionManager(collision_detection);
 
     //  Computation
-    return native_fem_examples::run_T3_simulation(
-        simulation, FEsolid, "T3_collision_detection", "T3_square_200.ref");
+    return native_fem_examples::run_T3_simulation(simulation, FEsolid,
+                                                  "T3_collision_detection_with_friction",
+                                                  "T3_square_200_with_friction.ref");
   } catch (...) {
-    std::cerr << "Exception caught in T3_collision_detection.cpp\n";
+    std::cerr << "Exception caught in T3_collision_detection_with_friction.cpp\n";
     siconos::exception::process();
     return 1;
   }

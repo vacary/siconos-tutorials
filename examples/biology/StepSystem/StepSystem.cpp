@@ -22,7 +22,6 @@
 
 #include <SiconosKernel.hpp>
 #include <chrono>
-#include <string>
 
 #include "NonlinearRelation.hpp"
 #include "const.h"
@@ -31,7 +30,7 @@
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   try {
     // printf("argc %i\n", argc);
     int cmp = 0;

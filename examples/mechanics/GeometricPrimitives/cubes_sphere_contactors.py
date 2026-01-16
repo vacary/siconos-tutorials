@@ -29,7 +29,7 @@ bullet_options = SiconosBulletOptions()
 bullet_options.worldScale = 1.0
 bullet_options.contactBreakingThreshold = 0.01
 
-plan_thickness = 0.05
+planthickness_ = 0.05
 
 density = 2679.1838
 
@@ -77,10 +77,10 @@ with MechanicsHdf5Runner(use_compression=True) as io:
     amont_normal = normal_plane(v1, v2, v3)
     print("amont_normal=", amont_normal)
 
-    v0_extruded = v0 + numpy.dot(plan_thickness, amont_normal)
-    v1_extruded = v1 + numpy.dot(plan_thickness, amont_normal)
-    v2_extruded = v2 + numpy.dot(plan_thickness, amont_normal)
-    v3_extruded = v3 + numpy.dot(plan_thickness, amont_normal)
+    v0_extruded = v0 + numpy.dot(planthickness_, amont_normal)
+    v1_extruded = v1 + numpy.dot(planthickness_, amont_normal)
+    v2_extruded = v2 + numpy.dot(planthickness_, amont_normal)
+    v3_extruded = v3 + numpy.dot(planthickness_, amont_normal)
 
     amont_vertices = numpy.array(
         [v0, v1, v2, v3, v0_extruded, v1_extruded, v2_extruded, v3_extruded]
@@ -97,8 +97,8 @@ with MechanicsHdf5Runner(use_compression=True) as io:
     aval_normal = normal_plane(v2, v4, v3)
     print("aval_normal=", aval_normal)
 
-    v4_extruded = v4 + numpy.dot(plan_thickness, aval_normal)
-    v5_extruded = v5 + numpy.dot(plan_thickness, aval_normal)
+    v4_extruded = v4 + numpy.dot(planthickness_, aval_normal)
+    v5_extruded = v5 + numpy.dot(planthickness_, aval_normal)
 
     aval_vertices = numpy.array(
         [v2, v3, v4, v5, v2_extruded, v3_extruded, v4_extruded, v5_extruded]
@@ -116,20 +116,20 @@ with MechanicsHdf5Runner(use_compression=True) as io:
     print("sol_normal=", sol_normal)
 
     v6_extruded = (
-        v6 - [plan_thickness, 0.0, 0.0] + numpy.dot(plan_thickness, sol_normal)
+        v6 - [planthickness_, 0.0, 0.0] + numpy.dot(planthickness_, sol_normal)
     )
     v7_extruded = (
-        v7 + [plan_thickness, 0.0, 0.0] + numpy.dot(plan_thickness, sol_normal)
+        v7 + [planthickness_, 0.0, 0.0] + numpy.dot(planthickness_, sol_normal)
     )
 
     sol_vertices = numpy.array(
         [
-            v4 - [plan_thickness, 0.0, 0.0],
-            v5 + [plan_thickness, 0.0, 0.0],
-            v6 - [plan_thickness, 0.0, 0.0],
-            v7 + [plan_thickness, 0.0, 0.0],
-            v4_extruded - [plan_thickness, 0.0, 0.0],
-            v5_extruded + [plan_thickness, 0.0, 0.0],
+            v4 - [planthickness_, 0.0, 0.0],
+            v5 + [planthickness_, 0.0, 0.0],
+            v6 - [planthickness_, 0.0, 0.0],
+            v7 + [planthickness_, 0.0, 0.0],
+            v4_extruded - [planthickness_, 0.0, 0.0],
+            v5_extruded + [planthickness_, 0.0, 0.0],
             v6_extruded,
             v7_extruded,
         ]

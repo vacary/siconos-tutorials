@@ -1,8 +1,7 @@
-
 # Siconos is a program dedicated to modeling, simulation and control
 # of non smooth dynamical systems.
 #
-# Copyright 2025 INRIA.
+# Copyright 2026 INRIA.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -117,17 +116,20 @@ if restart:
 # T=1*0.001
 hstep = 0.01
 run_options = MechanicsHdf5Runner_run_options()
-run_options["t0"] = 0
+run_options["t0"] = 0.0
 run_options["T"] = T
 run_options["h"] = hstep
-
+run_options["theta"] = 0.50001
 run_options["bullet_options"] = bullet_options
 run_options["solver_options"] = options
+
 run_options["constraint_activation_threshold"] = 1e-05
 run_options["Newton_options"] = siconos.simulation.LINEAR
 run_options["osns_assembly_type"] = siconos.nonsmooth_formulations.GLOBAL_REDUCED
 run_options["osi"] = siconos.integrators.MoreauJeanGOSI
-
+run_options["Newton_max_iter"] = 1
+run_options["Newton_tolerance"] = 1e-10
+run_options["numerics_verbose"] = True
 run_options["verbose"] = True
 run_options["with_timer"] = True
 run_options["explode_Newton_solve"] = True
@@ -140,25 +142,5 @@ run_options["explode_computeOneStep"] = False
 with MechanicsHdf5Runner(mode="r+") as io:
 
     # By default earth gravity is applied and the units are those
-    # of the International System of Units.
-    io.run(
-        verbose=True,
-        with_timer=True,
-        bullet_options=bullet_options,
-        face_class=None,
-        edge_class=None,
-        t0=0,
-        T=T,
-        h=hstep,
-        theta=0.50001,
-        Newton_max_iter=1,
-        set_external_forces=None,
-        solver_options=options,
-        numerics_verbose=True,
-        output_frequency=None,
-        Newton_options=siconos.simulation.LINEAR,
-        constraint_activation_threshold=1e-5,
-        osi=siconos.integrators.MoreauJeanGOSI,
-        osns_assembly_type=siconos.nonsmooth_formulations.GLOBAL_REDUCED,
-    )
-    # io.run(run_options)
+    # # of the International System of Units.
+    io.run(run_options)

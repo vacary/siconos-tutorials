@@ -1,3 +1,20 @@
+# Siconos is a program dedicated to modeling, simulation and control
+# of non smooth dynamical systems.
+#
+# Copyright 2026 INRIA.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 import numpy
 import pickle
 from siconos.mechanics.collision.tools import Contactor
@@ -8,7 +25,7 @@ box_height = 3.683
 box_length = 6.900
 box_width = 3.430
 
-plan_thickness = 0.1
+planthickness_ = 0.1
 
 body_collection = {}
 
@@ -59,9 +76,9 @@ with MechanicsHdf5Runner(use_compression=True) as io:
 
     left_up_normal = normal_plane(v1, v2, v3)
     print("left_up_normal=", left_up_normal)
-    v1_extruded = v1 + numpy.dot(plan_thickness, left_up_normal)
-    v2_extruded = v2 + numpy.dot(plan_thickness, left_up_normal)
-    v3_extruded = v3 + numpy.dot(plan_thickness, left_up_normal)
+    v1_extruded = v1 + numpy.dot(planthickness_, left_up_normal)
+    v2_extruded = v2 + numpy.dot(planthickness_, left_up_normal)
+    v3_extruded = v3 + numpy.dot(planthickness_, left_up_normal)
 
     left_up_vertices = numpy.array([v1, v2, v3, v1_extruded, v2_extruded, v3_extruded])
     print("left_up_vertices", left_up_vertices)
@@ -69,9 +86,9 @@ with MechanicsHdf5Runner(use_compression=True) as io:
     v1 = numpy.array([0, 0, box_height])
     v2 = numpy.array([4.370 - 4.370 * 1.200 / box_height, 0.0, 1.200])
     v3 = numpy.array([box_length, 0, 1.200])
-    v1_extruded = v1 + numpy.dot(plan_thickness, left_up_normal)
-    v2_extruded = v2 + numpy.dot(plan_thickness, left_up_normal)
-    v3_extruded = v3 + numpy.dot(plan_thickness, left_up_normal)
+    v1_extruded = v1 + numpy.dot(planthickness_, left_up_normal)
+    v2_extruded = v2 + numpy.dot(planthickness_, left_up_normal)
+    v3_extruded = v3 + numpy.dot(planthickness_, left_up_normal)
 
     left_up_vertices = numpy.array([v1, v2, v3, v1_extruded, v2_extruded, v3_extruded])
     print("left_up_vertices", left_up_vertices)
@@ -89,8 +106,8 @@ with MechanicsHdf5Runner(use_compression=True) as io:
     left_middle_normal = normal_plane(v2, v4, v3)
     print("left_middle_normal=", left_middle_normal)
 
-    v4_extruded = v4 + numpy.dot(plan_thickness, left_middle_normal)
-    v5_extruded = v5 + numpy.dot(plan_thickness, left_middle_normal)
+    v4_extruded = v4 + numpy.dot(planthickness_, left_middle_normal)
+    v5_extruded = v5 + numpy.dot(planthickness_, left_middle_normal)
 
     left_middle_vertices = numpy.array(
         [v2, v3, v4, v5, v2_extruded, v3_extruded, v4_extruded, v5_extruded]
@@ -111,20 +128,20 @@ with MechanicsHdf5Runner(use_compression=True) as io:
     print("left_down_normal=", left_down_normal)
 
     v6_extruded = (
-        v6 - [plan_thickness, 0.0, 0.0] + numpy.dot(plan_thickness, left_down_normal)
+        v6 - [planthickness_, 0.0, 0.0] + numpy.dot(planthickness_, left_down_normal)
     )
     v7_extruded = (
-        v7 + [plan_thickness, 0.0, 0.0] + numpy.dot(plan_thickness, left_down_normal)
+        v7 + [planthickness_, 0.0, 0.0] + numpy.dot(planthickness_, left_down_normal)
     )
 
     left_down_vertices = numpy.array(
         [
-            v4 - [plan_thickness, 0.0, 0.0],
-            v5 + [plan_thickness, 0.0, 0.0],
-            v6 - [plan_thickness, 0.0, 0.0],
-            v7 + [plan_thickness, 0.0, 0.0],
-            v4_extruded - [plan_thickness, 0.0, 0.0],
-            v5_extruded + [plan_thickness, 0.0, 0.0],
+            v4 - [planthickness_, 0.0, 0.0],
+            v5 + [planthickness_, 0.0, 0.0],
+            v6 - [planthickness_, 0.0, 0.0],
+            v7 + [planthickness_, 0.0, 0.0],
+            v4_extruded - [planthickness_, 0.0, 0.0],
+            v5_extruded + [planthickness_, 0.0, 0.0],
             v6_extruded,
             v7_extruded,
         ]
@@ -147,10 +164,10 @@ with MechanicsHdf5Runner(use_compression=True) as io:
     right_up_normal = normal_plane(v8, v9, v10)
     print("right_up_normal=", right_up_normal)
 
-    v8_extruded = v8 + numpy.dot(plan_thickness, right_up_normal)
-    v9_extruded = v9 + numpy.dot(plan_thickness, right_up_normal)
-    v10_extruded = v10 + numpy.dot(plan_thickness, right_up_normal)
-    v11_extruded = v11 + numpy.dot(plan_thickness, right_up_normal)
+    v8_extruded = v8 + numpy.dot(planthickness_, right_up_normal)
+    v9_extruded = v9 + numpy.dot(planthickness_, right_up_normal)
+    v10_extruded = v10 + numpy.dot(planthickness_, right_up_normal)
+    v11_extruded = v11 + numpy.dot(planthickness_, right_up_normal)
 
     right_up_vertices = numpy.array(
         [v8, v9, v10, v11, v8_extruded, v9_extruded, v10_extruded, v11_extruded]
@@ -167,24 +184,24 @@ with MechanicsHdf5Runner(use_compression=True) as io:
     rear_up_normal = normal_plane(v1, v8, v4)
     print("rear_up_normal=", rear_up_normal)
 
-    v1_extruded = v1 + numpy.dot(plan_thickness, rear_up_normal)
-    v2_extruded = v2 + numpy.dot(plan_thickness, rear_up_normal)
-    v8_extruded = v8 + numpy.dot(plan_thickness, rear_up_normal)
-    v4_extruded = v4 + numpy.dot(plan_thickness, rear_up_normal)
-    v11_extruded = v11 + numpy.dot(plan_thickness, rear_up_normal)
+    v1_extruded = v1 + numpy.dot(planthickness_, rear_up_normal)
+    v2_extruded = v2 + numpy.dot(planthickness_, rear_up_normal)
+    v8_extruded = v8 + numpy.dot(planthickness_, rear_up_normal)
+    v4_extruded = v4 + numpy.dot(planthickness_, rear_up_normal)
+    v11_extruded = v11 + numpy.dot(planthickness_, rear_up_normal)
 
     rear_up_vertices = numpy.array(
         [
-            v1 - [0.0, plan_thickness, 0.0],
-            v2 - [0.0, plan_thickness, 0.0],
-            v8 + [0.0, plan_thickness, 0.0],
-            v4 - [0.0, plan_thickness, 0.0],
-            v11 + [0.0, plan_thickness, 0.0],
-            v1_extruded - [0.0, plan_thickness, 0.0],
-            v2_extruded - [0.0, plan_thickness, 0.0],
-            v8_extruded + [0.0, plan_thickness, 0.0],
-            v4_extruded - [0.0, plan_thickness, 0.0],
-            v11_extruded + [0.0, plan_thickness, 0.0],
+            v1 - [0.0, planthickness_, 0.0],
+            v2 - [0.0, planthickness_, 0.0],
+            v8 + [0.0, planthickness_, 0.0],
+            v4 - [0.0, planthickness_, 0.0],
+            v11 + [0.0, planthickness_, 0.0],
+            v1_extruded - [0.0, planthickness_, 0.0],
+            v2_extruded - [0.0, planthickness_, 0.0],
+            v8_extruded + [0.0, planthickness_, 0.0],
+            v4_extruded - [0.0, planthickness_, 0.0],
+            v11_extruded + [0.0, planthickness_, 0.0],
         ]
     )
     print("rear_up_vertices", rear_up_vertices)
@@ -201,9 +218,9 @@ with MechanicsHdf5Runner(use_compression=True) as io:
     rear_down_normal = normal_plane(v4, v11, v6)
     print("rear_down_normal=", rear_down_normal)
 
-    v4_extruded = v4 + numpy.dot(plan_thickness, rear_down_normal)
-    v11_extruded = v11 + numpy.dot(plan_thickness, rear_down_normal)
-    v6_extruded = v6 + numpy.dot(plan_thickness, rear_down_normal)
+    v4_extruded = v4 + numpy.dot(planthickness_, rear_down_normal)
+    v11_extruded = v11 + numpy.dot(planthickness_, rear_down_normal)
+    v6_extruded = v6 + numpy.dot(planthickness_, rear_down_normal)
 
     rear_down_vertices = numpy.array(
         [v4, v11, v6, v4_extruded, v11_extruded, v6_extruded]
@@ -220,21 +237,21 @@ with MechanicsHdf5Runner(use_compression=True) as io:
     front_up_normal = normal_plane(v3, v5, v9)
     print("front_up_normal=", front_up_normal)
 
-    v3_extruded = v3 + numpy.dot(plan_thickness, front_up_normal)
-    v5_extruded = v5 + numpy.dot(plan_thickness, front_up_normal)
-    v9_extruded = v9 + numpy.dot(plan_thickness, front_up_normal)
-    v10_extruded = v10 + numpy.dot(plan_thickness, front_up_normal)
+    v3_extruded = v3 + numpy.dot(planthickness_, front_up_normal)
+    v5_extruded = v5 + numpy.dot(planthickness_, front_up_normal)
+    v9_extruded = v9 + numpy.dot(planthickness_, front_up_normal)
+    v10_extruded = v10 + numpy.dot(planthickness_, front_up_normal)
 
     front_up_vertices = numpy.array(
         [
-            v3 - [0.0, plan_thickness, 0.0],
-            v5 - [0.0, plan_thickness, 0.0],
-            v9 + [0.0, plan_thickness, 0.0],
-            v10 + [0.0, plan_thickness, 0.0],
-            v3_extruded - [0.0, plan_thickness, 0.0],
-            v5_extruded - [0.0, plan_thickness, 0.0],
-            v9_extruded + [0.0, plan_thickness, 0.0],
-            v10_extruded + [0.0, plan_thickness, 0.0],
+            v3 - [0.0, planthickness_, 0.0],
+            v5 - [0.0, planthickness_, 0.0],
+            v9 + [0.0, planthickness_, 0.0],
+            v10 + [0.0, planthickness_, 0.0],
+            v3_extruded - [0.0, planthickness_, 0.0],
+            v5_extruded - [0.0, planthickness_, 0.0],
+            v9_extruded + [0.0, planthickness_, 0.0],
+            v10_extruded + [0.0, planthickness_, 0.0],
         ]
     )
     print("front_up_vertices", front_up_vertices)
@@ -249,9 +266,9 @@ with MechanicsHdf5Runner(use_compression=True) as io:
     front_down_normal = normal_plane(v5, v7, v10)
     print("front_down_normal=", front_down_normal)
 
-    v7_extruded = v7 + numpy.dot(plan_thickness, front_down_normal)
-    v5_extruded = v5 + numpy.dot(plan_thickness, front_down_normal)
-    v10_extruded = v10 + numpy.dot(plan_thickness, front_down_normal)
+    v7_extruded = v7 + numpy.dot(planthickness_, front_down_normal)
+    v5_extruded = v5 + numpy.dot(planthickness_, front_down_normal)
+    v10_extruded = v10 + numpy.dot(planthickness_, front_down_normal)
 
     front_down_vertices = numpy.array(
         [v5, v7, v10, v5_extruded, v7_extruded, v10_extruded]

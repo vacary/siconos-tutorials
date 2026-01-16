@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2024 INRIA.
+ * Copyright 2025 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,18 @@
  */
 
 /*
-  V. Acary, F. Perignon.
+  V. Acary, F. Pérignon.
 
   A Ball bouncing on the ground.
-  - Scleronomous relation used for the contact, user-defined derived class
-  - LagrangianDS
-  - Simulation with a Time-Stepping scheme.
+  Simulation with an event-capturing (Time-Stepping) scheme.
+  Moreau-Jean integrator
 */
 
+#include <LagrangianSparseLinearTIDS.hpp>
 #include <SiconosKernel.hpp>
 #include <chrono>
 
-#include "BallRelations.hpp"
-
-using Matrix = siconos::algebra::SiconosMatrix;
+using Matrix = siconos::algebra::SiconosSparseMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
 int main(int argc, char *argv[]) {
@@ -39,12 +37,12 @@ int main(int argc, char *argv[]) {
 
     // User-defined main parameters
     int nDof = 3;                // degrees of freedom for the ball
-    double t0 = 0;               // initial computation time
-    double T = 10;               // final computation time
+    double t0 = 0.;              // initial computation time
+    double T = 10.;              // final computation time
     double h = 0.005;            // time step
     double position_init = 1.0;  // initial position for lowest bead.
     double velocity_init = 0.0;  // initial velocity for lowest bead.
-    double theta = 0.5;          // theta for MoreauJeanOSI integrator
+    double theta = 0.5;          // theta for the integrator
     double R = 0.1;              // Ball radius
     double m = 1;                // Ball mass
     double g = 9.81;             // Gravity
@@ -56,10 +54,11 @@ int main(int argc, char *argv[]) {
     std::cout << "====> Model loading ...\n";
 
     Matrix mass{nDof, nDof};
-    mass.setZero();
-    mass(0, 0) = m;
-    mass(1, 1) = m;
-    mass(2, 2) = 2. / 5 * m * R * R;
+
+    mass.insert(0, 0) = m;
+    mass.insert(1, 1) = m;
+    mass.insert(2, 2) = 2. / 5 * m * R * R;
+    mass.makeCompressed();
 
     // -- Initial positions and velocities --
     Vector q0{nDof};
@@ -70,16 +69,14 @@ int main(int argc, char *argv[]) {
     v0(0) = velocity_init;
 
     // -- The dynamical system --
-    auto ball =
-        std::make_shared<siconos::modeling::LagrangianDS>(q0, v0, siconos::algebra::alias_t);
-
-    ball->setConstantMass(mass, siconos::algebra::alias_t);
+    auto ball = std::make_shared<siconos::modeling::LagrangianSparseLinearTIDS>(
+        q0, v0, mass, siconos::algebra::copy_t);
 
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
     weight(0) = -m * g;
-    ball->setConstantFext(weight, siconos::algebra::alias_t);
+    ball->setConstantFext(weight, siconos::algebra::copy_t);
 
     // --------------------
     // --- Interactions ---
@@ -90,9 +87,11 @@ int main(int argc, char *argv[]) {
 
     // Interaction ball-floor
     //
+    siconos::algebra::SiconosDenseMatrix H{1, nDof};
+    H.setZero();
+    H(0, 0) = 1.0;
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
-    auto relation = std::make_shared<user_defined::BallR>();
-
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
     // --------------------------------
@@ -105,7 +104,6 @@ int main(int argc, char *argv[]) {
 
     // link the interaction and the dynamical system
     bouncingBall->link(inter, ball);
-
     // ------------------
     // --- Simulation ---
     // ------------------
@@ -130,8 +128,8 @@ int main(int argc, char *argv[]) {
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    unsigned int outputSize = 7;
-    Matrix dataPlot(N + 1, outputSize);
+    unsigned int outputSize = 5;
+    siconos::algebra::SiconosDenseMatrix dataPlot(N + 1, outputSize);
 
     auto q = ball->q_read();
     auto v = ball->velocity_read();
@@ -140,11 +138,9 @@ int main(int argc, char *argv[]) {
 
     dataPlot(0, 0) = bouncingBall->t0();
     dataPlot(0, 1) = q(0);
-    dataPlot(0, 2) = q(1);
-    dataPlot(0, 3) = v(0);
-    dataPlot(0, 4) = v(1);
-    dataPlot(0, 5) = p(0);
-    dataPlot(0, 6) = (*lambda)(0);
+    dataPlot(0, 2) = v(0);
+    dataPlot(0, 3) = p(0);
+    dataPlot(0, 4) = (*lambda)(0);
     // --- Time loop ---
     std::cout << "====> Start computation ... \n";
     // ==== Simulation loop - Writing without explicit event handling =====
@@ -155,13 +151,10 @@ int main(int argc, char *argv[]) {
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = q(0);
-      dataPlot(k, 2) = q(1);
-      dataPlot(k, 3) = v(0);
-      dataPlot(k, 4) = v(1);
-      dataPlot(k, 5) = p(0);
-      dataPlot(k, 6) = (*lambda)(0);
+      dataPlot(k, 2) = v(0);
+      dataPlot(k, 3) = p(0);
+      dataPlot(k, 4) = (*lambda)(0);
       s->nextStep();
-      siconos::tools::progressBar((double)k / N);
       k++;
     }
     auto end = std::chrono::system_clock::now();
@@ -171,12 +164,12 @@ int main(int argc, char *argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    siconos::algebra::io::write("BouncingBallTS-Lagrangian-scleronomous.dat", dataPlot,
+    siconos::algebra::io::write("BouncingBallTS.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     double error = 0.0, eps = 1e-12;
-    if ((error = siconos::algebra::io::compareRefFile(
-             dataPlot, "BouncingBallTS-Scleronomous.ref", eps)) >= eps)
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BouncingBallTS.ref", eps)) >=
+        eps)
       return 1;
 
     return 0;

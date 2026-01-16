@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Siconos is a program dedicated to modeling, simulation and control
 # of non smooth dynamical systems.
 #
