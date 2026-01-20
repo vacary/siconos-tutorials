@@ -30,9 +30,6 @@
 #include <SiconosKernel.hpp>
 #include <chrono>
 
-using Matrix = siconos::algebra::SiconosMatrix;
-using Vector = siconos::algebra::SiconosVector;
-
 int main(int argc, char* argv[]) {
   try {
     // ================= Creation of the model =======================
@@ -54,26 +51,28 @@ int main(int argc, char* argv[]) {
     // -------------------------
 
     std::cout << "====> Model loading ...\n";
-    Matrix mass{nDof, nDof};
+    siconos::algebra::SiconosDenseMatrix mass{nDof, nDof};
+    mass.setZero();
     mass(0, 0) = m1;
     mass(1, 1) = m1;
     mass(2, 2) = 2. / 5 * m1 * R * R;
 
-    Matrix mass2{nDof, nDof};
+    siconos::algebra::SiconosDenseMatrix mass2{nDof, nDof};
+    mass2.setZero();
     mass2(0, 0) = m2;
     mass2(1, 1) = m2;
     mass2(2, 2) = 2. / 5 * m2 * R * R;
 
     // -- Initial positions and velocities --
-    Vector q0{nDof};
+    siconos::algebra::SiconosVector q0{nDof};
     q0.setZero();
     q0(0) = position_init;
-    Vector v0{nDof};
+    siconos::algebra::SiconosVector v0{nDof};
     v0.setZero();
     v0(0) = velocity_init;
 
-    Vector q0_2{nDof};
-    Vector v0_2{nDof};
+    siconos::algebra::SiconosVector q0_2{nDof};
+    siconos::algebra::SiconosVector v0_2{nDof};
     q0_2(0) = position_init + 2 * R + 0.001;
     v0_2(0) = velocity_init;
 
@@ -84,12 +83,12 @@ int main(int argc, char* argv[]) {
         q0_2, v0_2, mass2, siconos::algebra::alias_t);
 
     // -- Set external forces (weight) --
-    Vector weight{nDof};
+    siconos::algebra::SiconosVector weight{nDof};
     weight.setZero();
     weight(0) = -m1 * g;
     ball1->setConstantFext(weight, siconos::algebra::alias_t);
 
-    Vector weight2{nDof};
+    siconos::algebra::SiconosVector weight2{nDof};
     weight2.setZero();
     weight2(0) = -m2 * g;
     ball2->setConstantFext(weight2, siconos::algebra::alias_t);
@@ -103,32 +102,32 @@ int main(int argc, char* argv[]) {
 
     // Interaction ball-floor
     //
-    auto H = std::make_shared<Matrix>(nDof, nDof);
-    (*H)(0, 0) = 1.0;
-    (*H)(1, 1) = 1.0;
-    (*H)(2, 2) = 1.0;
+    siconos::algebra::SiconosDenseMatrix H{nDof, nDof};
+    H.setZero();
+    H(0, 0) = 1.0;
+    H(1, 1) = 1.0;
+    H(2, 2) = 1.0;
 
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, e, 0.6, 3);
-    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H);
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
 
     auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
     // Interaction ball-ball
     //
-    auto H_bb = std::make_shared<Matrix>(nDof, 2 * nDof);
-    (*H_bb)(0, 0) = -1.0;
-    (*H_bb)(1, 1) = -1.0;
-    (*H_bb)(2, 2) = -1.0;
-    (*H_bb)(0, 3) = 1.0;
-    (*H_bb)(1, 4) = 1.0;
-    (*H_bb)(2, 5) = 1.0;
+    siconos::algebra::SiconosDenseMatrix H_bb{nDof, 2 * nDof};
+    H_bb.setZero();
+    H_bb(0, 0) = -1.0;
+    H_bb(1, 1) = -1.0;
+    H_bb(2, 2) = -1.0;
+    H_bb(0, 3) = 1.0;
+    H_bb(1, 4) = 1.0;
+    H_bb(2, 5) = 1.0;
 
-    auto b_bb = std::make_shared<Vector>(3);
-    (*b_bb)(0) = -2 * R;
-    (*b_bb)(1) = 0.0;
-    (*b_bb)(2) = 0.0;
+    siconos::algebra::SiconosVector3 b_bb;
+    b_bb << -2 * R, 0., 0.;
 
-    auto relation_bb = std::make_shared<siconos::modeling::LagrangianLinearTIR>(*H_bb, *b_bb);
+    auto relation_bb = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H_bb, b_bb);
 
     auto inter_bb = std::make_shared<siconos::modeling::Interaction>(nslaw, relation_bb);
 
@@ -183,25 +182,25 @@ int main(int argc, char* argv[]) {
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 8;
-    Matrix dataPlot(N, outputSize);
+    siconos::algebra::SiconosDenseMatrix dataPlot(N, outputSize);
 
-    auto q1 = ball1->q();
-    auto v1 = ball1->velocity();
-    auto p1 = ball1->p(1);
+    auto q1 = ball1->q_read();
+    auto v1 = ball1->velocity_read();
+    auto p1 = ball1->p_read(1);
     auto lambda = inter->lambda(1);
-    auto q2 = ball2->q();
-    auto v2 = ball2->velocity();
-    auto p2 = ball2->p(1);
+    auto q2 = ball2->q_read();
+    auto v2 = ball2->velocity_read();
+    auto p2 = ball2->p_read(1);
     // auto lambda = inter->lambda(1);
 
     dataPlot(0, 0) = bouncingBall->t0();
-    dataPlot(0, 1) = (*q1)(0);
-    dataPlot(0, 2) = (*v1)(0);
-    dataPlot(0, 3) = (*p1)(0);
+    dataPlot(0, 1) = q1(0);
+    dataPlot(0, 2) = v1(0);
+    dataPlot(0, 3) = p1(0);
     dataPlot(0, 4) = (*lambda)(0);
-    dataPlot(0, 5) = (*q2)(0);
-    dataPlot(0, 6) = (*v2)(0);
-    dataPlot(0, 7) = (*p2)(0);
+    dataPlot(0, 5) = q2(0);
+    dataPlot(0, 6) = v2(0);
+    dataPlot(0, 7) = p2(0);
     // --- Time loop ---
     std::cout << "====> Start computation ... \n";
     // ==== Simulation loop - Writing without explicit event handling =====
@@ -215,13 +214,13 @@ int main(int argc, char* argv[]) {
       s->computeOneStep();
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
-      dataPlot(k, 1) = (*q1)(0);
-      dataPlot(k, 2) = (*v1)(0);
-      dataPlot(k, 3) = (*p1)(0);
+      dataPlot(k, 1) = q1(0);
+      dataPlot(k, 2) = v1(0);
+      dataPlot(k, 3) = p1(0);
       dataPlot(k, 4) = (*lambda)(0);
-      dataPlot(k, 5) = (*q2)(0);
-      dataPlot(k, 6) = (*v2)(0);
-      dataPlot(k, 7) = (*p2)(0);
+      dataPlot(k, 5) = q2(0);
+      dataPlot(k, 6) = v2(0);
+      dataPlot(k, 7) = p2(0);
       // siconos::algebra::print(*osnspb);
       s->nextStep();
 

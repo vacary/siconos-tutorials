@@ -30,7 +30,7 @@ variables:
 # (based on current siconos-tutorials branch --> it assumes that a branch of the same name exists in siconos repo)
 run-examples:
   variables:
-    IMAGE_NAME: $CI_REGISTRY_IMAGE/$LAB_NAME-$CI_COMMIT_REF_SLUG
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/$LAB_NAME-occ-$CI_COMMIT_REF_SLUG
     CDASH_SUBMIT: 1
   extends: .examples-build
   rules:
@@ -38,11 +38,22 @@ run-examples:
     - if: '$CI_PIPELINE_SOURCE == "pipeline"' # - Run when triggered from siconos project
  
 # examples, with a standard (default) Siconos installation
-# with version from release 4.5 (latest)
+# with version from release 4.4 (latest)
 # Triggered manualy.
 run-examples:release:
   variables:
-    IMAGE_NAME: $CI_REGISTRY_IMAGE/siconos-release-4.5
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/siconoslab-release-4.4
+    CDASH_SUBMIT: 1
+  extends: .examples-build
+  when: manual
+
+
+# examples, with a standard (default) Siconos installation
+# with version from master (public last available version)
+# Triggered manualy.
+run-examples:master:
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/siconoslab-occ-master
     CDASH_SUBMIT: 1
   extends: .examples-build
   when: manual

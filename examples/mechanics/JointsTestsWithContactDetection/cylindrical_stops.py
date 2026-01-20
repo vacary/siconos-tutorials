@@ -1,7 +1,21 @@
-#!/usr/bin/env python
-
-from __future__ import print_function
-
+# Siconos is a program dedicated to modeling, simulation and control
+# of non smooth dynamical systems.
+#
+# Copyright 2024 INRIA.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#
 from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
 import siconos.numerics as sn
@@ -110,7 +124,7 @@ class Ctrl(object):
         self.nsds = io._nsds
         self.topo = self.nsds.topology()
         self.joint1_inter = self.topo.getInteraction("joint1")
-        self.joint1 = sj.NewtonEulerJointR(self.joint1_inter.relation())
+        self.joint1 = self.joint1_inter.relation()
         self.bar = self.topo.getDynamicalSystem("bar")
         self.post = self.topo.getDynamicalSystem("post")
         self.y = np.zeros(5)

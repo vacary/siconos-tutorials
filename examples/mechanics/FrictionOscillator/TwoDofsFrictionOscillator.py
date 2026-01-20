@@ -145,8 +145,10 @@ nslaw = sm.RelayNSL(1, -μ * N, μ * N)
 
 
 relation = sm.FirstOrderLinearR()
-relation.setConstantC(H, sm.alias_t)
-relation.setConstantB(H.T, sm.alias_t)
+relation.setConstantCAlias(
+    H,
+)
+relation.setConstantBAlias(H.T)
 inter = sm.Interaction(nslaw, relation)
 
 print(inter)
