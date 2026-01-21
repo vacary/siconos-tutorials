@@ -2,11 +2,9 @@ import numpy as np
 
 np.set_printoptions(precision=3)
 from siconos.mechanics.collision.tools import Contactor
-from siconos.mechanics.joints import cast_PrismaticJointR
 from siconos.io.mechanics_run import MechanicsHdf5Runner
 import siconos.modeling as sm
 import siconos.numerics as sn
-import siconos.modeling as sm
 
 # An example of applying force to the axis of a joint, and applying
 # spring and virtual damping by measuring position and velocity along
@@ -54,9 +52,7 @@ class Ctrl(object):
         self.ds1 = self.topo.getDynamicalSystem("bar1")
         self.ds2 = self.topo.getDynamicalSystem("bar2")
 
-        self.joint1 = cast_PrismaticJointR(
-            self.topo.getInteraction("joint1").relation()
-        )
+        self.joint1 = self.topo.getInteraction("joint1").relation()
 
         # Apply initial forces
         self.step()
@@ -65,14 +61,14 @@ class Ctrl(object):
         self.count += 1
 
         # Make a temporary BlockVector containing both qs
-        bv = BlockVector(self.ds1.q(), self.ds2.q())
+        # bv = BlockVector(self.ds1.q(), self.ds2.q())
 
         force1 = np.zeros(3)
         force2 = np.zeros(3)
 
         # Apply an impulse to watch the response
         if self.count == 1000:
-            tmp = np.array(self.joint1.normalDoF(bv, 0)) * -1000
+            tmp = np.array(self.joint1.normalDoF(self.ds1.q(), self.ds2.q(), 0)) * -1000
             print("applying impulse", tmp)
             force1 += np.array(tmp) / 2
             force2 += -np.array(tmp) / 2
@@ -80,16 +76,16 @@ class Ctrl(object):
         # Get the position and use it to project a force vector
         # onto the DoF (spring force)
         pos = np.zeros(1)
-        self.joint1.computehDoF(0, bv, pos, 0)
+        self.joint1.computehDoF(self.ds1.q(), self.ds2.q(), pos, 0)
 
         setpoint = 1.0
-        pos_diff = setpoint - pos(0)
-        spring_force = np.array(self.joint1.normalDoF(bv, 0)) * pos_diff * 100.0
+        pos_diff = setpoint - pos[0]
+        spring_force = np.array(self.joint1.normalDoF(self.ds1.q(), self.ds2.q(), 0)) * pos_diff * 100.0
 
         # Get the velocity of each body projected onto the DoF and
         # calculate their difference (damping force)
-        vel1 = self.joint1.projectVectorDoF(self.ds1.linearVelocity(), bv, 0)
-        vel2 = self.joint1.projectVectorDoF(self.ds2.linearVelocity(), bv, 0)
+        vel1 = self.joint1.projectVectorDoF(self.ds1.linearVelocity(), self.ds1.q(), self.ds2.q(), 0)
+        vel2 = self.joint1.projectVectorDoF(self.ds2.linearVelocity(), self.ds1.q(), self.ds2.q(), 0)
         vel_diff = vel1 - vel2
         damping_force = vel_diff * 10.0
 
