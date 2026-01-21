@@ -60,7 +60,7 @@ with MechanicsHdf5Runner() as io:
         mass=1,
     )
 
-    io.add_boundary_condition("sphere3_bc", "sphere3", indices=[0], bc_class="FixedBC")
+    io.add_boundary_condition("sphere3_bc", "sphere3", indices=[0], bc_class="BoundaryCondition")
 
     # the ground object made with the ground shape. As the mass is
     # not given, it is a static object only involved in contact
