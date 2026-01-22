@@ -1,7 +1,7 @@
 # Siconos is a program dedicated to modeling, simulation and control
 # of non smooth dynamical systems.
 #
-# Copyright 2024 INRIA.
+# Copyright 2026 INRIA.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 #
 #
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
 import siconos.numerics as sn
-import siconos.mechanics as Mechanics
-from siconos.simulation import TimeSteppingDirectProjection
-from siconos.integrators import MoreauJeanDirectProjectionOSI
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
+import siconos.simulation
+import siconos.integrators
 import numpy as np
 
 # Configuration of four stops, at 0 and 0.3 on the linear DoF and at
@@ -123,42 +125,51 @@ class Ctrl(object):
     def initialize(self, io):
         self.nsds = io._nsds
         self.topo = self.nsds.topology()
-        self.joint1_inter = self.topo.getInteraction('joint1')
+        self.joint1_inter = self.topo.getInteraction("joint1")
         self.joint1 = self.joint1_inter.relation()
-        self.bar = self.topo.getDynamicalSystem('bar')
-        self.post = self.topo.getDynamicalSystem('post')
+        self.bar = self.topo.getDynamicalSystem("bar")
+        self.post = self.topo.getDynamicalSystem("post")
         self.y = np.zeros(5)
         self.yDoF = np.zeros(2)
-        self.jachq = np.zeros((1,14))
+        self.jachq = np.zeros((1, 14))
 
     def step(self):
-        print('q bar:', self.bar.q())
-        print('q post:', self.post.q())
-        print('yDoF:', self.yDoF)
-        print('jachq:', self.jachq)
+        print("q bar:", self.bar.q())
+        print("q post:", self.post.q())
+        print("yDoF:", self.yDoF)
+        print("jachq:", self.jachq)
         # q0 = sk.BlockVector(self.bar.q(), self.post.q())
         self.joint1.computeh(self.bar.q(), self.post.q(), self.y)
         self.joint1.computehDoF(self.bar.q(), self.post.q(), self.yDoF)
-        self.joint1.computeJachqDoF(self.joint1_inter, self.bar.q(), self.post.q(), self.jachq, 0)
-        print('joint linear position, %f, angle, %f'%tuple(self.yDoF))
+        self.joint1.computeJachqDoF(
+            self.joint1_inter, self.bar.q(), self.post.q(), self.jachq, 0
+        )
+        print("joint linear position, %f, angle, %f" % tuple(self.yDoF))
+
 
 options = sn.solver_options_create(sn.solver_ids.SICONOS_GENERIC_MECHANICAL_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100000
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-10
-sn.solver_options_update_internal(options, 1, sn.solver_ids.SICONOS_FRICTION_3D_ONECONTACT_NSN) 
+sn.solver_options_update_internal(
+    options, 1, sn.solver_ids.SICONOS_FRICTION_3D_ONECONTACT_NSN
+)
+
+
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = 5.0
+run_options["h"] = 0.01
+run_options["theta"] = 0.50001
+run_options["Newton_max_iter"] = 1
+run_options["solver_options"] = options
+run_options["controller"] = Ctrl()
+run_options["projection_itermax"] = 3
+run_options["projection_tolerance"] = 1e-5
+run_options["projection_tolerance_unilateral"] = 1e-5
+run_options["time_stepping"] = siconos.simulation.TimeSteppingDirectProjection
+run_options["osi"] = siconos.integrators.MoreauJeanDirectProjectionOSI
+
+
 # Run the simulation
-with MechanicsHdf5Runner(mode='r+') as io:
-    io.run(t0=0,
-           T=20,
-           h=0.01,
-           theta=0.50001,
-           Newton_max_iter=1,
-           solver_options=options,
-           controller=Ctrl(),
-           set_external_forces=lambda x: None, # no gravity
-           projection_itermax=3,
-           projection_tolerance=1e-5,
-           projection_tolerance_unilateral=1e-5,
-           time_stepping=TimeSteppingDirectProjection,
-           osi=MoreauJeanDirectProjectionOSI,
-    )
+with MechanicsHdf5Runner(mode="r+") as io:
+    io.run(run_options)

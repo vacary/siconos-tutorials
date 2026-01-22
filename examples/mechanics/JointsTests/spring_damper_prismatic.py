@@ -1,10 +1,29 @@
+# Siconos is a program dedicated to modeling, simulation and control
+# of non smooth dynamical systems.
+#
+# Copyright 2026 INRIA.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 import numpy as np
 
-np.set_printoptions(precision=3)
 from siconos.mechanics.collision.tools import Contactor
 from siconos.io.mechanics_run import MechanicsHdf5Runner
 import siconos.modeling as sm
 import siconos.numerics as sn
+
+np.set_printoptions(precision=3)
 
 # An example of applying force to the axis of a joint, and applying
 # spring and virtual damping by measuring position and velocity along
@@ -80,12 +99,20 @@ class Ctrl(object):
 
         setpoint = 1.0
         pos_diff = setpoint - pos[0]
-        spring_force = np.array(self.joint1.normalDoF(self.ds1.q(), self.ds2.q(), 0)) * pos_diff * 100.0
+        spring_force = (
+            np.array(self.joint1.normalDoF(self.ds1.q(), self.ds2.q(), 0))
+            * pos_diff
+            * 100.0
+        )
 
         # Get the velocity of each body projected onto the DoF and
         # calculate their difference (damping force)
-        vel1 = self.joint1.projectVectorDoF(self.ds1.linearVelocity(), self.ds1.q(), self.ds2.q(), 0)
-        vel2 = self.joint1.projectVectorDoF(self.ds2.linearVelocity(), self.ds1.q(), self.ds2.q(), 0)
+        vel1 = self.joint1.projectVectorDoF(
+            self.ds1.linearVelocity(), self.ds1.q(), self.ds2.q(), 0
+        )
+        vel2 = self.joint1.projectVectorDoF(
+            self.ds2.linearVelocity(), self.ds1.q(), self.ds2.q(), 0
+        )
         vel_diff = vel1 - vel2
         damping_force = vel_diff * 10.0
 
