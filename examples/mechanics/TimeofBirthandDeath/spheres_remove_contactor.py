@@ -248,8 +248,8 @@ run_options["Newton_options"] = sk.SICONOS_TS_LINEAR
 
 # run_options['verbose']=True
 # run_options['with_timer']=True
-# run_options['explode_Newton_solve']=True
-# run_options['explode_computeOneStep']=True
+# run_options['explode_computeOneStep_in_python']=True
+# run_options['explode_computeOneStepNSProblem_in_python']=True
 
 # run_options['output_frequency']=None
 run_options["output_contact_index_set"] = 0

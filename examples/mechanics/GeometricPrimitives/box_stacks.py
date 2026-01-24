@@ -109,8 +109,8 @@ run_options["osns_assembly_type"] = siconos.nonsmooth_formulations.REDUCED_DIREC
 
 run_options["verbose"] = True
 run_options["with_timer"] = True
-# run_options['explode_Newton_solve']=True
-# run_options['explode_computeOneStep']=True
+# run_options['explode_computeOneStep_in_python']=True
+# run_options['explode_computeOneStepNSProblem_in_python']=True
 
 # run_options['violation_verbose'] = True
 run_options["output_frequency"] = 1

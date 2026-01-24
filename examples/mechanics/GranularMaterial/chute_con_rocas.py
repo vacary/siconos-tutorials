@@ -196,8 +196,8 @@ run_options["osns_assembly_type"] = nsf.REDUCED_DIRECT
 run_options["verbose"] = True
 run_options["violation_verbose"] = True
 run_options["with_timer"] = True
-run_options["explode_Newton_solve"] = False
-run_options["explode_computeOneStep"] = False
+run_options["explode_computeOneStep_in_python"] = False
+run_options["explode_computeOneStepNSProblem_in_python"] = False
 
 # run_options['numerics_verbose']=True
 # run_options['numerics_verbose_level']=0

@@ -187,8 +187,8 @@ run_options["Newton_tolerance"] = 1e-8
 
 run_options["verbose"] = True
 run_options["with_timer"] = True
-run_options["explode_Newton_solve"] = False
-# run_options['explode_computeOneStep']=True
+run_options["explode_computeOneStep_in_python"] = False
+# run_options['explode_computeOneStepNSProblem_in_python']=True
 
 # run_options['violation_verbose'] = True
 run_options["output_frequency"] = 1

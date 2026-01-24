@@ -168,8 +168,8 @@ run_options["theta"] = 1.0
 
 run_options["verbose"] = True
 run_options["with_timer"] = True
-run_options["explode_Newton_solve"] = True
-run_options["explode_computeOneStep"] = False
+run_options["explode_computeOneStep_in_python"] = True
+run_options["explode_computeOneStepNSProblem_in_python"] = False
 
 run_options["skip_reset_lambdas"] = True
 run_options["osns_assembly_type"] = nsf.REDUCED_DIRECT

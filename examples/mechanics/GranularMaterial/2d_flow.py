@@ -214,6 +214,6 @@ with MechanicsHdf5Runner(mode="r+") as io:
         solver_options=options,
         numerics_verbose=True,
         output_frequency=100,
-        explode_Newton_solve=False,
+        explode_computeOneStep_in_python=False,
         display_Newton_convergence=False,
     )

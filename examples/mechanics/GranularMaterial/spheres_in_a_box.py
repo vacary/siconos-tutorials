@@ -199,6 +199,6 @@ with MechanicsHdf5Runner(
         constraint_activation_threshold=0.00001,
         solver_options=options,
         numerics_verbose=False,
-        explode_Newton_solve=True,
+        explode_computeOneStep_in_python=True,
         output_frequency=None,
     )
