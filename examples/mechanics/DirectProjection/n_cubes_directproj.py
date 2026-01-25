@@ -4,9 +4,12 @@
 # Example of two cubes, one with a convex shape, one with a primitive
 # shape.
 #
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+
 import siconos.mechanics.collision.bullet
 
 import siconos.numerics as sn
@@ -118,28 +121,47 @@ else:
     nstep = 2000
 
 step = 0.005
+
+
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = nstep * step
+run_options["h"] = step
+#run_options["theta"] = 1.0
+
+run_options["bullet_options"]=bullet_options
+
+run_options["solver_options"] = options
+
+# run_options['Newton_options']=simu.LINEAR
+run_options["Newton_options"] = siconos.simulation.NONLINEAR
+run_options["Newton_max_iter"] = 1
+
+run_options["display_Newton_convergence"] = False
+
+#run_options["osns_assembly_type"] = nsf.REDUCED_DIRECT
+
+run_options["verbose"] = True
+run_options["violation_verbose"] = False
+run_options["with_timer"] = False
+
+
+run_options['numerics_verbose']=False
+run_options['numerics_verbose_level']=0
+
+run_options["output_frequency"] = 1
+run_options["time_stepping"] = siconos.simulation.TimeSteppingDirectProjection
+run_options["osi"] =siconos.integrators.MoreauJeanDirectProjectionOSI
+
+run_options["projection_itermax"]=5
+run_options["projection_tolerance"]=1e-8
+run_options["projection_tolerance_unilateral"]=1e-8
+
+
 with MechanicsHdf5Runner(mode="r+") as io:
 
     # By default earth gravity is applied and the units are those
     # of the International System of Units.
     # Because of fixed collision margins used in the collision detection,
     # sizes of small objects may need to be expressed in cm or mm.
-    io.run(
-        with_timer=False,
-        time_stepping=siconos.simulation.TimeSteppingDirectProjection,
-        osi=siconos.integrators.MoreauJeanDirectProjectionOSI,
-        gravity_scale=1,
-        bullet_options=bullet_options,
-        t0=0,
-        T=nstep * step,
-        h=step,
-        theta=0.50001,
-        Newton_max_iter=1,
-        set_external_forces=None,
-        solver_options=options,
-        numerics_verbose=False,
-        output_frequency=1,
-        projection_itermax=5,
-        projection_tolerance=1e-8,
-        projection_tolerance_unilateral=1e-8,
-    )
+    io.run(run_options)

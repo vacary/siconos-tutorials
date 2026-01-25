@@ -19,10 +19,11 @@
 # Example of two cubes, one with a convex shape, one with a primitive
 # shape.
 #
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
-
-from siconos.io.mechanics_run import MechanicsHdf5Runner
 
 import siconos.numerics as sn
 
@@ -162,6 +163,27 @@ options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-4
 
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = step * hstep
+run_options["h"] = hstep
+
+
+run_options["solver_options"] = options
+run_options["multipoints_iterations"] = True
+# run_options['constraint_activation_threshold']=1e-05
+
+
+run_options["Newton_max_iter"] = 1
+run_options["output_frequency"] = 10
+
+# run_options["verbose"] = False
+run_options["with_timer"] = False
+# run_options["violation_verbose"] = True
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
 with MechanicsHdf5Runner(mode="r+", collision_margin=0.05) as io:
 
     # By default earth gravity is applied and the units are those
@@ -169,18 +191,4 @@ with MechanicsHdf5Runner(mode="r+", collision_margin=0.05) as io:
     # Because of fixed collision margins used in the collision detection,
     # sizes of small objects may need to be expressed in cm or mm.
 
-    io.run(
-        with_timer=False,
-        gravity_scale=0.1,
-        t0=0,
-        T=step * hstep,
-        h=hstep,
-        multipoints_iterations=True,
-        theta=0.50001,
-        Newton_max_iter=1,
-        set_external_forces=None,
-        solver_options=options,
-        numerics_verbose=False,
-        output_frequency=10,
-        violation_verbose=True,
-    )
+    io.run(run_options)

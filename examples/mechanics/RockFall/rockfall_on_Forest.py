@@ -4,9 +4,11 @@
 # Example of how to use the heightmap object to interact with a static terrain.
 #
 import numpy as np
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
 
 import siconos.numerics as sn
 import random
@@ -188,6 +190,23 @@ else:
 
 time_step = 1e-2
 
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = T
+run_options["h"] = time_step
+
+run_options["solver_options"] = options
+run_options["Newton_max_iter"] = 1
+
+run_options["verbose"] = True
+run_options["verbose_progress"] = True
+run_options["with_timer"] = False
+
+run_options['numerics_verbose']=False
+run_options['numerics_verbose_level']=0
+
+run_options["output_frequency"] = 10
+
 
 with MechanicsHdf5Runner(mode="r+") as io:
 
@@ -198,21 +217,11 @@ with MechanicsHdf5Runner(mode="r+") as io:
     # are interested mostly just in the location of contacts with the
     # height field, but we are not evaluating the performance of
     # individual contacts here.
-    io.run(
-        with_timer=False,
-        verbose=True,
-        verbose_progress=True,
-        t0=0,
-        T=T,
-        h=time_step,
-        theta=0.50001,
-        Newton_max_iter=1,
-        solver_options=options,
-        numerics_verbose=False,
-        output_frequency=10,
-    )
+    io.run(run_options)
 
 
+
+    
 with MechanicsHdf5Runner(mode="r+") as io:
     data = io._out["data"]  # access to hdf5 group data
     positions = data["dynamic"][:]
@@ -229,3 +238,5 @@ with MechanicsHdf5Runner(mode="r+") as io:
                     e[0], e[2:5], e[5:10]
                 )
             )
+
+            

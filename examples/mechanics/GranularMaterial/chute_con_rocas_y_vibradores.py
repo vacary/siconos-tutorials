@@ -15,7 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 import siconos.numerics as sn
 
 # import chute_con_vibrator_rear_up as chute_con_vibradores
@@ -119,18 +122,24 @@ options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-4
 
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = T
+run_options["h"] = hstep
+
+run_options["solver_options"] = options
+run_options["Newton_max_iter"] = 1
+
+run_options["verbose"] = True
+run_options["verbose_progress"] = True
+run_options["with_timer"] = False
+
+run_options['numerics_verbose']=False
+run_options['numerics_verbose_level']=0
+
+run_options["output_frequency"] = 10
+run_options["multipoints_iterations"] = True
 
 with MechanicsHdf5Runner(mode="r+", io_filename=fn) as io:
-    io.run(
-        with_timer=False,
-        t0=0,
-        T=T,
-        h=hstep,
-        multipoints_iterations=True,
-        theta=0.50001,
-        Newton_max_iter=1,
-        set_external_forces=None,
-        solver_options=options,
-        numerics_verbose=False,
-        output_frequency=10,
-    )
+    io.run(run_options)
+    

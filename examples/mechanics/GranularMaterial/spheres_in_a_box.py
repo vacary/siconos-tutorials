@@ -21,9 +21,12 @@
 # for n spheres:
 # ./mkspheres.py <n>
 # ./spheres_in_a_box.py coors-<n>.txt radii-<n>.txt
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+
 from siconos.io.FrictionContactTrace import FrictionContactTraceParams
 
 import siconos.numerics as sn
@@ -177,6 +180,31 @@ with MechanicsHdf5Runner(io_filename="siab-{0}.hdf5".format(nb_laid_particles)) 
             mass=mass,
         )
 
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = 8.
+run_options["h"] = hstep
+
+
+run_options["solver_options"] = options
+run_options["bullet_options"] = bullet_options
+# run_options['constraint_activation_threshold']=1e-05
+
+
+run_options["Newton_max_iter"] = 1
+run_options["output_frequency"] = None
+
+# run_options["verbose"] = False
+run_options["with_timer"] = False
+# run_options["violation_verbose"] = True
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
+run_options["with_timer"]=True
+run_options["explode_computeOneStep_in_python"]=True
+
+run_options["friction_contact_trace_params"]=friction_contact_trace_params
 
 with MechanicsHdf5Runner(
     io_filename="siab-{0}.hdf5".format(nb_laid_particles), mode="r+"
@@ -184,19 +212,4 @@ with MechanicsHdf5Runner(
 
     # By default earth gravity is applied and the units are those
     # of the International System of Units.
-    io.run(
-        with_timer=True,
-        bullet_options=bullet_options,
-        t0=0,
-        T=8.00,
-        h=hstep,
-        theta=theta,
-        Newton_max_iter=1,
-        set_external_forces=None,
-        friction_contact_trace_params=friction_contact_trace_params,
-        constraint_activation_threshold=0.00001,
-        solver_options=options,
-        numerics_verbose=False,
-        explode_computeOneStep_in_python=True,
-        output_frequency=None,
-    )
+    io.run(run_options)

@@ -8,12 +8,19 @@
 import numpy
 import random
 import math
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.convexhull import ConvexHull2d
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+
 import siconos.numerics as sn
 import siconos.mechanics.collision.bullet
+import siconos.simulation as simu
+import siconos.nonsmooth_formulations as nsf
+
+
 
 bullet_options = siconos.mechanics.collision.bullet.SiconosBulletOptions()
 bullet_options.worldScale = 1.0
@@ -195,23 +202,41 @@ options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-8
 fclocal = sn.solver_options_get_internal_solver(options, 0)
 fclocal.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100
 
+
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = T
+run_options["h"] = hstep
+#run_options["theta"] = 1.0
+
+run_options["bullet_options"] = bullet_options
+run_options["solver_options"] = options
+
+# run_options['Newton_options']=simu.LINEAR
+run_options["Newton_options"] = simu.NONLINEAR
+run_options["Newton_max_iter"] = 1
+
+run_options["display_Newton_convergence"] = False
+
+run_options["osns_assembly_type"] = nsf.REDUCED_DIRECT
+
+run_options["verbose"] = True
+run_options["violation_verbose"] = False
+run_options["with_timer"] = False
+
+run_options["explode_computeOneStep_in_python"] = False
+run_options["explode_computeOneStepNSProblem_in_python"] = False
+
+run_options['numerics_verbose']=False
+run_options['numerics_verbose_level']=0
+
+run_options["output_frequency"] = 100
+
+
+
+
 with MechanicsHdf5Runner(mode="r+") as io:
 
     # By default earth gravity is applied and the units are those
     # of the International System of Units.
-    io.run(
-        verbose=True,
-        with_timer=False,
-        bullet_options=bullet_options,
-        t0=0,
-        T=T,
-        h=hstep,
-        theta=0.50001,
-        Newton_max_iter=1,
-        set_external_forces=None,
-        solver_options=options,
-        numerics_verbose=True,
-        output_frequency=100,
-        explode_computeOneStep_in_python=False,
-        display_Newton_convergence=False,
-    )
+    io.run(run_options)

@@ -16,8 +16,12 @@
 # limitations under the License.
 import numpy
 import math
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+
 import siconos.numerics as sn
 
 
@@ -229,18 +233,28 @@ else:
 options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-8
-with MechanicsHdf5Runner(mode="r+") as io:
 
-    io.run(
-        with_timer=False,
-        t0=0,
-        T=step * hstep,
-        h=hstep,
-        multipoints_iterations=True,
-        theta=0.50001,
-        Newton_max_iter=1,
-        set_external_forces=None,
-        solver_options=options,
-        numerics_verbose=False,
-        output_frequency=10,
-    )
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = step * hstep
+run_options["h"] = hstep
+
+
+run_options["solver_options"] = options
+run_options["multipoints_iterations"] = True
+# run_options['constraint_activation_threshold']=1e-05
+
+
+run_options["Newton_max_iter"] = 1
+run_options["output_frequency"] = 10
+
+# run_options["verbose"] = False
+run_options["with_timer"] = False
+# run_options["violation_verbose"] = True
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
+
+with MechanicsHdf5Runner(mode="r+") as io:
+    io.run(run_options)

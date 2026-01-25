@@ -18,9 +18,12 @@
 #
 # Example of delayed object introduction with time_of_birth parameter
 #
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+
 
 import siconos.numerics as sn
 
@@ -93,23 +96,31 @@ if test:
 else:
     T = 10.0
 
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = T
+run_options["h"] = 0.005
+
+
+run_options["solver_options"] = options
+run_options["multipoints_iterations"] = True
+# run_options['constraint_activation_threshold']=1e-05
+
+
+run_options["Newton_max_iter"] = 20
+run_options["output_frequency"] = None
+
+# run_options["verbose"] = False
+run_options["with_timer"] = False
+# run_options["violation_verbose"] = True
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
 with MechanicsHdf5Runner(mode="r+") as io:
 
     # By default earth gravity is applied and the units are those
     # of the International System of Units.
     # Because of fixed collision margins used in the collision detection,
     # sizes of small objects may need to be expressed in cm or mm.
-    io.run(
-        with_timer=False,
-        gravity_scale=1,
-        t0=0,
-        T=T,
-        h=0.0005,
-        multipoints_iterations=True,
-        theta=0.50001,
-        Newton_max_iter=20,
-        set_external_forces=None,
-        solver_options=options,
-        numerics_verbose=False,
-        output_frequency=None,
-    )
+    io.run(run_options)

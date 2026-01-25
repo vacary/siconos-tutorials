@@ -107,6 +107,7 @@ if(${kernel_installed} GREATER -1)
     mechanics/Relay
     mechanics/RockingBlock
     mechanics/SliderCrank
+    mechanics/TimeofBirthandDeath 
     mechanics/TwoBouncingBalls
     mechanics/Woodpecker
     mechanics/yoyo
