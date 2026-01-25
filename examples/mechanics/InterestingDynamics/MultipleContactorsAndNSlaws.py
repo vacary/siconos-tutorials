@@ -48,11 +48,11 @@ with MechanicsHdf5Runner(mode='w') as io:
     io.add_object('ground', [Contactor('Ground', collision_group=1)],
                   translation=[0, 0, 0])
 
-test=True
+test = True
 if test:
-    T=1.
+    T = 1.
 else:
-    T=10.
+    T = 10.
 # Run the simulation from the inputs previously defined and add
 # results to the hdf5 file. The visualisation of the output may be done
 # with the vview command.

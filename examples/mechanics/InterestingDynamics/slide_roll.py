@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 # Various object types sliding, rolling, and sitting still.
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
 from siconos.mechanics.collision.convexhull import ConvexHull
 
 from siconos.mechanics.collision.bullet import SiconosBulletOptions
@@ -179,6 +181,26 @@ options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 10000
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-8
 
+
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = T
+run_options["h"] = 0.005
+
+
+run_options["bullet_options"] = bullet_options
+run_options["solver_options"] = options
+run_options["Newton_max_iter"] = 1
+
+run_options["verbose"] = True
+run_options["violation_verbose"] = False
+run_options["with_timer"] = False
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
+run_options["output_frequency"] = None
+
 with MechanicsHdf5Runner(mode="r+") as io:
 
     # By default earth gravity is applied and the units are those
@@ -188,16 +210,4 @@ with MechanicsHdf5Runner(mode="r+") as io:
 
     # print(pydoc.render_doc(io.run, "Help on %s"))
 
-    io.run(
-        with_timer=False,
-        bullet_options=bullet_options,
-        t0=0,
-        T=T,
-        h=0.005,
-        theta=0.50001,
-        Newton_max_iter=1,
-        set_external_forces=None,
-        solver_options=options,
-        numerics_verbose=False,
-        output_frequency=None,
-    )
+    io.run(run_options)

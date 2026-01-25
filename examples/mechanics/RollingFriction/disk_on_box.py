@@ -4,11 +4,14 @@
 # Example of one object under gravity with one contactor and a ground
 # using the Siconos proposed mechanics API
 #
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
 import siconos.mechanics.collision.bullet
 import siconos.numerics as sn
+import siconos.simulation
 
 # Creation of the hdf5 file for input/output
 with MechanicsHdf5Runner() as io:
@@ -62,22 +65,30 @@ options = sn.solver_options_create(sn.solver_ids.SICONOS_ROLLING_FRICTION_2D_NSG
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100000
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-8
 
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = 6
+run_options["h"] = 1e-3
+# run_options["theta"] = 1.0
+run_options["bullet_options"] = bullet_options
+run_options["solver_options"] = options
+
+# run_options['Newton_options']=siconos.simulation.LINEAR
+run_options["Newton_options"] = siconos.simulation.NONLINEAR
+run_options["Newton_max_iter"] = 1
+
+run_options["verbose"] = True
+run_options["violation_verbose"] = False
+run_options["with_timer"] = False
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
+run_options["output_frequency"] = None
+
 
 with MechanicsHdf5Runner(mode="r+") as io:
 
     # By default earth gravity is applied and the units are those
     # of the International System of Units.
-    io.run(
-        verbose=True,
-        with_timer=False,
-        bullet_options=bullet_options,
-        t0=0,
-        T=6,
-        h=0.001,
-        theta=0.50001,
-        Newton_max_iter=1,
-        set_external_forces=None,
-        solver_options=options,
-        numerics_verbose=True,
-        output_frequency=None,
-    )
+    io.run(run_options)

@@ -16,10 +16,13 @@
 # limitations under the License.
 #
 # A tippe-top with Coulomb friction only & JeanMoreau time stepping.
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
 from siconos.mechanics.collision.bullet import SiconosBulletOptions
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+
 import siconos.mechanics.quaternions
 from math import pi
 from matplotlib import pyplot as plt
@@ -96,16 +99,27 @@ if test:
 else:
     T = 20.0
 
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = T
+run_options["h"] = 0.0001
+
+
+run_options["bullet_options"] = bullet_options
+
+run_options["Newton_max_iter"] = 20
+
+run_options["verbose"] = True
+run_options["violation_verbose"] = False
+run_options["with_timer"] = True
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
+run_options["output_frequency"] = None
 with MechanicsHdf5Runner(mode="r+") as io:
 
-    io.run(
-        with_timer=True,
-        bullet_options=bullet_options,
-        t0=0,
-        T=T,
-        h=0.0001,
-        Newton_max_iter=20,
-    )
+    io.run(run_options)
 
     # plot of theta Euler angle.
     # to be compared with fig 12

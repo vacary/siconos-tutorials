@@ -87,12 +87,12 @@ with MechanicsHdf5Runner() as io:
 # Run the simulation from the inputs previously defined and add
 # results to the hdf5 file. The visualisation of the output may be done
 # with the vview command.
-test=True
+test = True
 if test:
-    T=1.
+    T = 1.
 else:
-    T=30.
-    
+    T = 30.
+
 with MechanicsHdf5Runner(mode='r+') as io:
 
     # By default earth gravity is applied and the units are those

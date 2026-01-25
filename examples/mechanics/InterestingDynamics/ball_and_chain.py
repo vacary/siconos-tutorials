@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
 # Various object types sliding, rolling, and sitting still.
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+
 from siconos.mechanics.collision.convexhull import ConvexHull
 import numpy as np
 
@@ -170,11 +174,29 @@ with MechanicsHdf5Runner() as io:
 
 test = True
 if test == True:
-    T = 0.1
+    T = 0.5
     hstep = 1e-3
 else:
     T = 20
     hstep = 1e-3
+
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = T
+run_options["h"] = hstep
+
+# run_options["theta"] = 1.0
+
+run_options["Newton_max_iter"] = 1
+
+run_options["verbose"] = True
+run_options["violation_verbose"] = False
+run_options["with_timer"] = False
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
+run_options["output_frequency"] = None
 
 
 # Run the simulation from the inputs previously defined and add
@@ -187,16 +209,4 @@ options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-8
 
 
 with MechanicsHdf5Runner(mode="r+") as io:
-
-    io.run(
-        with_timer=False,
-        t0=0,
-        T=T,
-        h=hstep,
-        theta=0.50001,
-        Newton_max_iter=1,
-        set_external_forces=None,
-        solver_options=options,
-        numerics_verbose=False,
-        output_frequency=None,
-    )
+    io.run(run_options)

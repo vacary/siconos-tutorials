@@ -3,12 +3,15 @@
 #
 # Example of one object under gravity with one contactor and a ground
 #
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 
 import math
 import random
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+
 import siconos.numerics as sn
 import siconos.mechanics.collision.bullet
 
@@ -118,6 +121,26 @@ bullet_options.worldScale = 1000.0
 bullet_options.contactBreakingThreshold = 0.04
 bullet_options.dimension = siconos.mechanics.collision.bullet.TwoD
 
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = T
+run_options["h"] = 1e-3
+# run_options["theta"] = 1.0
+run_options["bullet_options"] = bullet_options
+run_options["solver_options"] = options
+
+# run_options['Newton_options']=siconos.simulation.LINEAR
+run_options["Newton_options"] = siconos.simulation.NONLINEAR
+run_options["Newton_max_iter"] = 1
+
+run_options["verbose"] = True
+run_options["violation_verbose"] = False
+run_options["with_timer"] = False
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
+run_options["output_frequency"] = 10
 
 with MechanicsHdf5Runner(mode="r+") as io:
 
@@ -125,20 +148,4 @@ with MechanicsHdf5Runner(mode="r+") as io:
     # of the International System of Units.
     # Because of fixed collision margins used in the collision detection,
     # sizes of small objects may need to be expressed in cm or mm.
-    io.run(
-        with_timer=False,
-        bullet_options=bullet_options,
-        gravity_scale=1,
-        t0=0,
-        T=T,
-        h=1e-3,
-        theta=0.50001,
-        Newton_max_iter=1,
-        set_external_forces=None,
-        solver_options=options,
-        violation_verbose=False,
-        numerics_verbose=False,
-        output_frequency=10,
-        # constraint_activation_threshold=1e-08,
-        output_contact_index_set=0,
-    )
+    io.run(run_options)

@@ -3,11 +3,15 @@
 #
 # Example of one object under gravity with one contactor and a ground
 #
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
 import siconos.numerics as sn
 import siconos.modeling as smsm
+import siconos.simulation
 
 # Creation of the hdf5 file for input/output
 with MechanicsHdf5Runner() as io:
@@ -21,12 +25,12 @@ with MechanicsHdf5Runner() as io:
 
     # Definition of a non smooth law. As no group ids are specified it
     # is between contactors of group id 0.
-    #io.add_Newton_impact_friction_nsl('contact', mu=0.3)
+    # io.add_Newton_impact_friction_nsl('contact', mu=0.3)
 
     # Definition of a non smooth law. As no group ids are specified it
     # is between contactors of group id 0.
-    io.add_Newton_impact_rolling_friction_nsl('contact_rolling', e= 0.9, mu=0.3, mu_r=.5)
-    #io.add_Newton_impact_friction_nsl('contact', e= 0.9, mu=0.3)
+    io.add_Newton_impact_rolling_friction_nsl('contact_rolling', e=0.9, mu=0.3, mu_r=.5)
+    # io.add_Newton_impact_friction_nsl('contact', e= 0.9, mu=0.3)
 
     # The cube object made with an unique Contactor : the cube shape.
     # As a mass is given, it is a dynamic system involved in contact
@@ -47,16 +51,36 @@ with MechanicsHdf5Runner() as io:
 options = sn.solver_options_create(sn.solver_ids.SICONOS_ROLLING_FRICTION_3D_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100000
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-8
-test=True
+test = True
 if test:
-    T=1.0
-    h=5e-3
+    T = 1.0
+    h = 5e-3
     options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
     options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-4
 else:
-    T=10.0
-    h=5e-3
-    
+    T = 10.0
+    h = 5e-3
+
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = T
+run_options["h"] = h
+# run_options["theta"] = 1.0
+run_options["solver_options"] = options
+run_options["multipoints_iterations"] = False
+# run_options['Newton_options']=siconos.simulation.LINEAR
+run_options["Newton_options"] = siconos.simulation.NONLINEAR
+run_options["Newton_max_iter"] = 20
+
+run_options["verbose"] = True
+run_options["violation_verbose"] = False
+run_options["with_timer"] = False
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
+run_options["output_frequency"] = None
+
 # # Run the simulation from the inputs previously defined and add
 # # results to the hdf5 file. The visualisation of the output may be done
 # # with the vview command.
@@ -66,15 +90,4 @@ with MechanicsHdf5Runner(mode='r+') as io:
     # of the International System of Units.
     # Because of fixed collision margins used in the collision detection,
     # sizes of small objects may need to be expressed in cm or mm.
-    io.run(with_timer=False,
-           multipoints_iterations=False,
-           gravity_scale=1,
-           t0=0,
-           T=T,
-           h=h,
-           theta=0.50001,
-           Newton_max_iter=20,
-           set_external_forces=None,
-           solver_options=options,
-           numerics_verbose=False,
-           output_frequency=None)
+    io.run(run_options)

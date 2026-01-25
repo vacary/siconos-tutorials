@@ -2,9 +2,11 @@
 
 import math
 import pickle
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
 
 # import scipy.constants as constants
 import numpy as np
@@ -134,24 +136,33 @@ def apply_forces(body):
 options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-14
+
+
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = step * hstep
+run_options["h"] = hstep
+run_options["theta"] = 1.0
+
+run_options["options"] = options
+run_options["Newton_max_iter"] = 10
+
+run_options["verbose"] = True
+run_options["violation_verbose"] = True
+run_options["with_timer"] = True
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
+run_options["output_frequency"] = 10
+run_options["gravity_scale"] = 1.0 / scale
+run_options["multipoints_iterations"] = True
+run_options["set_external_forces"] = apply_forces
+
 with MechanicsHdf5Runner(mode="r+", collision_margin=0.01) as io:
 
     # By default earth gravity is applied and the units are those
     # of the International System of Units.
     # Because of fixed collision margins used in the collision detection,
     # sizes of small objects may need to be expressed in cm or mm.
-    io.run(
-        with_timer=False,
-        gravity_scale=gravity_scale,
-        t0=0,
-        T=step * hstep,
-        h=hstep,
-        multipoints_iterations=True,
-        theta=1.0,
-        Newton_max_iter=10,
-        set_external_forces=apply_forces,
-        solver_options=options,
-        numerics_verbose=False,
-        violation_verbose=True,
-        output_frequency=10,
-    )
+    io.run(run_options)
