@@ -30,12 +30,19 @@ print(sys.argv)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
+    try:
+        from pylmgc90 import pre
+    except:
+        print('pylmgc90 is not found !!!, exit')
+        exit(0)
+    if (len(sys.argv) >1):
         nbp = int(sys.argv[1])
     else:
         nbp = 20
     radii = pre.granulo_Random(nbp, radius_min, radius_max)
-    [nbpl, coors] = pre.depositInBox3D(radii, lx, ly, lz)
+    print(radii)
+    print(pre.depositInBox3D(radii, lx, ly, lz))
+    nbpl, coors, radii = pre.depositInBox3D(radii, lx, ly, lz)
 
     numpy.savetxt("coors-{0}.txt".format(nbpl), coors[0 : nbpl * 3])
     numpy.savetxt("radii-{0}.txt".format(nbpl), radii[0:nbpl])
