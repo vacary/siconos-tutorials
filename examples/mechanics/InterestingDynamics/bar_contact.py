@@ -144,7 +144,7 @@ run_options["T"] = step * hstep
 run_options["h"] = hstep
 run_options["theta"] = 1.0
 
-run_options["options"] = options
+run_options["solver_options"] = options
 run_options["Newton_max_iter"] = 10
 
 run_options["verbose"] = True
