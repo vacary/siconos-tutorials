@@ -13,7 +13,7 @@ from siconos.io.mechanics_run import (
 
 import siconos.numerics as sn
 import siconos.modeling as sm
-
+import siconos.simulation
 import math
 
 # Creation of the hdf5 file for input/output
@@ -93,11 +93,11 @@ angle = math.pi / 4.0
 def apply_gravity(body):
     g = 9.81
     weight = [
-        body.scalarMass() * g * math.sin(angle),
+        body.scalarMass * g * math.sin(angle),
         0.0,
-        -body.scalarMass() * g * math.cos(angle),
+        -body.scalarMass * g * math.cos(angle),
     ]
-    body.setConstantFext(weight, sm.copy_t)  # scalMass() dans quel bibli ?
+    body.setConstantFext(weight, sm.copy_t)  
 
 
 import numpy
@@ -216,8 +216,8 @@ from siconos.mechanics.collision.bullet import SiconosBulletOptions
 bullet_options = SiconosBulletOptions()
 bullet_options.worldScale = 1.0
 bullet_options.contactBreakingThreshold = 1.0
-bullet_options.perturbationIterations = 3.0
-bullet_options.minimumPointsPerturbationThreshold = 3.0
+bullet_options.perturbationIterations = 3
+bullet_options.minimumPointsPerturbationThreshold = 3
 
 options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100
@@ -236,7 +236,7 @@ run_options["constraint_activation_threshold"] = 1e-05
 # run_options['start_run_iteration_hook']=sh
 run_options["end_run_iteration_hook"] = dh
 
-run_options["Newton_options"] = sk.SICONOS_TS_LINEAR
+run_options["Newton_options"] = siconos.simulation.LINEAR
 
 # run_options['skip_last_update_output']=True
 # run_options['skip_reset_lambdas']=True
