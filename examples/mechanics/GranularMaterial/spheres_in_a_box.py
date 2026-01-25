@@ -187,8 +187,6 @@ with MechanicsHdf5Runner(
     io.run(
         with_timer=True,
         bullet_options=bullet_options,
-        face_class=None,
-        edge_class=None,
         t0=0,
         T=8.00,
         h=hstep,

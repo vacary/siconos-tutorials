@@ -146,10 +146,6 @@ with MechanicsHdf5Runner(mode="r+", collision_margin=0.01) as io:
     io.run(
         with_timer=False,
         time_stepping=None,
-        body_class=None,
-        shape_class=None,
-        face_class=None,
-        edge_class=None,
         gravity_scale=gravity_scale,
         t0=0,
         T=step * hstep,

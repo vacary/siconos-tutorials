@@ -82,8 +82,6 @@ with MechanicsHdf5Runner(mode="r+") as io:
     # of the International System of Units.
     io.run(
         with_timer=False,
-        face_class=None,
-        edge_class=None,
         t0=0,
         T=6,
         h=0.0005,

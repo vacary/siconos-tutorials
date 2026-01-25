@@ -100,8 +100,6 @@ with MechanicsHdf5Runner(mode='r+', set_external_forces=apply_gravity) as io:
     # of the International System of Units.
     io.run(with_timer=False,
            bullet_options=bullet_options,
-           face_class=None,
-           edge_class=None,
            t0=0,
            T=4.0,
            h=1e-3,
