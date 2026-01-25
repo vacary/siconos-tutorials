@@ -15,10 +15,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
 from siconos.mechanics.collision.convexhull import ConvexHull
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+
 import siconos.numerics as sn
 import numpy
 
@@ -147,15 +150,23 @@ options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-4
 options.iparam[sn.params.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 100
 
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = T
+run_options["h"] = h_step
+
+run_options["solver_options"] = options
+run_options["Newton_max_iter"] = 1
+
+run_options["verbose"] = True
+run_options["violation_verbose"] = False
+run_options["with_timer"] = True
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
+run_options["output_frequency"] = 1
+
 # Load and run the simulation
 with MechanicsHdf5Runner(mode="r+") as io:
-    io.run(
-        t0=0,
-        T=T,
-        h=h_step,
-        theta=0.5,
-        Newton_max_iter=1,
-        solver_options=options,
-        output_frequency=1,
-        with_timer=True,
-    )
+    io.run(run_options)

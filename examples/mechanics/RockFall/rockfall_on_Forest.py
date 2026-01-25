@@ -3,6 +3,8 @@
 #
 # Example of how to use the heightmap object to interact with a static terrain.
 #
+import math
+from siconos.mechanics.collision.convexhull import ConvexHull
 import numpy as np
 from siconos.io.mechanics_run import (
     MechanicsHdf5Runner,
@@ -34,7 +36,6 @@ print("heightmap", heightmap_size_y)
 # 2 - Generate a random convexhull defined by its vertices
 # that flow on terrain under gravity given by the file ./data/d1/asc
 
-from siconos.mechanics.collision.convexhull import ConvexHull
 
 polyhedron_size = 10.0
 density = 2500
@@ -43,7 +44,6 @@ polyhedron_initial_position = np.array(Terrain.initial_position("./data/d1.asc")
 print(polyhedron_initial_position)
 polyhedron_initial_position[2] = polyhedron_initial_position[2] + polyhedron_size
 print(polyhedron_initial_position)
-import math
 
 angle = math.pi / 2.0
 polyhedron_initial_orientation = [
@@ -202,8 +202,8 @@ run_options["verbose"] = True
 run_options["verbose_progress"] = True
 run_options["with_timer"] = False
 
-run_options['numerics_verbose']=False
-run_options['numerics_verbose_level']=0
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
 
 run_options["output_frequency"] = 10
 
@@ -220,8 +220,6 @@ with MechanicsHdf5Runner(mode="r+") as io:
     io.run(run_options)
 
 
-
-    
 with MechanicsHdf5Runner(mode="r+") as io:
     data = io._out["data"]  # access to hdf5 group data
     positions = data["dynamic"][:]
@@ -238,5 +236,3 @@ with MechanicsHdf5Runner(mode="r+") as io:
                     e[0], e[2:5], e[5:10]
                 )
             )
-
-            

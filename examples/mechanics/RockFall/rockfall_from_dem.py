@@ -3,6 +3,9 @@
 #
 # Example of how to use the heightmap object to interact with a static terrain.
 #
+import math
+from siconos.mechanics.collision.convexhull import ConvexHull
+import random
 import numpy as np
 
 from siconos.mechanics.collision.tools import Contactor
@@ -32,8 +35,6 @@ heightmap_size_y = Terrain.dimension[1]
 # 2 - Generate a random convexhull defined by its vertices
 # that flow on terrain under gravity given by the file ./data/d1/asc
 
-import random
-from siconos.mechanics.collision.convexhull import ConvexHull
 
 polyhedron_size = 10.0
 density = 2500
@@ -41,7 +42,6 @@ density = 2500
 polyhedron_initial_position = np.array(Terrain.initial_position("./data/d1.asc"))
 polyhedron_initial_position[2] = polyhedron_initial_position[2] + polyhedron_size
 # print(polyhedron_initial_position)
-import math
 
 angle = math.pi / 2.0
 polyhedron_initial_orientation = [

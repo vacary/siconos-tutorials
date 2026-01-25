@@ -1,9 +1,16 @@
 #
 # Example of how to use the heightmap object to interact with a static terrain.
 #
+import math
+from siconos.mechanics.collision.convexhull import ConvexHull
+import random
 import numpy as np
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+
 
 import siconos.numerics as sn
 
@@ -56,13 +63,10 @@ rectangle_initial_position = [-5, 18, 150]  # x, y, z
 
 
 # 2.2 A randomconvexhull defined by its vertices.
-import random
-from siconos.mechanics.collision.convexhull import ConvexHull
 
 polyhedron_size = 10.0
 density = 2500
 polyhedron_initial_position = [5, 18, 150]  # x, y, z
-import math
 
 angle = math.pi / 2.0
 polyhedron_initial_orientation = [
@@ -206,6 +210,24 @@ if test:
 else:
     T = 30.0
 
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = T
+run_options["h"] = 0.01
+
+run_options["solver_options"] = options
+run_options["Newton_max_iter"] = 1
+
+run_options["verbose"] = True
+run_options["violation_verbose"] = False
+run_options["with_timer"] = False
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
+run_options["output_frequency"] = 10
+
+
 with MechanicsHdf5Runner(mode="r+") as io:
 
     # By default earth gravity is applied and the units are those
@@ -215,19 +237,7 @@ with MechanicsHdf5Runner(mode="r+") as io:
     # are interested mostly just in the location of contacts with the
     # height field, but we are not evaluating the performance of
     # individual contacts here.
-    io.run(
-        with_timer=False,
-        verbose=True,
-        verbose_progress=True,
-        t0=0,
-        T=T,
-        h=0.01,
-        theta=0.50001,
-        Newton_max_iter=1,
-        solver_options=options,
-        numerics_verbose=False,
-        output_frequency=10,
-    )
+    io.run(run_options)
 
 
 with MechanicsHdf5Runner(mode="r+") as io:
