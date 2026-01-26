@@ -12,8 +12,8 @@
 from pathlib import Path
 from siconos.mechanics.collision.tools import Contactor, Shape, Volume, Material
 from siconos.io.mechanics_run import MechanicsHdf5Runner
-from OCC.BRepPrimAPI import BRepPrimAPI_MakeCylinder
-from OCC.gp import gp_Pnt, gp_Ax2, gp_Dir
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCylinder
+from OCC.Core.gp import gp_Pnt, gp_Ax2, gp_Dir
 import siconos.numerics as sn
 import siconos.modeling as sm
 import siconos.io.mechanics_run
@@ -139,14 +139,14 @@ if not restart:
         io.add_external_function(
             "f1",
             "balance_wheel_body",
-            "setComputeMIntFunction",
+            "setComputeMintFunction",
             "Plugin",
             "internalMomentsBalanceWheel",
         )
         io.add_external_function(
             "f1_jacq",
             "balance_wheel_body",
-            "setComputeJacobianMIntqFunction",
+            "setComputeJacobianMintqFunction",
             "Plugin",
             "internalMomentsBalanceWheel_Jacq",
         )
@@ -387,7 +387,7 @@ if not restart:
         io.add_external_function(
             "M1",
             "escape_wheel_body",
-            "setComputeMExtFunction",
+            "setComputeMextFunction",
             "Plugin",
             "externalMomentEscapeWheel",
         )
@@ -541,6 +541,6 @@ with MechanicsHdf5Runner(config=config_occ, mode="r+") as io:
         h=h_step,
         solver_options=options,
         Newton_max_iter=5,
-        contact_index_set=0,
+        output_contact_index_set=0,
         output_frequency=10,
     )
