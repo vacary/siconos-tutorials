@@ -61,7 +61,6 @@ int main(int argc, char* argv[]) {
     double t0 = 0;     // initial computation time
     double T = 1e-02;  // final computation time
     auto solid = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
-
     // add the dynamical system in the non smooth dynamical system
     solid->insertDynamicalSystem(FEsolid);
     // Contact Conditions
@@ -92,11 +91,16 @@ int main(int argc, char* argv[]) {
     double h = 1e-05;    // time step
     double theta = 1.0;  // theta for MoreauJeanOSI integrator
 
+    // ------------------
+    // --- Simulation ---
+    // ------------------
+
     // -- (1) OneStepIntegrators --
     auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
     OSI->setIsWSymmetricDefinitePositive(true);
 
     // -- (2) Time discretisation --
+
     auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
     // -- (3) one step non smooth problem
