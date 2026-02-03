@@ -198,14 +198,14 @@ int main(int argc, char* argv[]) {
     auto q = FEsolid->q();
     auto v = FEsolid->velocity();
     auto sigma = FEsolid->stress();
-    auto epsilonp = FEsolid->epsilonp(1);
+    auto epsilon_p = FEsolid->epsilon_p(1);
     auto p = FEsolid->p(1);
     // auto lambda = inter->lambda(1);
     dataPlot(0, 0) = solid->t0();
     dataPlot(0, 1) = (*q)(FEsolid->dimension() - 1);
     dataPlot(0, 2) = (*v)(FEsolid->dimension() - 1);
     dataPlot(0, 3) = (*sigma)(30);
-    dataPlot(0, 4) = (*epsilonp)(30);
+    dataPlot(0, 4) = (*epsilon_p)(30);
     // dataPlot(0, 4) = (*lambda)(0);
 
     auto filename =
@@ -226,7 +226,7 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 1) = (*q)(FEsolid->dimension() - 1);
       dataPlot(k, 2) = (*v)(FEsolid->dimension() - 1);
       dataPlot(k, 3) = (*sigma)(30);
-      dataPlot(k, 4) = (*epsilonp)(30);
+      dataPlot(k, 4) = (*epsilon_p)(30);
 
       if (k % 1 == 0) writeDisplacementforPython(mesh, femodel, q, filename);
       // dataPlot(k, 4) = (*lambda)(0);

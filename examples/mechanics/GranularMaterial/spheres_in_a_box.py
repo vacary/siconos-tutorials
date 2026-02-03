@@ -26,7 +26,6 @@ from siconos.io.mechanics_run import (
     MechanicsHdf5Runner_run_options,
 )
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner, MechanicsHdf5Runner_run_options
 from siconos.io.FrictionContactTrace import FrictionContactTraceParams
 
 import siconos.numerics as sn
@@ -46,23 +45,23 @@ bullet_options.contactBreakingThreshold = 0.1
 bullet_options.perturbationIterations = 0
 bullet_options.minimumPointsPerturbationThreshold = 0
 
-T = 1.
+T = 1.0
 hstep = 1e-4
-theta = 1.
+theta = 1.0
 itermax = 1000
 tolerance = 1e-12
 
 length_scale_unit = 1000
 mass_scale_unit = 1000
 
-length_scale_unit = 1000.
-mass_scale_unit = 1000.
+length_scale_unit = 1000.0
+mass_scale_unit = 1000.0
 force_scale_unit = 1 / (length_scale_unit * mass_scale_unit)
 
 lx = mkspheres.lx * length_scale_unit
 ly = mkspheres.ly * length_scale_unit
 lz = mkspheres.lz * length_scale_unit
-margin_ratio = 1.e-5
+margin_ratio = 1.0e-5
 wthick = mkspheres.lz / 10
 zoffset = -wthick / 2
 
@@ -70,12 +69,12 @@ density = 2320 * mass_scale_unit / (length_scale_unit**3)
 
 
 margin_max = margin_ratio * mkspheres.radius_max
-if (len(sys.argv) > 1):
+if len(sys.argv) > 1:
     coors_filename = sys.argv[1]
     radii_filename = sys.argv[2]
 else:
-    coors_filename = 'coors-14.txt'
-    radii_filename = 'radii-14.txt'
+    coors_filename = "coors-18.txt"
+    radii_filename = "radii-18.txt"
 
 coors = numpy.loadtxt(coors_filename) * length_scale_unit
 radii = numpy.loadtxt(radii_filename) * length_scale_unit
@@ -91,8 +90,8 @@ nb_laid_particles = len(radii)
 # adapt the 2025 format of pylmgc90 preprocessor
 if coors.shape == (nb_laid_particles, 3):
     # translation to the center of the box
-    coors[:, 0] = coors[:, 0] - lx / 2.
-    coors[:, 1] = coors[:, 1] - ly / 2.
+    coors[:, 0] = coors[:, 0] - lx / 2.0
+    coors[:, 1] = coors[:, 1] - ly / 2.0
     coors = coors.flatten()
 
 print(nb_laid_particles)
@@ -185,19 +184,27 @@ with MechanicsHdf5Runner(io_filename="siab-{0}.hdf5".format(nb_laid_particles)) 
         orientation=([1, 0, 0], pi / 2.0),
     )
 
-    io.add_Newton_impact_friction_nsl('contact', mu=0.5, e=0.)
+    io.add_Newton_impact_friction_nsl("contact", mu=0.5, e=0.0)
     for i in range(nb_laid_particles):
         rad = radii[i]
         margin = rad * margin_ratio
-        io.add_primitive_shape('Sphere-{0}'.format(i), 'Sphere', (rad,),
-                               insideMargin=margin, outsideMargin=margin)
-        mass = (4. / 3) * pi * (radii[i]**3) * density
-        I_ = (2. / 5) * mass * (radii[i] * radii[i])
-        io.add_object('sphere-{0}'.format(i), [Contactor('Sphere-{0}'.format(i))],
-                      translation=[coors[3 * i], coors[3 * i + 1], coors[3 * i + 2]],
-                      velocity=[0, 0, 0, 0, 0, 0],
-                      inertia=[I_, I_, I_],
-                      mass=mass)
+        io.add_primitive_shape(
+            "Sphere-{0}".format(i),
+            "Sphere",
+            (rad,),
+            insideMargin=margin,
+            outsideMargin=margin,
+        )
+        mass = (4.0 / 3) * pi * (radii[i] ** 3) * density
+        I_ = (2.0 / 5) * mass * (radii[i] * radii[i])
+        io.add_object(
+            "sphere-{0}".format(i),
+            [Contactor("Sphere-{0}".format(i))],
+            translation=[coors[3 * i], coors[3 * i + 1], coors[3 * i + 2]],
+            velocity=[0, 0, 0, 0, 0, 0],
+            inertia=[I_, I_, I_],
+            mass=mass,
+        )
 
 
 def my_forces(body):
@@ -221,7 +228,7 @@ run_options["constraint_activation_threshold"] = 1e-02
 run_options["end_run_iteration_hook"] = None
 
 
-run_options['Newton_options'] = simu.LINEAR
+run_options["Newton_options"] = simu.LINEAR
 # run_options["Newton_options"] = simu.NONLINEAR
 run_options["Newton_max_iter"] = 10
 run_options["Newton_tolerance"] = 1e-8
@@ -250,7 +257,9 @@ run_options["output_energy_work"] = True
 
 run_options["set_external_forces"] = my_forces
 
-with MechanicsHdf5Runner(io_filename='siab-{0}.hdf5'.format(nb_laid_particles), mode='r+') as io:
+with MechanicsHdf5Runner(
+    io_filename="siab-{0}.hdf5".format(nb_laid_particles), mode="r+"
+) as io:
 
     # By default earth gravity is applied and the units are those
     # of the International System of Units.

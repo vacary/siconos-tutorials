@@ -49,9 +49,9 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
 
   virtual void computeOutput(double time, siconos::modeling::Interaction& inter,
                              unsigned int derivativeNumber) override {
-    auto& DSlink = inter.linkToDSVariables();
+    const auto& ds_vars = inter.read_dynamical_systems_variables();
     if (derivativeNumber == 0) {
-      computeh(*DSlink[siconos::tools::enum_to_index(WorkDS::q0)], *inter.y(0));
+      computeh(*ds_vars[siconos::tools::enum_to_index(ds_var::q0)], *inter.y(0));
     } else {
       R_CLASS::computeOutput(time, inter, derivativeNumber);
     }

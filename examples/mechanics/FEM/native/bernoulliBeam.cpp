@@ -37,8 +37,8 @@ int main(int argc, char* argv[]) {
   try {
     double Ly = 1.0;
 
-    auto v0 = std::make_shared<MVertex>(0, 0.0, 0.0, 0.0);
-    auto vEnd = std::make_shared<MVertex>(0, 0.0, 4.0, 0.0);
+    auto v0 = std::make_shared<MeshVertex>(0, 0.0, 0.0, 0.0);
+    auto vEnd = std::make_shared<MeshVertex>(0, 0.0, 4.0, 0.0);
     int nbBeams = 4;
     int dim = 2;
     auto mesh = createBeamMesh(v0, vEnd, nbBeams, 2);

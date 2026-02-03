@@ -44,14 +44,14 @@ def create_Meshcpp_for_siconos(mesh, filename):
     f.write("static Mesh * createMesh()\n{\n");
 
     p_cnt =0
-    f.write("std::vector<MVertex *> vertices;\n");
+    f.write("std::vector<MeshVertex *> vertices;\n");
     
     for p in mesh.points:
-        f.write("vertices.push_back(new MVertex({0}, {1}, {2}, {3}));\n".format(p_cnt,p[0], p[1], p[2]))
+        f.write("vertices.push_back(new MeshVertex({0}, {1}, {2}, {3}));\n".format(p_cnt,p[0], p[1], p[2]))
         p_cnt = p_cnt+1
 
 
-    f.write("std::vector<MElement *> elements;\n");
+    f.write("std::vector<MeshElement *> elements;\n");
     e_cnt=0
     dim=0
     for mc in mesh.cells:
@@ -65,7 +65,7 @@ def create_Meshcpp_for_siconos(mesh, filename):
                 p_cnt= p_cnt+1
             str_v += "}" 
             #print(str_v)
-            f.write("std::vector<MVertex *> vertices{0} = {1};\n".format(e_cnt, str_v));
+            f.write("std::vector<MeshVertex *> vertices{0} = {1};\n".format(e_cnt, str_v));
             
             if mc.type == 'triangle':
                 type = 2
@@ -79,7 +79,7 @@ def create_Meshcpp_for_siconos(mesh, filename):
             elif  mc.type == 'tetra':
                 type = 4
                 dim= max(dim,3)
-            f.write("elements.push_back(new MElement({0}, {1}, vertices{2}));\t".format(e_cnt, type, e_cnt))
+            f.write("elements.push_back(new MeshElement({0}, {1}, vertices{2}));\t".format(e_cnt, type, e_cnt))
 
             e_cnt=e_cnt+1
 

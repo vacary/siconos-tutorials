@@ -250,8 +250,8 @@ int main(int argc, char* argv[]) {
     auto q = FEsolid->q();
     auto v = FEsolid->velocity();
     auto sigma = FEsolid->stress();
-    auto epsilonp = FEsolid->epsilonp(0);
-    auto dotEpsilonp = FEsolid->epsilonp(1);
+    auto epsilon_p = FEsolid->epsilon_p(0);
+    auto dotEpsilonp = FEsolid->epsilon_p(1);
     auto p = FEsolid->p(1);
     // auto lambda = inter->lambda(1);
 

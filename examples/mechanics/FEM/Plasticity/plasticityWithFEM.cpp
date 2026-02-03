@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
         std::shared_ptr<siconos::algebra::SimpleMatrix> DBigB = std::make_shared<siconos::algebra::SimpleMatrix>(3*nElements,ndofs);
         std::shared_ptr<siconos::algebra::SimpleMatrix> DBfem = std::make_shared<siconos::algebra::SimpleMatrix>(3,ndofs);
         int elem_cnt = 0;
-        for(std::shared_ptr<siconos::mechanics::fem::native::FElement> fe : femodel->elements())
+        for(std::shared_ptr<siconos::mechanics::fem::native::FiniteElement> fe : femodel->elements())
         {
                     femodel->computeElementaryBMatrix_direct(*fe, *Bfem);
                     prod(*D, *Bfem, *DBfem, true);
