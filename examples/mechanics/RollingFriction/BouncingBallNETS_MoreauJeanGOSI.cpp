@@ -262,7 +262,7 @@ int main(int argc, char* argv[]) {
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
     dataPlot.resize(k, outputSize);
-    siconos::algebra::io::write("BouncingBallNETSMoreauJeanGOSI.dat", dataPlot,
+    siconos::algebra::io::write("BouncingBallNETS_MoreauJeanGOSI.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
     // Comparison with a reference file
