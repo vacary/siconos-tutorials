@@ -45,9 +45,11 @@ bullet_options.contactBreakingThreshold = 0.1
 bullet_options.perturbationIterations = 0
 bullet_options.minimumPointsPerturbationThreshold = 0
 
-T = 1.0
-hstep = 1e-4
-theta = 1.0
+
+T = 1.
+hstep = 1e-3
+theta = 0.5
+
 itermax = 1000
 tolerance = 1e-12
 
@@ -214,7 +216,7 @@ def my_forces(body):
 
 
 run_options = MechanicsHdf5Runner_run_options()
-
+run_options.display()
 
 run_options["t0"] = 0
 run_options["T"] = T
@@ -244,14 +246,14 @@ run_options["violation_verbose"] = False
 run_options["with_timer"] = True
 run_options["with_timer_output_at_the_end"] = True
 run_options["explode_computeOneStep_in_python"] = True
-run_options["explode_computeOneStep_in_python"] = True
+run_options["explode_computeOneStepNSProblem_in_python"] = True
 
 # run_options["explode_Newton_solve"] = True
 
 # run_options['numerics_verbose']=True
 # run_options['numerics_verbose_level']=0
 
-run_options["output_frequency"] = 0
+run_options["output_frequency"] = 1
 run_options["output_contact_work"] = True
 run_options["output_energy_work"] = True
 

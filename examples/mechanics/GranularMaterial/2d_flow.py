@@ -212,7 +212,7 @@ run_options["h"] = hstep
 run_options["bullet_options"] = bullet_options
 run_options["solver_options"] = options
 
-# run_options['Newton_options']=simu.LINEAR
+#run_options['Newton_options']=simu.LINEAR
 run_options["Newton_options"] = simu.NONLINEAR
 run_options["Newton_max_iter"] = 1
 
@@ -222,17 +222,16 @@ run_options["osns_assembly_type"] = nsf.REDUCED_DIRECT
 
 run_options["verbose"] = True
 run_options["violation_verbose"] = False
-run_options["with_timer"] = False
+run_options["with_timer"] = True
 
-run_options["explode_computeOneStep_in_python"] = False
-run_options["explode_computeOneStepNSProblem_in_python"] = False
+run_options["explode_computeOneStep_in_python"] = True
+run_options["explode_computeOneStepNSProblem_in_python"] = True
 
 run_options['numerics_verbose']=False
 run_options['numerics_verbose_level']=0
 
-run_options["output_frequency"] = 100
-
-
+run_options["output_frequency"] = 1
+run_options["output_energy_work"] = True
 
 
 with MechanicsHdf5Runner(mode="r+") as io:
