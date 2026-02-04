@@ -30,7 +30,7 @@
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-#define WITH_PROJ
+//#define WITH_PROJ
 #define WITH_FC3D
 using namespace std;
 #ifdef WITH_FC3D
@@ -289,6 +289,22 @@ int main(int argc, char* argv[]) {
     std::cout << "\nComputation time : " << elapsed << " ms\n";
 
     // --- Output files ---
+
+
+
+#ifdef WITH_PROJ    
+    std::cout << "====> Output file writing ...\n";
+    siconos::algebra::io::write("BallNewtonEuler-WITHPROJ.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
+
+    // Comparison with a reference file
+    cout << "====> Comparison with a reference file ...\n";
+    double error = 0.0, eps = 1e-10;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BallNewtonEuler-WITHPROJ.ref",
+                                                      eps)) > eps)
+      return 1;
+#else
     std::cout << "====> Output file writing ...\n";
     siconos::algebra::io::write("BallNewtonEuler.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
@@ -296,12 +312,6 @@ int main(int argc, char* argv[]) {
 
     // Comparison with a reference file
     cout << "====> Comparison with a reference file ...\n";
-#ifdef WITH_PROJ
-    double error = 0.0, eps = 1e-10;
-    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BallNewtonEuler-WITHPROJ.ref",
-                                                      eps)) > eps)
-      return 1;
-#else
     double error = 0.0, eps = 1e-10;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BallNewtonEuler.ref", eps)) >
         eps)

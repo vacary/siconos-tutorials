@@ -152,6 +152,7 @@ int main(int argc, char* argv[]) {
 
     auto collision_manager = std::make_shared<user_defined::MyCollisionManager>(R);
     s->insertInteractionManager(collision_manager);
+    //s->setNewtonOptions(siconos::simulation::TimeSteppingType::LINEAR);
 
     // =========================== End of model definition ===========================
 
