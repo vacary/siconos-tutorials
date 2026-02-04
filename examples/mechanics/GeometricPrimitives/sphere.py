@@ -70,8 +70,8 @@ from siconos.mechanics.collision.bullet import SiconosBulletOptions
 bullet_options = SiconosBulletOptions()
 bullet_options.worldScale = 1.0
 bullet_options.contactBreakingThreshold = 0.04
-bullet_options.perturbationIterations = 3
-bullet_options.minimumPointsPerturbationThreshold = 3
+bullet_options.perturbationIterations = 1
+bullet_options.minimumPointsPerturbationThreshold = 1
 
 options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100000
@@ -81,6 +81,7 @@ run_options = MechanicsHdf5Runner_run_options()
 run_options["t0"] = 0
 run_options["T"] = 20.
 run_options["h"] = 0.005
+run_options["theta"] = .5
 
 
 run_options["solver_options"] = options
@@ -97,6 +98,7 @@ run_options["with_timer"] = False
 
 run_options['numerics_verbose'] = False
 run_options['numerics_verbose_level'] = 0
+run_options['output_energy_work'] = True
 
 with MechanicsHdf5Runner(mode="r+") as io:
 
