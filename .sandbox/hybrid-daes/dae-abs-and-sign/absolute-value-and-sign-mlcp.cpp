@@ -31,7 +31,6 @@
   - mlcp solvers have to send all solutions (currently only 1)
 
   Examples of mlcp in cpp are in siconos/numerics/src/MLCP/test/main_mlcp.cpp
-  Examples of mlcp in cpp are in siconos/numerics/swig/test
 
 */
 
