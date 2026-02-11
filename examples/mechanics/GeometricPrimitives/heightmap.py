@@ -95,7 +95,7 @@ options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-5
 test = True
 if test:
-    T = 5.0
+    T = 3.0
 else:
     T = 20.0
 

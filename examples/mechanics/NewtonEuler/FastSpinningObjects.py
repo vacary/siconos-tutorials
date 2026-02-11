@@ -111,17 +111,6 @@ ds = unstableRotation
 
 print(ds)
 
-# test swig director
-# ds.computeMInt(1,x,v)
-# ds._mInt.display()
-# m=SiconosVector(3)
-# ds.computeMInt(1,x,v,m)
-# m.display()
-# m=np.zeros(3)
-# ds.computeMInt(1,x,v,m)
-# print m
-# raw_input()
-
 
 # Non-Smooth Dynamical System
 #

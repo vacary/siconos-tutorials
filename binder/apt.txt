@@ -7,7 +7,6 @@ libboost-filesystem-dev
 libboost-timer-dev
 libboost-chrono-dev
 libgmp-dev
-swig
 gcc
 gfortran
 libgfortran3

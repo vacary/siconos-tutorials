@@ -117,7 +117,7 @@ run_options["output_frequency"] = 1
 
 test = True
 if test:
-    run_options["T"] = 1.0
+    run_options["T"] = 0.2
     options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
     options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-06
 else:

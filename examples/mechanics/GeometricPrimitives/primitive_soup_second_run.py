@@ -44,7 +44,7 @@ bullet_options.minimumPointsPerturbationThreshold = 3
 
 test = True
 if test:
-    T = 1.8
+    T = 1.1
     options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100
     options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-3
 else:

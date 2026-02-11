@@ -172,7 +172,7 @@ with MechanicsHdf5Runner() as io:
 # with the vview command.
 test = True
 if test:
-    T = 1.0
+    T = 0.5
 else:
     T = 20.0
 

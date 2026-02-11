@@ -15,6 +15,8 @@ import siconos.modeling as sm
 
 import math
 
+from siconos.mechanics.collision.bullet import SiconosBulletOptions
+
 # Creation of the hdf5 file for input/output
 with MechanicsHdf5Runner() as io:
 
@@ -62,7 +64,9 @@ with MechanicsHdf5Runner() as io:
         mass=1,
     )
 
-    io.add_boundary_condition("sphere3_bc", "sphere3", indices=[0], bc_class="BoundaryCondition")
+    io.add_boundary_condition(
+        name="sphere3_bc", object1="sphere3", indices=[0], bc_class="BoundaryCondition"
+    )
 
     # the ground object made with the ground shape. As the mass is
     # not given, it is a static object only involved in contact
@@ -96,9 +100,9 @@ angle = math.pi / 4.0
 def apply_gravity(body):
     g = 9.81
     weight = [
-        body.scalarMass() * g * math.sin(angle),
+        body.scalarMass * g * math.sin(angle),
         0.0,
-        -body.scalarMass() * g * math.cos(angle),
+        -body.scalarMass * g * math.cos(angle),
     ]
     body.setConstantFext(weight, sm.copy_t)  # scalMass() dans quel bibli ?
 
@@ -106,8 +110,6 @@ def apply_gravity(body):
 # Run the simulation from the inputs previously defined and add
 # results to the hdf5 file. The visualisation of the output may be done
 # with the vview command.
-
-from siconos.mechanics.collision.bullet import SiconosBulletOptions
 
 bullet_options = SiconosBulletOptions()
 bullet_options.worldScale = 1.0
@@ -121,7 +123,7 @@ options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-8
 
 run_options = MechanicsHdf5Runner_run_options()
 run_options["t0"] = 0
-run_options["T"] = 4.
+run_options["T"] = 4.0
 run_options["h"] = 1e-3
 
 
@@ -137,8 +139,8 @@ run_options["output_frequency"] = None
 run_options["with_timer"] = False
 # run_options["violation_verbose"] = True
 
-run_options['numerics_verbose'] = False
-run_options['numerics_verbose_level'] = 0
+run_options["numerics_verbose"] = False
+run_options["numerics_verbose_level"] = 0
 
 with MechanicsHdf5Runner(mode="r+", set_external_forces=apply_gravity) as io:
 

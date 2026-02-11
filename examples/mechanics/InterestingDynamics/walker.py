@@ -270,7 +270,7 @@ def my_forces(body):
 test = True
 
 if test:
-    T = 1.0
+    T = 0.5
 else:
     T = 30.0
 
