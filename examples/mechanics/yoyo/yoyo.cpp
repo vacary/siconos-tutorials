@@ -28,7 +28,7 @@ using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 using namespace user;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   try {
     int nDof = 3;   // nombre de degrés de liberté du yoyo
     double t0 = 0;  //  instants initial et final de la simulation
@@ -41,13 +41,13 @@ int main(int argc, char *argv[]) {
     auto law = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
     auto relation = std::make_shared<siconos::modeling::LagrangianRheonomousR>();
 
-    relation->setComputehFunction([](const siconos::algebra::BlockVector &q, double time,
+    relation->setComputehFunction([](const siconos::algebra::BlockVector& q, double time,
                                      Eigen::Ref<siconos::algebra::MapVectorType> y) {
       y(0) = q(1) - r * q(0) + L - q(2);
     });
 
     relation->setComputeJacobianhOver_qFunction(
-        [](const siconos::algebra::BlockVector &pos, double time,
+        [](const siconos::algebra::BlockVector& pos, double time,
            Eigen::Ref<siconos::algebra::MapType> result) {
           result.setZero();
           result(0, 0) = -r;
@@ -134,8 +134,8 @@ int main(int argc, char *argv[]) {
       //     });
 
       yoyo->setComputeFintFunction(
-          [](const Eigen::Ref<const siconos::algebra::SiconosVector> &velocity,
-             const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+          [](const Eigen::Ref<const siconos::algebra::SiconosVector>& velocity,
+             const Eigen::Ref<const siconos::algebra::SiconosVector>& q, double time,
              Eigen::Ref<siconos::algebra::MapVectorType> fint) {
             fint(0) = r * epsilon * (velocity(0));
             fint(1) = 0;
@@ -149,8 +149,8 @@ int main(int argc, char *argv[]) {
           });
 
       yoyo->setComputeJacobianFintOver_qFunction(
-          [](const Eigen::Ref<const siconos::algebra::SiconosVector> &velocity,
-             const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+          [](const Eigen::Ref<const siconos::algebra::SiconosVector>& velocity,
+             const Eigen::Ref<const siconos::algebra::SiconosVector>& q, double time,
              Eigen::Ref<siconos::algebra::MapType> jacob) {
             jacob(0, 0) = 0;
             jacob(1, 0) = 0;
@@ -164,8 +164,8 @@ int main(int argc, char *argv[]) {
           });
 
       yoyo->setComputeJacobianFintOver_velocityFunction(
-          [](const Eigen::Ref<const siconos::algebra::SiconosVector> &velocity,
-             const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+          [](const Eigen::Ref<const siconos::algebra::SiconosVector>& velocity,
+             const Eigen::Ref<const siconos::algebra::SiconosVector>& q, double time,
              Eigen::Ref<siconos::algebra::MapType> jacob) {
             jacob(0, 0) = r * epsilon;
             jacob(1, 0) = 0;
@@ -251,8 +251,8 @@ int main(int argc, char *argv[]) {
         yoyo->setConstantFext(fext2, siconos::algebra::alias_t);
 
         yoyo->setComputeFintFunction(
-            [](const Eigen::Ref<const siconos::algebra::SiconosVector> &velocity,
-               const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+            [](const Eigen::Ref<const siconos::algebra::SiconosVector>& velocity,
+               const Eigen::Ref<const siconos::algebra::SiconosVector>& q, double time,
                Eigen::Ref<siconos::algebra::MapVectorType> fint) {
               fint(0) = 0.;
               fint(1) = 0;
@@ -266,8 +266,8 @@ int main(int argc, char *argv[]) {
             });
 
         yoyo->setComputeJacobianFintOver_qFunction(
-            [](const Eigen::Ref<const siconos::algebra::SiconosVector> &velocity,
-               const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+            [](const Eigen::Ref<const siconos::algebra::SiconosVector>& velocity,
+               const Eigen::Ref<const siconos::algebra::SiconosVector>& q, double time,
                Eigen::Ref<siconos::algebra::MapType> jacob) {
               jacob(0, 0) = 0;
               jacob(1, 0) = 0;
@@ -281,8 +281,8 @@ int main(int argc, char *argv[]) {
             });
 
         yoyo->setComputeJacobianFintOver_velocityFunction(
-            [](const Eigen::Ref<const siconos::algebra::SiconosVector> &velocity,
-               const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+            [](const Eigen::Ref<const siconos::algebra::SiconosVector>& velocity,
+               const Eigen::Ref<const siconos::algebra::SiconosVector>& q, double time,
                Eigen::Ref<siconos::algebra::MapType> jacob) {
               jacob(0, 0) = 0.;
               jacob(1, 0) = 0.;

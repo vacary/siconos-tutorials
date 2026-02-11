@@ -1,5 +1,20 @@
-#!/usr/bin/env python
-
+# Siconos is a program dedicated to modeling, simulation and control
+# of non smooth dynamical systems.
+#
+# Copyright 2026 INRIA.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 #
 # Example of one object under gravity with one contactor and a ground
 # using the Siconos proposed mechanics API
@@ -15,6 +30,9 @@ import siconos.numerics as sn
 import siconos.modeling as sm
 import siconos.simulation
 import math
+
+import numpy
+import siconos.mechanics.collision.bullet as smcb
 
 # Creation of the hdf5 file for input/output
 with MechanicsHdf5Runner() as io:
@@ -97,11 +115,7 @@ def apply_gravity(body):
         0.0,
         -body.scalarMass * g * math.cos(angle),
     ]
-    body.setConstantFext(weight, sm.copy_t)  
-
-
-import numpy
-from siconos.mechanics.collision.bullet import *
+    body.setConstantFext(weight, sm.copy_t)
 
 
 class death_hook:
@@ -149,7 +163,8 @@ class death_hook:
                     print("interaction with a static object")
                     inter = self._io._nsds.interaction(inter_id)
 
-                    contact_r = cast_BulletR(inter.relation())
+                    contact_r = inter.relation()
+                    print("contact_r.bodyShapeRecordA", contact_r.distance())
                     print("contact_r.bodyShapeRecordA", contact_r.bodyShapeRecordA)
                     print("contact_r.bodyShapeRecordB", contact_r.bodyShapeRecordB)
 

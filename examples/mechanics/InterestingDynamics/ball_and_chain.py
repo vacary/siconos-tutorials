@@ -173,8 +173,8 @@ with MechanicsHdf5Runner() as io:
 
 
 test = True
-if test == True:
-    T = 0.5
+if test:
+    T = 0.3
     hstep = 1e-3
 else:
     T = 20
@@ -193,8 +193,8 @@ run_options["verbose"] = True
 run_options["violation_verbose"] = False
 run_options["with_timer"] = False
 
-run_options['numerics_verbose'] = False
-run_options['numerics_verbose_level'] = 0
+run_options["numerics_verbose"] = False
+run_options["numerics_verbose_level"] = 0
 
 run_options["output_frequency"] = None
 

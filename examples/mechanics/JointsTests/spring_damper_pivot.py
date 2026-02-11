@@ -124,7 +124,7 @@ options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-12
 with MechanicsHdf5Runner(mode="r+") as io:
     io.run(
         t0=0,
-        T=5.0,
+        T=2.0,
         h=0.001,
         theta=0.5,
         Newton_max_iter=1,

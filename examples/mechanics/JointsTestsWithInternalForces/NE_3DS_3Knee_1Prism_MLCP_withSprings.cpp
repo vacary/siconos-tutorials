@@ -29,7 +29,7 @@
 using Matrix = siconos::algebra::SiconosMatrix;
 using Vector = siconos::algebra::SiconosVector;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   try {
     // ================= Creation of the model =======================
 
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     // --- Dynamical systems ---
     // -------------------------
 
-    FILE *pFile;
+    FILE* pFile;
     pFile = fopen("data.h", "w");
     if (pFile == NULL) {
       printf("fopen exampleopen filed!\n");
@@ -83,7 +83,8 @@ int main(int argc, char *argv[]) {
     q10(6) = V1(2) * sin(angle / 2);
 
     // -- The dynamical system --
-    auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1, siconos::algebra::alias_t);
+    auto beam1 = std::make_shared<siconos::modeling::NewtonEulerDS>(q10, v10, m, I1,
+                                                                    siconos::algebra::alias_t);
     // -- Set external forces (weight) --
     Vector weight{nDof};
     weight.setZero();
@@ -91,8 +92,8 @@ int main(int argc, char *argv[]) {
     beam1->setConstantFext(weight, siconos::algebra::alias_t);
 
     beam1->setComputeFintFunction(
-        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &twist,
-           const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector>& twist,
+           const Eigen::Ref<const siconos::algebra::SiconosVector>& q, double time,
            Eigen::Ref<siconos::algebra::MapVectorType> fint) {
           auto i = 0;
           fint(0) = 1e4 * q(0);
@@ -101,8 +102,8 @@ int main(int argc, char *argv[]) {
         });
 
     beam1->setComputeJacobianFintOver_qFunction(
-        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &twist,
-           const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector>& twist,
+           const Eigen::Ref<const siconos::algebra::SiconosVector>& q, double time,
            Eigen::Ref<siconos::algebra::MapType> result) {
           result.setZero();
 
@@ -111,8 +112,8 @@ int main(int argc, char *argv[]) {
         });
 
     beam1->setComputeMintFunction(
-        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &twist,
-           const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector>& twist,
+           const Eigen::Ref<const siconos::algebra::SiconosVector>& q, double time,
            Eigen::Ref<siconos::algebra::MapVectorType> mint) {
           double angle = 2 * asin(q(5));
           mint(0) = 0.0;
@@ -121,8 +122,8 @@ int main(int argc, char *argv[]) {
         });
 
     beam1->setComputeJacobianMintOver_qFunction(
-        [](const Eigen::Ref<const siconos::algebra::SiconosVector> &twist,
-           const Eigen::Ref<const siconos::algebra::SiconosVector> &q, double time,
+        [](const Eigen::Ref<const siconos::algebra::SiconosVector>& twist,
+           const Eigen::Ref<const siconos::algebra::SiconosVector>& q, double time,
            Eigen::Ref<siconos::algebra::MapType> result) {
           result.setZero();
           result(1, 5) = 1e3 * 2.0 / sqrt(1 - q(5) * q(5));
@@ -144,7 +145,8 @@ int main(int argc, char *argv[]) {
     q02(5) = V1(1) * sin(angle / 2);
     q02(6) = V1(2) * sin(angle / 2);
 
-    auto beam2 = std::make_shared<siconos::modeling::NewtonEulerDS>(q02, v02, m, I2, siconos::algebra::alias_t);
+    auto beam2 = std::make_shared<siconos::modeling::NewtonEulerDS>(q02, v02, m, I2,
+                                                                    siconos::algebra::alias_t);
     // -- Set external forces (weight) --
     beam2->setConstantFext(weight, siconos::algebra::alias_t);
 
@@ -163,7 +165,8 @@ int main(int argc, char *argv[]) {
     q03(5) = V1(1) * sin(angle / 2);
     q03(6) = V1(2) * sin(angle / 2);
 
-    auto beam3 = std::make_shared<siconos::modeling::NewtonEulerDS>(q03, v03, m, I3, siconos::algebra::alias_t);
+    auto beam3 = std::make_shared<siconos::modeling::NewtonEulerDS>(q03, v03, m, I3,
+                                                                    siconos::algebra::alias_t);
     // -- Set external forces (weight) --
     beam3->setConstantFext(weight, siconos::algebra::alias_t);
     // --------------------
@@ -218,10 +221,6 @@ int main(int argc, char *argv[]) {
     Vector axe1{3};
     axe1 << 1, 0, 0;
     auto relation4 = std::make_shared<siconos::joints::PrismaticJointR>(axe1, false, beam3);
-    // relation1->setJachq(H1); // Remark V.A. Why do we need to set the Jacobian outside
-    // relation2->setJachq(H2);
-    // relation3->setJachq(H3);
-    // relation4->setJachq(H4);
     auto nslaw4 = std::make_shared<siconos::modeling::EqualityConditionNSL>(
         relation4->numberOfConstraints());
 
