@@ -45,34 +45,40 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
   double _sBallRadius;
 
  public:
-  my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius) {};
+  my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius){};
 
   virtual void computeOutput(double time, siconos::modeling::Interaction& inter,
                              unsigned int derivativeNumber) override {
     const auto& ds_vars = inter.read_dynamical_systems_variables();
     if (derivativeNumber == 0) {
-      computeh(*ds_vars[siconos::tools::enum_to_index(ds_var::q0)], *inter.y(0));
+      auto q0 = ds_vars[siconos::tools::enum_to_index(ds_var::q0)]->vector(0);
+      auto q1 = ds_vars[siconos::tools::enum_to_index(ds_var::q0)]->vector(1);
+      if (q1)
+        computeh(*q0, *q1, *inter.y(0));
+      else
+        computeh(*q0, std::nullopt, *inter.y(0));
     } else {
       R_CLASS::computeOutput(time, inter, derivativeNumber);
     }
   }
 
-  void computeh(const siconos::algebra::BlockVector& q0,
+  void computeh(const Eigen::Ref<const siconos::algebra::SiconosVector7>& q1,
+                const std::optional<Eigen::Ref<const siconos::algebra::SiconosVector>>& q2,
                 Eigen::Ref<siconos::algebra::SiconosVector> y) override {
     std::cout << "my_NewtonEulerR:: computeh \n";
-    std::cout << "q0.size() = " << q0.size() << "\n";
-    double height = q0(0) - _sBallRadius - q0(7);
+    assert(q2);
+    double height = q1(0) - _sBallRadius - (*q2)(0);
     y(0) = height;
     (*_Nc)(0) = 1;
     (*_Nc)(1) = 0;
     (*_Nc)(2) = 0;
-    (*_Pc1)(0) = q0(0) - _sBallRadius;
-    (*_Pc1)(1) = q0(1);
-    (*_Pc1)(2) = q0(2);
+    (*_Pc1)(0) = q1(0) - _sBallRadius;
+    (*_Pc1)(1) = q1(1);
+    (*_Pc1)(2) = q1(2);
 
-    (*_Pc2)(0) = q0(7);
-    (*_Pc2)(1) = q0(8);
-    (*_Pc2)(2) = q0(9);
+    (*_Pc2)(0) = (*q2)(0);
+    (*_Pc2)(1) = (*q2)(1);
+    (*_Pc2)(2) = (*q2)(2);
     // printf("my_NewtonEulerR N, Pc\n");
     siconos::algebra::print(*_Nc);
     siconos::algebra::print(*_Pc1);

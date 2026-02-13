@@ -46,7 +46,8 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
  public:
   my_NewtonEulerR(double radius) : R_CLASS{}, _sBallRadius{radius} {};
 
-  void computeh(const siconos::algebra::BlockVector& q0,
+  void computeh(const Eigen::Ref<const siconos::algebra::SiconosVector7>& q0,
+                const std::optional<Eigen::Ref<const siconos::algebra::SiconosVector>>&,
                 Eigen::Ref<siconos::algebra::SiconosVector> y) override {
     double height = fabs(q0(0)) - _sBallRadius;
     // std::cout <<"my_NewtonEulerR:: computeh jacobianhOver_q_" << std:: endl;
