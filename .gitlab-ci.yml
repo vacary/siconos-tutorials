@@ -30,7 +30,7 @@ variables:
 # (based on current siconos-tutorials branch --> it assumes that a branch of the same name exists in siconos repo)
 run-examples:
   variables:
-    IMAGE_NAME: $CI_REGISTRY_IMAGE/$LAB_NAME-occ-$CI_COMMIT_REF_SLUG
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/$LAB_NAME-$CI_COMMIT_REF_SLUG
     CDASH_SUBMIT: 1
   extends: .examples-build
   rules:
