@@ -242,7 +242,7 @@ int main(int argc, char* argv[]) {
     osnspb->setNumericsVerboseLevel(1);
 
     osnspb->numericsSolverOptions()->iparam[SICONOS_FRICTION_3D_IPARAM_ERROR_EVALUATION] =
-        SICONOS_FRICTION_3D_NSGS_ERROR_EVALUATION_FULL;
+        SICONOS_NSGS_ERROR_EVALUATION_FULL;
     // osnspb->numericsSolverOptions()->dparam[SICONOS_DPARAM_TOL] = 1.0e-1;
 
     // auto osnspb = std::make_shared<siconos::nonsmooth_formulations::LCP>();

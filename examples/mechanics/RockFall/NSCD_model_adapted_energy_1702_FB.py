@@ -1273,7 +1273,7 @@ bullet_options = SiconosBulletOptions()
 options = Numerics.solver_options_create(Numerics.solver_ids.SICONOS_FRICTION_3D_NSGS)
 options.iparam[Numerics.params.SICONOS_IPARAM_MAX_ITER] = 800
 options.dparam[Numerics.params.SICONOS_DPARAM_TOL] = 1e-4
-options.iparam[Numerics.params.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 20
+options.iparam[Numerics.params.SICONOS_NSGS_FREEZING_CONTACT] = 20
 
 run_options = MechanicsHdf5Runner_run_options()
 run_options["t0"] = 0

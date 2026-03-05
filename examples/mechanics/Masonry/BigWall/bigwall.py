@@ -149,7 +149,7 @@ h_step = 5e-3
 options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-4
-options.iparam[sn.params.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 100
+options.iparam[sn.params.SICONOS_NSGS_FREEZING_CONTACT] = 100
 
 run_options = MechanicsHdf5Runner_run_options()
 run_options["t0"] = 0

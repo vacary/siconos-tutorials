@@ -140,7 +140,7 @@ friction_contact_trace_params = FrictionContactTraceParams(
 options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
 options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = itermax
 options.dparam[sn.params.SICONOS_DPARAM_TOL] = tolerance
-options.iparam[sn.params.SICONOS_FRICTION_3D_NSGS_FREEZING_CONTACT] = 100
+options.iparam[sn.params.SICONOS_NSGS_FREEZING_CONTACT] = 100
 
 
 with MechanicsHdf5Runner(io_filename="siab-{0}.hdf5".format(nb_laid_particles)) as io:
