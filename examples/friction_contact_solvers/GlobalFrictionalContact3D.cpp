@@ -61,7 +61,7 @@
 #include "SparseBlockMatrix.h"
 #include "NumericsSparseMatrix.h"
 #include "SolverOptions.h"
-#include "Friction_cst.h"
+#include "FrictionContact_options.h"
 #include "gfc3d_Solvers.h"
 #include "SiconosNumerics.h"
 

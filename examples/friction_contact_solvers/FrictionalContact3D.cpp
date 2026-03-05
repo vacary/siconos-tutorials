@@ -56,7 +56,7 @@
 #include "FrictionContactProblem.h"
 #include "NumericsMatrix.h"
 #include "SolverOptions.h"
-#include "Friction_cst.h"
+#include "FrictionContact_options.h"
 #include "fc3d_Solvers.h"
 #include "NumericsVerbose.h"
 #include <float.h>

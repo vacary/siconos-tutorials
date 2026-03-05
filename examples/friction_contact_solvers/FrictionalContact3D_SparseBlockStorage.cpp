@@ -61,7 +61,7 @@
 #include "NumericsSparseMatrix.h"
 #include "SparseBlockMatrix.h"
 #include "SolverOptions.h"
-#include "Friction_cst.h"
+#include "FrictionContact_options.h"
 #include "fc3d_Solvers.h"
 
 int main(int argc, char* argv[])
