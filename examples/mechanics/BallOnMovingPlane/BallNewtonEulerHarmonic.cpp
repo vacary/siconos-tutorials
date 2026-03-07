@@ -48,7 +48,7 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
   my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius){};
 
   virtual void computeOutput(double time, siconos::modeling::Interaction& inter,
-                             unsigned int derivativeNumber) override {
+                             siconos::algebra::blocks::size_type derivativeNumber) override {
     const auto& ds_vars = inter.read_dynamical_systems_variables();
     if (derivativeNumber == 0) {
       auto q0 = ds_vars[siconos::tools::enum_to_index(ds_var::q0)]->vector(0);
