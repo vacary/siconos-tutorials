@@ -147,7 +147,7 @@ options.iparam[sn.params.SICONOS_NSGS_FREEZING_CONTACT] = 100
 
 test = True
 if test:
-    T = 2.0
+    T = .2
     # T =0.01
 else:
     T = 20.0
