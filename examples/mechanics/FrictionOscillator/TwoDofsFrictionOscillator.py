@@ -20,7 +20,7 @@
 #
 
 
-""" siconos -v TwoDofsFrictionOscillator.py --build-plugins """
+""" siconos -v TwoDofsFrictionOscillator.py"""
 
 
 import numpy as np

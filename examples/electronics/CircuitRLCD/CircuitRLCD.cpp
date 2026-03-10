@@ -57,44 +57,43 @@ int main(int argc, char *argv[]) {
   double Cvalue = 1e-6;     // capacitance
   double Rvalue = 1e3;      // resistance
   double Vinit = 10.0;      // initial voltage
-  std::string Modeltitle = "CircuitRLCD";
 
   try {
     // ================= Creation of the model =======================
     // --- Dynamical system specification ---
-    auto init_state = std::make_shared<siconos::algebra::SiconosVector>(2);
-    (*init_state)(0) = Vinit;
-    (*init_state)(1) = 0.0;
+    siconos::algebra::SiconosVector init_state{2};
+    init_state << Vinit, 0.;
 
-    auto LS_A = std::make_shared<siconos::algebra::SiconosMatrix>(2, 2);
-    LS_A->setValue(0, 1, -1.0 / Cvalue);
-    LS_A->setValue(1, 0, 1.0 / Lvalue);
+    siconos::algebra::SiconosMatrix LS_A{2, 2};
+    LS_A.setZero();
+    LS_A(0, 1) = -1.0 / Cvalue;
+    LS_A(1, 0) = 1.0 / Lvalue;
 
     auto LSCircuitRLCD = std::make_shared<siconos::modeling::FirstOrderLinearDS>(
-        *init_state, siconos::algebra::alias_t);
-    LSCircuitRLCD->setConstantA(*LS_A, siconos::algebra::alias_t);
+        init_state, siconos::algebra::alias_t);
+    LSCircuitRLCD->setConstantA(LS_A, siconos::algebra::alias_t);
     // --- Interaction between linear system and non smooth system ---
-    auto Int_C = std::make_shared<siconos::algebra::SiconosMatrix>(1, 2);
-    Int_C->setValue(0, 0, -1.0);
+    siconos::algebra::SiconosMatrix Int_C{1, 2};
+    Int_C(0, 0) = -1.0;
+    Int_C(0, 1) = 0.;
 
-    auto Int_D = std::make_shared<siconos::algebra::SiconosMatrix>(1, 1);
-    Int_D->setValue(0, 0, Rvalue);
+    siconos::algebra::SiconosMatrix Int_D{1, 1};
+    Int_D << Rvalue;
 
-    auto Int_B = std::make_shared<siconos::algebra::SiconosMatrix>(2, 1);
-    Int_B->setValue(0, 0, -1.0 / Cvalue);
+    siconos::algebra::SiconosMatrix Int_B{2, 1};
+    Int_B << -1.0 / Cvalue, 0.;
 
     auto LTIRCircuitRLCD =
-        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*Int_C, *Int_B);
+        std::make_shared<siconos::modeling::FirstOrderLinearTIR>(Int_C, Int_B);
     auto NSLaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(1);
 
-    LTIRCircuitRLCD->setConstantD(*Int_D);
+    LTIRCircuitRLCD->setConstantD(Int_D);
 
     auto InterCircuitRLCD =
         std::make_shared<siconos::modeling::Interaction>(NSLaw, LTIRCircuitRLCD);
 
     // --- Model creation ---
     auto CircuitRLCD = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
-    CircuitRLCD->setTitle(Modeltitle);
     // add the dynamical system in the non smooth dynamical system
     CircuitRLCD->insertDynamicalSystem(LSCircuitRLCD);
 
@@ -104,7 +103,6 @@ int main(int argc, char *argv[]) {
     InterCircuitRLCD->computeOutput(t0, 0);
     InterCircuitRLCD->computeInput(t0, 0);
 
-    CircuitRLCD->display();
     // ------------------
     // --- Simulation ---
     // ------------------
@@ -123,36 +121,38 @@ int main(int argc, char *argv[]) {
         CircuitRLCD, TiDiscRLCD, OSI_RLCD, LCP_RLCD);
     double h = StratCircuitRLCD->timeStep();
     int N = ceil((T - t0) / h);  // Number of time steps
-    int k = 0;
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    Matrix dataPlot(N, 6);
-
+    Matrix dataPlot(N + 1, 6);
+    dataPlot.setZero();
     // For the initial time step:
-
+    LSCircuitRLCD->display();
+    auto x = LSCircuitRLCD->x_read();
+    siconos::algebra::print(x);
     // time
-    dataPlot(k, 0) = CircuitRLCD->t0();
+    dataPlot(0, 0) = CircuitRLCD->t0();
 
     // inductor voltage
-    dataPlot(k, 1) = (*LSCircuitRLCD->x())(0);
+    dataPlot(0, 1) = x(0);  // x(0);
 
     // inductor current
-    dataPlot(k, 2) = (*LSCircuitRLCD->x())(1);
+    dataPlot(0, 2) = x(1);
 
     // diode voltage
-    dataPlot(k, 3) = -(*InterCircuitRLCD->y(0))(0);
+    dataPlot(0, 3) = -(*InterCircuitRLCD->y(0))(0);
 
     // diode current
-    dataPlot(k, 4) = (InterCircuitRLCD->getLambda(0))(0);
+    dataPlot(0, 4) = (InterCircuitRLCD->getLambda(0))(0);
 
-    dataPlot(k, 5) = (*LSCircuitRLCD->r())(0);
+    dataPlot(0, 5) = (*LSCircuitRLCD->r())(0);
 
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
 
     // --- Time loop  ---
-    for (k = 1; k < N; ++k) {
+    int k = 1;
+    while (StratCircuitRLCD->hasNextEvent()) {
       // solve ...
       StratCircuitRLCD->computeOneStep();
 
@@ -161,10 +161,10 @@ int main(int argc, char *argv[]) {
       dataPlot(k, 0) = StratCircuitRLCD->nextTime();
 
       // inductor voltage
-      dataPlot(k, 1) = (*LSCircuitRLCD->x())(0);
+      dataPlot(k, 1) = x(0);
 
       // inductor current
-      dataPlot(k, 2) = (*LSCircuitRLCD->x())(1);
+      dataPlot(k, 2) = x(1);
 
       // diode voltage
       dataPlot(k, 3) = -(*InterCircuitRLCD->y(0))(0);
@@ -177,6 +177,7 @@ int main(int argc, char *argv[]) {
       dataPlot(k, 5) = 0;
       // transfer of state i+1 into state i and time incrementation
       StratCircuitRLCD->nextStep();
+      k++;
     }
     // Number of time iterations
     std::cout << "Number of iterations done: " << k - 1 << "\n";
@@ -184,7 +185,7 @@ int main(int argc, char *argv[]) {
     end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "Computation time : " << elapsed << " ms\n";
-
+    std::cout << dataPlot(0, 1) << "\n";
     // dataPlot (ascii) output
     siconos::algebra::io::write("CircuitRLCD.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
@@ -192,7 +193,6 @@ int main(int argc, char *argv[]) {
     double error = 0.0, eps = 1e-11;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "CircuitRLCD.ref", eps)) > eps)
       return 1;
-
   }
 
   // --- Exceptions handling ---

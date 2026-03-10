@@ -281,20 +281,15 @@ foreach(current_dir IN LISTS EXAMPLES_DIRECTORIES)
     # Create test
     if(ext MATCHES ".py")
       # -- Python --
-      # Plugins are not build by default for python scripts.
-      # We force it with --build-plugins.
       # Build everything in temp dirs (autom. removed at the end of the test)
       add_test(
         NAME py_${test_name}
-        COMMAND ${siconos_SCRIPT} ${driver} --build-plugins --tmp-dir
+        COMMAND ${siconos_SCRIPT} ${driver}
         WORKING_DIRECTORY ${working_dir}
         )
 
       set_tests_properties(py_${test_name} PROPERTIES
             TIMEOUT ${tests_timeout})
-
-      # plugins are not build by default for python scripts, so
-      # we force it with --build-plugins.
     else()
       # -- C++ --
       # A test for the build part (siconos --no-exec)

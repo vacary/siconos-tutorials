@@ -13,9 +13,6 @@ Model Definition and usage
 
 The multibody system is defined in a python file, for instance `occ_watch_escapement.py`. To run the simulation, you have to
 
-Compile the plugin that defines the spring forces:
-
-	siconos --build-plugins
 
 Run the python script:
 

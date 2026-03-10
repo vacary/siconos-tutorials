@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Siconos is a program dedicated to modeling, simulation and control
 # of non smooth dynamical systems.
@@ -65,13 +64,13 @@ if withPlot:
     import matplotlib
 
     matplotlib.use("Agg")
-    from matplotlib.pyplot import subplot, title, plot, grid, savefig, show
+    from matplotlib.pyplot import subplot, title, plot, grid, savefig
 
 
 #
 # dynamical system
 #
-init_state = np.array([-1, 0], dtype=np.float64, order="F")
+init_state = np.array([Vinit, 0], dtype=np.float64, order="F")
 
 A = np.zeros((2, 2), dtype=np.float64, order="F")
 A.flat[...] = [0.0, -1.0 / Cvalue, 1.0 / Lvalue, 0.0]
@@ -108,12 +107,13 @@ CircuitRLCD.insertDynamicalSystem(LSCircuitRLCD)
 #   link the interaction and the dynamical system
 CircuitRLCD.link(InterCircuitRLCD, LSCircuitRLCD)
 
+
 #
 # Simulation
 #
 
 # (1) OneStepIntegrators
-theta = 0.500000001
+theta = 0.5000000000001
 aOSI = si.EulerMoreauOSI(theta)
 
 # (2) Time discretisation
@@ -131,11 +131,11 @@ aTS = ss.TimeStepping(CircuitRLCD, aTiDisc, aOSI, aLCP)
 # computation
 #
 
-k = 0
+
 h = aTS.timeStep()
 print("Timestep : ", h)
 # Number of time steps
-N = int((T - t0) / h)
+N = int((T - t0) / h) + 1
 print("Number of steps : ", N)
 
 # Get the values to be plotted
@@ -144,14 +144,13 @@ print("Number of steps : ", N)
 dataPlot = np.zeros([N + 1, 6], dtype=np.float64)
 
 x = LSCircuitRLCD.x()
-print("Initial state : ", x)
 y = InterCircuitRLCD.y(0)
-print("First y : ", y)
 lambda_ = InterCircuitRLCD.lambda_python(0)
-
+InterCircuitRLCD.computeInput(t0, 0)
+InterCircuitRLCD.computeOutput(t0, 0)
 # For the initial time step:
 # time
-
+k = 0
 #  inductor voltage
 dataPlot[k, 1] = x[0]
 
@@ -166,7 +165,7 @@ dataPlot[k, 4] = lambda_[0]
 dataPlot[k, 5] = LSCircuitRLCD.r()[0]
 
 k += 1
-while k < N:
+while aTS.hasNextEvent():
     aTS.computeOneStep()
     # aLCP.display()
     dataPlot[k, 0] = aTS.nextTime()
@@ -185,13 +184,8 @@ while k < N:
 # comparison with reference file
 
 ref = np.loadtxt("CircuitRLCD.ref", skiprows=1)
-error = np.linalg.norm(dataPlot - ref)
-print("Error:", error)
-if error > 1e-10:
-    print("Warning. The result is rather different from the reference file.")
-    # raise ValueError("Results are different from reference.")
 
-# assert (np.linalg.norm(dataPlot - ref) < 1e-10)
+assert(np.allclose(ref, dataPlot, atol=1e-8))
 
 if withPlot:
     #
@@ -213,4 +207,3 @@ if withPlot:
     title("diode current")
     plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 4])
     savefig("circuit_rlcd.png")
-    # show()

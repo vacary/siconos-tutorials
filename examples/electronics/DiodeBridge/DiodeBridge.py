@@ -221,7 +221,7 @@ print("Error:", error)
 if error > 1e-12:
     print("Warning. The result is rather different from the reference file.")
     raise ValueError("Results are different from reference.")
-
+assert np.allclose(dataPlot, ref)
 if havedisplay:
     #
     # plots
@@ -245,4 +245,4 @@ if havedisplay:
     plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 7])
     plt.grid()
     plt.savefig("diode_bridge.png")
-    plt.show()
+    # plt.show()

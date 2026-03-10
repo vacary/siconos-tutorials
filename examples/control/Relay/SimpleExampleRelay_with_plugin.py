@@ -30,7 +30,7 @@ the directory 'plugins'.
 Usage :
 
 
-siconos SimpleExampleRelay_with_plugin.py --build-plugins
+siconos SimpleExampleRelay_with_plugin.py 
 
 --> compile all C files in plugins dir and creates a library plugins.so
 

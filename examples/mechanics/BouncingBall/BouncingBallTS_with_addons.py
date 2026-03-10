@@ -18,7 +18,6 @@
 # limitations under the License.
 #
 #
-import cppimport.import_hook
 import siconos.modeling as sm
 import siconos.integrators
 import siconos.simulation
@@ -74,7 +73,7 @@ def compute_mass(q, mat):
 
 
 ball.setComputeMassFunction(compute_mass)
-# or use cppimport:
+# or use bindings:
 # ball.setComputeMassFunction(addons.computeM.computeMassDense)
 
 
