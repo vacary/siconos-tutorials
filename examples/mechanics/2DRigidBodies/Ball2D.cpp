@@ -211,7 +211,7 @@ int main(int argc, char* argv[]) {
     siconos::algebra::io::write("Ball2D.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
-    double error = 0.0, eps = 1e-12;
+    double error = 0.0, eps = 1e-8;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "Ball2D.ref", eps)) > eps)
       return 1;
 

@@ -21,10 +21,6 @@
 
 
 import numpy as np
-import os
-import matplotlib
-import matplotlib.pyplot as plt
-
 from numpy.linalg import norm
 import siconos.modeling as sm
 import siconos.integrators as si
@@ -33,6 +29,10 @@ import siconos.nonsmooth_formulations as snsf
 import siconos.numerics as sn
 
 import math
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 """
 
@@ -180,9 +180,6 @@ else:
 #
 # plots
 #
-havedisplay = "DISPLAY" in os.environ
-if not havedisplay:
-    matplotlib.use("Agg")
 plt.subplot(411)
 plt.title("position x1")
 plt.plot(dataPlot[:, 0], dataPlot[:, 1])
@@ -201,7 +198,7 @@ plt.plot(dataPlot[:, 0], dataPlot[:, 3])
 plt.title("lambda")
 
 
-if havedisplay:
+if enable_plot:
     plt.show()
 else:
     plt.savefig("bbts.png")

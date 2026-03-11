@@ -22,32 +22,36 @@ from siconos.kernel import FirstOrderLinearDS, getMatrix, SiconosMatrix
 from siconos.control.simulation import ControlZOHSimulation
 from siconos.control.sensor import LinearSensor
 from siconos.control.controller import LinearSMCOT2
-
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib.pyplot import subplot, title, plot, grid, savefig
-from numpy import eye, empty, zeros, savetxt
+from numpy import eye, zeros, savetxt
 from math import ceil, sin
 from numpy.linalg import norm
+import numpy as np
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
+
 
 # Derive our own version of FirstOrderLinearDS
 class MyFOLDS(FirstOrderLinearDS):
-    ''' derived FirstOrderLinearDS class to show how to override a method '''
+    """derived FirstOrderLinearDS class to show how to override a method"""
+
     def computeb(self, time):
-        t = sin(50*time)
+        t = sin(50 * time)
         u = [t, -t]
         self.setbPtr(u)
 
+
 # variable declaration
-ndof = 2   # Number of degrees of freedom of your system
-t0 = 0.0   # start time
-T = 1    # end time
+ndof = 2  # Number of degrees of freedom of your system
+t0 = 0.0  # start time
+T = 1  # end time
 h = 1.0e-4  # time step for simulation
-hControl = 1.0e-2 # time step for control
-Xinit = 1.0 # initial position
+hControl = 1.0e-2  # time step for control
+Xinit = 1.0  # initial position
 theta = 0.5
-N = 2*int(ceil((T-t0)/h)) # number of time steps
-outputSize = 5 # number of variable to store at each time step
+N = 2 * int(ceil((T - t0) / h))  # number of time steps
+outputSize = 5  # number of variable to store at each time step
 
 # Matrix declaration
 A = zeros((ndof, ndof))
@@ -87,26 +91,23 @@ sim.run()
 dataPlot = sim.data()
 
 # Save to disk
-savetxt('SMCExampleImplicitOT2-noCplugin-py.dat', dataPlot)
+savetxt("SMCExampleImplicitOT2-noCplugin-py.dat", dataPlot)
 # Plot interesting data
-subplot(411)
-title('x1')
-plot(dataPlot[:, 0], dataPlot[:, 1])
-grid()
-subplot(412)
-title('x2')
-plot(dataPlot[:, 0], dataPlot[:, 2])
-grid()
-subplot(413)
-title('u')
-plot(dataPlot[:, 0], dataPlot[:, 3])
-grid()
-savefig('ismcOT2-noCplugin.png')
+plt.subplot(411)
+plt.title("x1")
+plt.plot(dataPlot[:, 0], dataPlot[:, 1])
+plt.grid()
+plt.subplot(412)
+plt.title("x2")
+plt.plot(dataPlot[:, 0], dataPlot[:, 2])
+plt.grid()
+plt.subplot(413)
+plt.title("u")
+plt.plot(dataPlot[:, 0], dataPlot[:, 3])
+plt.grid()
+plt.savefig("ismcOT2-noCplugin.png")
 
 # compare with the reference
 ref = getMatrix(SiconosMatrix("SMCExampleImplicitOT2-py.ref"))
 print("%e" % norm(dataPlot - ref))
-if (norm(dataPlot - ref) > 1e-12):
-    print(dataPlot - ref)
-    print("Warning. The result is rather different from the reference file.")
-    return 1
+assert np.allclose(dataPlot, ref, atol=1e-11)

@@ -28,13 +28,12 @@ int native_fem_examples::run_T3_simulation(
     std::shared_ptr<siconos::simulation::TimeStepping> simulation,
     std::shared_ptr<siconos::mechanics::fem::FiniteElementLinearTIDS> FEsolid,
     std::string basename, std::string reference_file_name) {
-  double h = 1e-05;    // time step
-  double theta = 1.0;  // theta for MoreauJeanOSI integrator
+  double time_step = simulation->timeStep();
 
   auto solid = simulation->nonSmoothDynamicalSystem();
   double T = solid->finalT();
   double t0 = solid->t0();
-  int N = ceil((T - t0) / h);  // Number of time steps
+  int N = ceil((T - t0) / time_step);  // Number of time steps
 
   // --- Get the values to be plotted ---
   // -> saved in a matrix dataPlot

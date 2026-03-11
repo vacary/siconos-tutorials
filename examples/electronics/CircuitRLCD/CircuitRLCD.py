@@ -50,6 +50,10 @@ import siconos.integrators as si
 import siconos.simulation as ss
 import siconos.nonsmooth_formulations as snsf
 import numpy as np
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 t0 = 0.0
 T = 5.0e-3  # Total simulation time
@@ -58,13 +62,6 @@ Lvalue = 1e-2  # inductance
 Cvalue = 1e-6  # capacitance
 Rvalue = 1e3  # resistance
 Vinit = 10.0  # initial voltage
-
-withPlot = True
-if withPlot:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    from matplotlib.pyplot import subplot, title, plot, grid, savefig
 
 
 #
@@ -185,25 +182,25 @@ while aTS.hasNextEvent():
 
 ref = np.loadtxt("CircuitRLCD.ref", skiprows=1)
 
-assert(np.allclose(ref, dataPlot, atol=1e-8))
+assert np.allclose(ref, dataPlot, atol=1e-8)
 
-if withPlot:
+if enable_plot:
     #
     # plots
     #
-    subplot(411)
-    title("inductor voltage")
-    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 1])
-    grid()
-    subplot(412)
-    title("inductor current")
-    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 2])
-    # plot(dataPlot[0:k - 1, 0], ref[0:k - 1, 2])
-    grid()
-    subplot(413)
-    title("diode  voltage")
-    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 3])
-    subplot(414)
-    title("diode current")
-    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 4])
-    savefig("circuit_rlcd.png")
+    plt.subplot(411)
+    plt.title("inductor voltage")
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 1])
+    plt.grid()
+    plt.subplot(412)
+    plt.title("inductor current")
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 2])
+    # plt.plot(dataPlot[0:k - 1, 0], ref[0:k - 1, 2])
+    plt.grid()
+    plt.subplot(413)
+    plt.title("diode  voltage")
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 3])
+    plt.subplot(414)
+    plt.title("diode current")
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 4])
+    plt.savefig("circuit_rlcd.png")

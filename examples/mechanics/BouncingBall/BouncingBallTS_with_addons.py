@@ -22,16 +22,12 @@ import siconos.modeling as sm
 import siconos.integrators
 import siconos.simulation
 import siconos.nonsmooth_formulations
-import matplotlib
-import os
-import matplotlib.pyplot as plt
 import numpy as np
 import addons.computeM
+import siconos.plot_config as sicoplot
 
-havedisplay = "DISPLAY" in os.environ
-
-if not havedisplay:
-    matplotlib.use("Agg")
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 
 t0 = 0  # start time
@@ -72,9 +68,10 @@ def compute_mass(q, mat):
     # print("this is the mass")
 
 
-ball.setComputeMassFunction(compute_mass)
+# with lambda function
+# ball.setComputeMassFunction(compute_mass)
 # or use bindings:
-# ball.setComputeMassFunction(addons.computeM.computeMassDense)
+ball.setComputeMassFunction(addons.computeM.computeMassDense)
 
 
 ball.computeMass(initial_position)  # initialize
@@ -183,7 +180,7 @@ plt.plot(dataPlot[:, 0], dataPlot[:, 4])
 plt.title("lambda")
 plt.grid()
 
-if havedisplay:
+if enable_plot:
     plt.show()
 else:
     plt.savefig("bbts.png")

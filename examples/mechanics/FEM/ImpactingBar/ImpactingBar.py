@@ -3,7 +3,10 @@ import siconos.modeling as sm
 import siconos.integrators
 import siconos.simulation
 import siconos.nonsmooth_formulations
-import matplotlib.pyplot as plt
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 
 # User-defined main parameters
@@ -165,5 +168,5 @@ plt.plot(dataPlot[:, 0], dataPlot[:, 4])
 plt.title("lambda")
 plt.grid()
 
-
-plt.show()
+if enable_plot:
+    plt.show()

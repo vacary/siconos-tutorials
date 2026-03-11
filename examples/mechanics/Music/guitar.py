@@ -9,14 +9,16 @@ import siconos.modeling as sm
 
 # import scipy.sparse as scs
 import numpywrappers as npw
-import matplotlib.pyplot as plt
 import siconos.integrators
 import siconos.nonsmooth_formulations
 
 from matplotlib import animation
-import h5py
 import scipy.io
 import os
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 
 class StringDS(sm.LagrangianLinearDiagonalDS):
@@ -391,7 +393,8 @@ class Guitar(object):
         self.simulation = siconos.simulation.TimeStepping(
             self.nsds, t, default_integrator, self.osnspb
         )
-        # self.simulation = siconos.simulation.TimeStepping(self.nsds, t, moreau_bilbao, self.osnspb)
+        # self.simulation = siconos.simulation.TimeStepping(
+        #   self.nsds, t, moreau_bilbao, self.osnspb)
         if integrators is not None:
             for ds in integrators:
                 self.simulation.associate(integrators[ds], ds)
@@ -538,7 +541,7 @@ class Guitar(object):
             plot_x = plot_shape[0]
             plot_y = plot_shape[1]
 
-        ndof = ds.dimension()
+        # ndof = ds.dimension()
         plt.figure(iplot, figsize=(17, 8))
         # plt.subplot(342)
         # #f, t, Sxx = signal.spectrogram(pos[0], self.fs)

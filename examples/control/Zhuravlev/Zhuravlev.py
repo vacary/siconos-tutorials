@@ -20,66 +20,69 @@
 #
 
 
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib.pyplot import subplot, title, plot, grid
-import matplotlib.pyplot as plt
 from numpy import array, eye, empty, zeros, savetxt
 import numpy as np
-from siconos.kernel import FirstOrderLinearDS, RelayNSL, \
-NonSmoothDynamicalSystem, TimeDiscretisation, TimeStepping, EulerMoreauOSI, \
-Interaction, Relay
-from math import ceil
+from siconos.kernel import (
+    FirstOrderLinearDS,
+    RelayNSL,
+    NonSmoothDynamicalSystem,
+    TimeDiscretisation,
+    TimeStepping,
+    EulerMoreauOSI,
+    Interaction,
+    Relay,
+)
 
 
-import MyR
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 
 # variables
-t0 = 0.0   # start time
-T = 10.0     # end time
-h = 1.0e-3   # time step
+t0 = 0.0  # start time
+T = 10.0  # end time
+h = 1.0e-3  # time step
 numInter = 2
 ninter = 2
-#theta = 0.5
+# theta = 0.5
 theta = 1.0
-alpha = .01
-N = int((T-t0)/h)
+alpha = 0.01
+N = int((T - t0) / h)
 
 # matrices
-A = zeros((2,2))
+A = zeros((2, 2))
 A[0, 1] = 1
 
-x0 = array([1.,10.])
-B = 500*array([[alpha,1-alpha],[-(1-alpha),alpha]])
+x0 = array([1.0, 10.0])
+B = 500 * array([[alpha, 1 - alpha], [-(1 - alpha), alpha]])
 C = eye(2)
-D = zeros((2,2))
+D = zeros((2, 2))
 
 # dynamical systems
 process = FirstOrderLinearDS(x0, A)
-myProcessRelation = MyR.MyR(C,B)
+myProcessRelation = MyR.MyR(C, B)
 
-#myProcessRelation.setConstantD(D)
+# myProcessRelation.setConstantD(D)
 
 myNslaw = RelayNSL(2)
 myNslaw.display()
 
-myProcessInteraction = Interaction(myNslaw,
-        myProcessRelation)
+myProcessInteraction = Interaction(myNslaw, myProcessRelation)
 
 
-
-filippov = NonSmoothDynamicalSystem(t0,T)
+filippov = NonSmoothDynamicalSystem(t0, T)
 filippov.insertDynamicalSystem(process)
-filippov.link(myProcessInteraction,process)
+filippov.link(myProcessInteraction, process)
 td = TimeDiscretisation(t0, h)
-s = TimeStepping(filippov,td)
+s = TimeStepping(filippov, td)
 
 myIntegrator = EulerMoreauOSI(theta)
 s.insertIntegrator(myIntegrator)
 
 
-#TODO python <- SICONOS_RELAY_LEMKE
+# TODO python <- SICONOS_RELAY_LEMKE
 # access dparam
 
 osnspb = Relay()
@@ -91,82 +94,86 @@ s.setNewtonTolerance(1e-12)
 
 
 # matrix to save data
-dataPlot = empty((N+1,5))
+dataPlot = empty((N + 1, 5))
 dataPlot[0, 0] = t0
 dataPlot[0, 1:3] = process.x()
 dataPlot[0, 3] = myProcessInteraction.lambda_(0)[0]
 dataPlot[0, 4] = myProcessInteraction.lambda_(0)[1]
 # time loop
 k = 1
-while(s.hasNextEvent()):
-     s.advanceToEvent()
-     dataPlot[k, 0] = s.nextTime()
-     dataPlot[k, 1] = process.x()[0]
-     dataPlot[k, 2] = process.x()[1]
-     dataPlot[k, 3] = myProcessInteraction.lambda_(0)[0]
-     dataPlot[k, 4] = myProcessInteraction.lambda_(0)[1]
-     k += 1
-     s.nextStep()
-     #print s.nextTime()
+while s.hasNextEvent():
+    s.advanceToEvent()
+    dataPlot[k, 0] = s.nextTime()
+    dataPlot[k, 1] = process.x()[0]
+    dataPlot[k, 2] = process.x()[1]
+    dataPlot[k, 3] = myProcessInteraction.lambda_(0)[0]
+    dataPlot[k, 4] = myProcessInteraction.lambda_(0)[1]
+    k += 1
+    s.nextStep()
+    # print s.nextTime()
 
 # save to disk
-savetxt('output.txt', dataPlot)
+savetxt("output.txt", dataPlot)
 # plot interesting stuff
-subplot(411)
-title('s')
-plot(dataPlot[:,0], dataPlot[:,1])
-grid()
-subplot(412)
-title('v')
-plot(dataPlot[:,0], dataPlot[:,2])
-grid()
-subplot(413)
-plot(dataPlot[:,0], dataPlot[:,3])
-title('lambda1')
-grid()
-subplot(414)
-plot(dataPlot[:,0], dataPlot[:,4])
-title('lambda2')
-grid()
-plt.savefig('Zhuravlev_all.png')
+plt.subplot(411)
+plt.title("s")
+plt.plot(dataPlot[:, 0], dataPlot[:, 1])
+plt.grid()
+plt.subplot(412)
+plt.title("v")
+plt.plot(dataPlot[:, 0], dataPlot[:, 2])
+plt.grid()
+plt.subplot(413)
+plt.plot(dataPlot[:, 0], dataPlot[:, 3])
+plt.title("lambda1")
+plt.grid()
+plt.subplot(414)
+plt.plot(dataPlot[:, 0], dataPlot[:, 4])
+plt.title("lambda2")
+plt.grid()
+plt.savefig("Zhuravlev_all.png")
 
 plt.figure()
-plot(dataPlot[:,1], dataPlot[:,2])
-plt.xlabel('s')
-plt.xlabel('v')
-grid()
-plt.savefig('Zhuravlev_sv.png')
+plt.plot(dataPlot[:, 1], dataPlot[:, 2])
+plt.xlabel("s")
+plt.xlabel("v")
+plt.grid()
+plt.savefig("Zhuravlev_sv.png")
 
 plt.figure()
-plot(dataPlot[:,3], dataPlot[:,4])
-plt.xlabel('lambda1')
-plt.xlabel('lambda2')
-grid()
-plt.savefig('Zhuravlev_lambdas.png')
+plt.plot(dataPlot[:, 3], dataPlot[:, 4])
+plt.xlabel("lambda1")
+plt.xlabel("lambda2")
+plt.grid()
+plt.savefig("Zhuravlev_lambdas.png")
 
-pos = np.abs(dataPlot[:,1])
-velocity = (1-myProcessRelation._kappa*np.sign(dataPlot[:,1]*dataPlot[:,2]))*dataPlot[:, 2]*np.sign(dataPlot[:,1])
+pos = np.abs(dataPlot[:, 1])
+velocity = (
+    (1 - myProcessRelation._kappa * np.sign(dataPlot[:, 1] * dataPlot[:, 2]))
+    * dataPlot[:, 2]
+    * np.sign(dataPlot[:, 1])
+)
 plt.figure()
-subplot(211)
-title('position')
-plot(dataPlot[:,0], pos)
-grid()
-subplot(212)
-title('velocity')
-plot(dataPlot[:,0], velocity)
-grid()
-plt.savefig('Zhuravlev_pv.png')
+plt.subplot(211)
+plt.title("position")
+plt.plot(dataPlot[:, 0], pos)
+plt.grid()
+plt.subplot(212)
+plt.title("velocity")
+plt.plot(dataPlot[:, 0], velocity)
+plt.grid()
+plt.savefig("Zhuravlev_pv.png")
 
 plt.figure()
-indx = np.nonzero(dataPlot[:, 0]>3)
+indx = np.nonzero(dataPlot[:, 0] > 3)
 ttt = dataPlot[indx, 0].flatten()
 
 plt.subplot(211)
-plt.title('position')
+plt.title("position")
 plt.plot(ttt, pos[indx])
 plt.grid()
 plt.subplot(212)
-plt.title('velocity')
+plt.title("velocity")
 plt.plot(ttt, velocity[indx])
 plt.grid()
-plt.savefig('Zhuravlev_pv_z.png')
+plt.savefig("Zhuravlev_pv_z.png")

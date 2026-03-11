@@ -55,6 +55,10 @@ import siconos.integrators
 import siconos.nonsmooth_formulations
 import numpy as np
 from numpy import linalg as LA
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 t0 = 0.0
 T = 5.0e-3  # Total simulation time
@@ -64,13 +68,6 @@ Cvalue = 1e-6  # capacitance
 Rvalue = 1e3  # resistance
 Vinit = 10.0  # initial voltage
 Modeltitle = "DiodeBridge"
-
-withPlot = True
-if withPlot:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    from matplotlib.pyplot import subplot, title, plot, grid, savefig
 
 #
 # dynamical system
@@ -219,34 +216,34 @@ print("error = ", error)
 
 # assert (error < 1e-09)
 withRef = True
-if withPlot:
+if enable_plot:
     #
     # plots
     #
-    subplot(411)
-    title("inductor voltage")
-    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 1])
+    plt.subplot(411)
+    plt.title("inductor voltage")
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 1])
     if withRef:
-        plot(ref[0 : k - 1, 0], ref[0 : k - 1, 1])
-    grid()
-    subplot(412)
-    title("inductor current")
-    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 2])
+        plt.plot(ref[0 : k - 1, 0], ref[0 : k - 1, 1])
+    plt.grid()
+    plt.subplot(412)
+    plt.title("inductor current")
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 2])
     if withRef:
-        plot(ref[0 : k - 1, 0], ref[0 : k - 1, 2])
-    grid()
-    subplot(413)
-    title("diode R1 (blue) and F2 (green) voltage")
-    plot(dataPlot[0 : k - 1, 0], -dataPlot[0 : k - 1, 4])
-    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 5])
+        plt.plot(ref[0 : k - 1, 0], ref[0 : k - 1, 2])
+    plt.grid()
+    plt.subplot(413)
+    plt.title("diode R1 (blue) and F2 (green) voltage")
+    plt.plot(dataPlot[0 : k - 1, 0], -dataPlot[0 : k - 1, 4])
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 5])
     if withRef:
-        plot(ref[0 : k - 1, 0], -ref[0 : k - 1, 4])
-        plot(ref[0 : k - 1, 0], ref[0 : k - 1, 5])
-    grid()
-    subplot(414)
-    title("resistor current")
-    plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 3] + dataPlot[0 : k - 1, 6])
+        plt.plot(ref[0 : k - 1, 0], -ref[0 : k - 1, 4])
+        plt.plot(ref[0 : k - 1, 0], ref[0 : k - 1, 5])
+    plt.grid()
+    plt.subplot(414)
+    plt.title("resistor current")
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 3] + dataPlot[0 : k - 1, 6])
     if withRef:
-        plot(dataPlot[0 : k - 1, 0], ref[0 : k - 1, 3] + ref[0 : k - 1, 6])
-    grid()
-    savefig("diode_brige_tgs.png")
+        plt.plot(dataPlot[0 : k - 1, 0], ref[0 : k - 1, 3] + ref[0 : k - 1, 6])
+    plt.grid()
+    plt.savefig("diode_brige_tgs.png")

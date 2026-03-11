@@ -26,11 +26,12 @@ import sys
 
 try:
     from sage.all import *
+
     # this is needed since sage uses mpfr by default ...
     RealNumber = float
     Integer = int
 except ImportError:
-    print('sage is not installed, exiting')
+    print("sage is not installed, exiting")
     sys.exit(0)
 
 # Other import
@@ -39,20 +40,22 @@ from siconos.control.simulation import ControlZOHSimulation
 from siconos.control.sensor import LinearSensor
 from siconos.control.controller import LinearSMCOT2
 
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib.pyplot import subplot, title, plot, grid, savefig
-from numpy import array, eye, empty, zeros, savetxt
-from math import ceil, sin
+from numpy import array, eye, zeros, savetxt
+from math import ceil
 from numpy.linalg import norm
 
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 # Some stupid symbolic computations
-x = var('x')
-g = vector((-cos(50*x), cos(50*x)))/50
+x = var("x")
+g = vector((-cos(50 * x), cos(50 * x))) / 50
 f = g.diff(x)
 
 # Derive our own version of FirstOrderLinearDS
+
 
 class MyFOLDS(FirstOrderLinearDS):
     def computeb(self, time):
@@ -63,19 +66,20 @@ class MyFOLDS(FirstOrderLinearDS):
             return
         # XXX we need to find a smarter way to do things here
         # we need to convert from vector (sage) to arrayish
-        u = array(f(x=time).list(), dtype = float) + tmpz
+        u = array(f(x=time).list(), dtype=float) + tmpz
         self.setbPtr(u)
 
+
 # variable declaration
-ndof = 2   # Number of degrees of freedom of your system
-t0 = 0.0   # start time
-T = 1    # end time
+ndof = 2  # Number of degrees of freedom of your system
+t0 = 0.0  # start time
+T = 1  # end time
 h = 1.0e-4  # time step for simulation
-hControl = 1.0e-2 # time step for control
-Xinit = 1.0 # initial position
+hControl = 1.0e-2  # time step for control
+Xinit = 1.0  # initial position
 theta = 0.5
-N = ceil((T-t0)/h + 10) # number of time steps
-outputSize = 5 # number of variable to store at each time step
+N = ceil((T - t0) / h + 10)  # number of time steps
+outputSize = 5  # number of variable to store at each time step
 
 # Matrix declaration
 A = zeros((ndof, ndof))
@@ -115,24 +119,24 @@ sim.run()
 dataPlot = sim.data()
 
 # Save to disk
-savetxt('SMCExampleImplicitOT2-noCplugin-sage-py.dat', dataPlot)
+savetxt("SMCExampleImplicitOT2-noCplugin-sage-py.dat", dataPlot)
 # Plot interesting data
-subplot(411)
-title('x1')
-plot(dataPlot[:, 0], dataPlot[:, 1])
-grid()
-subplot(412)
-title('x2')
-plot(dataPlot[:, 0], dataPlot[:, 2])
-grid()
-subplot(413)
-title('u')
-plot(dataPlot[:, 0], dataPlot[:, 3])
-savefig('ismcOT2_x_u.png')
+plt.subplot(411)
+plt.title("x1")
+plt.plot(dataPlot[:, 0], dataPlot[:, 1])
+plt.grid()
+plt.subplot(412)
+plt.title("x2")
+plt.plot(dataPlot[:, 0], dataPlot[:, 2])
+plt.grid()
+plt.subplot(413)
+plt.title("u")
+plt.plot(dataPlot[:, 0], dataPlot[:, 3])
+plt.savefig("ismcOT2_x_u.png")
 
 # compare with the reference
 ref = getMatrix(SiconosMatrix("SMCExampleImplicitOT2-py.ref"))
 print("%19e" % norm(dataPlot - ref))
-if (norm(dataPlot - ref) > 1e-12):
+if norm(dataPlot - ref) > 1e-12:
     print(dataPlot - ref)
     print("Warning. The result is rather different from the reference file.")

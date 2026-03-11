@@ -38,15 +38,15 @@ siconos SimpleExampleRelay_with_plugin.py
 """
 
 import sys
-import matplotlib
-from matplotlib.pyplot import subplot, title, plot, grid, savefig
 import numpy as np
 import siconos.modeling as sm
 import siconos.integrators
 import siconos.nonsmooth_formulations
 import siconos.simulation
+import siconos.plot_config as sicoplot
 
-matplotlib.use("Agg")
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 t0 = 0.0  # start time
 T = 1.0  # end time
@@ -120,21 +120,21 @@ sys.stdout.write("\n")
 np.savetxt("SimpleExampleRelay_py.dat", dataPlot)
 
 # plot interesting stuff
-subplot(411)
-title("x_1")
-plot(dataPlot[:, 0], dataPlot[:, 1])
-grid()
-subplot(412)
-title("x_2")
-plot(dataPlot[:, 0], dataPlot[:, 2])
-grid()
-subplot(413)
-plot(dataPlot[:, 0], dataPlot[:, 3])
-title("lambda_1")
-grid()
-subplot(414)
-plot(dataPlot[:, 0], dataPlot[:, 4])
-title("lambda_2")
-grid()
+plt.subplot(411)
+plt.title("x_1")
+plt.plot(dataPlot[:, 0], dataPlot[:, 1])
+plt.grid()
+plt.subplot(412)
+plt.title("x_2")
+plt.plot(dataPlot[:, 0], dataPlot[:, 2])
+plt.grid()
+plt.subplot(413)
+plt.plot(dataPlot[:, 0], dataPlot[:, 3])
+plt.title("lambda_1")
+plt.grid()
+plt.subplot(414)
+plt.plot(dataPlot[:, 0], dataPlot[:, 4])
+plt.title("lambda_2")
+plt.grid()
 
-savefig("SimpleRelay_py_with_plugin.png")
+plt.savefig("SimpleRelay_py_with_plugin.png")

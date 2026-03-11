@@ -26,13 +26,11 @@ import siconos.integrators
 import siconos.nonsmooth_formulations
 import siconos.simulation
 
-import matplotlib
+from numpy import zeros, savetxt
+import siconos.plot_config as sicoplot
 
-matplotlib.use("Agg")
-from matplotlib.pyplot import subplot, title, plot, grid, savefig
-from numpy import array, eye, empty, zeros, savetxt
-from math import ceil
-from numpy.linalg import norm
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 # variable declaration
 t0 = 0.0  # start time
@@ -107,15 +105,15 @@ while s.hasNextEvent():
 # Save to disk
 savetxt("output.txt", dataPlot)
 # Plot interesting data
-subplot(211)
-title("position")
-plot(dataPlot[:, 0], dataPlot[:, 1])
-grid()
-subplot(212)
-title("velocity")
-plot(dataPlot[:, 0], dataPlot[:, 2])
-grid()
-savefig("pid.png")
+plt.subplot(211)
+plt.title("position")
+plt.plot(dataPlot[:, 0], dataPlot[:, 1])
+plt.grid()
+plt.subplot(212)
+plt.title("velocity")
+plt.plot(dataPlot[:, 0], dataPlot[:, 2])
+plt.grid()
+plt.savefig("pid.png")
 # TODO
 # compare with the reference
 # ref = getMatrix(SiconosMatrix("result.ref"))

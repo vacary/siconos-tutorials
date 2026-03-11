@@ -20,9 +20,6 @@
 #
 
 import sys
-import matplotlib
-
-matplotlib.use("Agg")
 from matplotlib.pyplot import subplot, title, plot, grid, savefig
 import numpy as np
 import siconos.modeling as sm
@@ -30,6 +27,10 @@ import scipy.linalg as la
 import siconos.integrators
 import siconos.nonsmooth_formulations
 import siconos.simulation
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 t0 = 0.0  # start time
 T = 1.0  # end time
@@ -109,16 +110,16 @@ assert la.norm(dataPlot - dataRef) <= 1e-12
 
 
 # plot interesting stuff
-subplot(311)
-title("x_1")
-plot(dataPlot[:, 0], dataPlot[:, 1])
-grid()
-subplot(312)
-title("x_2")
-plot(dataPlot[:, 0], dataPlot[:, 2])
-grid()
-subplot(313)
-plot(dataPlot[:, 0], dataPlot[:, 3])
-title("lambda")
-grid()
-savefig("SimpleRelay_py.png")
+plt.subplot(311)
+plt.title("x_1")
+plt.plot(dataPlot[:, 0], dataPlot[:, 1])
+plt.grid()
+plt.subplot(312)
+plt.title("x_2")
+plt.plot(dataPlot[:, 0], dataPlot[:, 2])
+plt.grid()
+plt.subplot(313)
+plt.plot(dataPlot[:, 0], dataPlot[:, 3])
+plt.title("lambda")
+plt.grid()
+plt.savefig("SimpleRelay_py.png")

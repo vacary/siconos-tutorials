@@ -77,7 +77,6 @@ int main(int argc, char* argv[]) {
         Hv.emplace_back(1, FEsolid->dimension());
         Hv.back().setZero();
         Hv.back()(0, idx_y) = 1.0;
-        auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
         auto relation =
             std::make_shared<siconos::modeling::LagrangianLinearTIR>(Hv.back(), initial_gap);
         auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);

@@ -30,9 +30,8 @@ import siconos.numerics as sn
 import siconos.modeling as sm
 import siconos.simulation
 import math
+from siconos.mechanics.collision.bullet import SiconosBulletOptions
 
-import numpy
-import siconos.mechanics.collision.bullet as smcb
 
 # Creation of the hdf5 file for input/output
 with MechanicsHdf5Runner() as io:
@@ -226,7 +225,6 @@ dh = death_hook()
 # results to the hdf5 file. The visualisation of the output may be done
 # with the vview command.
 
-from siconos.mechanics.collision.bullet import SiconosBulletOptions
 
 bullet_options = SiconosBulletOptions()
 bullet_options.worldScale = 1.0

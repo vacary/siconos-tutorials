@@ -23,8 +23,12 @@ import siconos.simulation
 import siconos.integrators
 import siconos.nonsmooth_formulations
 import siconos.geometry as sg
-from matplotlib.pyplot import subplot, title, plot, grid, show, figure
 import numpy.linalg as LA
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
+
 
 t0 = 0.0  # start time
 h = 0.001  # time step
@@ -264,38 +268,39 @@ ref = np.loadtxt("result-py.ref")
 
 assert np.allclose(ref, dataPlot)
 
-figure(num="Moreau Jean Siconos", figsize=(12, 12))
-subplot(321)
-title("angular velocities Omega")
-plot(dataPlot[:, 0], dataPlot[:, 11])
-plot(dataPlot[:, 0], dataPlot[:, 12])
-# plot(dataPlot[:, 0], dataPlot[:, 13])
+plt.figure(num="Moreau Jean Siconos", figsize=(12, 12))
+plt.subplot(321)
+plt.title("angular velocities Omega")
+plt.plot(dataPlot[:, 0], dataPlot[:, 11])
+plt.plot(dataPlot[:, 0], dataPlot[:, 12])
+# plt.plot(dataPlot[:, 0], dataPlot[:, 13])
 
-subplot(322)
-title("rotation vector")
-plot(dataPlot[:, 0], dataPlot[:, 18])
-plot(dataPlot[:, 0], dataPlot[:, 19])
-plot(dataPlot[:, 0], dataPlot[:, 20])
+plt.subplot(322)
+plt.title("rotation vector")
+plt.plot(dataPlot[:, 0], dataPlot[:, 18])
+plt.plot(dataPlot[:, 0], dataPlot[:, 19])
+plt.plot(dataPlot[:, 0], dataPlot[:, 20])
 
-subplot(323)
-title("Theta (h Omega)")
-plot(dataPlot[:, 0], dataPlot[:, 21])
-plot(dataPlot[:, 0], dataPlot[:, 22])
-plot(dataPlot[:, 0], dataPlot[:, 23])
+plt.subplot(323)
+plt.title("Theta (h Omega)")
+plt.plot(dataPlot[:, 0], dataPlot[:, 21])
+plt.plot(dataPlot[:, 0], dataPlot[:, 22])
+plt.plot(dataPlot[:, 0], dataPlot[:, 23])
 
-subplot(325)
-title("norm of Theta")
-plot(dataPlot[:, 0], dataPlot[:, 24])
+plt.subplot(325)
+plt.title("norm of Theta")
+plt.plot(dataPlot[:, 0], dataPlot[:, 24])
 
-subplot(324)
-title("angular momentum (pi[0])")
-plot(dataPlot[:, 0], dataPlot[:, 14])
-# plot(dataPlot[:, 0], dataPlot[:, 15])
-# plot(dataPlot[:, 0], dataPlot[:, 16])
+plt.subplot(324)
+plt.title("angular momentum (pi[0])")
+plt.plot(dataPlot[:, 0], dataPlot[:, 14])
+# plt.plot(dataPlot[:, 0], dataPlot[:, 15])
+# plt.plot(dataPlot[:, 0], dataPlot[:, 16])
 
-subplot(326)
-title("norm of angular momentum  pi")
-plot(dataPlot[:, 0], dataPlot[:, 17])
+plt.subplot(326)
+plt.title("norm of angular momentum  pi")
+plt.plot(dataPlot[:, 0], dataPlot[:, 17])
 
-grid()
-show()
+plt.grid()
+if enable_plot:
+    plt.show()

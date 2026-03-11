@@ -3,17 +3,15 @@ from B. Caillaud,
 http://www.irisa.fr/prive/Benoit.Caillaud/cours-hybride-2014/Cours_modelisation_des_systemes_hybrides/Cours/Cours.html
 """
 
-import matplotlib
-
-matplotlib.use("Agg")
-from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
-import matplotlib.pyplot as plt
 import siconos.modeling as sm
 import siconos.numerics as sn
-from math import ceil
 import siconos.integrators
 import siconos.nonsmooth_formulations
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 # == User-defined parameters ==
 ndof = 3  # number of degrees of freedom of your system
@@ -115,20 +113,20 @@ def plot_results():
 
 # --- Uncomment lines below to plot interesting stuff ---
 plot_results()
-# subplot(311)
-# title('position')
-# plot(data_plot[:,0], data_plot[:,1])
-# grid()
-# subplot(312)
-# title('velocity')
-# plot(data_plot[:,0], data_plot[:,2])
-# grid()
-# subplot(313)
-# plot(data_plot[:,0], data_plot[:,3])
-# title('lambda')
-# grid()
+# plt.subplot(311)
+# plt.title('position')
+# plt.plot(data_plot[:,0], data_plot[:,1])
+# plt.grid()
+# plt.subplot(312)
+# plt.title('velocity')
+# plt.plot(data_plot[:,0], data_plot[:,2])
+# plt.grid()
+# plt.subplot(313)
+# plt.plot(data_plot[:,0], data_plot[:,3])
+# plt.title('lambda')
+# plt.grid()
 # show()
 
-# plot(data_plot[:,1], data_plot[:,2])
-# grid()
+# plt.plot(data_plot[:,1], data_plot[:,2])
+# plt.grid()
 # show()

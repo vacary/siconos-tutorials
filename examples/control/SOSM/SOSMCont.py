@@ -19,117 +19,121 @@
 #
 #
 
-
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib.pyplot import subplot, title, plot, grid, savefig, figure
 from numpy import eye, empty, zeros, savetxt
-from siconos.kernel import FirstOrderNonLinearDS, FirstOrderLinearTIR, RelayNSL, \
-NonSmoothDynamicalSystem, TimeDiscretisation, TimeStepping, EulerMoreauOSI, \
-Interaction, Relay
-from math import ceil
+from siconos.modeling import (
+    FirstOrderNonLinearDS,
+    FirstOrderLinearTIR,
+    RelayNSL,
+    NonSmoothDynamicalSystem,
+    Interaction,
+)
+import siconos.simulation
+import siconos.integrators
+import siconos.nonsmooth_formulations
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 # variables
-t0 = 0.0   # start time
-T = 10      # end time
-h = 1.0e-3   # time step
+t0 = 0.0  # start time
+T = 10  # end time
+h = 1.0e-3  # time step
 numInter = 2
 ninter = 2
 theta = 0.5
-N = (int)((T-t0)/h)
+N = (int)((T - t0) / h)
 mu1 = 2
 mu2 = 3
 
 # matrices
-A = zeros((2,2))
-A[0,1] = 1
-#x0 = array([10.,0.])
-x0 = ([10.,0.])
-#x0 = 10
+A = zeros((2, 2))
+A[0, 1] = 1
+# x0 = array([10.,0.])
+x0 = [10.0, 0.0]
+# x0 = 10
 
-#B = 500*array([[0,0],[mu2,mu1]])
-B = ([0,0],[mu2,mu1])
-#B = mu2
+# B = 500*array([[0,0],[mu2,mu1]])
+B = ([0, 0], [mu2, mu1])
+# B = mu2
 
 C = eye(2)
-#C = 1
-D = zeros((2,2))
-#D = 0
+# C = 1
+D = zeros((2, 2))
+# D = 0
 
 # dynamical systems
 process = FirstOrderNonLinearDS(x0)
-process.setComputeFFunction('PluginF', 'computef1')
-process.setComputeJacobianfxFunction('PluginF', 'computeJacf1')
+process.setComputeFFunction("PluginF", "computef1")
+process.setComputeJacobianfxFunction("PluginF", "computeJacf1")
 
 
-#process = FirstOrderNonLinearDS(x0,'PluginF:computef1','PluginF:computeJacf1'  )
+# process = FirstOrderNonLinearDS(x0,'PluginF:computef1','PluginF:computeJacf1'  )
 
 process.display()
 
-myProcessRelation = FirstOrderLinearTIR(C,B)
+myProcessRelation = FirstOrderLinearTIR(C, B)
 myProcessRelation.setDPtr = D
 
 myNslaw = RelayNSL(2)
 myNslaw.display()
 
-nameInter = 'processInteraction'
-myProcessInteraction = Interaction(myNslaw,
-        myProcessRelation)
+nameInter = "processInteraction"
+myProcessInteraction = Interaction(myNslaw, myProcessRelation)
 
 
-
-filippov = NonSmoothDynamicalSystem(t0,T)
+filippov = NonSmoothDynamicalSystem(t0, T)
 filippov.insertDynamicalSystem(process)
-filippov.link(myProcessInteraction,process)
+filippov.link(myProcessInteraction, process)
 
-td = TimeDiscretisation(t0, h)
-s = TimeStepping(filippov,td)
+td = siconos.simulation.TimeDiscretisation(t0, h)
+s = siconos.simulation.TimeStepping(filippov, td)
 
-myIntegrator = EulerMoreauOSI(theta)
+myIntegrator = siconos.integrators.EulerMoreauOSI(theta)
 s.insertIntegrator(myIntegrator)
 
-print('initialization')
-#TODO python <- SICONOS_RELAY_LEMKE
+print("initialization")
+# TODO python <- SICONOS_RELAY_LEMKE
 # access dparam
 
-osnspb = Relay()
+osnspb = siconos.nonsmooth_formulations.Relay()
 s.insertNonSmoothProblem(osnspb)
 
 # matrix to save data
-dataPlot = empty((N+1,4))
+dataPlot = empty((N + 1, 4))
 dataPlot[0, 0] = t0
 dataPlot[0, 1:3] = process.x()
 dataPlot[0, 3] = myProcessInteraction.lambda_(0)[0]
 
 # time loop
 k = 1
-while(s.hasNextEvent()):
-     #print 'iteration k'
-     s.computeOneStep()
-     dataPlot[k, 0] = s.nextTime()
-     dataPlot[k, 1] = process.x()[0]
-     dataPlot[k, 2] = process.x()[1]
-     dataPlot[k, 3] = myProcessInteraction.lambda_(0)[0]
-     k += 1
-     s.nextStep()
+while s.hasNextEvent():
+    # print 'iteration k'
+    s.computeOneStep()
+    dataPlot[k, 0] = s.nextTime()
+    dataPlot[k, 1] = process.x()[0]
+    dataPlot[k, 2] = process.x()[1]
+    dataPlot[k, 3] = myProcessInteraction.lambda_(0)[0]
+    k += 1
+    s.nextStep()
 
 # save to disk
-savetxt('output.txt', dataPlot)
+savetxt("output.txt", dataPlot)
 # plot interesting stuff
-subplot(311)
-title('position')
-plot(dataPlot[:,0], dataPlot[:,1])
-grid()
-subplot(312)
-title('velocity')
-plot(dataPlot[:,0], dataPlot[:,2])
-grid()
-subplot(313)
-plot(dataPlot[:,0], dataPlot[:,3])
-title('lambda')
-grid()
-savefig("SOSM1.png")
-figure()
-plot(dataPlot[:,1], dataPlot[:,2])
-grid()
-savefig("SOSM2.png")
+plt.subplot(311)
+plt.title("position")
+plt.plot(dataPlot[:, 0], dataPlot[:, 1])
+plt.grid()
+plt.subplot(312)
+plt.title("velocity")
+plt.plot(dataPlot[:, 0], dataPlot[:, 2])
+plt.grid()
+plt.subplot(313)
+plt.plot(dataPlot[:, 0], dataPlot[:, 3])
+plt.title("lambda")
+plt.grid()
+plt.savefig("SOSM1.png")
+plt.figure()
+plt.plot(dataPlot[:, 1], dataPlot[:, 2])
+plt.grid()
+plt.savefig("SOSM2.png")

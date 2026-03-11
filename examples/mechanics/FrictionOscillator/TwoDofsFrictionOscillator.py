@@ -31,13 +31,11 @@ import siconos.modeling as sm
 import siconos.simulation
 import siconos.nonsmooth_formulations
 import siconos.integrators
-import matplotlib
-import os
 
-havedisplay = "DISPLAY" in os.environ
-if not havedisplay:
-    matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 """
 
@@ -269,7 +267,7 @@ plt.plot(dataPlot[:, 0], dataPlot[:, 5])
 plt.title("lambda")
 
 
-if havedisplay:
+if enable_plot:
     plt.show()
 else:
     plt.savefig("bbts.png")

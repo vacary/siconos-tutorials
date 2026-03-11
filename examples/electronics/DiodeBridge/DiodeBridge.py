@@ -54,14 +54,10 @@ import siconos.integrators as si
 import siconos.simulation as ss
 import siconos.nonsmooth_formulations as snsf
 import numpy as np
-import matplotlib
-import os
-import matplotlib.pyplot as plt
+import siconos.plot_config as sicoplot
 
-havedisplay = "DISPLAY" in os.environ
-
-if not havedisplay:
-    matplotlib.use("Agg")
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 
 t0 = 0.0
@@ -222,7 +218,7 @@ if error > 1e-12:
     print("Warning. The result is rather different from the reference file.")
     raise ValueError("Results are different from reference.")
 assert np.allclose(dataPlot, ref)
-if havedisplay:
+if enable_plot:
     #
     # plots
     #

@@ -18,16 +18,15 @@ Equations are ::
 
 """
 
-import matplotlib
-
-matplotlib.use("Agg")
 import numpy as np
-import matplotlib.pyplot as plt
 import siconos.modeling as sm
-from math import ceil
 import siconos.integrators
 import siconos.nonsmooth_formulations
 import siconos.simulation
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 # == User-defined parameters ==
 number_of_cars = 3

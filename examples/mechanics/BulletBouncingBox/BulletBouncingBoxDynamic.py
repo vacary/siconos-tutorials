@@ -17,20 +17,6 @@
 #
 #
 
-do_plot = True
-try:
-    import matplotlib
-except:
-    do_plot = False
-if do_plot:
-    import os
-    import sys
-
-    if sys.platform == "linux" and (
-        not "DISPLAY" in os.environ or len(os.environ["DISPLAY"]) == 0
-    ):
-        matplotlib.use("Agg")
-    from matplotlib.pyplot import subplot, title, plot, grid, show, savefig, ylim
 
 from siconos.modeling import (
     NewtonImpactFrictionNSL,
@@ -56,6 +42,10 @@ from siconos.mechanics.collision import (
 from numpy import zeros
 from numpy.linalg import norm
 import numpy as np
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 t0 = 0  # start time
 T = 20  # end time
@@ -230,29 +220,30 @@ if norm(dataPlot - ref) > 1e-11:
 # plots
 #
 
-if do_plot:
-    subplot(511)
-    title("position")
-    plot(dataPlot[0:k, 0], dataPlot[0:k, 1])
-    y = ylim()
-    plot(ref[0:k, 0], ref[0:k, 1])
-    ylim(y)
-    grid()
-    subplot(513)
-    title("velocity")
-    plot(dataPlot[0:k, 0], dataPlot[0:k, 2])
-    y = ylim()
-    plot(ref[0:k, 0], ref[0:k, 2])
-    ylim(y)
-    grid()
-    subplot(515)
-    plot(dataPlot[0:k, 0], dataPlot[0:k, 3])
-    y = ylim()
-    plot(ref[0:k, 0], ref[0:k, 3])
-    ylim(y)
-    title("lambda")
-    grid()
-    savefig("result_dynamic.png")
-    show()
+if enable_plot:
+    plt.subplot(511)
+    plt.title("position")
+    plt.plot(dataPlot[0:k, 0], dataPlot[0:k, 1])
+    y = plt.ylim()
+    plt.plot(ref[0:k, 0], ref[0:k, 1])
+    plt.ylim(y)
+    plt.grid()
+    plt.subplot(513)
+    plt.title("velocity")
+    plt.plot(dataPlot[0:k, 0], dataPlot[0:k, 2])
+    y = plt.ylim()
+    plt.plot(ref[0:k, 0], ref[0:k, 2])
+    plt.ylim(y)
+    plt.grid()
+    plt.subplot(515)
+    plt.plot(dataPlot[0:k, 0], dataPlot[0:k, 3])
+    y = plt.ylim()
+    plt.plot(ref[0:k, 0], ref[0:k, 3])
+    plt.ylim(y)
+    plt.title("lambda")
+    plt.grid()
+    plt.savefig("result_dynamic.png")
+    if enable_plot:
+        plt.show()
 
 np.savetxt("BouncingBoxDynamic-py.dat", dataPlot)
