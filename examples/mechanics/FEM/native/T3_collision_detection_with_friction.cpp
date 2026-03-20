@@ -68,9 +68,8 @@ int main(int argc, char* argv[]) {
     double mu = 1.0;
     auto nslaw = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, 0.0, mu, 2);
     double initial_gap = Ly * 5e-4;
-    auto normal = std::make_shared<siconos::algebra::SiconosVector>(2);
-    (*normal)(0) = 0.0;
-    (*normal)(1) = 1.0;
+    siconos::algebra::SiconosVector normal{2};
+    normal << 0., 1.;
 
     auto contact_condition = [](const siconos::mechanics::fem::FENode& node) {
       return (std::fabs(node.y()) <= 1e-16 and std::fabs(node.x()) >= 1e-16);

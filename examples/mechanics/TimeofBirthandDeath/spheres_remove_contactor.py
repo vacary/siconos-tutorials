@@ -29,6 +29,7 @@ from siconos.io.mechanics_run import (
 import siconos.numerics as sn
 import siconos.modeling as sm
 import siconos.simulation
+import siconos.mechanics.collision
 import math
 from siconos.mechanics.collision.bullet import SiconosBulletOptions
 
@@ -163,8 +164,13 @@ class death_hook:
                     inter = self._io._nsds.interaction(inter_id)
 
                     contact_r = inter.relation()
-                    print("contact_r.bodyShapeRecordA", contact_r.distance())
+                    print(inter)
+                    print("contact_r.distance", contact_r.distance())
+
                     print("contact_r.bodyShapeRecordA", contact_r.bodyShapeRecordA)
+                    contact_r.bodyShapeRecordB.display()
+                    contact_r.bodyShapeRecordA.display()
+
                     print("contact_r.bodyShapeRecordB", contact_r.bodyShapeRecordB)
 
                     print("contact_r.bodyShapeRecordB.staticBody")
@@ -181,10 +187,7 @@ class death_hook:
                     )
 
                     print("contact_r.bodyShapeRecordA.staticBody")
-                    print(
-                        "contact_r.bodyShapeRecordA.staticBody",
-                        contact_r.bodyShapeRecordA.staticBody,
-                    )
+                    print(contact_r.bodyShapeRecordA.staticBody)
                     print(
                         "contact_r.bodyShapeRecordA.staticBody.ds.number()",
                         contact_r.bodyShapeRecordA.ds.number(),

@@ -53,19 +53,19 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
     // std::cout <<"my_NewtonEulerR:: computeh jacobianhOver_q_" << std:: endl;
     // siconos::algebra::print(*jacobianhOver_q_);
     y(0) = height;
-    (*_Nc)(0) = 1;
-    (*_Nc)(1) = 0;
-    (*_Nc)(2) = 0;
-    (*_Pc1)(0) = height;
-    (*_Pc1)(1) = q0(1);
-    (*_Pc1)(2) = q0(2);
+    nc_(0) = 1;
+    nc_(1) = 0;
+    nc_(2) = 0;
+    contactPoint1_(0) = height;
+    contactPoint1_(1) = q0(1);
+    contactPoint1_(2) = q0(2);
 
-    //(*_Pc2)(0) = hpc;
-    //(*_Pc2)(1) = (*data[q0])(1);
-    //(*_Pc2)(2) = (*data[q0])(2);
+    //contactPoint2_(0) = hpc;
+    //contactPoint2_(1) = (*data[q0])(1);
+    //contactPoint2_(2) = (*data[q0])(2);
     // printf("my_NewtonEulerR N, Pc\n");
-    // siconos::algebra::print(*_Nc);
-    // siconos::algebra::print(*_Pc1);
+    // siconos::algebra::printnc_;
+    // siconos::algebra::print(contactPoint1_);
   }
 };
 

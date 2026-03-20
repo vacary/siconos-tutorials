@@ -20,12 +20,7 @@
 
 #include <FEM-GlobalFrictionContact.hpp>
 #include <FEM-MoreauJeanGOSI.hpp>
-#include <FemTools.hpp>
-#include <FiniteElementLinearTIDS.hpp>
-#include <FiniteElementModel.hpp>
 #include <LagrangianSparseLinearTIDS.hpp>
-#include <Material.hpp>
-#include <MeshUtils.hpp>
 #include <SiconosKernel.hpp>
 #include <SiconosMatrix.hpp>
 #include <SiconosVector.hpp>

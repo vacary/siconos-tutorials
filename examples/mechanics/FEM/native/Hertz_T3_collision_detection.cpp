@@ -69,9 +69,8 @@ int main(int argc, char* argv[]) {
 
     double initial_gap = 0.0;  // Ly*5e-05;
     auto displacement = FEsolid->q();
-    auto normal = std::make_shared<siconos::algebra::SiconosVector>(2);
-    (*normal)(0) = 0.0;
-    (*normal)(1) = 1.0;
+    siconos::algebra::SiconosVector normal{2};
+    normal << 0., 1.;
     int contact_condition_tag = 4;
 
     auto contact_condition = [](const siconos::mechanics::fem::FENode& node) {

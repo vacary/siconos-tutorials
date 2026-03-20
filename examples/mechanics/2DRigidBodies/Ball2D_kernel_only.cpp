@@ -17,11 +17,8 @@
  */
 
 #include <SiconosKernel.hpp>
+#include <SiconosMatrix.hpp>
 #include <chrono>
-
-using namespace std;
-using Matrix = siconos::algebra::SiconosMatrix;
-using Vector = siconos::algebra::SiconosVector;
 
 int main(int argc, char* argv[]) {
   try {
@@ -42,19 +39,19 @@ int main(int argc, char* argv[]) {
     // --- Dynamical systems ---
     // -------------------------
 
-    cout << "====> Model loading ..." << endl;
+    std::cout << "====> Model loading ...\n";
 
-    Matrix mass{nDof, nDof};
+    siconos::algebra::SiconosDenseMatrix mass{nDof, nDof};
     mass.setZero();
     mass(0, 0) = m;
     mass(1, 1) = m;
     mass(2, 2) = 2. / 5 * m * R * R;
 
     // -- Initial positions and velocities --
-    Vector q0{nDof};
+    siconos::algebra::SiconosVector q0{nDof};
     q0.setZero();
     q0(0) = position_init;
-    Vector v0{nDof};
+    siconos::algebra::SiconosVector v0{nDof};
     v0.setZero();
     v0(0) = velocity_init;
 
@@ -62,8 +59,8 @@ int main(int argc, char* argv[]) {
     auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
         q0, v0, mass, siconos::algebra::alias_t);
 
-    Vector q01{nDof};
-    Vector v01{nDof};
+    siconos::algebra::SiconosVector q01{nDof};
+    siconos::algebra::SiconosVector v01{nDof};
     q01(0) = position_init + 2 * R + 0.1;
     v01(0) = velocity_init;
 
@@ -71,7 +68,7 @@ int main(int argc, char* argv[]) {
         q01, v01, mass, siconos::algebra::alias_t);
 
     // -- Set external forces (weight) --
-    Vector weight{nDof};
+    siconos::algebra::SiconosVector weight{nDof};
     weight.setZero();
     weight(0) = -m * g;
     ball->setConstantFext(weight, siconos::algebra::alias_t);
@@ -131,78 +128,84 @@ int main(int argc, char* argv[]) {
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 9;
-    Matrix dataPlot(N, outputSize);
+    siconos::algebra::SiconosDenseMatrix dataPlot(N, outputSize);
 
-    auto q = ball->q();
-    auto v = ball->velocity();
-    auto p = ball->p(1);
+    auto q = ball->q_read();
+    auto v = ball->velocity_read();
+    auto p = ball->p_read(1);
     auto lambda = inter->lambda(1);
-    auto q1 = ball1->q();
-    auto v1 = ball->velocity();
-    auto p1 = ball->p(1);
+    auto q1 = ball1->q_read();
+    auto v1 = ball->velocity_read();
+    auto p1 = ball->p_read(1);
     auto lambda1 = inter1->lambda(1);
 
     dataPlot(0, 0) = bouncingBall->t0();
-    dataPlot(0, 1) = (*q)(0);
-    dataPlot(0, 2) = (*v)(0);
-    dataPlot(0, 3) = (*p)(0);
+    dataPlot(0, 1) = q(0);
+    dataPlot(0, 2) = v(0);
+    dataPlot(0, 3) = p(0);
     dataPlot(0, 4) = (*lambda)(0);
-    dataPlot(0, 5) = (*q1)(0);
-    dataPlot(0, 6) = (*v1)(0);
-    dataPlot(0, 7) = (*p1)(0);
+    dataPlot(0, 5) = q1(0);
+    dataPlot(0, 6) = v1(0);
+    dataPlot(0, 7) = p1(0);
     dataPlot(0, 8) = (*lambda1)(0);
     // --- Time loop ---
-    cout << "====> Start computation ... \n";
+    std::cout << "====> Start computation ... \n";
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
     auto start = std::chrono::system_clock::now();
-    auto rpc = relation->pc1();
-    auto nnc = relation->nc();
 
-    auto rpc1 = relation1->pc1();
-    auto rpc2 = relation1->pc2();
-    auto nnc1 = relation1->nc();
+    // For relation
+    siconos::algebra::SiconosVector2 pc1;
+    siconos::algebra::SiconosVector2 pc2;
+    pc2.setZero();
+    siconos::algebra::SiconosVector2 normal;
+    // For relation1
+    siconos::algebra::SiconosVector2 pc1_1;
+    siconos::algebra::SiconosVector2 pc2_1;
+    siconos::algebra::SiconosVector2 normal_1;
 
     while (s->hasNextEvent()) {
       // a fake contact detection
-      (*rpc)(0) = -R + (*q)(0);
-      (*rpc)(1) = (*q)(1);
-      (*nnc)(0) = 1.0;
-      (*nnc)(1) = 0.0;
+      pc1(0) = -R + q(0);
+      pc1(1) = q(1);
+      normal(0) = 1.0;
+      normal(1) = 0.0;
+      relation->updateContactPoints(pc1, pc2, normal);
 
-      (*rpc1)(0) = -R + (*q1)(0);
-      (*rpc1)(1) = (*q1)(1);
+      pc1_1(0) = -R + q1(0);
+      pc1_1(1) = q1(1);
 
-      (*rpc2)(0) = R + (*q)(0);
-      ;
-      (*rpc2)(1) = (*q)(1);
-      (*nnc1)(0) = 1.0;
-      (*nnc1)(1) = 0.0;
+      pc2_1(0) = R + q(0);
+
+      pc2_1(1) = q(1);
+      normal_1(0) = 1.0;
+      normal_1(1) = 0.0;
+      relation1->updateContactPoints(pc1_1, pc2_1, normal_1);
 
       s->computeOneStep();
 
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
-      dataPlot(k, 1) = (*q)(0);
-      dataPlot(k, 2) = (*v)(0);
-      dataPlot(k, 3) = (*p)(0);
+      dataPlot(k, 1) = q(0);
+      dataPlot(k, 2) = v(0);
+      dataPlot(k, 3) = p(0);
       dataPlot(k, 4) = (*lambda)(0);
-      dataPlot(k, 5) = (*q1)(0);
-      dataPlot(k, 6) = (*v1)(0);
-      dataPlot(k, 7) = (*p1)(0);
+      dataPlot(k, 5) = q1(0);
+      dataPlot(k, 6) = v1(0);
+      dataPlot(k, 7) = p1(0);
       dataPlot(k, 8) = (*lambda1)(0);
       s->nextStep();
 
       k++;
     }
-    cout << "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation Time : " << endl;
+    std::cout << "End of computation - Number of iterations done: " << k - 1 << std::endl;
+    std::cout << "Computation Time : " << std::endl;
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    cout << "Computation time : " << elapsed << " ms\n";
+    std::cout << "Computation time : " << elapsed << " ms\n";
 
     // --- Output files ---
-    cout << "====> Output file writing ...\n";
+    std::cout << "====> Output file writing ...\n";
     siconos::algebra::io::write("Ball2D_kernel_only.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);

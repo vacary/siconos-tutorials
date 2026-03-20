@@ -18,153 +18,133 @@
 
 #include <SiconosFEM.h>
 
+#include <FEM-GlobalFrictionContact.hpp>
+#include <FEM-MoreauJeanGOSI.hpp>
 #include <SiconosKernel.hpp>
 #include <chrono>
 #include <cmath>  // for fabs
-
-#include "FENode.hpp"
-#include "FiniteElementModel.hpp"
-#include "MeshUtils.hpp"
-#include "FiniteElementLinearTIDS.hpp"
-#include "Material.hpp"
-
-using namespace std;
-using namespace siconos::mechanics::fem;
-using Matrix = siconos::algebra::SimpleMatrix;
-using Vector = siconos::algebra::SiconosVector;
 
 int main(int argc, char* argv[]) {
   try {
     double Ly = 1.0;
 
-    auto v0 = std::make_shared<MeshVertex>(0, 0.0, 0.0, 0.0);
-    auto vEnd = std::make_shared<MeshVertex>(0, 0.0, 4.0, 0.0);
-    int nbBeams = 4;
+    int nb_elements = 4;
     int dim = 2;
-    auto mesh = createBeamMesh(v0, vEnd, nbBeams, 2);
+    siconos::algebra::SiconosVector3 coords_start{0., 0., 0.};
+    siconos::algebra::SiconosVector3 coords_end{0., 4., 0.};
+    auto mesh =
+        siconos::mechanics::fem::createBeamMesh(coords_start, coords_end, nb_elements, 2);
     mesh->display(false);
 
-            // siconos::mechanics::fem::writeMeshforPython(mesh);
+    siconos::mechanics::fem::Tags tags;
+    tags[siconos::mechanics::fem::MeshTags::bulk_material] = 1;
+    tags[siconos::mechanics::fem::MeshTags::boundary_conditions] = 2;
+    tags[siconos::mechanics::fem::MeshTags::applied_forces] = 3;
 
-    int bulk_material_tag = 1;
-    int boundary_condition_tag = 2;
-    int applied_force_tag = 3;
+    siconos::mechanics::fem::Material mat{1080, 500e7, 1. / 3};
 
-            // std::shared_ptr<Material> mat1 = std::make_shared<Material>(1, 8*36/5.,
-            // 1/5.); // material for  triangle_felippa.msh
-    double density = 7800.;
-    auto mat1 = std::make_shared<siconos::mechanics::fem::Material>(
-        density, 210e9, 1 / 3);
-    // auto mat1 = std::make_shared<siconos::mechanics::fem::Material>(
-    //     1.0, 1.0, 1 / 3);
-    std::map<unsigned int, std::shared_ptr<siconos::mechanics::fem::Material>>
-        materials = {{bulk_material_tag, mat1},{boundary_condition_tag,mat1},{applied_force_tag,mat1}};
-    auto start = std::chrono::system_clock::now();
-    std::cout << "Creating beamTIDS... " << std::endl;
-    auto beam = std::make_shared<siconos::mechanics::fem::SolidLinearTIDS>(
-        mesh, materials, siconos::algebra::UblasType::SPARSE);
-    // auto beam = std::make_shared<siconos::mechanics::fem::FiniteElementLinearTIDS>(
-    //     mesh, materials, siconos::algebra::UblasType::SPARSE);
-    std::cout << "beamTIDS created!" << std::endl;
-    auto femodel = beam->FEModel();
-    /*------------------------------------------------- Applied forces  */
-                                                                            //    (*nodal_forces)(0) = 1e6;
-    std::cout << "Applying forces :" << std::endl;
+    // Same material for all tags.
+    std::map<int, const siconos::mechanics::fem::Material> materials = {
+        {1, mat}, {2, mat}, {3, mat}};
 
-    auto nodal_forces = std::make_shared<Vector>(3);
-    nodal_forces->zero();
-    (*nodal_forces)(0) = -2e9;
-    beam->applyNodalForces(applied_force_tag, nodal_forces);
-    std::cout << "forces applied!" << std::endl;
-    /*------------------------------------------------- Boundary Conditions  */
-    /* This part should be hidden in a new BC function for a node number
-     * and a dof index. */
+    // Create the beam
+    auto beam = std::make_shared<siconos::mechanics::fem::SolidLinearTIDS>(mesh, materials);
 
+    // Apply nodal forces
+    if (tags.find(siconos::mechanics::fem::MeshTags::applied_forces) != tags.end()) {
+      siconos::algebra::SiconosVector nodal_forces{3};
+      nodal_forces << -2e9, 0., 0.;
 
-    auto node_dof_index = std::make_shared<std::vector<int>>(0);
-    node_dof_index->push_back(0);
-    node_dof_index->push_back(1);
-    node_dof_index->push_back(2);
-    std::cout << "Applying BCs :" << std::endl;
-    beam->applyDirichletBoundaryConditions(boundary_condition_tag,
-                                           node_dof_index);
-    std::cout << "BCs :" << std::endl;
-    beam->boundaryConditions()->display();
+      beam->applyNodalForces(tags[siconos::mechanics::fem::MeshTags::applied_forces],
+                             nodal_forces);
+    }
 
-            // -------------
-            // --- Model ---
-            // -------------
-    double t0 = 0;       // initial computation time
-    double T = 1e-02;    // final computation time
-    double h = 1e-05;    // time step
-    double theta = 1.0;  // theta for MoreauJeanOSI integrator
-    int N = ceil((T - t0) / h);  // Number of time steps
+    // Boundary Conditions
+    if (tags.find(siconos::mechanics::fem::MeshTags::boundary_conditions) != tags.end()) {
+      std::vector<int> bc_dof_index(3);
+      bc_dof_index[0] = 0;
+      bc_dof_index[1] = 1;
+      bc_dof_index[1] = 2;
+      beam->applyDirichletBoundaryConditions(
+          tags[siconos::mechanics::fem::MeshTags::boundary_conditions], bc_dof_index);
+    }
 
-
-    auto beamNSDS =
-        std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
-
-            // add the dynamical system in the non smooth dynamical system
+    // ------- NSDS -------
+    double t0 = 0;     // initial computation time
+    double T = 1e-02;  // final computation time
+    auto beamNSDS = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
     beamNSDS->insertDynamicalSystem(beam);
 
-    auto OSI = std::make_shared<siconos::integrators::MoreauJeanGOSI>(theta);
-    // auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
-    OSI->setIsWSymmetricDefinitePositive(true);
+    // ------- Simulation -------
+    // -- (1) integrator --
+    double theta = 1.0;  // theta for MoreauJeanOSI integrator
+    auto osi_fem =
+        std::make_shared<siconos::mechanics::fem::integrators::MoreauJeanGOSI>(theta);
+    osi_fem->setIsWSymmetricDefinitePositive(true);
 
-            // -- (2) Time discretisation --
-
+    // -- (2) Time discretisation --
+    double h = 1e-05;  // time step
     auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
-    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::GlobalFrictionContact>(2, SICONOS_FRICTION_2D_NSGS);
-    // auto osnspb = std::make_shared<siconos::nonsmooth_formulations::LCP>();
+    // -- (3) one step non smooth problem --
+    auto osnspb = std::make_shared<
+        siconos::mechanics::fem::nonsmooth_formulations::GlobalFrictionContact>(
+        2, SICONOS_FRICTION_2D_NSGS);
 
+    // -- (4) Simulation setup with (1) (2) (3)
+    auto s = std::make_shared<siconos::simulation::TimeStepping>(beamNSDS, t, osi_fem, osnspb);
 
-            // -- (4) Simulation setup with (1) (2) (3)
-    auto s = std::make_shared<siconos::simulation::TimeStepping>(beamNSDS, t,OSI,osnspb);
-    // s->insertIntegrator(OSI);
-
+    // ---- Outputs ----
+    int N = ceil((T - t0) / h);  // Number of time steps
     std::string SOFAfilename = "beam.state";
     int k = 1;
-    start = std::chrono::system_clock::now();
-    unsigned int outputSize = 4;
-    Matrix dataPlot(N + 1, outputSize);
-    auto q = beam->q();
-    auto v = beam->velocity();
+    siconos::algebra::Index outputSize = 4;
+    siconos::algebra::SiconosDenseMatrix dataPlot{N + 1, outputSize};
+    dataPlot.setZero();
+    auto q = beam->q_read();
+    auto v = beam->velocity_read();
 
-    prepareWriteBeamPositionforSOFA(SOFAfilename);
-    writeBeamPositionforSOFA(mesh, femodel, q, SOFAfilename,0);
+    auto start = std::chrono::system_clock::now();
 
-    Matrix pos(N + 1, 10);
+    siconos::mechanics::fem::prepareWriteBeamPositionforSOFA(SOFAfilename);
+
+    siconos::mechanics::fem::writeBeamPositionforSOFA(*mesh, *beam->FEModel(), q, SOFAfilename,
+                                                      0);
+
+    siconos::algebra::SiconosDenseMatrix pos{N + 1, 10};
+    pos.setZero();
+
     int vcnt = 0;
     // for (auto v : mesh->vertices()) {
     //   std::cout << v->num() << std::endl;
-    //   pos(0,(vcnt)*2) = v->x() + (*q)((vcnt)*3);
-    //   pos(0,(vcnt)*2+1) = v->y() + (*q)((vcnt)*3+1);
+    //   pos(0,(vcnt)*2) = v->x() + q((vcnt)*3);
+    //   pos(0,(vcnt)*2+1) = v->y() + q((vcnt)*3+1);
     //   vcnt++;
     // }
 
     dataPlot(0, 0) = beamNSDS->t0();
-    dataPlot(0, 1) = (*q)(beam->dimension() - 3);
-    dataPlot(0, 2) = (*q)(beam->dimension() - 2);
-    dataPlot(0, 3) = (*q)(beam->dimension() - 1);
+    dataPlot(0, 1) = q(beam->dimension() - 3);
+    dataPlot(0, 2) = q(beam->dimension() - 2);
+    dataPlot(0, 3) = q(beam->dimension() - 1);
 
     std::cout << "About to start simulation" << std::endl;
     while (s->hasNextEvent()) {
       s->computeOneStep();
       //  --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
-      dataPlot(k, 1) = (*q)(beam->dimension() - 3);
-      dataPlot(k, 2) = (*q)(beam->dimension() - 2);
-      dataPlot(k, 3) = (*q)(beam->dimension() - 1);
+      dataPlot(k, 1) = q(beam->dimension() - 3);
+      dataPlot(k, 2) = q(beam->dimension() - 2);
+      dataPlot(k, 3) = q(beam->dimension() - 1);
       vcnt = 0;
       // for (auto v : mesh->vertices()) {
       //   std::cout << v->num() << std::endl;
 
-              //   pos(k,(vcnt)*2) = v->x() + (*q)((vcnt)*3);
-              //   pos(k,(vcnt)*2+1) = v->y() + (*q)((vcnt)*3+1);
-              //   vcnt++;
-              // }
-      writeBeamPositionforSOFA(mesh, femodel, q, SOFAfilename,k*0.01);
+      //   pos(k,(vcnt)*2) = v->x() + q((vcnt)*3);
+      //   pos(k,(vcnt)*2+1) = v->y() + q((vcnt)*3+1);
+      //   vcnt++;
+      // }
+      siconos::mechanics::fem::writeBeamPositionforSOFA(*mesh, *beam->FEModel(), q,
+                                                        SOFAfilename, k * 0.01);
 
       s->nextStep();
       k++;
@@ -172,17 +152,17 @@ int main(int argc, char* argv[]) {
       siconos::tools::progressBar((double)k / N);
     }
     auto end = std::chrono::system_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-                       .count();
-
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
+    std::cout << "\nComputation time : " << elapsed << " ms\n";
 
     siconos::algebra::io::write("bernoulliBeam-GOSI.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
     double error = 0.0, eps = 1e-12;
-    if ((error = siconos::algebra::io::compareRefFile(
-             dataPlot, "bernoulliBeam.ref", eps)) >= eps)
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "bernoulliBeam.ref", eps)) >=
+        eps)
       return 1;
 
     return 0;

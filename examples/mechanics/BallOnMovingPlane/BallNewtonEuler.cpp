@@ -25,12 +25,12 @@
 */
 
 #include <SiconosKernel.hpp>
+#include <SiconosMatrix.hpp>
+#include <SiconosVector.hpp>
 #include <chrono>
 #include <numbers>  // For std::numbers::pi
-using Matrix = siconos::algebra::SiconosMatrix;
-using Vector = siconos::algebra::SiconosVector;
 
-//#define WITH_PROJ
+// #define WITH_PROJ
 #define WITH_FC3D
 using namespace std;
 #ifdef WITH_FC3D
@@ -68,20 +68,17 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
     assert(q2);
     double height = q1(0) - _sBallRadius - (*q2)(0);
     y(0) = height;
-    (*_Nc)(0) = 1;
-    (*_Nc)(1) = 0;
-    (*_Nc)(2) = 0;
-    (*_Pc1)(0) = q1(0) - _sBallRadius;
-    (*_Pc1)(1) = q1(1);
-    (*_Pc1)(2) = q1(2);
+    nc_ << 1., 0., 0.;
+    contactPoint1_(0) = q1(0) - _sBallRadius;
+    contactPoint1_(1) = q1(1);
+    contactPoint1_(2) = q1(2);
 
-    (*_Pc2)(0) = (*q2)(0);
-    (*_Pc2)(1) = (*q2)(1);
-    (*_Pc2)(2) = (*q2)(2);
+    contactPoint2_ = (*q2);
+
     // printf("my_NewtonEulerR N, Pc\n");
-    siconos::algebra::print(*_Nc);
-    siconos::algebra::print(*_Pc1);
-    siconos::algebra::print(*_Pc2);
+    siconos::algebra::print(nc_);
+    siconos::algebra::print(contactPoint1_);
+    siconos::algebra::print(contactPoint2_);
     std::cout << "my_NewtonEulerR:: computeh ends" << std::endl;
   }
 };
@@ -118,7 +115,7 @@ int main(int argc, char* argv[]) {
     siconos::algebra::SiconosVector v0{nDim};
     q0.setZero();
     v0.setZero();
-    Matrix I = Eigen::MatrixXd::Identity(3, 3);
+    siconos::algebra::SiconosDenseMatrix I = Eigen::MatrixXd::Identity(3, 3);
 
     q0(0) = position_init;
     /*initial quaternion equal to (1,0,0,0)*/
@@ -132,7 +129,7 @@ int main(int argc, char* argv[]) {
                                                                    siconos::algebra::alias_t);
 
     // -- Set external forces (weight) --
-    Vector weight{nDof};
+    siconos::algebra::SiconosVector weight{nDof};
     weight(0) = -m * g;
     ball->setConstantFext(weight, siconos::algebra::alias_t);
 
@@ -209,8 +206,8 @@ int main(int argc, char* argv[]) {
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    unsigned int outputSize = 20;
-    Matrix dataPlot(N + 1, outputSize);
+    siconos::algebra::Index outputSize = 20;
+    siconos::algebra::SiconosDenseMatrix dataPlot(N + 1, outputSize);
 
     auto q = ball->q();
     auto v = ball->twist();
