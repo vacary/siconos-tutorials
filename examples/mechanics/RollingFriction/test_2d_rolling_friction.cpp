@@ -29,9 +29,15 @@ class MyCollisionManager : public siconos::simulation::InteractionManager {
  protected:
   /** radius of the ball */
   double _R = 0.5;
+  siconos::algebra::SiconosVector2 pc1 = siconos::algebra::SiconosVector2::Zero();
+  siconos::algebra::SiconosVector2 pc2 = siconos::algebra::SiconosVector2::Zero();
+  siconos::algebra::SiconosVector2 nc = siconos::algebra::SiconosVector2::Zero();
 
  public:
-  MyCollisionManager(double R) : InteractionManager() { _R = R; }
+  MyCollisionManager(double R) : InteractionManager() {
+    _R = R;
+    nc(0) = 1;
+  }
   virtual ~MyCollisionManager() noexcept = default;
 
   /** Called by Simulation after updating positions prior to starting
@@ -54,12 +60,11 @@ class MyCollisionManager : public siconos::simulation::InteractionManager {
         auto q = ds1->q_read();
         // double angle= q(2);
         // std::cout << "angle = " << angle << std::endl;
-        (*pc)(0) = -_R + q(0);
-        (*pc)(1) = q(1);
-        // std::cout << "pc : "  << std::endl;
-        // siconos::algebra::print(*pc);
-        (*nnc)(0) = 1.0;
-        (*nnc)(1) = 0.0;
+        pc1(0) = -_R + q(0);
+        pc1(1) = q(1);
+        // nc(0) = 1.;
+        // nc(1) = 0.;
+        r->updateContactPoints(pc1, pc2, nc);
       }
     }
   }

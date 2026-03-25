@@ -47,11 +47,9 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
   my_NewtonEulerR(double radius) : R_CLASS{}, _sBallRadius{radius} {};
 
   void computeh(const Eigen::Ref<const siconos::algebra::SiconosVector7>& q0,
-                const std::optional<Eigen::Ref<const siconos::algebra::SiconosVector>>&,
+                const std::optional<Eigen::Ref<const siconos::algebra::SiconosVector7>>&,
                 Eigen::Ref<siconos::algebra::SiconosVector> y) override {
     double height = fabs(q0(0)) - _sBallRadius;
-    // std::cout <<"my_NewtonEulerR:: computeh jacobianhOver_q_" << std:: endl;
-    // siconos::algebra::print(*jacobianhOver_q_);
     y(0) = height;
     nc_(0) = 1;
     nc_(1) = 0;
@@ -60,12 +58,12 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
     contactPoint1_(1) = q0(1);
     contactPoint1_(2) = q0(2);
 
-    //contactPoint2_(0) = hpc;
-    //contactPoint2_(1) = (*data[q0])(1);
-    //contactPoint2_(2) = (*data[q0])(2);
-    // printf("my_NewtonEulerR N, Pc\n");
-    // siconos::algebra::printnc_;
-    // siconos::algebra::print(contactPoint1_);
+    // contactPoint2_(0) = hpc;
+    // contactPoint2_(1) = (*data[q0])(1);
+    // contactPoint2_(2) = (*data[q0])(2);
+    //  printf("my_NewtonEulerR N, Pc\n");
+    //  siconos::algebra::printnc_;
+    //  siconos::algebra::print(contactPoint1_);
   }
 };
 
@@ -193,6 +191,7 @@ int main(int argc, char* argv[]) {
 #endif
     s->setNewtonTolerance(1e-10);
     s->setNewtonMaxIteration(10);
+
     // =========================== End of model definition ===========================
 
     // ================================= Computation =================================

@@ -44,10 +44,10 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
   double _sBallRadius;
 
  public:
-  my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius){};
+  my_NewtonEulerR(double radius) : R_CLASS{}, _sBallRadius{radius} {};
 
   void computeh(const Eigen::Ref<const siconos::algebra::SiconosVector7>& q0,
-                const std::optional<Eigen::Ref<const siconos::algebra::SiconosVector>>&,
+                const std::optional<Eigen::Ref<const siconos::algebra::SiconosVector7>>&,
                 Eigen::Ref<siconos::algebra::SiconosVector> y) override {
     double height = fabs(q0(0)) - _sBallRadius;
     y(0) = height;
@@ -58,12 +58,12 @@ class my_NewtonEulerR : public siconos::modeling::R_CLASS {
     contactPoint1_(1) = q0(1);
     contactPoint1_(2) = q0(2);
 
-    //contactPoint2_(0) = hpc;
-    //contactPoint2_(1) = (*data[q0])(1);
-    //contactPoint2_(2) = (*data[q0])(2);
-    // printf("my_NewtonEulerR N, Pc\n");
-    // siconos::algebra::printnc_;
-    // siconos::algebra::print(contactPoint1_);
+    // contactPoint2_(0) = hpc;
+    // contactPoint2_(1) = (*data[q0])(1);
+    // contactPoint2_(2) = (*data[q0])(2);
+    //  printf("my_NewtonEulerR N, Pc\n");
+    //  siconos::algebra::printnc_;
+    //  siconos::algebra::print(contactPoint1_);
   }
 };
 
@@ -182,9 +182,9 @@ int main(int argc, char* argv[]) {
     // ================================= Computation =================================
 
     int N = ceil((T - t0) / h);  // Number of time steps
-    // s->setDisplayNewtonConvergence(true);
-    //  --- Get the values to be plotted ---
-    //  -> saved in a matrix dataPlot
+
+    // --- Get the values to be plotted ---
+    // -> saved in a matrix dataPlot
     unsigned int outputSize = 16;
     Matrix dataPlot(N + 1, outputSize);
 
@@ -220,6 +220,7 @@ int main(int argc, char* argv[]) {
     while (s->hasNextEvent()) {
       //      s->computeOneStep();
       s->advanceToEvent();
+
       // --- Get values to be plotted ---
       dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(0);
@@ -238,6 +239,7 @@ int main(int argc, char* argv[]) {
       dataPlot(k, 14) = (*v)(1);
       dataPlot(k, 15) = (*v)(2);
       s->nextStep();
+
       k++;
     }
     auto end = std::chrono::system_clock::now();
@@ -247,7 +249,8 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    siconos::algebra::io::write("result.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+    siconos::algebra::io::write("BouncingBallNETS-MJGOSI.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
     double error = 0.0, eps = 1e-12;

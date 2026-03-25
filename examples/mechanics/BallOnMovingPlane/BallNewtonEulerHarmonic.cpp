@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-/*!\file BouncingBallNETS.cpp
-  \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
+/*
   V. Acary, O. Bonnefon.
 
   A Ball bouncing on the ground.
@@ -31,57 +30,7 @@
 
 #define WITH_PROJ
 #define WITH_FC3D
-using namespace std;
-#ifdef WITH_FC3D
-#define R_CLASS NewtonEuler3DR
-#else
-#define R_CLASS NewtonEuler1DR
-#endif
-
-namespace user_defined {
-class my_NewtonEulerR : public siconos::modeling::R_CLASS {
-  double _sBallRadius;
-
- public:
-  my_NewtonEulerR(double radius) : R_CLASS(), _sBallRadius(radius){};
-
-  virtual void computeOutput(double time, siconos::modeling::Interaction& inter,
-                             siconos::algebra::blocks::size_type derivativeNumber) override {
-    const auto& ds_vars = inter.read_dynamical_systems_variables();
-    if (derivativeNumber == 0) {
-      auto q0 = ds_vars[siconos::tools::enum_to_index(ds_var::q0)]->vector(0);
-      auto q1 = ds_vars[siconos::tools::enum_to_index(ds_var::q0)]->vector(1);
-      if (q1)
-        computeh(*q0, *q1, *inter.y(0));
-      else
-        computeh(*q0, std::nullopt, *inter.y(0));
-    } else {
-      R_CLASS::computeOutput(time, inter, derivativeNumber);
-    }
-  }
-
-  void computeh(const Eigen::Ref<const siconos::algebra::SiconosVector7>& q1,
-                const std::optional<Eigen::Ref<const siconos::algebra::SiconosVector>>& q2,
-                Eigen::Ref<siconos::algebra::SiconosVector> y) override {
-    std::cout << "my_NewtonEulerR:: computeh \n";
-    assert(q2);
-    double height = q1(0) - _sBallRadius - (*q2)(0);
-    y(0) = height;
-    nc_ << 1., 0., 0.;
-    contactPoint1_(0) = q1(0) - _sBallRadius;
-    contactPoint1_(1) = q1(1);
-    contactPoint1_(2) = q1(2);
-
-    contactPoint2_ = (*q2);
-
-    // printf("my_NewtonEulerR N, Pc\n");
-    siconos::algebra::print(nc_);
-    siconos::algebra::print(contactPoint1_);
-    siconos::algebra::print(contactPoint2_);
-    std::cout << "my_NewtonEulerR:: computeh ends" << std::endl;
-  }
-};
-}  // namespace user_defined
+#include "UserRelation.hpp"
 
 int main(int argc, char* argv[]) {
   try {
@@ -287,18 +236,23 @@ int main(int argc, char* argv[]) {
 
     // --- Output files ---
     std::cout << "====> Output file writing ...\n";
-    siconos::algebra::io::write("BallNewtonEuler.dat", dataPlot,
+#ifdef WITH_PROJ
+    siconos::algebra::io::write("BallNewtonEulerHarmonic-WITHPROJ.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
-
     // Comparison with a reference file
-    cout << "====> Comparison with a reference file ...\n";
-#ifdef WITH_PROJ
+    std::cout << "====> Comparison with a reference file ...\n";
     double error = 0.0, eps = 1e-10;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BallNewtonEuler-WITHPROJ.ref",
                                                       eps)) > eps)
       return 1;
 #else
+    siconos::algebra::io::write("BallNewtonEulerHarmonic.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
+
+    // Comparison with a reference file
+    std::cout << "====> Comparison with a reference file ...\n";
     double error = 0.0, eps = 1e-10;
     if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BallNewtonEuler.ref", eps)) >
         eps)

@@ -37,6 +37,7 @@ import os
 
 from stl import mesh
 
+siconos.integrators.enable_solver_check()
 #
 
 # List of input paramters #######

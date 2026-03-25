@@ -242,13 +242,13 @@ int withLevel(unsigned int mylevel) {
     cout << "Computation time : " << elapsed << " ms\n";
     // --- Output files ---
     cout << "====> Output file writing ..." << endl;
-    siconos::algebra::io::write("ColumnOfbeadsTS-MoreauJeanGOSI.dat", dataPlot,
+    siconos::algebra::io::write("ColumnOfBeadsTS-MoreauJeanGOSI.dat", dataPlot,
                                 siconos::algebra::io::ASCII_OUT,
                                 siconos::algebra::io::WriteType::nodim);
 
     double error = 0.0, eps = 1e-12;
     if ((error = siconos::algebra::io::compareRefFile(
-             dataPlot, "ColumnOfbeadsTS-MoreauJeanGOSI.ref", eps)) > eps)
+             dataPlot, "ColumnOfBeadsTS-MoreauJeanGOSI.ref", eps)) > eps)
       return 1;
     return 0;
   }
