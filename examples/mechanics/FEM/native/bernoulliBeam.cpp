@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
     tags[siconos::mechanics::fem::MeshTags::boundary_conditions] = 2;
     tags[siconos::mechanics::fem::MeshTags::applied_forces] = 3;
 
-    siconos::mechanics::fem::Material mat{1080, 500e7, 1. / 3};
+    siconos::mechanics::fem::Material mat{7800, 210e9, 1. / 3};
 
     // Same material for all tags.
     std::map<int, const siconos::mechanics::fem::Material> materials = {
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
     double theta = 1.0;  // theta for MoreauJeanOSI integrator
     auto osi_fem =
         std::make_shared<siconos::mechanics::fem::integrators::MoreauJeanGOSI>(theta);
-    osi_fem->setIsWSymmetricDefinitePositive(true);
+    osi_fem->setIsWSymmetricDefinitePositive(false);
 
     // -- (2) Time discretisation --
     double h = 1e-05;  // time step
