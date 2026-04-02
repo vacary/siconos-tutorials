@@ -1,11 +1,30 @@
-import numpy as np
-import os
-import sys
+# Siconos is a program dedicated to modeling, simulation and control
+# of non smooth dynamical systems.
+#
+# Copyright 2026 INRIA.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#
+#
+
+from pathlib import Path
+import shutil
 
 # siconos
 from siconos.mechanics.collision.tools import Contactor
 
-from siconos.mechanics.collision.convexhull import ConvexHull
+import siconos.io.rocks_generator as rg
 
 # from convexhull_modif import ConvexHull
 from siconos.mechanics.collision.bullet import SiconosBulletOptions
@@ -17,24 +36,12 @@ import siconos.numerics as sn
 import siconos.simulation as simu
 import siconos.integrators
 
-# stl mesh
-import trimesh
-
 # passage argument --output
 import argparse
-
-# function generate a shape
-import generate_shape as gen_shape
 
 ###############################################################################
 # Definition
 ###############################################################################
-
-# Script name
-sName = os.path.basename(sys.argv[0])[:-3]
-
-# Working DIrertory
-workDir = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 # Simu parameters---------------------------------------------------------------
 
@@ -101,46 +108,43 @@ mu_r_c = [mu1, mur2, mur12, mur13, mur15, mur16, mur17, mur18, mur19]
 
 # blocks
 density = 2600
-# volumes
-Vblock_min = 1.0
-Vblock_max = 2.0
-# shapes
-elBlocx = 1.1
-elBlocy = 1.2
-nbPts = 40
 
-# height_fall
-height_fall_min = 2.0
-height_fall_max = 3.0
 mnt_file_prefix = "./data/dem_red_site_reduit_simple_id"
-raster_dep_file = "./data/zones_dep_red_site_reduit_simplifie.stl"
-raster_dep_file = "./data/dem_red_site_reduit_simple_zone_dep_calib.stl"
 
 mnt_raster_file = "./data/dem_red_site_reduit.asc"
 
+# Warning arg parsing will work only when the script is called with python
+# not with 'siconos'.
 parser = argparse.ArgumentParser(description="Simulation Rockfall")
 
-nb_rocks_default = 100
-parser.add_argument(
-    "--nblocks", type=int, default=nb_rocks_default, help="nombre blocs par run"
-)
+parser.add_argument("--nblocks", type=int, default=100, help="nombre blocs par run")
 
 parser.add_argument(
     "--output",
     type=str,
-    default="run_default.hdf5",
+    default=Path(__file__).with_suffix(".h5").name,
     help="Chemin complet du fichier HDF5 de sortie",
 )
 args = parser.parse_args()
-# nom de fichier hdf5
-fn = args.output
-nb_rocks = args.nblocks
 
-###############################################################################
-# Simulation
-###############################################################################
 
-with MechanicsHdf5Runner(io_filename=fn) as io:
+# -- Rock shape config --
+rock_config = rg.RockShapeConfig(
+    nb_pts=40, y_aspect_ratio=1.1, z_aspect_ratio=1.2, volume_min=1.0, volume_max=2.0
+)
+
+# -- Drop config --
+# raster_dep_file = "./data/zones_dep_red_site_reduit_simplifie.stl"
+raster_dep_file = "./data/dem_red_site_reduit_simple_zone_dep_calib.stl"
+drop_config = rg.RocksDropConfig(
+    drop_zone=raster_dep_file,
+    number_of_rocks=args.nblocks,
+    height_fall_min=2.0,
+    height_fall_max=3.0,
+)
+
+
+with MechanicsHdf5Runner(io_filename=args.output) as io:
 
     # soil ---------------------------------------------------------------------
     print("Resample Soil mask... \n")
@@ -164,67 +168,7 @@ with MechanicsHdf5Runner(io_filename=fn) as io:
         )
 
     # blocks
-
-    # chargement zones depart
-    mesh = trimesh.load(raster_dep_file)
-    areas = mesh.area_faces
-    prob = areas / areas.sum()
-
-    # creation blocks
-    for i in range(0, nb_rocks):
-        print("n_rock", i)
-        nameDs = "block" + str(i)
-        nameShape = "block" + str(i) + "-shape"
-        initial_angles = np.random.uniform(0, 2 * np.pi, 3)
-        (c1, c2, c3), (s1, s2, s3) = np.cos(initial_angles), np.sin(initial_angles)
-        initial_orientation = [
-            c1 * c2 * c3 - s1 * s2 * s3,
-            s1 * s2 * c3 + c1 * c2 * s3,
-            s1 * c2 * c3 + c1 * s2 * s3,
-            c1 * s2 * c3 - s1 * c2 * s3,
-        ]
-
-        # Position initiale
-        height_fall = height_fall_min + (
-            height_fall_max - height_fall_min
-        ) ** np.random.uniform(0, 1, 1)
-        triangle_index = np.random.choice(len(mesh.faces), p=prob)
-        triangle = mesh.triangles[triangle_index]
-        A, B, C = triangle
-        r1 = np.sqrt(np.random.rand())
-        r2 = np.random.rand()
-        point = (1 - r1) * A + r1 * (1 - r2) * B + r1 * r2 * C
-        Xpos = point[0]
-        Ypos = point[1]
-        Zpos = point[2] + Vblock_max**0.33 + height_fall[0]
-
-        # posInit=[-0.5*heightmap.shape[0]+indx_dep[0][0],-0.5*heightmap.shape[1]+indx_dep[0][1],315]
-        posInit = [Xpos, Ypos, Zpos]
-        dest_vol = Vblock_min + np.random.rand() * (Vblock_max - Vblock_min)
-        vertices = gen_shape.generate_shape(nbPts, elBlocx, elBlocy, dest_vol)
-        # create the convexhull
-
-        ch = ConvexHull(vertices)
-        cm = ch.centroid()
-        # move the vertices to center the center of mass at 0.0
-        vertices = np.array(vertices)[:] - cm[:]
-        # ch = ConvexHull(vertices)
-        # cm = ch.centroid()
-        inertia, area = ch.inertia(cm)
-        mass_block = 2650.0 * 2.0
-
-        inertia = inertia * mass_block
-        # random block shape
-        io.add_convex_shape(nameShape, vertices, outsideMargin=0.0)
-        io.add_object(
-            nameDs,
-            [Contactor(nameShape, collision_group=100)],
-            translation=posInit,
-            velocity=[0, 0, 0, 0, 0, 0],
-            orientation=initial_orientation,
-            mass=mass_block,
-            inertia=inertia,
-        )
+    rg.generate_random_blocks(io, drop_config, rock_config)
 
     # contact laws
     for i in range(0, nb_zones):
@@ -237,6 +181,13 @@ with MechanicsHdf5Runner(io_filename=fn) as io:
             collision_group2=i,
         )
 
+# Save initial configuration (repr. purpose)
+config_backup = Path(args.output).stem + "_start.h5"
+shutil.copy(args.output, config_backup)
+
+###############################################################################
+# Simulation
+###############################################################################
 
 # LIST OF NUMERICAL PARAMETERS
 
@@ -450,11 +401,5 @@ run_options['osns_assembly_type']= None
 
 # solve
 
-with MechanicsHdf5Runner(mode="r+", io_filename=fn) as io:
+with MechanicsHdf5Runner(mode="r+", io_filename=args.output) as io:
     io.run(run_options)
-
-# plotTools.showPlots()
-
-# Open graphic win
-# bashCommand = "siconos_vview --cf-scale=0.1 " + workDir + '/' + sName + ".hdf5"
-# subprocess.call(bashCommand, shell = True)
