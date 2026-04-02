@@ -67,9 +67,6 @@ e_c = [e1, e2]
 mu_c = [mu1, mu2]
 mu_r_c = [mu1, mur2]
 
-# blocks
-density = 2600
-
 mnt_file_prefix = "./data/mnt_nord_sud_id"
 mnt_raster_file = "./data/mnt_nord_sud.asc"
 
@@ -100,7 +97,12 @@ time += args.nblocks
 
 # -- Rock shape config --
 rock_config = rg.RockShapeConfig(
-    nb_pts=40, y_aspect_ratio=1.1, z_aspect_ratio=1.2, volume_min=1.0, volume_max=2.0
+    nb_pts=40,
+    y_aspect_ratio=1.1,
+    z_aspect_ratio=1.2,
+    volume_min=1.0,
+    volume_max=2.0,
+    density=2650,
 )
 
 # -- Drop config --

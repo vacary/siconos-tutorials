@@ -48,71 +48,6 @@ import argparse
 # time
 time = 35.0  # sec  ok avec 1 dt
 
-
-# Soil param -------------------------------------------------------------------
-# concat
-zone_id = [1, 2, 12, 13, 15, 16, 17, 18, 19]
-zone_id = [1, 2, 12, 13, 15, 16, 17, 18]
-
-# zone 1 == none !!
-nb_zones = 9
-nb_zones = 8
-
-# zone 13:
-e13 = 0.0
-mu13 = 0.6
-mur13 = 0.35
-# mur13 = 0.1
-# zone 1:
-e1 = 0.0
-mu1 = 0.7
-mur1 = 0.39
-# mur1 = 0.15
-# zone 2:
-e2 = e1
-mu2 = mu1
-mur2 = mur1
-# zone 12:
-e12 = 0.0
-mu12 = 0.7
-mur12 = 0.42
-# mur12 = 0.2
-# zone 15:
-e15 = e12
-mu15 = mu12
-mur15 = mur12
-# zone 16:
-e16 = 0.0
-mu16 = 0.8
-mur16 = 0.55
-# mur16 = 0.25
-# zone 17:
-e17 = e1
-mu17 = mu1
-mur17 = mur1
-
-
-# zone 18:
-e18 = e17
-mu18 = mu17
-mur18 = mur17
-# zone 19:
-e19 = e18
-mu19 = mu18
-mur19 = mur18
-
-
-e_c = [e1, e2, e12, e13, e15, e16, e17, e18, e19]
-mu_c = [mu1, mu2, mu12, mu13, mu15, mu16, mu17, mu18, mu19]
-mu_r_c = [mu1, mur2, mur12, mur13, mur15, mur16, mur17, mur18, mur19]
-
-# blocks
-density = 2600
-
-mnt_file_prefix = "./data/dem_red_site_reduit_simple_id"
-
-mnt_raster_file = "./data/dem_red_site_reduit.asc"
-
 # Warning arg parsing will work only when the script is called with python
 # not with 'siconos'.
 parser = argparse.ArgumentParser(description="Simulation Rockfall")
@@ -128,62 +63,139 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-# -- Rock shape config --
-rock_config = rg.RockShapeConfig(
-    nb_pts=40, y_aspect_ratio=1.1, z_aspect_ratio=1.2, volume_min=1.0, volume_max=2.0
-)
+do_build_config = False
 
-# -- Drop config --
-# raster_dep_file = "./data/zones_dep_red_site_reduit_simplifie.stl"
-raster_dep_file = "./data/dem_red_site_reduit_simple_zone_dep_calib.stl"
-drop_config = rg.RocksDropConfig(
-    drop_zone=raster_dep_file,
-    number_of_rocks=args.nblocks,
-    height_fall_min=2.0,
-    height_fall_max=3.0,
-)
+if do_build_config:
 
+    # Soil param -------------------------------------------------------------------
+    # concat
+    zone_id = [1, 2, 12, 13, 15, 16, 17, 18, 19]
+    zone_id = [1, 2, 12, 13, 15, 16, 17, 18]
 
-with MechanicsHdf5Runner(io_filename=args.output) as io:
+    # zone 1 == none !!
+    nb_zones = 9
+    nb_zones = 8
 
-    # soil ---------------------------------------------------------------------
-    print("Resample Soil mask... \n")
-    for i in range(0, nb_zones):
-        dem_file = mnt_file_prefix + str(zone_id[i]) + ".stl"
-        # if i==1:
-        # dem_file='mnt_2m_PR_simple_'+str(i)+'_mod.stl'
-        # else:
-        # dem_file='mnt_2m_PR_simple_'+str(i)+'.stl'
-        mesh1 = io.add_mesh_from_file(
-            "dem_TIN_shape%d" % i,
-            dem_file,
-            scale=1,
-            insideMargin=0.0,
-            outsideMargin=0.0,
-        )
-        io.add_object(
-            "dem_TIN%d" % i,
-            [Contactor("dem_TIN_shape%d" % i, collision_group=i)],
-            translation=[0.0, 0.0, 0.0],
-        )
+    # zone 13:
+    e13 = 0.0
+    mu13 = 0.6
+    mur13 = 0.35
+    # mur13 = 0.1
+    # zone 1:
+    e1 = 0.0
+    mu1 = 0.7
+    mur1 = 0.39
+    # mur1 = 0.15
+    # zone 2:
+    e2 = e1
+    mu2 = mu1
+    mur2 = mur1
+    # zone 12:
+    e12 = 0.0
+    mu12 = 0.7
+    mur12 = 0.42
+    # mur12 = 0.2
+    # zone 15:
+    e15 = e12
+    mu15 = mu12
+    mur15 = mur12
+    # zone 16:
+    e16 = 0.0
+    mu16 = 0.8
+    mur16 = 0.55
+    # mur16 = 0.25
+    # zone 17:
+    e17 = e1
+    mu17 = mu1
+    mur17 = mur1
+
+    # zone 18:
+    e18 = e17
+    mu18 = mu17
+    mur18 = mur17
+    # zone 19:
+    e19 = e18
+    mu19 = mu18
+    mur19 = mur18
+
+    e_c = [e1, e2, e12, e13, e15, e16, e17, e18, e19]
+    mu_c = [mu1, mu2, mu12, mu13, mu15, mu16, mu17, mu18, mu19]
+    mu_r_c = [mu1, mur2, mur12, mur13, mur15, mur16, mur17, mur18, mur19]
 
     # blocks
-    rg.generate_random_blocks(io, drop_config, rock_config)
+    density = 2600
 
-    # contact laws
-    for i in range(0, nb_zones):
-        io.add_Newton_impact_rolling_friction_nsl(
-            "contact_soil_%d" % int(i),
-            e=e_c[i - 1],
-            mu=mu_c[i - 1],
-            mu_r=mu_r_c[i - 1],
-            collision_group1=100,
-            collision_group2=i,
-        )
+    mnt_file_prefix = "./data/dem_red_site_reduit_simple_id"
 
-# Save initial configuration (repr. purpose)
-config_backup = Path(args.output).stem + "_start.h5"
-shutil.copy(args.output, config_backup)
+    mnt_raster_file = "./data/dem_red_site_reduit.asc"
+
+    # -- Rock shape config --
+    rock_config = rg.RockShapeConfig(
+        nb_pts=40,
+        y_aspect_ratio=1.1,
+        z_aspect_ratio=1.2,
+        volume_min=1.0,
+        volume_max=2.0,
+    )
+
+    # -- Drop config --
+    # raster_dep_file = "./data/zones_dep_red_site_reduit_simplifie.stl"
+    raster_dep_file = "./data/dem_red_site_reduit_simple_zone_dep_calib.stl"
+    drop_config = rg.RocksDropConfig(
+        drop_zone=raster_dep_file,
+        number_of_rocks=args.nblocks,
+        height_fall_min=2.0,
+        height_fall_max=3.0,
+        density=2650,
+    )
+    with MechanicsHdf5Runner(io_filename=args.output) as io:
+
+        # soil ---------------------------------------------------------------------
+        print("Resample Soil mask... \n")
+        for i in range(0, nb_zones):
+            dem_file = mnt_file_prefix + str(zone_id[i]) + ".stl"
+            # if i==1:
+            # dem_file='mnt_2m_PR_simple_'+str(i)+'_mod.stl'
+            # else:
+            # dem_file='mnt_2m_PR_simple_'+str(i)+'.stl'
+            mesh1 = io.add_mesh_from_file(
+                "dem_TIN_shape%d" % i,
+                dem_file,
+                scale=1,
+                insideMargin=0.0,
+                outsideMargin=0.0,
+            )
+            io.add_object(
+                "dem_TIN%d" % i,
+                [Contactor("dem_TIN_shape%d" % i, collision_group=i)],
+                translation=[0.0, 0.0, 0.0],
+            )
+
+        # blocks
+        rg.generate_random_blocks(io, drop_config, rock_config)
+
+        # contact laws
+        for i in range(0, nb_zones):
+            io.add_Newton_impact_rolling_friction_nsl(
+                "contact_soil_%d" % int(i),
+                e=e_c[i - 1],
+                mu=mu_c[i - 1],
+                mu_r=mu_r_c[i - 1],
+                collision_group1=100,
+                collision_group2=i,
+            )
+
+    # Save initial configuration (repr. purpose)
+    config_backup = Path(args.output).stem + "_start.h5"
+    shutil.copy(args.output, config_backup)
+
+    run_config = args.output
+else:
+    # Copy backup file to restart simu from an existing setup
+    config_backup = Path(args.output).stem + "_start.h5"
+    run_config = args.output
+    shutil.copy(config_backup, run_config)
+
 
 ###############################################################################
 # Simulation
@@ -401,5 +413,5 @@ run_options['osns_assembly_type']= None
 
 # solve
 
-with MechanicsHdf5Runner(mode="r+", io_filename=args.output) as io:
+with MechanicsHdf5Runner(mode="r+", io_filename=run_config) as io:
     io.run(run_options)
