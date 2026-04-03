@@ -46,7 +46,7 @@ import argparse
 # Simu parameters---------------------------------------------------------------
 
 # time
-time = 35.0  # sec  ok avec 1 dt
+time = 35.0  # 35.0  # sec  ok avec 1 dt
 
 # Warning arg parsing will work only when the script is called with python
 # not with 'siconos'.
@@ -122,9 +122,6 @@ if do_build_config:
     mu_c = [mu1, mu2, mu12, mu13, mu15, mu16, mu17, mu18, mu19]
     mu_r_c = [mu1, mur2, mur12, mur13, mur15, mur16, mur17, mur18, mur19]
 
-    # blocks
-    density = 2600
-
     mnt_file_prefix = "./data/dem_red_site_reduit_simple_id"
 
     mnt_raster_file = "./data/dem_red_site_reduit.asc"
@@ -136,6 +133,7 @@ if do_build_config:
         z_aspect_ratio=1.2,
         volume_min=1.0,
         volume_max=2.0,
+        density=2650,
     )
 
     # -- Drop config --
@@ -146,7 +144,6 @@ if do_build_config:
         number_of_rocks=args.nblocks,
         height_fall_min=2.0,
         height_fall_max=3.0,
-        density=2650,
     )
     with MechanicsHdf5Runner(io_filename=args.output) as io:
 
