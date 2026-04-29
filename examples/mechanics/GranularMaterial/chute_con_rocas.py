@@ -46,8 +46,6 @@ if float(mu) < 0.1 or float(mu) > 2.0:
     sys.exit(1)
 
 
-# hdf5 file name
-fn = "chute_con_rocas-{0}-mu-{1}.hdf5".format(dist, mu)
 
 random.seed(0)
 
@@ -59,6 +57,16 @@ box_width = 3.430
 density = 2500
 planethickness_ = 0.2
 cube_size = 0.1
+
+rock_shape = 'roca'
+#rock_shape = 'esfera'
+#rock_shape = 'cubo'
+
+# hdf5 file name
+if rock_shape == 'roca':
+    fn = "chute_con_rocas-{0}-mu-{1}.hdf5".format(dist, mu)
+else:
+    fn = "chute_con_rocas-{0}-mu-{1}_{2}.hdf5".format(dist, mu, rock_shape)
 
 test = True
 if test:
@@ -161,6 +169,7 @@ with MechanicsHdf5Runner(mode="w", io_filename=fn) as io:
         top=3,
         rate=0.2,
         density=density,
+        rock_shape = rock_shape
     )
 
     io.add_Newton_impact_friction_nsl("contact", mu=1.0, e=0.01)
