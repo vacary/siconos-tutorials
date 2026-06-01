@@ -53,7 +53,9 @@ int main(int argc, char* argv[]) {
     // Apply nodal forces
     if (tags.find(siconos::mechanics::fem::MeshTags::applied_forces) != tags.end()) {
       siconos::algebra::SiconosVector nodal_forces{3};
-      nodal_forces << -2e9, 0., 0.;
+      nodal_forces <<  -2e9, 0. ,0. ;
+      // siconos::algebra::SiconosVector nodal_forces{6};  // 3D case
+      // nodal_forces <<  0., 0.,0., -2e9,0., 0. ;
 
       beam->applyNodalForces(tags[siconos::mechanics::fem::MeshTags::applied_forces],
                              nodal_forces);
@@ -64,7 +66,7 @@ int main(int argc, char* argv[]) {
       std::vector<int> bc_dof_index(3);
       bc_dof_index[0] = 0;
       bc_dof_index[1] = 1;
-      bc_dof_index[1] = 2;
+      bc_dof_index[2] = 2;
       beam->applyDirichletBoundaryConditions(
           tags[siconos::mechanics::fem::MeshTags::boundary_conditions], bc_dof_index);
     }
