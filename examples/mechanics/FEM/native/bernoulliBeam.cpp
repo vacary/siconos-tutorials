@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
     siconos::algebra::SiconosVector3 coords_start{0., 0., 0.};
     siconos::algebra::SiconosVector3 coords_end{0., 4., 0.};
     auto mesh =
-        siconos::mechanics::fem::createBeamMesh(coords_start, coords_end, nb_elements, 2);
+        siconos::mechanics::fem::createBeamMesh(coords_start, coords_end, nb_elements, dim);
     mesh->display(false);
 
     siconos::mechanics::fem::Tags tags;
@@ -52,21 +52,42 @@ int main(int argc, char* argv[]) {
 
     // Apply nodal forces
     if (tags.find(siconos::mechanics::fem::MeshTags::applied_forces) != tags.end()) {
-      siconos::algebra::SiconosVector nodal_forces{3};
-      nodal_forces <<  -2e9, 0. ,0. ;
-      // siconos::algebra::SiconosVector nodal_forces{6};  // 3D case
-      // nodal_forces <<  0., 0.,0., -2e9,0., 0. ;
+       siconos::algebra::SiconosVector nodal_forces;
+      if (dim == 2)
+      {
+        nodal_forces.resize(3);
+        nodal_forces <<  -2e4, 0. ,0. ;
+      }
+      else
+      {
+        nodal_forces.resize(6);
+        nodal_forces <<  -2e4, 0. ,0. ,0. ,0. ,0. ;
 
+      }
       beam->applyNodalForces(tags[siconos::mechanics::fem::MeshTags::applied_forces],
                              nodal_forces);
     }
 
     // Boundary Conditions
     if (tags.find(siconos::mechanics::fem::MeshTags::boundary_conditions) != tags.end()) {
-      std::vector<int> bc_dof_index(3);
-      bc_dof_index[0] = 0;
-      bc_dof_index[1] = 1;
-      bc_dof_index[2] = 2;
+      std::vector<int> bc_dof_index;
+      if (dim == 2)
+      {
+        bc_dof_index.resize(3);
+        bc_dof_index[0] = 0;
+        bc_dof_index[1] = 1;
+        bc_dof_index[2] = 2;
+      }
+      else
+      {
+        bc_dof_index.resize(6);
+        bc_dof_index[0] = 0;
+        bc_dof_index[1] = 1;
+        bc_dof_index[2] = 2;
+        bc_dof_index[3] = 3;
+        bc_dof_index[4] = 4;
+        bc_dof_index[5] = 5;
+      }
       beam->applyDirichletBoundaryConditions(
           tags[siconos::mechanics::fem::MeshTags::boundary_conditions], bc_dof_index);
     }
@@ -89,9 +110,17 @@ int main(int argc, char* argv[]) {
     auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
     // -- (3) one step non smooth problem --
+    int SOLVER;
+    if (dim == 2)
+      SOLVER = SICONOS_FRICTION_2D_NSGS;
+    else
+      SOLVER = SICONOS_GLOBAL_FRICTION_3D_NSGS_WR;
+
     auto osnspb = std::make_shared<
         siconos::mechanics::fem::nonsmooth_formulations::GlobalFrictionContact>(
-        2, SICONOS_FRICTION_2D_NSGS);
+        dim, SOLVER);
+    osnspb->setNumericsVerboseLevel(3);
+
 
     // -- (4) Simulation setup with (1) (2) (3)
     auto s = std::make_shared<siconos::simulation::TimeStepping>(beamNSDS, t, osi_fem, osnspb);
