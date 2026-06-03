@@ -192,8 +192,7 @@ while simu.hasNextEvent() and k < N:
     data[k, 7] = qplane[0]
     data[k, 8] = vplane[0]
 
-    #data[k, 11] = movingplane.reactionToBoundaryConditions()[0]
-
+    data[k, 11] = movingplane.reactionToBoundaryConditions()[0]
     simu.nextStep()
 
     k += 1
@@ -202,21 +201,31 @@ while simu.hasNextEvent() and k < N:
 # Save
 # ==========================================================
 
-np.savetxt("result.dat", data[:k])
+np.savetxt("BallOnMovingPlane_py.dat", data[:k])
 
 import matplotlib.pyplot as plt
 
 #
-plt.subplot(211)
+plt.subplot(411)
 plt.title("position")
 plt.plot(data[:, 0], data[:, 1], label='position ball')
 plt.plot(data[:, 0], data[:, 7], label='position plane')
 plt.legend()
 plt.grid()
-plt.subplot(212)
+plt.subplot(412)
 plt.title("velocity")
 plt.plot(data[:, 0], data[:, 2], label='velocity ball')
 plt.plot(data[:, 0], data[:, 8], label='velocity plane')
+plt.grid()
+plt.legend()
+plt.subplot(413)
+plt.title("lambda")
+plt.plot(data[:, 0], data[:, 4], label='lambda')
+plt.grid()
+plt.legend()
+plt.subplot(414)
+plt.title("reaction to boundary conditions")
+plt.plot(data[:, 0], data[:, 11], label='reaction to boundary conditions')
 plt.grid()
 plt.legend()
 plt.show()
