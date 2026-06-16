@@ -4,7 +4,7 @@ import subprocess
 import math
 import numpy
 
-command = ['siconos', '--build-plugins', '-q']
+command = ['siconos', '-q']
 print(subprocess.run(command, check=True))
 
 # REQUIRED number of bodies

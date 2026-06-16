@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 3;           // degrees of freedom for robot arm
+    int nDof = 3;           // degrees of freedom for robot arm
     double t0 = 0;                   // initial computation time
     double T = 1.9;                   // final computation time
     double h = 0.005;                // time step
@@ -60,11 +60,14 @@ int main(int argc, char* argv[])
 
 
     // Initial position (angles in radian)
-    SP::SiconosVector q0(new SiconosVector(nDof)), v0(new SiconosVector(nDof));
-    (*q0)(0) = 0.05;
-    (*q0)(1) = 0.05;
+    siconos::algebra::SiconosVector q0{nDof};
+    siconos::algebra::SiconosVector v0{nDof};
+    q0.setZero();
+    v0.setZero();
+   q0(0) = 0.05;
+   q0(1) = 0.05;
 
-    SP::LagrangianDS arm(new LagrangianDS(q0, v0));
+    auto arm(new LagrangianDS(q0, v0));
 
     // external plug-in
     arm->setComputeMassFunction("RobotPlugin", "mass");
@@ -84,16 +87,16 @@ int main(int argc, char* argv[])
     // -- relations --
 
     // => arm-floor relation
-    SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
+    auto nslaw(new NewtonImpactNSL(e));
     string G = "RobotPlugin:G2";
-    SP::Relation relation(new LagrangianScleronomousR("RobotPlugin:h2", G));
-    SP::Interaction inter(new Interaction(nslaw, relation, 0));
+    auto relation(new LagrangianScleronomousR("RobotPlugin:h2", G));
+    auto inter(new Interaction(nslaw, relation, 0));
 
     // => angular stops
 
     //     SimpleMatrix H(6,3);
     //     SiconosVector b(6);
-    //     H.zero();
+    //     H.setZero();
     //     H(0,0) =-1;
     //     H(1,0) =1;
     //     H(2,1) =-1;
@@ -109,9 +112,9 @@ int main(int argc, char* argv[])
     //     b(5) = 3.14;
     double lim0 = 1.6;
     double lim1 = 3.1;  // -lim <= q[1] <= lim
-    SP::SimpleMatrix H(new SimpleMatrix(4, 3));
-    SP::SiconosVector b(new SiconosVector(4));
-    H->zero();
+    auto H(new SimpleMatrix(4, 3));
+    std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector(4));
+    H->setZero();
 
     (*H)(0, 0) = -1;
     (*H)(1, 0) = 1;
@@ -123,15 +126,15 @@ int main(int argc, char* argv[])
     (*b)(2) = lim1;
     (*b)(3) = lim1;
 
-    SP::NonSmoothLaw nslaw2(new NewtonImpactNSL(e2));
-    SP::Relation relation2(new LagrangianLinearTIR(H, b));
-    SP::Interaction inter2(new Interaction(nslaw2, relation2, 1));
+    auto nslaw2(new NewtonImpactNSL(e2));
+    auto relation2(new LagrangianLinearTIR(H, b));
+    auto inter2(new Interaction(nslaw2, relation2, 1));
 
     // -------------
     // --- Model ---
     // -------------
 
-    SP::Model Robot(new Model(t0, T));
+    auto Robot(new Model(t0, T));
 
     // add the dynamical system in the non smooth dynamical system
     Robot->nonSmoothDynamicalSystem()->insertDynamicalSystem(arm);
@@ -145,15 +148,15 @@ int main(int argc, char* argv[])
     // ----------------
 
     // -- Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t(new TimeDiscretisation(t0, h));
 
-    SP::TimeStepping s(new TimeStepping(t));
+    auto s(new TimeStepping(t));
 
     // -- OneStepIntegrators --
-    SP::OneStepIntegrator OSI(new MoreauJeanOSI(arm, 0.500001));
+    auto OSI(new MoreauJeanOSI(arm, 0.500001));
     s->insertIntegrator(OSI);
 
-    SP::OneStepNSProblem osnspb(new LCP("PGS"));
+    auto osnspb(new LCP("PGS"));
 
     osnspb->numericsSolverOptions()->iparam[0] = 30001;
     osnspb->numericsSolverOptions()->dparam[0] = 0.005;
@@ -182,9 +185,9 @@ int main(int argc, char* argv[])
     // For the initial time step:
     // time
 
-    SP::SiconosVector q = arm->q();
-    SP::SiconosVector vel = arm->velocity();
-    SP::SiconosVector y = inter->y(0);
+    std::shared_ptr<siconos::algebra::SiconosVector> q = arm->q();
+    std::shared_ptr<siconos::algebra::SiconosVector> vel = arm->velocity();
+    std::shared_ptr<siconos::algebra::SiconosVector> y = inter->y(0);
 
     dataPlot(k, 0) =  Robot->t0();
     dataPlot(k, 1) = (*q)(0);

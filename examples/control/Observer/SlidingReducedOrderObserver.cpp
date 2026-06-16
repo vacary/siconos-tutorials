@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,114 +14,126 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
-#include "SiconosKernel.hpp"
-#include "SiconosControl.hpp"
-#include "PID.hpp"
-#include "LinearSensor.hpp"
+/* Academic example of a Luenberger Observer
+  O. Huber.
+
+  The controlled plant is a double integrator
+  */
+
+#include <LinearSensor.hpp>
+#include <PID.hpp>
+#include <SiconosControl.hpp>
+#include <SiconosKernel.hpp>
 
 using namespace std;
+using Matrix = siconos::algebra::SiconosMatrix;
+using Vector = siconos::algebra::SiconosVector;
 
 #define WITH_CONTROL
 
-int main(int argc, char* argv[])
-{
-
+int main(int argc, char* argv[]) {
   // ================= Creation of the model =======================
 
   // User-defined main parameters
-  unsigned int nDof = 2;           // degrees of freedom for the system
-  double t0 = 0;                   // initial computation time
-  double T = 100;                  // final computation time
-  double h = 0.05;                // time step
-  double hControl = 2*h;
-  double position_init = 10;      // initial position for lowest bead.
-  double velocity_init = 0.0;      // initial velocity for lowest bead.
-  double xFinal = 0;              // final value
+  int nDof = 2;     // degrees of freedom for the system
+  double t0 = 0;    // initial computation time
+  double T = 100;   // final computation time
+  double h = 0.05;  // time step
+  double hControl = 2 * h;
+  double position_init = 10;   // initial position for lowest bead.
+  double velocity_init = 0.0;  // initial velocity for lowest bead.
+  double xFinal = 0;           // final value
   // -------------------------
   // --- Dynamical systems ---
   // -------------------------
 
-  cout << "====> Model loading ..." << endl << endl;
+  cout << "====> Model loading ...\n\n";
 
-  SP::SiconosMatrix A(new SimpleMatrix(nDof, nDof));
-  A->zero();
+  auto A = std::make_shared<Matrix>(nDof, nDof);
+  A->setZero();
   (*A)(0, 1) = 1;
   (*A)(1, 0) = -1;
 
-  SP::SimpleMatrix B(new SimpleMatrix(nDof, 1));
-  (*B)(nDof-1, 0) = 1.0;
-
+  auto B = std::make_shared<Matrix>(nDof, 1);
+  B->setZero();
+  (*B)(nDof - 1, 0) = 1.0;
   // -- Initial positions and velocities --
-  SP::SiconosVector x0(new SiconosVector(nDof));
+  auto x0 = std::make_shared<Vector>(nDof);
   (*x0)(0) = position_init;
   (*x0)(1) = velocity_init;
 
   // -- The dynamical system --
-  SP::FirstOrderLinearTIDS doubleIntegrator(new FirstOrderLinearTIDS(x0, A));
-
+  auto doubleIntegrator =
+      std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, siconos::algebra::alias_t);
+  doubleIntegrator->setConstantA(*A, siconos::algebra::alias_t);
   // -------------
   // --- Model ---
   // -------------
-  SP::ControlSimulation sim(new ControlZOHSimulation(t0, T, h));
+  auto sim = std::make_shared<siconos::control::ControlZOHSimulation>(t0, T, h);
 
-  // add the dynamical system in the non smooth dynamical system
   sim->addDynamicalSystem(doubleIntegrator);
 
+  // ------------------
+  // --- Simulation ---
+  // ------------------
+
   // use a controlSensor
-  SP::SimpleMatrix C(new SimpleMatrix(1, 2, 0));
-  (*C)(0, 0) = 1.0;
-  SP::LinearSensor sens(new LinearSensor(doubleIntegrator, C));
+  auto C = std::make_shared<Matrix>(1, 2);
+  C->setZero();
+  (*C)(0, 0) = 1;
+  auto sens = std::make_shared<siconos::control::LinearSensor>(doubleIntegrator, C);
   sim->addSensor(sens, hControl);
 
   // add the Observer
-  SP::SimpleMatrix L(new SimpleMatrix(2, 1));
+  auto L = std::make_shared<Matrix>(2, 1);
   (*L)(0, 0) = -7.5125146;
   (*L)(1, 0) = -50.04168751;
-  SP::SiconosVector xHat0(new SiconosVector(2));
+  auto xHat0 = std::make_shared<Vector>(2);
   (*xHat0)(0) = position_init;
   (*xHat0)(1) = -5;
-  SP::Observer obs(new SlidingReducedOrderObserver(sens, *xHat0, C, L));
+  auto obs =
+      std::make_shared<siconos::control::SlidingReducedOrderObserver>(sens, *xHat0, C, L);
   sim->addObserver(obs, hControl);
   // add the PID controller
-  SP::SiconosVector K(new SiconosVector(3, 0));
+  auto K = std::make_shared<Vector>(3);
   (*K)(0) = .25;
   (*K)(1) = .125;
   (*K)(2) = 2;
 #ifdef WITH_CONTROL
-  SP::PID act(new PID(sens));
+  auto act = std::make_shared<siconos::control::PID>(sens);
   act->setRef(xFinal);
   act->setK(K);
   act->setB(B);
   sim->addActuator(act, hControl);
 #endif
 
-  cout << "=== End of model loading === " << endl;
+  cout << "=== End of model loading === \n";
   // =========================== End of model definition ===========================
 
   // ================================= Computation =================================
 
   // --- Simulation initialization ---
 
-  cout << "====> Initialisation ..." << endl << endl;
+  cout << "====> Initialisation ...\n\n";
   // Initialize the model and the controlManager
   sim->initialize();
-// --- Time loop ---
-  cout << "====> Start computation ... " << endl << endl;
+  // --- Time loop ---
+  cout << "====> Start computation ... \n\n";
   // ==== Simulation loop - Writing without explicit event handling =====
   sim->run();
   // --- Output files ---
-  cout << "====> Output file writing ..." << endl;
-  SimpleMatrix& dataPlot = *sim->data();
-  ioMatrix::write("SlidingReducedOrderObserver.dat", "ascii", dataPlot, "noDim");
-
-  double error=0.0, eps=1e-12;
-  if((error=ioMatrix::compareRefFile(dataPlot, "SlidingReducedOrderObserver.ref",
-                                     eps)) >= 0.0
-      && error > eps)
+  cout << "====> Output file writing ...\n";
+  auto& dataPlot = *sim->data();
+  siconos::algebra::io::write("SlidingReducedOrderObserver.dat", dataPlot,
+                              siconos::algebra::io::ASCII_OUT,
+                              siconos::algebra::io::WriteType::nodim);
+  double error = 0.0, eps = 1e-12;
+  if ((error = siconos::algebra::io::compareRefFile(
+           dataPlot, "SlidingReducedOrderObserver.ref", eps)) >= 0.0 &&
+      error > eps)
     return 1;
   else
     return 0;
-
 }

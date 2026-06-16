@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,43 +14,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 #include "myDS.h"
+// #define DEBUG_STDOUT
+// #define DEBUG_MESSAGES
+#include <siconos_debug.h>
 
+using Matrix = siconos::algebra::SiconosMatrix;
+using Vector = siconos::algebra::SiconosVector;
 
+user_defined::MyDS::MyDS(Eigen::Ref<siconos::algebra::SiconosVector> x0)
+    : FirstOrderNonLinearDS(x0, siconos::algebra::copy_t) {
+  setComputefVectorFunction(
+      [](const Eigen::Ref<const siconos::algebra::SiconosVector> &x, double time,
+         Eigen::Ref<siconos::algebra::MapVectorType> result) { result.setZero(); });
 
-MyDS::MyDS(SP::SiconosVector x0): FirstOrderNonLinearDS(x0)
-{
-  _jacobianfx.reset(new SimpleMatrix(1, 1));
-  _f.reset(new SiconosVector(1));
-  _M.reset(new SimpleMatrix(1, 1));
-  _M->eye();
-}
-
-void MyDS::computeF(double t)
-{
-  _f->setValue(0, 0);
-}
-void  MyDS::computeF(double, SP::SiconosVector)
-{
-  _f->setValue(0, 0);
-}
-
-void MyDS::computeJacobianfx(double t)
-{
-  _jacobianfx->setValue(0, 0, 0);
-}
-
-void MyDS::computeJacobianfx(double t, SP::SiconosVector v)
-{
-  _jacobianfx->setValue(0, 0, 0);
-}
-
-void MyDS::computeRhs(double t)
-{
-  ;
-}
-void MyDS::resetNonSmoothPart(unsigned int level)
-{
-  _r->zero();
+  setComputeJacobianfOver_xFunction(
+      [](const Eigen::Ref<const siconos::algebra::SiconosVector> &x, double time,
+         Eigen::Ref<siconos::algebra::MapType> result) { result.setZero(); });
 }

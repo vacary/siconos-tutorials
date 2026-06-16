@@ -60,40 +60,39 @@ int main(int argc, char* argv[])
   try
   {
     // --- Dynamical system specification ---
-    SP::SiconosVector x0(new SiconosVector(2));
-    x0->setValue(0, Vinit);
-    x0->setValue(1, 0.0);
+    std::shared_ptr<siconos::algebra::SiconosVector> x0(new SiconosVector(2));
+    (*x0)(0) = Vinit;
+    (*x0)(1) = 0.0;
 
-    SP::SimpleMatrix A(new SimpleMatrix(2, 2));
+    auto A(new SimpleMatrix(2, 2));
     A->setValue(0 , 1, -1.0 / Cvalue);
     A->setValue(1 , 0, 1.0 / Lvalue);
 
     // --- Interaction between linear system and non smooth system ---
-    SP::SimpleMatrix C(new SimpleMatrix(1, 2));
+    auto C(new SimpleMatrix(1, 2));
     C->setValue(0 , 0 , -1.0);
 
-    SP::SimpleMatrix D(new SimpleMatrix(1, 1));
+    auto D(new SimpleMatrix(1, 1));
     D->setValue(0 , 0, Rvalue);
 
-    SP::SimpleMatrix B(new SimpleMatrix(2, 1));
+    auto B(new SimpleMatrix(2, 1));
     B->setValue(0 , 0, -1.0 / Cvalue);
 
-    SP::SiconosVector a;
-    SP::SiconosVector b;
+    std::shared_ptr<siconos::algebra::SiconosVector> a;
+    std::shared_ptr<siconos::algebra::SiconosVector> b;
 
     // --- Model creation ---
-    SP::NonSmoothDynamicalSystem CircuitRLCD(new NonSmoothDynamicalSystem(t0, T));
+    auto CircuitRLCD(new NonSmoothDynamicalSystem(t0, T));
 
-    SP::LinearComplementaritySystemsNSDS lcs(new LinearComplementaritySystemsNSDS(t0,T, x0, A, B, C, D, a, b));
+    auto lcs(new LinearComplementaritySystemsNSDS(t0,T, x0, A, B, C, D, a, b));
     // assert(lcs->interaction());
     // assert(lcs->relation());
     // assert(lcs->ds());
     // assert(lcs->nslaw());
-    // lcs->interaction()->display();
     lcs->interaction()->computeOutput(t0,0);
     lcs->interaction()->computeInput(t0,0);
 
-    //lcs->display();
+    //siconos::algebra::print(*lcs);
 
     // ------------------
     // --- Simulation ---
@@ -101,15 +100,15 @@ int main(int argc, char* argv[])
     double theta = 0.5000000000001;
 
     // -- (1) OneStepIntegrators --
-    SP::EulerMoreauOSI osi(new EulerMoreauOSI(theta));
+    auto osi(new EulerMoreauOSI(theta));
 
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation td(new TimeDiscretisation(t0, h_step));
+    auto td(new TimeDiscretisation(t0, h_step));
     // --- (3) one step non smooth problem
-    SP::LCP lcp(new LCP());
+    auto lcp(new LCP());
 
     // -- (4) Simulation setup with (1) (2) (3)
-    SP::TimeStepping simulation(new TimeStepping(lcs, td, osi, lcp));
+    auto simulation(new TimeStepping(lcs, td, osi, lcp));
     double h = simulation->timeStep();
     int N = ceil((T - t0) / h); // Number of time steps
     int k = 0;

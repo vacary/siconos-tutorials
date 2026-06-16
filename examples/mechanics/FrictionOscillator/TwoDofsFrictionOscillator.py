@@ -20,17 +20,22 @@
 #
 
 
-""" siconos -v TwoDofsFrictionOscillator.py --build-plugins """
+""" siconos -v TwoDofsFrictionOscillator.py"""
 
 
-import  numpy as np
+import numpy as np
 
-from numpy.linalg import norm
-from siconos.kernel import FirstOrderLinearTIDS, FirstOrderLinearDS, RelayNSL, Interaction, FirstOrderLinearR, NonSmoothDynamicalSystem,\
-    EulerMoreauOSI, TimeDiscretisation, TimeStepping, Relay
-
+# from numpy import linalg as LA
 import siconos.numerics as sn
+import siconos.modeling as sm
+import siconos.simulation
+import siconos.nonsmooth_formulations
+import siconos.integrators
 
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 """
 
@@ -55,81 +60,101 @@ f2 = 0;
 """
 
 
-t0 = 0       # start time
-T = 500       # end time
-h = 5e-02    # time step
+t0 = 0  # start time
+T = 500  # end time
+h = 5e-02  # time step
 theta = 0.5  # theta scheme
 
-m1 = 1; k1 = 1;
-m2 = 1; k2 = 1;
-μ = 0.5; N = 1;
-d1 = 0; d2 = 0;
-f1 = 1;
-f2 = 0;
-ω = 0.3;
+m1 = 1
+k1 = 1
+m2 = 1
+k2 = 1
+μ = 0.5
+N = 1
+d1 = 0
+d2 = 0
+f1 = 1
+f2 = 0
+ω = 0.3
 
 
-x_1_0=1.0
-dot_x_1_0=0.0
-x_2_0=0.0
-dot_x_2_0=0.0
+x_1_0 = 1.0
+dot_x_1_0 = 0.0
+x_2_0 = 0.0
+dot_x_2_0 = 0.0
 
 
-x = [x_1_0, dot_x_1_0, x_2_0, dot_x_2_0]    # initial state
+x = np.asarray([x_1_0, dot_x_1_0, x_2_0, dot_x_2_0])  # initial state
 
-M = np.zeros((4,4))
+M = np.zeros((4, 4), dtype=np.float64, order="F")
 
-M[0,0]=1
-M[1,1]=m1
-M[2,2]=1
-M[3,3]=m2
-
-
-
-A = np.zeros((4,4))
-
-A[0,1] = 1
-
-A[1,0] = -(k1+k2)
-A[1,1] = - d1
-A[1,2] = k2
+M[0, 0] = 1
+M[1, 1] = m1
+M[2, 2] = 1
+M[3, 3] = m2
 
 
-A[2,3] = 1
+A = np.zeros((4, 4), dtype=np.float64, order="F")
 
-A[3,0] =  k2
-A[3,2] = -k2
-A[3,3] = - d2
+A[0, 1] = 1
 
+A[1, 0] = -(k1 + k2)
+A[1, 1] = -d1
+A[1, 2] = k2
+
+
+A[2, 3] = 1
+
+A[3, 0] = k2
+A[3, 2] = -k2
+A[3, 3] = -d2
 
 
 #
 # dynamical system
 #
 
-oscillator = FirstOrderLinearDS(x, A)
-oscillator.setMPtr(M)
+oscillator = sm.FirstOrderLinearDS(x, sm.alias_t)
+oscillator.setConstantA(A, sm.alias_t)
+oscillator.setConstantMMatrix(M, sm.alias_t)
 
-oscillator.setComputebFunction("plugins", "TwoDofsOscillatorB")
-#oscillator.display()
+
+def computeb(time, result):
+    omega = 0.3
+    f1 = 1.0
+    f2 = 0.0
+
+    result[0] = 0.0
+    result[1] = f1 * np.cos(omega * time)
+    result[2] = 0.0
+    result[3] = f2 * np.cos(omega * time)
+
+
+oscillator.setComputebVectorFunction(computeb)
+# oscillator.display()
 
 #
 # Interactions
 #
 
+H = np.array([[0, 0, 0, 1]], dtype=np.float64, order="F")
 
-H = np.array([[0, 0, 0, 1]])
+nslaw = sm.RelayNSL(1, -μ * N, μ * N)
 
-nslaw = RelayNSL(1, -μ*N, μ*N)
-relation = FirstOrderLinearR(H, H.T)
-inter = Interaction(nslaw, relation)
 
-inter.display()
+relation = sm.FirstOrderLinearR()
+relation.setConstantCAlias(
+    H,
+)
+relation.setConstantBAlias(H.T)
+inter = sm.Interaction(nslaw, relation)
+
+print(inter)
 
 #
 # Model
 #
-frictionOscillator = NonSmoothDynamicalSystem(t0, T)
+frictionOscillator = sm.NonSmoothDynamicalSystem(t0, T)
 
 # add the dynamical system to the non smooth dynamical system
 frictionOscillator.insertDynamicalSystem(oscillator)
@@ -138,24 +163,23 @@ frictionOscillator.insertDynamicalSystem(oscillator)
 frictionOscillator.link(inter, oscillator)
 
 
-
 #
 # Simulation
 #
 
 # (1) OneStepIntegrators
-OSI = EulerMoreauOSI(theta)
+OSI = siconos.integrators.EulerMoreauOSI(theta)
 
 # (2) Time discretisation --
-t = TimeDiscretisation(t0, h)
+t = siconos.simulation.TimeDiscretisation(t0, h)
 
 # (3) one step non smooth problem
-osnspb = Relay()
-osnspb.setSolverId(sn.SICONOS_RELAY_LEMKE);
+osnspb = siconos.nonsmooth_formulations.Relay()
+osnspb.setSolverId(sn.solver_ids.SICONOS_RELAY_LEMKE)
 
-osnspb.numericsSolverOptions().dparam[0] = 1e-08;
+osnspb.numericsSolverOptions().dparam[0] = 1e-08
 # (4) Simulation setup with (1) (2) (3)
-s = TimeStepping(frictionOscillator,t, OSI, osnspb)
+s = siconos.simulation.TimeStepping(frictionOscillator, t, OSI, osnspb)
 
 # end of model definition
 
@@ -170,14 +194,14 @@ N = int((T - t0) / h)
 # # Get the values to be plotted
 # # ->saved in a matrix dataPlot
 
-dataPlot = np.zeros((N+1, 6))
+dataPlot = np.zeros((N + 1, 6))
 
 # #
 # # numpy pointers on dense Siconos vectors
 # #
 x = oscillator.x()
 # p = ball.p(1)
-lambda_ = inter.lambda_(0)
+lambda_ = inter.lambda_python(0)
 
 
 # #
@@ -203,18 +227,15 @@ while s.hasNextEvent():
     dataPlot[k, 3] = x[2]
     dataPlot[k, 4] = x[3]
     dataPlot[k, 5] = lambda_[0]
-    
+
     k += 1
     s.nextStep()
 
 
-
-
-    
 # #
 # # comparison with the reference file
 # #
-# ref = getMatrix(SimpleMatrix("BouncingBallTS.ref"))
+# ref = getMatrix(SiconosMatrix("BouncingBallTS.ref"))
 
 # if (norm(dataPlot - ref) > 1e-12):
 #     print("Warning. The result is rather different from the reference file.")
@@ -223,36 +244,30 @@ while s.hasNextEvent():
 #
 # plots
 #
-import matplotlib,os
-havedisplay = "DISPLAY" in os.environ
-if not havedisplay:
-    matplotlib.use('Agg')
-
-import matplotlib.pyplot as plt
 plt.subplot(411)
-plt.title('position x1')
+plt.title("position x1")
 plt.plot(dataPlot[:, 0], dataPlot[:, 1])
 plt.grid()
 plt.subplot(412)
-plt.title('velocity dot x1')
+plt.title("velocity dot x1")
 plt.plot(dataPlot[:, 0], dataPlot[:, 2])
 plt.grid()
 plt.subplot(413)
 plt.plot(dataPlot[:, 0], dataPlot[:, 3])
-plt.title('position x2')
+plt.title("position x2")
 plt.grid()
 plt.subplot(414)
 plt.plot(dataPlot[:, 0], dataPlot[:, 4])
-plt.title('velocity dot x2')
+plt.title("velocity dot x2")
 plt.grid()
 
 
 plt.figure()
 plt.plot(dataPlot[:, 0], dataPlot[:, 5])
-plt.title('lambda')
+plt.title("lambda")
 
 
-if havedisplay:
+if enable_plot:
     plt.show()
 else:
     plt.savefig("bbts.png")

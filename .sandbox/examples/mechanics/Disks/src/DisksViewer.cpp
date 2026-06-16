@@ -61,9 +61,9 @@ void DisksViewer::draw()
 
   float lbdmax = 0.;
 
-  SP::InteractionsGraph I1;
-  SP::Interaction interaction;
-  SP::Relation relation;
+  auto I1;
+  auto interaction;
+  auto relation;
 
   if (Siconos_->simulation()->nonSmoothDynamicalSystem()->topology()->numberOfIndexSet() > 1)
   {
@@ -73,7 +73,7 @@ void DisksViewer::draw()
     InteractionsGraph::VIterator ui, uiend;
     for (boost::tie(ui, uiend) = I1->vertices(); ui != uiend; ++ui)
     {
-      lbdmax = fmax(I1->bundle(*ui)->lambdaOld(1)->getValue(0), lbdmax);
+      lbdmax = (*fmax(I1->bundle(*ui)->lambdaOld(1))(0), lbdmax);
     }
 
     for (boost::tie(ui, uiend) = I1->vertices(); ui != uiend; ++ui)
@@ -81,17 +81,17 @@ void DisksViewer::draw()
       interaction = I1->bundle(*ui);
       relation = interaction->relation();
       
-      lbd = interaction->lambdaOld(1)->getValue(0);
+      lbd = (*interaction->lambdaOld(1))(0);
 
       // screen width of interaction
       w = lbd / (2 * fmax(lbdmax, 1.)) + .03;
    
       // disk/disk
       
-      SP::DynamicalSystem d1 = I1->properties(*ui).source;
-      SP::DynamicalSystem d2 = I1->properties(*ui).target;
+      auto d1 = I1->properties(*ui).source;
+      auto d2 = I1->properties(*ui).target;
 
-      SP::SiconosVector q1 = ask<ForPosition>(*d1);
+      std::shared_ptr<siconos::algebra::SiconosVector> q1 = ask<ForPosition>(*d1);
 
       float x1 = (*q1)(0);
       float y1 = (*q1)(1);
@@ -100,7 +100,7 @@ void DisksViewer::draw()
 
       if (d1 != d2)
       {
-        SP::SiconosVector q2 = ask<ForPosition>(*d2);
+        std::shared_ptr<siconos::algebra::SiconosVector> q2 = ask<ForPosition>(*d2);
         float x2 = (*q2)(0);
         float y2 = (*q2)(1);
         float r2 = ask<ForRadius>(*d2);
@@ -118,9 +118,9 @@ void DisksViewer::draw()
 
       else
       {
-        SP::SiconosMatrix jachq = ask<ForJachq>(*relation);
-        double jx = jachq->getValue(0, 0);
-        double jy = jachq->getValue(0, 1);
+        std::shared_ptr<siconos::algebra::SiconosMatrix> jachq = ask<ForJachq>(*relation);
+        double jx = (*jachq)(0, 0);
+        double jy = (*jachq)(0, 1);
         double dj = hypot(jx, jy);
 
         glPushMatrix();

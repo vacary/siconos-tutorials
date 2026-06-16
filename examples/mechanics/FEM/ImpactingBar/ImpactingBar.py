@@ -1,84 +1,86 @@
 import numpy as np
-from numpy.linalg import norm
-from siconos.kernel import LagrangianLinearTIDS, NewtonImpactNSL,\
-    LagrangianLinearTIR, Interaction, NonSmoothDynamicalSystem, MoreauJeanOSI,\
-    TimeDiscretisation, LCP, TimeStepping
+import siconos.modeling as sm
+import siconos.integrators
+import siconos.simulation
+import siconos.nonsmooth_formulations
+import siconos.plot_config as sicoplot
 
-from siconos.kernel import SimpleMatrix, getMatrix, SPARSE
-#import numpy as np
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
+
 
 # User-defined main parameters
-nDof = 500  #degrees of freedom for the beam
-t0 = 1e-8    #initial computation time
-T = 0.0015                  # final computation time
-h = 2e-7                # time step
-position_init = 0.00005      # initial position
-velocity_init =  -.1      # initial velocity
-epsilon = 0.5#1e-1
-theta = 1/2.0 + epsilon              # theta for MoreauJeanOSI integrator
-#theta = 1.0
-E = 210e9 # young Modulus
-S = 0.000314 #  Beam Section 1 cm  for the diameter
-#S=0.1
-L = 1.0 # length of the  beam
-l = L/nDof # length of an element
+ndof = 100  # degrees of freedom for the beam
+t0 = 1e-8  # initial computation time
+T = 0.0015  # final computation time
+h = 2e-6  # time step
+position_init = 0.00005  # initial position
+velocity_init = -0.1  # initial velocity
+epsilon = 0.0  # 1e-1
+theta = 1.0 / 2.0 + epsilon  # theta for MoreauJeanOSI integrator
+# theta = 1.0
+E = 210e9  # young Modulus
+S = 0.000314  # Beam Section 1 cm  for the diameter
+# S=0.1
+beam_length = 1.0  # length of the  beam
+elem_length = beam_length / ndof  # length of an element
 rho = 7800.0  # specific mass
-#rho=1.0
-g = 9.81 # Gravity
-g=0.0
+# rho=1.0
+g = 9.81  # Gravity
+g = 0.0
+
+mass = np.zeros((ndof, ndof), dtype=np.float64, order="F")
+stiffness = np.zeros((ndof, ndof), dtype=np.float64, order="F")
+
+stiffness[0, 0] = 1.0 * E * S / elem_length
+stiffness[0, 1] = -1.0 * E * S / elem_length
+mass[0, 0] = 1 / 3.0 * rho * S * elem_length
+mass[0, 1] = 1 / 6.0 * rho * S * elem_length
+
+for i in range(1, ndof - 1):
+    stiffness[i, i] = 2.0 * E * S / elem_length
+    stiffness[i, i - 1] = -1.0 * E * S / elem_length
+    stiffness[i, i + 1] = -1.0 * E * S / elem_length
+    mass[i, i] = 2 / 3.0 * rho * S * elem_length
+    mass[i, i - 1] = 1 / 6.0 * rho * S * elem_length
+    mass[i, i + 1] = 1 / 6.0 * rho * S * elem_length
 
 
-M= SimpleMatrix(nDof,nDof,SPARSE,nDof)
-K= SimpleMatrix(nDof,nDof,SPARSE,nDof)
-K.setValue(0,0, 1.*E*S/l)
-K.setValue(0,1,-1.*E*S/l)
-M.setValue(0,0, 1/3.*rho*S*l)
-M.setValue(0,1, 1/6.*rho*S*l)
-
-for i in range(1,nDof-1):
-    K.setValue(i,i,2.*E*S/l)
-    K.setValue(i,i-1,-1.*E*S/l)
-    K.setValue(i,i+1,-1.*E*S/l)
-    M.setValue(i,i,2/3.*rho*S*l)
-    M.setValue(i,i-1,1/6.*rho*S*l)
-    M.setValue(i,i+1,1/6.*rho*S*l)
+stiffness[ndof - 1, ndof - 2] = -1.0 * E * S / elem_length
+stiffness[ndof - 1, ndof - 1] = 1.0 * E * S / elem_length
+mass[ndof - 1, ndof - 2] = 1 / 6.0 * rho * S * elem_length
+mass[ndof - 1, ndof - 1] = 1 / 3.0 * rho * S * elem_length
 
 
-K.setValue(nDof-1,nDof-2,-1.*E*S/l)
-K.setValue(nDof-1,nDof-1, 1.*E*S/l)
-M.setValue(nDof-1,nDof-2,1/6.*rho*S*l)
-M.setValue(nDof-1,nDof-1,1/3.*rho*S*l)
+q0 = np.full((ndof), position_init)
+v0 = np.full((ndof), velocity_init)
 
+bar = sm.LagrangianLinearTIDS(q0, v0, mass, sm.alias_t)
+bar.setStiffnessMatrix(stiffness, sm.alias_t)
+# bar.display()
 
-q0 = np.full((nDof), position_init)
-v0 = np.full((nDof), velocity_init)
+weight = np.full((ndof), -g * rho * S / elem_length)
+bar.setConstantFext(weight, sm.alias_t)
 
-bar = LagrangianLinearTIDS(q0,v0,M)
-bar.setKPtr(K)
-#bar.display()
+e = 0.0
 
-weight = np.full((nDof),-g*rho*S/l)
-bar.setFExtPtr(weight)
+H = np.zeros((1, ndof))
+H[0, 0] = 1.0
 
-e=0.0
-
-H = np.zeros((1,nDof))
-H[0,0]=1.
-
-nslaw = NewtonImpactNSL(e)
-relation = LagrangianLinearTIR(H)
-inter = Interaction(nslaw, relation)
+nslaw = sm.NewtonImpactNSL(e)
+relation = sm.LagrangianLinearTIR(H)
+inter = sm.Interaction(nslaw, relation)
 
 # -------------
 # --- Model ---
 # -------------
-impactingBar = NonSmoothDynamicalSystem(t0, T)
+impactingBar = sm.NonSmoothDynamicalSystem(t0, T)
 
 # add the dynamical system in the non smooth dynamical system
-impactingBar.insertDynamicalSystem(bar);
+impactingBar.insertDynamicalSystem(bar)
 
 # link the interaction and the dynamical system
-impactingBar.link(inter,bar);
+impactingBar.link(inter, bar)
 
 
 # ------------------
@@ -86,63 +88,85 @@ impactingBar.link(inter,bar);
 # ------------------
 
 # -- (1) OneStepIntegrators --
-OSI = MoreauJeanOSI(theta,0.5)
+OSI = siconos.integrators.MoreauJeanOSI(theta, 0.0)
 
 # -- (2) Time discretisation --
-t = TimeDiscretisation(t0,h)
+t = siconos.simulation.TimeDiscretisation(t0, h)
 
 # -- (3) one step non smooth problem
-osnspb = LCP()
+osnspb = siconos.nonsmooth_formulations.LCP()
 
-s = TimeStepping(impactingBar, t,OSI,osnspb)
+s = siconos.simulation.TimeStepping(impactingBar, t, OSI, osnspb)
 
-k =0
+k = 0
 
-N = int((T-t0)/h)
-dataPlot = np.zeros((N+1, 5))
+N = int((T - t0) / h)
+dataPlot = np.zeros((N, 12))
+halfpos = int(ndof * 0.5)
 
 q = bar.q()
 v = bar.velocity()
 p = bar.p(1)
-lambda_ = inter.lambda_(1)
-
+lambda_ = inter.lambda_python(1)
+dataPlot[k, 0] = t0
+dataPlot[k, 1] = q[0]
+dataPlot[k, 2] = v[0]
+dataPlot[k, 3] = p[0]
+dataPlot[k, 7] = q[ndof - 1]
+dataPlot[k, 8] = v[ndof - 1]
+dataPlot[k, 9] = q[halfpos]
+dataPlot[k, 10] = v[halfpos]
+potentialEnergy = q.dot(stiffness @ q)
+kineticEnergy = v.dot(mass @ v)
+dataPlot[k, 5] = potentialEnergy
+dataPlot[k, 6] = kineticEnergy
+k = 1
 # time loop
-while s.hasNextEvent():
+while k < N:
     s.computeOneStep()
     dataPlot[k, 0] = s.nextTime()
-    print('time=', dataPlot[k, 0])
+    # print("time=", dataPlot[k, 0])
     dataPlot[k, 1] = q[0]
     dataPlot[k, 2] = v[0]
-    dataPlot[k, 3] = p[0]/h
+    dataPlot[k, 3] = p[0] / h
     dataPlot[k, 4] = lambda_[0]
+    dataPlot[k, 7] = q[ndof - 1]
+    dataPlot[k, 8] = v[ndof - 1]
+    dataPlot[k, 9] = q[halfpos]
+    dataPlot[k, 10] = v[halfpos]
+    potentialEnergy = q.dot(stiffness @ q)
+    kineticEnergy = v.dot(mass @ v)
+    dataPlot[k, 5] = potentialEnergy
+    dataPlot[k, 6] = kineticEnergy
+    v_p_theta = theta * v[0] + (1 - theta) * dataPlot[k - 1, 2]
+    impactEnergy = v_p_theta * lambda_[0]
+    dataPlot[k, 11] = impactEnergy
 
     k += 1
     s.nextStep()
 
-dataPlot.resize(k,5)
-
-
-import matplotlib.pyplot as plt
+ref = np.loadtxt("ImpactingBar.ref", skiprows=1)
+assert np.allclose(ref, dataPlot)
 
 fig_size = [14, 14]
 plt.rcParams["figure.figsize"] = fig_size
 
 plt.subplot(411)
-plt.title('position')
+plt.title("position")
 plt.plot(dataPlot[:, 0], dataPlot[:, 1])
 plt.grid()
 plt.subplot(412)
-plt.title('velocity')
+plt.title("velocity")
 plt.plot(dataPlot[:, 0], dataPlot[:, 2])
 plt.grid()
 plt.subplot(413)
 plt.plot(dataPlot[:, 0], dataPlot[:, 3])
-plt.title('reaction')
+plt.title("reaction")
 plt.grid()
 plt.subplot(414)
 plt.plot(dataPlot[:, 0], dataPlot[:, 4])
-plt.title('lambda')
+plt.title("lambda")
 plt.grid()
 
-
-plt.show()
+if enable_plot:
+    plt.show()

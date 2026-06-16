@@ -1,7 +1,28 @@
+/* Siconos is a program dedicated to modeling, simulation and control
+ * of non smooth dynamical systems.
+ *
+ * Copyright 2023 INRIA.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#include <SolverOptions.h>
+
+#include <SiconosKernel.hpp>
 #include <chrono>
-#include "SiconosKernel.hpp"
-#include <math.h>
+#include <string>
 using namespace std;
+using Matrix = siconos::algebra::SiconosMatrix;
+using Vector = siconos::algebra::SiconosVector;
 
 // main program
 /* Example of a limit cycle in Relay system with sliding motion and multisliding motion
@@ -12,17 +33,14 @@ using namespace std;
  *
  */
 
-
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   // Exception handling
-  try
-  {
+  try {
     // == User-defined parameters ==
     unsigned int ndof = 4;  // number of degrees of freedom of your system
     double t0 = 0.0;
-    double T = 5;        // Total simulation times
-    double h = 1.0e-4;      // Time step
+    double T = 5;       // Total simulation times
+    double h = 1.0e-4;  // Time step
 
     // ================= Creation of the model =======================
     // Steps:
@@ -43,83 +61,65 @@ int main(int argc, char* argv[])
     // x(0) = x0
     // Note: r = Blambda, B defines in relation below.
 
-    SP::SiconosMatrix A(new SimpleMatrix(ndof, ndof));
-
-    (*A)(0, 0) = -4.0;
+    auto A = std::make_shared<Matrix>(ndof, ndof);
+    A->setZero();
     (*A)(0, 1) = 1.0;
-    (*A)(0, 2) = 0.0;
-    (*A)(0, 3) = 0.0;
-
     (*A)(1, 0) = -6.0;
-    (*A)(1, 1) = 0.0;
     (*A)(1, 2) = 1.0;
-    (*A)(1, 3) = 0.0;
-
     (*A)(2, 0) = -4.0;
-    (*A)(2, 1) = 0.0;
-    (*A)(2, 2) = 0.0;
     (*A)(2, 3) = 1.0;
-
     (*A)(3, 0) = -1.0;
-    (*A)(3, 1) = 0.0;
-    (*A)(3, 2) = 0.0;
-    (*A)(3, 3) = 0.0;
 
-    A->display();
-    SP::SiconosVector x0(new SiconosVector(ndof));
+    auto x0 = std::make_shared<Vector>(ndof);
     (*x0)(0) = -0.01;
     (*x0)(1) = -0.02;
     (*x0)(2) = -1.0;
     (*x0)(3) = 0.5;
 
-    SP::FirstOrderLinearDS process(new FirstOrderLinearDS(x0, A));
-    //    process->setComputebFunction("ObserverLCSPlugin","uProcess");
+    auto process = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, siconos::algebra::alias_t);
+    process->setConstantA(*A, siconos::algebra::alias_t);
 
     // --------------------
     // --- Interactions ---
     // --------------------
-    unsigned int ninter = 1; // dimension of your Interaction = size of y and lambda vectors
+    unsigned int ninter = 1;  // dimension of your Interaction = size of y and lambda vectors
 
     // First relation, related to the process
     // y = Cx + Dlambda
     // r = Blambda
     double xsi = 0.2;
 
-    SP::SimpleMatrix B(new SimpleMatrix(ndof, ninter));
-    (*B)(0, 0) = 0;
+    auto B = std::make_shared<Matrix>(ndof, ninter);
+    B->setZero();
     (*B)(1, 0) = 1;
     (*B)(2, 0) = -2 * xsi;
     (*B)(3, 0) = xsi * xsi;
 
-    SP::SimpleMatrix C(new SimpleMatrix(ninter, ndof));
+    auto C = std::make_shared<Matrix>(ninter, ndof);
+    C->setZero();
     (*C)(0, 0) = 1.0;
-    (*C)(0, 1) = 0.0;
-    (*C)(0, 2) = 0.0;
-    (*C)(0, 3) = 0.0;
-
-    SP::FirstOrderLinearR myProcessRelation(new FirstOrderLinearR(C, B));
-    SP::SimpleMatrix D(new SimpleMatrix(ninter, ninter));
-    (*D)(0, 0) = 0.0;
-
-    myProcessRelation->setDPtr(D);
-    //myProcessRelation->setComputeEFunction("ObserverLCSPlugin","computeE");
-
+    auto myProcessRelation = std::make_shared<siconos::modeling::FirstOrderLinearR>();
+    myProcessRelation->setConstantB(*B);
+    myProcessRelation->setConstantC(*C);
     // Second relation, related to the observer
     // haty = C hatX + D hatLambda + E
     // hatR = B hatLambda
 
     // NonSmoothLaw
     unsigned int nslawSize = 1;
-    SP::NonSmoothLaw myNslaw(new RelayNSL(nslawSize));
+    auto myNslaw = std::make_shared<siconos::modeling::RelayNSL>(nslawSize);
 
-    myNslaw->display();
+    siconos::algebra::print(*myNslaw);
 
     // The Interaction which involves the first DS (the process)
-    SP::Interaction myProcessInteraction(new Interaction(myNslaw, myProcessRelation));
+    auto myProcessInteraction =
+        std::make_shared<siconos::modeling::Interaction>(myNslaw, myProcessRelation);
+
     // -------------
     // --- Model ---
     // -------------
-    SP::NonSmoothDynamicalSystem relayOscillatorWithChattering(new NonSmoothDynamicalSystem(t0, T));
+    auto relayOscillatorWithChattering =
+        std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
     relayOscillatorWithChattering->insertDynamicalSystem(process);
     relayOscillatorWithChattering->link(myProcessInteraction, process);
 
@@ -127,17 +127,19 @@ int main(int argc, char* argv[])
     // --- Simulation ---
     // ------------------
     // TimeDiscretisation
-    SP::TimeDiscretisation td(new TimeDiscretisation(t0, h));
+    auto td = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
     // == Creation of the Simulation ==
-    SP::TimeStepping s(new TimeStepping(relayOscillatorWithChattering, td));
+    auto s =
+        std::make_shared<siconos::simulation::TimeStepping>(relayOscillatorWithChattering, td);
     // -- OneStepIntegrators --
     double theta = 0.5;
-    SP::EulerMoreauOSI myIntegrator(new EulerMoreauOSI(theta));
+    auto myIntegrator = std::make_shared<siconos::integrators::EulerMoreauOSI>(theta);
     s->insertIntegrator(myIntegrator);
 
     // -- OneStepNsProblem --
 
-    SP::Relay osnspb(new Relay());
+    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::Relay>();
+
     osnspb->setSolverId(SICONOS_RELAY_LEMKE);
     osnspb->numericsSolverOptions()->dparam[0] = 1e-08;
     s->insertNonSmoothProblem(osnspb);
@@ -146,21 +148,19 @@ int main(int argc, char* argv[])
 
     // ================================= Computation =================================
 
-
     // --- Get the values to be plotted ---
-    unsigned int outputSize = 8; // number of required data
-    unsigned int N = ceil((T - t0) / h); // Number of time steps
+    unsigned int outputSize = 8;          // number of required data
+    unsigned int N = ceil((T - t0) / h);  // Number of time steps
 
-    SimpleMatrix dataPlot(N, outputSize);
+    Matrix dataPlot{N + 1, outputSize};
 
-    SP::SiconosVector xProc = process->x();
-    SP::SiconosVector lambdaProc = myProcessInteraction->lambda(0);
-    SP::SiconosVector yProc = myProcessInteraction->y(0);
-    unsigned int step = 0; // Current step
-
+    auto xProc = process->x();
+    auto lambdaProc = myProcessInteraction->lambda(0);
+    auto yProc = myProcessInteraction->y(0);
+    unsigned int step = 0;  // Current step
 
     // -> saved in a matrix dataPlot
-    dataPlot(0, 0) = relayOscillatorWithChattering->t0(); // Initial time of the model
+    dataPlot(0, 0) = relayOscillatorWithChattering->t0();  // Initial time of the model
     dataPlot(step, 1) = (*xProc)(0);
     dataPlot(step, 2) = (*xProc)(1);
     dataPlot(step, 3) = (*xProc)(2);
@@ -168,16 +168,13 @@ int main(int argc, char* argv[])
     dataPlot(step, 5) = (*lambdaProc)(0);
     dataPlot(step, 6) = (*yProc)(0);
 
-
     // ==== Simulation loop =====
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ... \n\n";
 
     // *z = *(myProcessInteraction->y(0)->getVectorPtr(0));
     // Simulation loop
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
-    while(step < N - 1)
-    {
+    auto start = std::chrono::system_clock::now();
+    while (s->hasNextEvent()) {
       step++;
 
       //  osnspb->setNumericsVerboseMode(1);
@@ -195,32 +192,27 @@ int main(int argc, char* argv[])
       s->nextStep();
     }
     cout << endl << "End of computation - Number of iterations done: " << step - 1 << endl;
-    cout << "Computation Time " << endl;;
-    end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
-                  (end-start).count();
-    cout << "Computation time : " << elapsed << " ms" << endl;
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    cout << "Computation time : " << elapsed << " ms\n";
     // --- Output files ---
-    cout << "====> Output file writing ..." << endl;
-    ioMatrix::write("RelayOscillatorWithChattering.dat", "ascii", dataPlot, "noDim");
+    cout << "====> Output file writing ...\n";
 
-    // // Comparison with a reference file
-    // SimpleMatrix dataPlotRef(dataPlot);
-    // dataPlotRef.zero();
-    // ioMatrix::read("RelayOscillatorWithChattering.ref", "ascii", dataPlotRef);
-    // //std::cout << (dataPlot-dataPlotRef).normInf() <<std::endl;
-    // if ((dataPlot-dataPlotRef).normInf() > 1e-12)
-    // {
-    //   std::cout << "Warning. The results is rather different from the reference file."<< std::endl;
-    //   return 1;
-    // }
+    siconos::algebra::io::write("RelayOscillatorWithChattering.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
 
+    double error = 0.0, eps = 1e-12;
+    if ((error = siconos::algebra::io::compareRefFile(
+             dataPlot, "RelayOscillatorWithChattering.ref", eps)) > eps)
+      return 1;
+    else
+      return 0;
 
   }
 
-  catch(...)
-  {
-    Siconos::exception::process();
+  catch (...) {
+    siconos::exception::process();
     return 1;
   }
 }

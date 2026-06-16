@@ -48,7 +48,7 @@ private:
 
   /** A copy vector of X at the last capture time
    */
-  SP::SiconosVector storedX;
+  std::shared_ptr<siconos::algebra::SiconosVector> storedX;
 
 public:
 
@@ -56,7 +56,7 @@ public:
    * \param a string, the type of the Sensor, which corresponds to the class type
    * \param a TimeDiscretisation*, (linked to a model).
    */
-  SensorX(int, SP::TimeDiscretisation);
+  SensorX(int, std::shared_ptr<siconos::simulation::TimeDiscretisation>);
 
   /** Destructor
    */

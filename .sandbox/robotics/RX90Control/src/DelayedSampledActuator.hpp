@@ -49,7 +49,7 @@ public:
    * \param a string, the type of the Actuator, which corresponds to the class type
    * \param a TimeDiscretisation*, (linked to a model).
    */
-  DelayedSampledActuator(int, SP::TimeDiscretisation);
+  DelayedSampledActuator(int, std::shared_ptr<siconos::simulation::TimeDiscretisation>);
 
   /** Destructor
    */

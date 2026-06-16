@@ -1,5 +1,5 @@
 # Set minimum version for cmake
-cmake_minimum_required(VERSION 3.14) 
+cmake_minimum_required(VERSION 3.19)
 
 cmake_policy(SET CMP0074 NEW) # find_package() uses <PackageName>_ROOT variables.
 cmake_policy(SET CMP0086 NEW) # UseSWIG honors SWIG_MODULE_NAME via -module flag.
@@ -10,7 +10,7 @@ project(siconos_examples CXX C)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-set(tests_timeout 35 CACHE INTERNAL "Limit time for tests (in seconds)")
+set(tests_timeout 300 CACHE INTERNAL "Limit time for tests (in seconds)")
 
 # -- Try to find a proper siconos installation --
 # Get siconos version required to run the examples
@@ -46,12 +46,11 @@ include(SiconosTools)
 # 'HAS_PYTHON_WRAPPER' provided by siconosConfig.cmake
 # Check if python API has been generated and look for
 # some specific packages if required.
-if(HAS_PYTHON_WRAPPER)
+if(HAS_PYTHON_WRAPPER OR HAS_PYB11_WRAPPER)
   message("Siconos Python API is ON")
   include(FindPythonModule)
   find_python_module(matplotlib)
-  find_python_module(pyhull)
-  if(SICONOS_HAS_OCE)
+  if(SICONOS_HAS_OpenCASCADE)
     find_python_module(OCC REQUIRED)
   endif()
 endif()
@@ -71,11 +70,11 @@ endif()
 # We assume that numerics, at least, is installed ...
 set(numerics_examples
   friction_contact_solvers
-  )
+)
 list(APPEND EXAMPLES_DIRECTORIES ${numerics_examples})
 
 # === kernel ===
-string(FIND "${installed_targets}" "kernel" kernel_installed )
+string(FIND "${installed_targets}" "kernel" kernel_installed)
 if(${kernel_installed} GREATER -1)
   message(STATUS "kernel component found")
   set(kernel_examples
@@ -97,8 +96,10 @@ if(${kernel_installed} GREATER -1)
     mechanics/ChainsOfBalls
     mechanics/ColumnOfBeads
     mechanics/FEM/ImpactingBar
+    mechanics/FEM/native
     mechanics/FourBarLinkageWith3clearance
     mechanics/FrictionOscillator
+    mechanics/Masonry
     mechanics/Music
     mechanics/NewtonEuler
     mechanics/Pendulum
@@ -110,12 +111,11 @@ if(${kernel_installed} GREATER -1)
     mechanics/Woodpecker
     mechanics/yoyo
 
-    )
+  )
   # Check mfem and add this example
   if(HAS_MFEM) # To be done!
     list(APPEND kernel_examples mechanics/FEM/Punch)
   endif()
-  
   list(APPEND EXAMPLES_DIRECTORIES ${kernel_examples})
 
 
@@ -128,12 +128,12 @@ endif()
 
 
 # === control ===
-string(FIND "${installed_targets}" "control" control_installed )
+string(FIND "${installed_targets}" "control" control_installed)
 if(${control_installed} GREATER -1)
   message(STATUS "control component found")
   set(control_examples
     control
-    )
+  )
   list(APPEND EXAMPLES_DIRECTORIES ${control_examples})
   # Exclude some tests if LpSolve has not been found
   if(NOT HAS_ONE_LP_SOLVER)
@@ -142,19 +142,20 @@ if(${control_installed} GREATER -1)
 endif()
 
 # === mechanics ===
-string(FIND "${installed_targets}" "mechanics" mechanics_installed )
+string(FIND "${installed_targets}" "mechanics" mechanics_installed)
 # mechanics with bullet? --> SICONOS_HAS_BULLET = ON
-# mechanics or mechanisms with OCE? --> SICONOS_HAS_OCE = ON
+# mechanics or mechanisms with OpenCASCADE? --> SICONOS_HAS_OpenCASCADE  = ON
 # mechanics + bullet
 if(${mechanics_installed} GREATER -1)
   message(STATUS "mechanics component found")
   set(mechanics_examples
     mechanics/JointsTestsWithBoundaryConditions
     mechanics/JointsTestsWithInternalForces
-    )
+  )
   list(APPEND EXAMPLES_DIRECTORIES ${mechanics_examples})
+  include(FindPythonModule)
 
-  find_python_module(pyhull REQUIRED)
+  list(APPEND EXCLUDE_PATTERN_FROM_TESTS meshio_prepost matplotlib_post_2d)
 
   if(SICONOS_HAS_BULLET)
     message(STATUS "add examples requiring bullet")
@@ -171,37 +172,39 @@ if(${mechanics_installed} GREATER -1)
       mechanics/RockFall
       mechanics/RigidBodiesCollection
       mechanics/RollingFriction
-      )
+      mechanics/TimeofBirthandDeath
+    )
     list(APPEND EXAMPLES_DIRECTORIES ${mechanics_bullet_examples})
 
-    find_python_module(pylmgc90)
-    
+    if(HAS_PYB11_WRAPPER)
+      find_python_module(pylmgc90)
+    endif()
     if(NOT pylmgc90_FOUND)
-      list(APPEND EXCLUDE_PATTERN_FROM_TESTS mkspheres spheres_in_a_box)
+      list(APPEND EXCLUDE_PATTERN_FROM_TESTS mkspheres)
     endif()
 
   endif()
-  if(SICONOS_HAS_OCE)
-    message(STATUS "add examples requiring oce")
-    # mechanics + oce
-    set(mechanics_oce_examples
+  if(SICONOS_HAS_OpenCASCADE)
+    message(STATUS "add examples requiring occt")
+    # mechanics + occ
+    set(mechanics_occt_examples
       mechanics/MultiBodySystems/OCC_examples
       mechanics/MultiBodySystems/SliderCrank
       mechanics/MultiBodySystems/WatchEscapment
-      )
-    list(APPEND EXAMPLES_DIRECTORIES ${mechanics_oce_examples})
+    )
+    list(APPEND EXAMPLES_DIRECTORIES ${mechanics_occt_examples})
   endif()
 endif()
 
 
 # === io ===
-string(FIND "${installed_targets}" "io" io_installed )
+string(FIND "${installed_targets}" "io" io_installed)
 if(${io_installed} GREATER -1)
   message(STATUS "io component found")
   find_python_module(h5py REQUIRED)
 
   # no examples ?
-  
+
 endif()
 
 
@@ -213,16 +216,16 @@ enable_testing()
 # -- Scan each dir in examples_directories and collect source files
 foreach(current_dir IN LISTS EXAMPLES_DIRECTORIES)
   message("Scan examples directory ${current_dir}")
-    
+
   # -- collect all source files for the current example dirs --
   # Each file found will be used to create a test.
   set(src_dir ${CMAKE_CURRENT_SOURCE_DIR}/${current_dir})
-  if(HAS_PYTHON_WRAPPER)
+  if(HAS_PYTHON_WRAPPER OR HAS_PYB11_WRAPPER)
     file(GLOB current_example_files ${src_dir}/*.cpp ${src_dir}/*.py)
   else()
     file(GLOB current_example_files ${src_dir}/*.cpp)
   endif()
-  
+
   # exclude plugins (they are treated separatly)
   list(FILTER current_example_files EXCLUDE REGEX "Plugin")
   list(FILTER current_example_files EXCLUDE REGEX "plugin")
@@ -231,18 +234,26 @@ foreach(current_dir IN LISTS EXAMPLES_DIRECTORIES)
   foreach(pattern IN LISTS EXCLUDE_PATTERN_FROM_TESTS)
     list(FILTER current_example_files EXCLUDE REGEX "${pattern}")
   endforeach()
-  
+
   # Create a working directory for the current example.
   set(working_dir ${CMAKE_CURRENT_BINARY_DIR}/${current_dir})
   file(MAKE_DIRECTORY ${working_dir})
-  
+
   # collect data files for the current example dirs
-  file(GLOB current_example_data ${src_dir}/*.ref ${src_dir}/*/*.mat ${src_dir}/*.tess)
+  file(GLOB current_example_data ${src_dir}/*.ref ${src_dir}/*/*.mat
+    ${src_dir}/*.tess ${src_dir}/coor*.txt ${src_dir}/rad*.txt)
+  file(GLOB_RECURSE gmsh_files RELATIVE ${src_dir} ${src_dir}/*.msh*)
+
+  foreach(datafile IN LISTS gmsh_files)
+    configure_file(${src_dir}/${datafile} ${working_dir}/${datafile} COPYONLY)
+  endforeach()
+
+
   # Copy data files into the working directory.
   foreach(datafile IN LISTS current_example_data)
     configure_file(${datafile} ${working_dir} COPYONLY)
   endforeach()
-  
+
   file(GLOB current_example_dir_data ${src_dir}/data/*.asc)
   # Copy data files into the working directory.
   foreach(datafile IN LISTS current_example_dir_data)
@@ -258,7 +269,7 @@ foreach(current_dir IN LISTS EXAMPLES_DIRECTORIES)
   #   COMMAND ${siconos_SCRIPT} --clean
   #   WORKING_DIRECTORY ${working_dir}
   #   COMMENT "Clean ${working_dir}")
-  
+
   # -- For each collected source file, create a test --
   foreach(driver IN LISTS current_example_files)
     # Set test name (based on example dir name)
@@ -269,25 +280,15 @@ foreach(current_dir IN LISTS EXAMPLES_DIRECTORIES)
     # Create test
     if(ext MATCHES ".py")
       # -- Python --
-      # Plugins are not build by default for python scripts.
-      # We force it with --build-plugins.
       # Build everything in temp dirs (autom. removed at the end of the test)
       add_test(
         NAME py_${test_name}
-        COMMAND ${siconos_SCRIPT} ${driver} --build-plugins --tmp-dir
+        COMMAND ${siconos_SCRIPT} ${driver}
         WORKING_DIRECTORY ${working_dir}
-        )
-      if(SICONOS_HAS_OCE)
-        # add path to python OCC to PYTHONPATH
-        set_tests_properties(py_${test_name} PROPERTIES
-          ENVIRONMENT PYTHONPATH=${OCC_PYTHONPATH}
-          TIMEOUT ${tests_timeout})
-      else()
-        set_tests_properties(py_${test_name} PROPERTIES
-          TIMEOUT ${tests_timeout})
-      endif()
-      # plugins are not build by default for python scripts, so
-      # we force it with --build-plugins.
+      )
+
+      set_tests_properties(py_${test_name} PROPERTIES
+        TIMEOUT ${tests_timeout})
     else()
       # -- C++ --
       # A test for the build part (siconos --no-exec)
@@ -312,23 +313,23 @@ endforeach()
 
 # separate treatment for mechanisms
 # === mechanisms ===
-string(FIND "${installed_targets}" "mechanisms" mechanisms_installed )
+string(FIND "${installed_targets}" "mechanisms" mechanisms_installed)
 if(${mechanisms_installed} GREATER -1)
   message(STATUS "mechanisms component found")
-  
+
   set(mechanisms_examples
     mechanics/Mechanisms/ShaftTube
     mechanics/Mechanisms/SliderCrank
     mechanics/Mechanisms/Trip_Magnetic
-    )
+  )
   #list(APPEND EXAMPLES_DIRECTORIES ${mechanisms_examples})
   foreach(current_dir IN LISTS mechanisms_examples)
     set(working_dir ${CMAKE_CURRENT_BINARY_DIR}/${current_dir})
     # file(MAKE_DIRECTORY ${working_dir})
 
-    file(COPY ${current_dir} DESTINATION ${working_dir})#CMAKE_CURRENT_BINARY_DIR}/mechanisms_examples)
+    file(COPY ${current_dir} DESTINATION ${working_dir}) #CMAKE_CURRENT_BINARY_DIR}/mechanisms_examples)
     string(REPLACE "/" "_" test_name ${current_dir})
-    
+
     add_test(
       NAME ${test_name}
       COMMAND ${siconos_mechanisms_SCRIPT} .

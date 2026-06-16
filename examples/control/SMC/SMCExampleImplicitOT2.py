@@ -17,28 +17,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from siconos.kernel import FirstOrderLinearDS, getMatrix, SimpleMatrix
+from siconos.kernel import FirstOrderLinearDS, getMatrix, SiconosMatrix
 from siconos.control.simulation import ControlZOHSimulation
 from siconos.control.sensor import LinearSensor
 from siconos.control.controller import LinearSMCOT2
 
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib.pyplot import subplot, title, plot, grid, savefig
-import matplotlib.pyplot as plt
 from numpy import eye, zeros, savetxt
 from numpy.linalg import norm
 from math import ceil
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 # variable declaration
-ndof = 2   # Number of degrees of freedom of your system
-t0 = 0.0   # start time
-T = 1    # end time
+ndof = 2  # Number of degrees of freedom of your system
+t0 = 0.0  # start time
+T = 1  # end time
 h = 1.0e-4  # time step for simulation
 hControl = 1.0e-2  # time step for control
 Xinit = 1.0  # initial position
 theta = 0.5
-N = 2*int(ceil((T-t0)/h))  # number of time steps
+N = 2 * int(ceil((T - t0) / h))  # number of time steps
 outputSize = 5  # number of variable to store at each time step
 
 # Matrix declaration
@@ -78,35 +78,35 @@ sim.run()
 dataPlot = sim.data()
 
 # Save to disk
-savetxt('SMCExampleImplicitOT2-py.dat', dataPlot)
+savetxt("SMCExampleImplicitOT2-py.dat", dataPlot)
 # Plot interesting data
-subplot(411)
-title('x1')
-plot(dataPlot[:, 0], dataPlot[:, 1])
-grid()
-subplot(412)
-title('x2')
-plot(dataPlot[:, 0], dataPlot[:, 2])
-grid()
-subplot(413)
-title('u')
-plot(dataPlot[:, 0], dataPlot[:, 3])
-grid()
-savefig('ismcOT2_x_u')
+plt.subplot(411)
+plt.title("x1")
+plt.plot(dataPlot[:, 0], dataPlot[:, 1])
+plt.grid()
+plt.subplot(412)
+plt.title("x2")
+plt.plot(dataPlot[:, 0], dataPlot[:, 2])
+plt.grid()
+plt.subplot(413)
+plt.title("u")
+plt.plot(dataPlot[:, 0], dataPlot[:, 3])
+plt.grid()
+plt.savefig("ismcOT2_x_u")
 
-subplot(211)
-p1 = plot(dataPlot[:, 0], dataPlot[:, 2])
-plt.ylabel('$\sigma$')
-plt.xlabel('t')
-grid()
-subplot(212)
-p2 = plot(dataPlot[:, 0], dataPlot[:, 3])
-plt.ylabel('u')
-plt.xlabel('t')
-savefig('ismcOT2_sigma_u')
+plt.subplot(211)
+p1 = plt.plot(dataPlot[:, 0], dataPlot[:, 2])
+plt.ylabel("$\sigma$")
+plt.xlabel("t")
+plt.grid()
+plt.subplot(212)
+p2 = plt.plot(dataPlot[:, 0], dataPlot[:, 3])
+plt.ylabel("u")
+plt.xlabel("t")
+plt.savefig("ismcOT2_sigma_u")
 
 # TODO
 # compare with the reference
-ref = getMatrix(SimpleMatrix("SMCExampleImplicitOT2-py.ref"))
-if (norm(dataPlot - ref) > 1e-12):
+ref = getMatrix(SiconosMatrix("SMCExampleImplicitOT2-py.ref"))
+if norm(dataPlot - ref) > 1e-12:
     print("Warning. The result is rather different from the reference file.")

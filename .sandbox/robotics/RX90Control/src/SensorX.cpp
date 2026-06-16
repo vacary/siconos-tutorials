@@ -29,7 +29,7 @@ using namespace SensorFactory;
 SensorX::SensorX(): Sensor()
 {}
 
-SensorX::SensorX(int name, SP::TimeDiscretisation t): Sensor(name, t)
+SensorX::SensorX(int name, std::shared_ptr<siconos::simulation::TimeDiscretisation> t): Sensor(name, t)
 {}
 
 SensorX::~SensorX()
@@ -47,7 +47,7 @@ void SensorX::initialize()
   //pour y associer notre vecteur de données.
 
   //Comme on veut récuperer un vecteur a un temps donné, on créer une copie dans un autre vecteur
-  storedX.reset(new SiconosVector(model()->nonSmoothDynamicalSystem()->dynamicalSystem(0)->n()));
+  storedX.reset(new SiconosVector(model()->nonSmoothDynamicalSystem()->dynamicalSystem(0)->dimension()));
   (_data[_eSensor])["StoredX"] = storedX;
 }
 

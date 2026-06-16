@@ -1,54 +1,28 @@
 #ifndef ADJOINTINPUT_H
 #define ADJOINTINPUT_H
 
-#include "SiconosKernel.hpp"
+#include <FirstOrderNonLinearR.hpp>
+#include <memory>
 
-class adjointInput : public FirstOrderNonLinearR
-{
-protected:
-  SP::SimpleMatrix  K2;
+namespace user_defined {
 
-public:
+class adjointInput : public siconos::modeling::FirstOrderNonLinearR {
+ protected:
+  std::shared_ptr<siconos::algebra::SiconosMatrix> K2{nullptr};
+
+ public:
   adjointInput();
-  virtual ~adjointInput() {};
+  virtual ~adjointInput() noexcept = default;
 
-
-  virtual void initialize(Interaction& inter);
-
-
-  /** default function to compute h
-   *  \param double : current time
-   */
-  virtual void computeh(double time, SiconosVector& x, SiconosVector& lambda, SiconosVector& z, SiconosVector& y);
-
-  /** default function to compute g
-   *  \param double time, Interaction& inter : current time
-   */
-  virtual void computeg(double time, SiconosVector& x, SiconosVector& lambda, SiconosVector& z, SiconosVector& r);
-
-   /** default function to compute jacobianH
-   *  \param double time, Interaction& inter : current time
-   *  \param index for jacobian (0: jacobian according to x, 1 according to lambda)
-   */
-  virtual void computeJachx(double time, SiconosVector& x, SiconosVector& lambda, SiconosVector& z, SimpleMatrix& C);
-  virtual void computeJachlambda(double time, SiconosVector& x, SiconosVector& lambda, SiconosVector& z, SimpleMatrix& D);
-
-  /** default function to compute jacobianG according to lambda
-   *  \param double time, Interaction& inter : current time
-   *  \param index for jacobian: at the time only one possible jacobian => i = 0 is the default value .
-   */
-  virtual void computeJacgx(double time, SiconosVector& x, SiconosVector& lambda, SiconosVector& z, SimpleMatrix& K);
-  virtual void computeJacglambda(double time, SiconosVector& x, SiconosVector& lambda, SiconosVector& z, SimpleMatrix& B);
-
+  virtual void initialize(siconos::modeling::Interaction &inter) override;
 
   double source(double t);
 
-  void beta(double t, SiconosVector& xvalue, SP::SiconosVector alpha);
+  siconos::algebra::SiconosVector beta(double t, const siconos::algebra::BlockVector &xvalue);
 
-  void JacobianXbeta(double t, SiconosVector& xvalue, SP::SimpleMatrix JacbetaX);
-
+  siconos::algebra::SiconosMatrix JacobianXbeta(double t,
+                                                const siconos::algebra::BlockVector &xvalue);
 };
-
-TYPEDEF_SPTR(adjointInput);
+}  // namespace user_defined
 
 #endif

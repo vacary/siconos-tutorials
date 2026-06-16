@@ -14,8 +14,6 @@ import numpy as np
 import h5py
 import bisect
 import time
-import pickle
-
 import tempfile
 from contextlib import contextmanager
 
@@ -198,7 +196,7 @@ def object_id(obj):
 def apply_gravity(body):
     g = constants.g
     weight = [0, 0, - body.scalarMass() * g]
-    body.setFExtPtr(weight)
+    body.setConstantFext(weight)
 
 
 def group(h, name, must_exist=True):
@@ -760,7 +758,7 @@ class MechanicsHdf5Runner(siconos.io.mechanics_hdf5.MechanicsHdf5):
     def apply_gravity(self, body):
         g = constants.g / self._gravity_scale
         weight = [0, 0, - body.scalarMass() * g]
-        body.setFExtPtr(weight)
+        body.setConstantFext(weight)
 
     def import_nonsmooth_law(self, name):
         if self._interman is not None:
@@ -895,7 +893,7 @@ class MechanicsHdf5Runner(siconos.io.mechanics_hdf5.MechanicsHdf5):
                 csetpos = (translation + orientation)
                 for c in contactors:
                     shp = self._shape.get(c.shape_name)
-                    pos = list(c.translation) + list(c.orientation)
+                    pos = np.concatenate([c.translation, c.orientation], axis=0)
                     cset.append(SiconosContactor(shp, pos, c.group))
                     if self.verbose:
                         print('Adding shape %s to static contactor'%c.shape_name, pos)
@@ -933,7 +931,7 @@ class MechanicsHdf5Runner(siconos.io.mechanics_hdf5.MechanicsHdf5):
                 cset = SiconosContactorSet()
                 for c in contactors:
                     shp = self._shape.get(c.shape_name)
-                    pos = list(c.translation) + list(c.orientation)
+                    pos = np.concatenate([c.translation, c.orientation], axis=0)
                     cset.append(SiconosContactor(shp, pos, c.group))
 
                 body.setContactors(cset)

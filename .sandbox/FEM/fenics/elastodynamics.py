@@ -333,11 +333,11 @@ t0 = 0.0
 print(' -- build dynamical system -- ')
 
 body = LagrangianLinearTIDS(q_0,v_0,M)
-body.setKPtr(K)
+body.setStiffnessMatrix(K)
 
 applied_force = np.zeros(n_dof)
 applied_force[n_dof-1]=1.
-body.setFExtPtr(applied_force)
+body.setConstantFext(applied_force)
 
 # -------------
 # --- Model ---

@@ -1,43 +1,36 @@
+/* Siconos is a program dedicated to modeling, simulation and control
+ * of non smooth dynamical systems.
+ *
+ * Copyright 2024 INRIA.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #ifndef ELECRELATION_H
 #define ELECRELATION_H
 
-#include "SiconosKernel.hpp"
+#include <FirstOrderNonLinearR.hpp>
 
-class elecRelation : public FirstOrderType2R
-{
-protected:
-public:
+namespace user_defined {
+class elecRelation : public siconos::modeling::FirstOrderNonLinearR {
+ protected:
+ public:
   elecRelation();
-  virtual ~elecRelation() {};
-
-  /** default function to compute h
-   *  \param double : current time
-   */
-  virtual void computeh(double t, const BlockVector& x, const SiconosVector& lambda, SiconosVector& y);
-
-  /** default function to compute g
-   *  \param double : current time
-   */
-  virtual void computeg(double t, const SiconosVector& lambda, BlockVector& r);
-
-  /** default function to compute jacobianH
-   *  \param double : current time
-   *  \param index for jacobian (0: jacobian according to x, 1 according to lambda)
-   */
-  virtual void computeJachx(double t, const BlockVector& x, const SiconosVector& lambda, SimpleMatrix& C);
-  virtual void computeJachlambda(double t, const BlockVector& x, const SiconosVector& lambda, SimpleMatrix& D);
-
-  /** default function to compute jacobianG according to lambda
-   *  \param double : current time
-   *  \param index for jacobian: at the time only one possible jacobian => i = 0 is the default value .
-   */
-  virtual void computeJacglambda(double t, const SiconosVector& lambda, SimpleMatrix& B);
-
+  virtual ~elecRelation() noexcept = default;
 
   double source(double t);
 
+  void display() const override {};
 };
-
-TYPEDEF_SPTR(elecRelation);
+}  // namespace user_defined
 
 #endif

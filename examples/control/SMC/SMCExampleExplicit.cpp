@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,45 +14,32 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
-/* !\file SMCExampleExplicit.cpp
-  \brief Two independent systems of dimension one controlled to slide
+/* Two independent systems of dimension one controlled to slide
   on \f$x = 0\f$. An explicit scheme is used
   O. Huber
-  */
+*/
 
-#include "SiconosKernel.hpp"
-#include "SiconosControl.hpp"
+#include <SiconosControl.hpp>
+#include <SiconosKernel.hpp>
+#include <chrono>
+#include <string>
+using Matrix = siconos::algebra::SiconosMatrix;
+using Vector = siconos::algebra::SiconosVector;
 using namespace std;
-class MyDS : public FirstOrderLinearDS
-{
-public:
-  MyDS(SP::SiconosVector x0, SP::SiconosMatrix A) : FirstOrderLinearDS(x0, A)
-  {
-    _b.reset(new SiconosVector(x0->size()));
-  };
-  void computeb(double time)
-  {
-    double t = sin(50 * time);
-    _b->setValue(0,t);
-    _b->setValue(1,-t);
-  };
-};
 
 // main program
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   // User-defined parameters
-  unsigned int ndof = 2;          // Number of degrees of freedom of your system
-  double t0 = 0.0;                // Starting time
-  double T = 1;                   // Total simulation time
-  double h = 1.0e-4;              // Time step for simulation
-  double hControl = 1.0e-2;       // Time step for control
+  unsigned int ndof = 2;     // Number of degrees of freedom of your system
+  double t0 = 0.0;           // Starting time
+  double T = 1;              // Total simulation time
+  double h = 1.0e-4;         // Time step for simulation
+  double hControl = 1.0e-2;  // Time step for control
   double Xinit = 1.0;
 
-  if(h > hControl)
-  {
+  if (h > hControl) {
     THROW_EXCEPTION("hControl must be bigger than h");
   }
 
@@ -71,24 +58,33 @@ int main(int argc, char* argv[])
   // Note: r = Blambda, B defines in relation below.
 
   // Matrix declaration
-  SP::SiconosMatrix A(new SimpleMatrix(ndof, ndof, 0));
-  SP::SiconosVector x0(new SiconosVector(ndof));
+  auto x0 = std::make_shared<Vector>(ndof);
   (*x0)(0) = Xinit;
   (*x0)(1) = -Xinit;
-  SP::SimpleMatrix sensorC(new SimpleMatrix(2, 2));
-  sensorC->eye();
-  SP::SimpleMatrix sensorD(new SimpleMatrix(2, 2, 0));
-  SP::SimpleMatrix Csurface(new SimpleMatrix(1, 2, 0));
+  auto sensorC = std::make_shared<Matrix>(2, 2);
+  sensorC->setIdentity();
+  auto sensorD = std::make_shared<Matrix>(2, 2);
+  sensorD->setZero();
+  auto Csurface = std::make_shared<Matrix>(1, 2);
+  Csurface->setZero();
   (*Csurface)(0, 1) = 1;
-  SP::SimpleMatrix Brel(new SimpleMatrix(2, 1, 0));
+  auto Brel = std::make_shared<Matrix>(2, 1);
+  Brel->setZero();
   (*Brel)(1, 0) = 2;
 
   // Dynamical Systems
-  SP::FirstOrderLinearDS processDS(new MyDS(x0, A));
+  auto processDS = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0);
+  processDS->setComputebVectorFunction(
+      [](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+        auto t = sin(50 * time);
+        result(0) = t;
+        result(1) = -t;
+      });
+
   // -------------
   // --- Model process ---
   // -------------
-  SP::ControlSimulation sim(new ControlZOHSimulation(t0, T, h));
+  auto sim = std::make_shared<siconos::control::ControlZOHSimulation>(t0, T, h);
   sim->setSaveOnlyMainSimulation(true);
   sim->addDynamicalSystem(processDS);
 
@@ -97,10 +93,10 @@ int main(int argc, char* argv[])
   // ------------------
   // Control stuff
   // use a controlSensor
-  SP::LinearSensor sens(new LinearSensor(processDS, sensorC));
+  auto sens = std::make_shared<siconos::control::LinearSensor>(processDS, sensorC);
   sim->addSensor(sens, hControl);
   // add the sliding mode controller
-  SP::ExplicitLinearSMC act(new ExplicitLinearSMC(sens));
+  auto act = std::make_shared<siconos::control::ExplicitLinearSMC>(sens);
   act->setCsurface(Csurface);
   act->setB(Brel);
   sim->addActuator(act, hControl);
@@ -110,28 +106,25 @@ int main(int argc, char* argv[])
 
   // --- Simulation initialization ---
 
-  cout << "====> Simulation initialisation ..." << endl << endl;
+  cout << "====> Simulation initialisation ...\n\n";
   // initialise the process and the ControlManager
   sim->initialize();
 
   // ==== Simulation loop =====
-  cout << "====> Start computation ... " << endl << endl;
+  cout << "====> Start computation ... \n\n";
   sim->run();
   // --- Output files ---
-  cout << "====> Output file writing ..." << endl;
-  SimpleMatrix& dataPlot = *sim->data();
-  ioMatrix::write("SMCExampleExplicit.dat", "ascii", dataPlot, "noDim");
+  cout << "====> Output file writing ...\n";
+  auto& dataPlot = *sim->data();
 
-  // Comparison with a reference file
-  SimpleMatrix dataPlotRef(dataPlot);
-  dataPlotRef.zero();
-  ioMatrix::read("SMCExampleExplicit.ref", "ascii", dataPlotRef);
-  std::cout << (dataPlot - dataPlotRef).normInf() << std::endl;
+  siconos::algebra::io::write("SMCExampleExplicit.dat", dataPlot,
+                              siconos::algebra::io::ASCII_OUT,
+                              siconos::algebra::io::WriteType::nodim);
 
-  if((dataPlot - dataPlotRef).normInf() > 1e-12)
-  {
-    std::cout << "Warning. The results is rather different from the reference file." << std::endl;
+  double error = 0.0, eps = 1e-12;
+  if ((error = siconos::algebra::io::compareRefFile(dataPlot, "SMCExampleExplicit.ref", eps)) >
+      eps)
     return 1;
-  }
-
+  else
+    return 0;
 }

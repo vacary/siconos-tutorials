@@ -168,8 +168,8 @@ sico.nbdof = mfu.nbdof()
 v0 = np.zeros(sico.nbdof)
 block = kernel.LagrangianLinearTIDS(sico.initial_displacement,v0,sico.Mass)
 # set fExt and K
-block.setFExtPtr(sico.RHS)
-block.setKPtr(sico.Stiff)
+block.setConstantFext(sico.RHS)
+block.setStiffnessMatrix(sico.Stiff)
 
 print("Start Siconos process ...")
 

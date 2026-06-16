@@ -1,10 +1,29 @@
-#!/usr/bin/env python
-
+# Siconos is a program dedicated to modeling, simulation and control
+# of non smooth dynamical systems.
+#
+# Copyright 2026 INRIA.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 # A tippe-top with Coulomb friction only & JeanMoreau time stepping.
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
 from siconos.mechanics.collision.bullet import SiconosBulletOptions
-from siconos.io.mechanics_run import thetav, MechanicsHdf5Runner
+
+import siconos.mechanics.quaternions
 from math import pi
 from matplotlib import pyplot as plt
 
@@ -27,13 +46,13 @@ from matplotlib import pyplot as plt
 # different results as the divergence or deadening was weakened."
 
 mu = 0.3
-m = 6*1e-3     # kg
-r1 = 1.5       # cm
-r2 = 0.5       # cm
-a1 = 0.3       # cm
-a2 = 1.6       # cm
-I1 = 8*1e-3    # kg . cm^2
-I3 = 7*1e-3    # kg . cm^2
+m = 6 * 1e-3  # kg
+r1 = 1.5  # cm
+r2 = 0.5  # cm
+a1 = 0.3  # cm
+a2 = 1.6  # cm
+I1 = 8 * 1e-3  # kg . cm^2
+I3 = 7 * 1e-3  # kg . cm^2
 
 # Bullet: do not generate extra contact points for convex pairs by
 # rotational purterbation method.
@@ -43,49 +62,71 @@ bullet_options.minimumPointsPerturbationThreshold = 0
 
 with MechanicsHdf5Runner() as io:
 
-    io.add_primitive_shape('Body1', 'Sphere', (r1,))
-    io.add_primitive_shape('Body2', 'Cylinder', (r2, a2))
-    io.add_primitive_shape('Body3', 'Sphere', (r2,))
-    io.add_primitive_shape('Ground', 'Box', (100, 100, .5))
+    io.add_primitive_shape("Body1", "Sphere", (r1,))
+    io.add_primitive_shape("Body2", "Cylinder", (r2, a2))
+    io.add_primitive_shape("Body3", "Sphere", (r2,))
+    io.add_primitive_shape("Ground", "Box", (100, 100, 0.5))
 
-    io.add_Newton_impact_friction_nsl('contact', mu=mu)
-    io.add_object('ground', [Contactor('Ground')], translation=[0, 0, 0])
+    io.add_Newton_impact_friction_nsl("contact", mu=mu)
+    io.add_object("ground", [Contactor("Ground")], translation=[0, 0, 0])
 
-    io.add_object('tippe-top', [Contactor('Body1',
-                                          relative_translation=[0, 0, a1]),
-                                Contactor('Body2',
-                                          relative_orientation=([1, 0, 0],
-                                                                pi/2),
-                                          relative_translation=[0, 0, a2/2.]),
-                                Contactor('Body3',
-                                          relative_orientation=([1, 0, 0],
-                                                                pi/2),
-                                          relative_translation=[0, 0, a2])],
-                  # we need to avoid contact at first step, so we let the top
-                  # fall. This is not what is done in Leine & Glocker.
-                  translation=[0, 0, r1-a1 + r1-a1],
-                  orientation=([0, 1, 0], 0.1),
-                  velocity=[0, 0, 0, .0, .0, 180],
-                  mass=m)
+    io.add_object(
+        "tippe-top",
+        [
+            Contactor("Body1", relative_translation=[0, 0, a1]),
+            Contactor(
+                "Body2",
+                relative_orientation=([1, 0, 0], pi / 2),
+                relative_translation=[0, 0, a2 / 2.0],
+            ),
+            Contactor(
+                "Body3",
+                relative_orientation=([1, 0, 0], pi / 2),
+                relative_translation=[0, 0, a2],
+            ),
+        ],
+        # we need to avoid contact at first step, so we let the top
+        # fall. This is not what is done in Leine & Glocker.
+        translation=[0, 0, r1 - a1 + r1 - a1],
+        orientation=([0, 1, 0], 0.1),
+        velocity=[0, 0, 0, 0.0, 0.0, 180],
+        mass=m,
+    )
 
-test =True
+test = True
 if test:
-    T=0.2
+    T = 0.2
 else:
-    T=20.
+    T = 20.0
 
-with MechanicsHdf5Runner(mode='r+') as io:
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = T
+run_options["h"] = 0.0001
 
-    io.run(with_timer=True,
-           bullet_options=bullet_options,
-           t0=0,
-           T=T,
-           h=0.0001,
-           Newton_max_iter=20)
+
+run_options["bullet_options"] = bullet_options
+
+run_options["Newton_max_iter"] = 20
+
+run_options["verbose"] = True
+run_options["violation_verbose"] = False
+run_options["with_timer"] = True
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
+run_options["output_frequency"] = None
+with MechanicsHdf5Runner(mode="r+") as io:
+
+    io.run(run_options)
 
     # plot of theta Euler angle.
     # to be compared with fig 12
     p = io.dynamic_data()[0:5000, :]
+    phi, theta, psi = siconos.mechanics.quaternions.euler_from_quaternion(
+        p[:, 5], p[:, 6], p[:, 7], p[:, 8]
+    )
 
-    plt.plot(p[:, 0], thetav(p[:, 5], p[:, 6], p[:, 7], p[:, 8]))
+    plt.plot(p[:, 0], theta)
     plt.show()

@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 21;           // degrees of freedom for robot
+    int nDof = 21;           // degrees of freedom for robot
     double t0 = 0;                   // initial computation time
     double T = 1.3;//0.005;                   // final computation time
     double h = 0.001;                // time step
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
     q0(6) = 0.2;
     q0(7) = -0.1;
 
-    SP::LagrangianDS bip(new LagrangianDS(q0, v0));
+    auto bip(new LagrangianDS(q0, v0));
 
     // external plug-in
     bip->setComputeMassFunction("RobotFrotPlugin", "mass");
@@ -65,17 +65,17 @@ int main(int argc, char* argv[])
 
     // -- relations --
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactFrictionNSL(en, et, mu, 3));
+    auto nslaw(new NewtonImpactFrictionNSL(en, et, mu, 3));
     string G = "RobotFrotPlugin:G0";
-    SP::Relation relation(new LagrangianScleronomousR("RobotFrotPlugin:h0", G));
-    SP::Interaction inter(new Interaction(69, nslaw, relation));
+    auto relation(new LagrangianScleronomousR("RobotFrotPlugin:h0", G));
+    auto inter(new Interaction(69, nslaw, relation));
 
     //The linear contraint corresponding to joints limits (hq+b>0)
-    SP::NonSmoothLaw nslaw2(new NewtonImpactFrictionNSL(en, et, 0, 3));
+    auto nslaw2(new NewtonImpactFrictionNSL(en, et, 0, 3));
     SimpleMatrix H(90, 21);
     SiconosVector b(90);
-    H.zero();
-    b.zero();
+    H.setZero();
+    b.setZero();
     for (unsigned int i = 0; i < 15; ++i)
     {
       for (unsigned int j = 0; j < 3; ++j)
@@ -132,14 +132,14 @@ int main(int argc, char* argv[])
     b(3 * i + 29) = 0.21;
 
 
-    SP::Relation relation2(new LagrangianLinearTIR(H, b));
-    SP::Interaction inter2(new Interaction(90, nslaw2, relation2));
+    auto relation2(new LagrangianLinearTIR(H, b));
+    auto inter2(new Interaction(90, nslaw2, relation2));
 
     // -------------
     // --- Model ---
     // -------------
 
-    SP::Model Robot(new Model(t0, T));
+    auto Robot(new Model(t0, T));
     Robot->nonSmoothDynamicalSystem()->insertDynamicalSystem(bip);
     Robot->nonSmoothDynamicalSystem()->link(inter1, bip);
     Robot->nonSmoothDynamicalSystem()->link(inter2, bip);
@@ -149,12 +149,12 @@ int main(int argc, char* argv[])
     // ----------------
 
     // -- Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t(new TimeDiscretisation(t0, h));
 
-    SP::TimeStepping s(new TimeStepping(t));
+    auto s(new TimeStepping(t));
 
     // -- OneStepIntegrators --
-    SP::OneStepIntegrator OSI(new MoreauJeanOSI(bip, 0.500001));
+    auto OSI(new MoreauJeanOSI(bip, 0.500001));
     s->insertIntegrator(OSI);
 
     // -- OneStepNsProblem --
@@ -167,9 +167,9 @@ int main(int argc, char* argv[])
     DoubleParameters dparam(5);
     dparam[0] = 1e-6; // Tolerance
     dparam[2] = 1e-8; // Local Tolerance
-    SP::NonSmoothSolver Mysolver(new NonSmoothSolver(solverName, iparam, dparam));
-    SP::NonSmoothSolver mySolver(new NonSmoothSolver(solverName, iparam, dparam));
-    SP::FrictionContact osnspb(new FrictionContact(3, mySolver));
+    auto Mysolver(new NonSmoothSolver(solverName, iparam, dparam));
+    auto mySolver(new NonSmoothSolver(solverName, iparam, dparam));
+    auto osnspb(new FrictionContact(3, mySolver));
     s->insertNonSmoothProblem(osnspb);
     cout << "=== End of model loading === " << endl;
     Robot->setSimulation(s);

@@ -91,20 +91,20 @@ struct ForNdof : public Question<unsigned int>
 };
 
 
-struct ForFExt : public Question<SP::SiconosVector>
+struct ForFExt : public Question<std::shared_ptr<siconos::algebra::SiconosVector>>
 {
   using SiconosVisitor::visit;
 
-  ANSWER(Disk, fExt());
-  ANSWER(Circle, fExt());
-  ANSWER(SphereLDS, fExt());
-  ANSWER(SphereNEDS, fExt());
-  ANSWER(RigidBodyDS, fExt());
-  ANSWER(NewtonEulerDS, fExt());
+  ANSWER(Disk, fext());
+  ANSWER(Circle, fext());
+  ANSWER(SphereLDS, fext());
+  ANSWER(SphereNEDS, fext());
+  ANSWER(RigidBodyDS, fext());
+  ANSWER(NewtonEulerDS, fext());
 };
 
 
-struct ForPosition : public Question<SP::SiconosVector>
+struct ForPosition : public Question<std::shared_ptr<siconos::algebra::SiconosVector>>
 {
   using SiconosVisitor::visit;
 
@@ -133,15 +133,15 @@ struct ForMassValue : public Question<double>
 {
   using SiconosVisitor::visit;
 
-  ANSWER(Disk, mass()->getValue(0, 0));
-  ANSWER(Circle, mass()->getValue(0, 0));
-  ANSWER(SphereLDS, mass()->getValue(0, 0));
+  ANSWER(Disk, (*mass())(0, 0));
+  ANSWER(Circle, (*mass())(0, 0));
+  ANSWER(SphereLDS, (*mass())(0, 0));
   ANSWER(SphereNEDS, scalarMass());
   ANSWER(RigidBodyDS, scalarMass());
   ANSWER(NewtonEulerDS, scalarMass());
 };
 
-struct ForJachq : public Question<SP::SiconosMatrix>
+struct ForJachq : public Question<std::shared_ptr<siconos::algebra::SiconosMatrix>>
 {
   using SiconosVisitor::visit;
 
@@ -158,7 +158,7 @@ struct ForJachq : public Question<SP::SiconosMatrix>
   ANSWER(ContactR, jachq());
 };
 
-struct ForContactForce : public Question<SP::SiconosVector>
+struct ForContactForce : public Question<std::shared_ptr<siconos::algebra::SiconosVector>>
 {
   using SiconosVisitor::visit;
 
@@ -169,24 +169,24 @@ struct ForContactForce : public Question<SP::SiconosVector>
 
 
 
-#define GETX(C) ask<ForPosition>(*C)->getValue(0)
-#define GETY(C) ask<ForPosition>(*C)->getValue(1)
-#define GETZ(C) ask<ForPosition>(*C)->getValue(2)
-#define GETA1(C) ask<ForPosition>(*C)->getValue(3)
-#define GETA2(C) ask<ForPosition>(*C)->getValue(4)
-#define GETA3(C) ask<ForPosition>(*C)->getValue(5)
-#define GETA4(C) ask<ForPosition>(*C)->getValue(6)
-#define GETXFE(C) ask<ForFExt>(*C)->getValue(0)
-#define GETYFE(C) ask<ForFExt>(*C)->getValue(1)
-#define GETZFE(C) ask<ForFExt>(*C)->getValue(2)
+#define GETX(C) (*ask<ForPosition>(*C))(0)
+#define GETY(C) (*ask<ForPosition>(*C))(1)
+#define GETZ(C) (*ask<ForPosition>(*C))(2)
+#define GETA1(C) (*ask<ForPosition>(*C))(3)
+#define GETA2(C) (*ask<ForPosition>(*C))(4)
+#define GETA3(C) (*ask<ForPosition>(*C))(5)
+#define GETA4(C) (*ask<ForPosition>(*C))(6)
+#define GETXFE(C) (*ask<ForFExt>(*C))(0)
+#define GETYFE(C) (*ask<ForFExt>(*C))(1)
+#define GETZFE(C) (*ask<ForFExt>(*C))(2)
 
-#define GETVX(C) ask<ForVelocity>(*C)->getValue(0)
-#define GETVY(C) ask<ForVelocity>(*C)->getValue(1)
-#define GETVZ(C) ask<ForVelocity>(*C)->getValue(2)
+#define GETVX(C) (*ask<ForVelocity>(*C))(0)
+#define GETVY(C) (*ask<ForVelocity>(*C))(1)
+#define GETVZ(C) (*ask<ForVelocity>(*C))(2)
 
-#define GETVA1(C) ask<ForVelocity>(*C)->getValue(3)
-#define GETVA2(C) ask<ForVelocity>(*C)->getValue(4)
-#define GETVA3(C) ask<ForVelocity>(*C)->getValue(5)
+#define GETVA1(C) (*ask<ForVelocity>(*C))(3)
+#define GETVA2(C) (*ask<ForVelocity>(*C))(4)
+#define GETVA3(C) (*ask<ForVelocity>(*C))(5)
 
 #define GETRADIUS(C) ask<ForRadius>(*C)
 
@@ -221,7 +221,7 @@ class QGLShape
 public:
 
   /* construction from a LagrangianDS */
-  QGLShape(SHAPE f, SP::DynamicalSystem D, const qglviewer::Frame* ref)
+  QGLShape(SHAPE f, auto D, const qglviewer::Frame* ref)
   {
     assert(D);
 
@@ -239,7 +239,7 @@ public:
   ~QGLShape() {};
 
   /* pointer to DS */
-  SP::DynamicalSystem DS() const
+  auto DS() const
   {
     return DS_;
   };
@@ -277,13 +277,13 @@ public:
     case Type::NewtonEulerDS :
     {
       std11::static_pointer_cast<NewtonEulerDS>(DS())
-      ->setFExtPtr(std11::static_pointer_cast<SiconosVector>(savedFExt_));
+      ->setConstantFext(Eigen::Ref<SiconosVector>(*savedFExt_));
       break;
     }
     case Type::LagrangianDS :
     {
       std11::static_pointer_cast<LagrangianDS>(DS())
-      ->setFExtPtr(std11::static_pointer_cast<SiconosVector>(savedFExt_));
+      ->setConstantFext(Eigen::Ref<SiconosVector>(*savedFExt_));
       break;
     };
     default:
@@ -311,11 +311,11 @@ protected:
   int id_;
   bool selected_;
   bool saved_;
-  SP::SiconosVector savedFExt_;
+  std::shared_ptr<siconos::algebra::SiconosVector> savedFExt_;
   boost::shared_ptr<qglviewer::ManipulatedFrame> frame_;
 
   SHAPE figure_;
-  SP::DynamicalSystem DS_;
+  auto DS_;
   int positionSize_;
 
   Type::Siconos type_;
@@ -360,7 +360,7 @@ public:
 
   virtual void drawQGLShape(const QGLShape&);
   virtual void drawSelectedQGLShape(const QGLShape&);
-  void insertQGLShape(SHAPE, SP::DynamicalSystem);
+  void insertQGLShape(SHAPE, auto);
 
 
 protected :
@@ -376,11 +376,11 @@ protected :
   virtual QString helpString() const;
   boost::shared_ptr<qglviewer::WorldConstraint> constraint_;
 
-  SP::SiconosBodies Siconos_;
+  auto Siconos_;
 
   qglviewer::Frame* referenceFrame_;
 
-  std::vector<SP::QGLShape>  shapes_;
+  std::vector<auto>  shapes_;
 
   void print(float x, float y, const char *s, int size);
 

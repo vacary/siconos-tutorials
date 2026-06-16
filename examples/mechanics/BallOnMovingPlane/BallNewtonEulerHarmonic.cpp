@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2023 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,144 +14,76 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
-/*!\file BouncingBallNETS.cpp
-  \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
+/*
   V. Acary, O. Bonnefon.
 
   A Ball bouncing on the ground.
   Direct description of the model.
   Simulation with a Time-Stepping scheme.
 */
-//#include "SphereNEDSPlanR.hpp"
-#include "SiconosKernel.hpp"
-#include <math.h>
+
+#include <SiconosKernel.hpp>
 #include <chrono>
+#include <numbers>  // For std::numbers::pi
 
 #define WITH_PROJ
 #define WITH_FC3D
-using namespace std;
-#ifdef WITH_FC3D
-#define R_CLASS NewtonEuler3DR
-#else
-#define R_CLASS NewtonEuler1DR
-#endif
+#include "UserRelation.hpp"
 
-class my_NewtonEulerR : public R_CLASS
-{
-
-  double _sBallRadius ;
-
-public:
-
-  my_NewtonEulerR(double radius): R_CLASS(), _sBallRadius(radius) { };
-
-  virtual void computeOutput(double t, Interaction& inter, unsigned int derivativeNumber)
-  {
-    VectorOfBlockVectors& DSlink = inter.linkToDSVariables();
-    if(derivativeNumber == 0)
-    {
-      computeh(t, *DSlink[NewtonEulerR::q0], *inter.y(0));
-    }
-    else
-    {
-      R_CLASS::computeOutput(t, inter, derivativeNumber);
-    }
-
-  }
-  void computeh(double time, BlockVector& q0, SiconosVector& y)
-  {
-
-    std::cout <<"my_NewtonEulerR:: computeh" << std:: endl;
-    std::cout <<"q0.size() = " << q0.size() << std:: endl;
-    double height = q0.getValue(0) - _sBallRadius - q0.getValue(7);
-    // std::cout <<"my_NewtonEulerR:: computeh _jachq" << std:: endl;
-    // _jachq->display();
-
-    y.setValue(0, height);
-    _Nc->setValue(0, 1);
-    _Nc->setValue(1, 0);
-    _Nc->setValue(2, 0);
-    _Pc1->setValue(0, q0.getValue(0) - _sBallRadius);
-    _Pc1->setValue(1, q0.getValue(1));
-    _Pc1->setValue(2, q0.getValue(2));
-
-    _Pc2->setValue(0,q0.getValue(7));
-    _Pc2->setValue(1,q0.getValue(8));
-    _Pc2->setValue(2,q0.getValue(9));
-    //printf("my_NewtonEulerR N, Pc\n");
-    _Nc->display();
-    _Pc1->display();
-    _Pc2->display();
-    std::cout <<"my_NewtonEulerR:: computeh ends" << std:: endl;
-  }
-  //ACCEPT_VISITORS();
-};
-TYPEDEF_SPTR(my_NewtonEulerR);
-
-
-
-
-
-int main(int argc, char* argv[])
-{
-  try
-  {
-
-
+int main(int argc, char* argv[]) {
+  try {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 3;           // degrees of freedom for the ball
-    unsigned int qDim = 7;           // degrees of freedom for the ball
-    unsigned int nDim = 6;           // degrees of freedom for the ball
-    double t0 = 0;                   // initial computation time
-    double T = 10.0;                  // final computation time
-    double h = 0.001;                // time step
-    double position_init = 1.0;      // initial position for lowest bead.
-    double velocity_init = 0.0;      // initial velocity for lowest bead.
-    double omega_initx = 0.0;
-    double omega_initz = 0.0;// initial velocity for lowest bead.
-    double theta = 1.0;              // theta for MoreauJeanOSI integrator
-    double m = 1; // Ball mass
-    double g = 10.0; // Gravity
+    int nDof = 3;                // degrees of freedom for the ball
+    unsigned int qDim = 7;       // degrees of freedom for the ball
+    unsigned int nDim = 6;       // degrees of freedom for the ball
+    double t0 = 0;               // initial computation time
+    double T = 10.0;             // final computation time
+    double h = 0.001;            // time step
+    double position_init = 1.0;  // initial position
+    double velocity_init = 0.0;  // initial velocity
+    double omega_initx = 0.0;    // initial angular velocity
+    double omega_initz = 0.0;    // initial angular velocity
+    double theta = 1.0;          // theta for MoreauJeanOSI integrator
+    double m = 1;                // Ball mass
+    double g = 10.0;             // Gravity
     double radius = 0.1;
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
 
-    cout << "====> Model loading ..." << endl << endl;
+    std::cout << "====> Model loading ...\n";
 
     // -- Initial positions and velocities --
-    SP::SiconosVector q0(new SiconosVector(qDim));
-    SP::SiconosVector v0(new SiconosVector(nDim));
-    SP::SimpleMatrix I(new SimpleMatrix(3, 3));
-    v0->zero();
-    q0->zero();
 
-    I->eye();
-    (*q0)(0) = position_init;
+    siconos::algebra::SiconosVector q0{qDim};
+    siconos::algebra::SiconosVector v0{nDim};
+    q0.setZero();
+    v0.setZero();
+    siconos::algebra::SiconosDenseMatrix I = Eigen::MatrixXd::Identity(3, 3);
+
+    q0(0) = position_init;
     /*initial quaternion equal to (1,0,0,0)*/
-    (*q0)(3) = 1.0;
+    q0(3) = 1.0;
 
-    (*v0)(0) = velocity_init;
-    (*v0)(3) = omega_initx;
-    (*v0)(5) = omega_initz;
+    v0(0) = velocity_init;
+    v0(3) = omega_initx;
+    v0(5) = omega_initz;
     // -- The dynamical system --
-    SP::NewtonEulerDS ball(new NewtonEulerDS(q0, v0, m, I));
+    auto ball = std::make_shared<siconos::modeling::NewtonEulerDS>(q0, v0, m, I,
+                                                                   siconos::algebra::alias_t);
 
     // -- Set external forces (weight) --
-    SP::SiconosVector weight(new SiconosVector(nDof));
-    (*weight)(0) = -m * g;
-    ball->setFExtPtr(weight);
+    siconos::algebra::SiconosVector weight{nDof};
+    weight(0) = -m * g;
+    ball->setConstantFext(weight, siconos::algebra::alias_t);
 
-    SP::IndexInt bdindex(new IndexInt(3));
-    (*bdindex)[0] = 0;
-    (*bdindex)[1] = 3;
-    (*bdindex)[2] = 5;
-
-    SP::HarmonicBC bc(new HarmonicBC(bdindex,2.0,1.0, M_PI / 2.0, 0.0));
+    auto bc = std::make_shared<siconos::modeling::HarmonicBC>(
+        siconos::modeling::BoundaryCondition::Indices{0, 3, 5}, 2.0, 1.0,
+        std::numbers::pi / 2.0, 0.0);
     ball->setBoundaryConditions(bc);
 
     // --------------------
@@ -161,35 +93,21 @@ int main(int argc, char* argv[])
     // -- nslaw --
     double e = 0.9;
 
-    // Interaction ball-floor
-    //
-
-    //     vector<SP::SiconosMatrix> vecMatrix1;
-    //     vecMatrix1.push_back(H);
-    //     SP::BlockMatrix H_block(new BlockMatrix(vecMatrix1,1,1));
-
-    //     SP::SiconosMatrix HT(new SimpleMatrix(1,nDim));
-    //     vector<SP::SiconosMatrix> vecMatrix2;
-    //     vecMatrix2.push_back(HT);
-    //     SP::BlockMatrix HT_block(new BlockMatrix(vecMatrix2,1,1));
-
 #ifdef WITH_FC3D
-    SP::NonSmoothLaw nslaw0(new NewtonImpactFrictionNSL(e, e, 0.6, 3));
+    auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactFrictionNSL>(e, e, 0.6, 3);
 #else
-    SP::NonSmoothLaw nslaw0(new NewtonImpactNSL(e));
+    auto nslaw0 = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
 #endif
 
-    // Version with my_NewtonEulerR()
-    SP::NewtonEulerR relation0(new my_NewtonEulerR(radius));
-    SP::Interaction inter(new Interaction(nslaw0, relation0));
+    auto relation0 = std::make_shared<user_defined::my_NewtonEulerR>(radius);
+    auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw0, relation0);
 
     // -------------
     // --- Model ---
     // -------------
-    SP::NonSmoothDynamicalSystem bouncingBall(new NonSmoothDynamicalSystem(t0, T));
+    auto bouncingBall = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
     // add the dynamical system in the non smooth dynamical system
     bouncingBall->insertDynamicalSystem(ball);
-
 
     // ------------------
     // --- Simulation ---
@@ -197,26 +115,29 @@ int main(int argc, char* argv[])
 
     // -- (1) OneStepIntegrators --
 #ifdef WITH_PROJ
-    SP::MoreauJeanDirectProjectionOSI OSI(new MoreauJeanDirectProjectionOSI(theta));
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanDirectProjectionOSI>(theta);
 #else
-    SP::MoreauJeanOSI OSI(new MoreauJeanOSI(theta));
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
 #endif
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
     // -- (3) one step non smooth problem
-    SP::OneStepNSProblem osnspb(new GenericMechanical());
+    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::GenericMechanical>();
 #ifdef WITH_PROJ
-    SP::OneStepNSProblem osnspb_pos(new MLCPProjectOnConstraints(SICONOS_MLCP_ENUM, 1.0));
+    auto osnspb_pos =
+        std::make_shared<siconos::nonsmooth_formulations::MLCPProjectOnConstraints>(
+            SICONOS_MLCP_ENUM, 1.0);
 #endif
     // -- (4) Simulation setup with (1) (2) (3)
 #ifdef WITH_PROJ
-    SP::TimeSteppingDirectProjection s(new TimeSteppingDirectProjection(bouncingBall, t, OSI, osnspb, osnspb_pos));
+    auto s = std::make_shared<siconos::simulation::TimeSteppingDirectProjection>(
+        bouncingBall, t, OSI, osnspb, osnspb_pos);
     s->setProjectionMaxIteration(20);
     s->setConstraintTolUnilateral(1e-08);
     s->setConstraintTol(1e-08);
 #else
-    SP::TimeStepping s(new TimeStepping(bouncingBall, t, OSI, osnspb));
+    auto s = std::make_shared<siconos::simulation::TimeStepping>(bouncingBall, t, OSI, osnspb);
 #endif
     s->setNewtonTolerance(1e-10);
     s->setNewtonMaxIteration(10);
@@ -224,22 +145,21 @@ int main(int argc, char* argv[])
 
     // ================================= Computation =================================
 
-    int N = ceil((T - t0) / h); // Number of time steps
+    int N = ceil((T - t0) / h);  // Number of time steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    unsigned int outputSize = 20;
-    SimpleMatrix dataPlot(N + 1, outputSize);
+    siconos::algebra::Index outputSize = 20;
+    siconos::algebra::SiconosDenseMatrix dataPlot(N + 1, outputSize);
 
-    SP::SiconosVector q = ball->q();
-    SP::SiconosVector v = ball->velocity();
-    SP::SiconosVector p = ball->p(1);
+    auto q = ball->q();
+    auto v = ball->twist();
+    auto p = ball->p(1);
 
-    // SP::SiconosVector lambda = inter->lambda(1);
-    // SP::SiconosVector y = inter->y(0);
+    // auto lambda = inter->lambda(1);
+    // auto y = inter->y(0);
 
-    SP::SiconosVector reaction = ball->reactionToBoundaryConditions();
-
+    auto reaction = ball->reactionToBoundaryConditions();
 
     dataPlot(0, 0) = bouncingBall->t0();
     dataPlot(0, 1) = (*q)(0);
@@ -247,7 +167,7 @@ int main(int argc, char* argv[])
     dataPlot(0, 3) = (*p)(0);
     dataPlot(0, 4) = (*reaction)(0);
     dataPlot(0, 5) = acos((*q)(3));
-    //dataPlot(0, 6) = relation0->contactForce()->norm2();
+    // dataPlot(0, 6) = relation0->contactForce()->norm();
 
     dataPlot(0, 7) = (*q)(0);
     dataPlot(0, 8) = (*q)(1);
@@ -264,30 +184,32 @@ int main(int argc, char* argv[])
     dataPlot(0, 18) = (*v)(4);
     dataPlot(0, 19) = (*v)(5);
 
-
-
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl << endl;
+    std::cout << "====> Start computation ... \n";
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
 
-
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
-    //dataPlot(k, 6) = relation0->contactForce()->norm2();
-    while(s->hasNextEvent())
-    {
-      //      s->computeOneStep();
+    auto start = std::chrono::system_clock::now();
+    while (s->hasNextEvent()) {
+      // std::cout << "step " << k << std::endl;
+      //        s->computeOneStep();
       s->advanceToEvent();
       // --- Get values to be plotted ---
-      dataPlot(k, 0) =  s->nextTime();
+      dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(0);
       dataPlot(k, 2) = (*v)(0);
       dataPlot(k, 3) = (*p)(0);
-
       dataPlot(k, 4) = (*reaction)(0);
-      dataPlot(k, 5) = acos((*q)(3));
-      // dataPlot(k, 6) = relation0->contactForce()->norm2();
+
+      /* fix issue with machine accuracy */
+      if ((*q)(3) > 1.0) {
+        dataPlot(k, 5) = acos(1.0);
+      } else if ((*q)(3) < -1.0) {
+        dataPlot(k, 5) = acos(-1.0);
+      } else {
+        dataPlot(k, 5) = acos((*q)(3));
+      }
+      // dataPlot(k, 6) = relation0->contactForce()->norm();
       dataPlot(k, 7) = (*q)(0);
       dataPlot(k, 8) = (*q)(1);
       dataPlot(k, 9) = (*q)(2);
@@ -303,30 +225,44 @@ int main(int argc, char* argv[])
       dataPlot(k, 18) = (*v)(4);
       dataPlot(k, 19) = (*v)(5);
 
-
-
       s->nextStep();
 
       k++;
     }
-    cout << endl << "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation Time " << endl;;
-    end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
-                  (end-start).count();
-    cout << "Computation time : " << elapsed << " ms" << endl;
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
+    std::cout << "\nComputation time : " << elapsed << " ms\n";
+
     // --- Output files ---
-    cout << "====> Output file writing ..." << endl;
-    dataPlot.resize(k, outputSize);
-    ioMatrix::write("BallNewtonEuler.dat", "ascii", dataPlot, "noDim");
+    std::cout << "====> Output file writing ...\n";
+#ifdef WITH_PROJ
+    siconos::algebra::io::write("BallNewtonEulerHarmonic-WITHPROJ.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
+    // Comparison with a reference file
+    std::cout << "====> Comparison with a reference file ...\n";
+    double error = 0.0, eps = 1e-10;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BallNewtonEuler-WITHPROJ.ref",
+                                                      eps)) > eps)
+      return 1;
+#else
+    siconos::algebra::io::write("BallNewtonEulerHarmonic.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
 
-
+    // Comparison with a reference file
+    std::cout << "====> Comparison with a reference file ...\n";
+    double error = 0.0, eps = 1e-10;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "BallNewtonEuler.ref", eps)) >
+        eps)
+      return 1;
+#endif
+    return 0;
   }
 
-  catch(...)
-  {
-    Siconos::exception::process();
+  catch (...) {
+    siconos::exception::process();
     return 1;
   }
-
 }

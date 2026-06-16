@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 21;           // degrees of freedom for robot
+    int nDof = 21;           // degrees of freedom for robot
     double t0 = 0;                   // initial computation time
     double T = 1.0;//0.005;                   // final computation time
     double h = 0.001;                // time step
@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
     q0(6) = 0.2;
     q0(7) = -0.1;
 
-    SP::LagrangianDS bip(new LagrangianDS(q0, v0));
+    auto bip(new LagrangianDS(q0, v0));
 
     // external plug-in
     bip->setComputeMassFunction("RobotPlugin", "mass");
@@ -64,15 +64,15 @@ int main(int argc, char* argv[])
 
     // -- relations --
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
+    auto nslaw(new NewtonImpactNSL(e));
     string G = "RobotPlugin:G0";
-    SP::Relation relation(new LagrangianScleronomousR("RobotPlugin:h0", G));
-    SP::Interaction inter(new Interaction(23, nslaw, relation));
+    auto relation(new LagrangianScleronomousR("RobotPlugin:h0", G));
+    auto inter(new Interaction(23, nslaw, relation));
 
     //The linear contraint corresponding to joints limits (hq+b>0)
     SimpleMatrix H(30, 21);
     SiconosVector b(30);
-    H.zero();
+    H.setZero();
     H(0, 0) = -1;
     H(1, 0) = 1;
     b(0) = 0.21;
@@ -135,14 +135,14 @@ int main(int argc, char* argv[])
     b(29) = 0.21;
 
 
-    SP::Relation relation2(new LagrangianLinearTIR(H, b));
-    SP::Interaction inter2(new Interaction(30, nslaw, relation2));
+    auto relation2(new LagrangianLinearTIR(H, b));
+    auto inter2(new Interaction(30, nslaw, relation2));
 
     // -------------
     // --- Model ---
     // -------------
 
-    SP::Model Robot(new Model(t0, T));
+    auto Robot(new Model(t0, T));
     Robot->nonSmoothDynamicalSystem()->insertDynamicalSystem(bip);
     Robot->nonSmoothDynamicalSystem()->link(inter1, bip);
     Robot->nonSmoothDynamicalSystem()->link(inter2, bip);
@@ -153,12 +153,12 @@ int main(int argc, char* argv[])
     // ----------------
 
     // -- Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t(new TimeDiscretisation(t0, h));
 
-    SP::TimeStepping s(new TimeStepping(t));
+    auto s(new TimeStepping(t));
 
     // -- OneStepIntegrators --
-    SP::OneStepIntegrator OSI(new MoreauJeanOSI(bip, 0.500001));
+    auto OSI(new MoreauJeanOSI(bip, 0.500001));
     s->insertIntegrator(OSI);
 
     // -- OneStepNsProblem --
@@ -167,8 +167,8 @@ int main(int argc, char* argv[])
     DoubleParameters dparam(5);
     dparam[0] = 0.0005; // Tolerance
     string solverName = "PGS" ;
-    SP::NonSmoothSolver mySolver(new NonSmoothSolver(solverName, iparam, dparam));
-    SP::LCP osnspb(new LCP(mySolver));
+    auto mySolver(new NonSmoothSolver(solverName, iparam, dparam));
+    auto osnspb(new LCP(mySolver));
     s->insertNonSmoothProblem(osnspb);
     Robot->setSimulation(s);
     cout << "=== End of model loading === " << endl;

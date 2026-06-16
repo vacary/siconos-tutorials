@@ -56,7 +56,7 @@ void BodiesViewer::init()
   boost::tie(dsi, dsend) = GETALLDS(Siconos_)->vertices();
   for (unsigned int i = 0; dsi != dsend; ++i, ++dsi)
   {
-    SP::DynamicalSystem ds = GETALLDS(Siconos_)->bundle(*dsi);
+    auto ds = GETALLDS(Siconos_)->bundle(*dsi);
     insertQGLShape(ask<ForShape>(*ds), ds);
   }
 
@@ -689,7 +689,7 @@ void BodiesViewer::drawSelectedQGLShape(const QGLShape& fig)
     {};
     }
     glColor3f(1., 0., 0.);
-    dFe = hypot3(ask<ForFExt>(*ds)->getArray());
+    dFe = hypot3(ask<ForFExt>(*ds)->data());
     Cal = log(dFe);
 
     drawArrow(GETX(ds), GETY(ds), GETZ(ds),
@@ -704,10 +704,10 @@ void BodiesViewer::drawSelectedQGLShape(const QGLShape& fig)
   }
 };
 
-void BodiesViewer::insertQGLShape(SHAPE f, SP::DynamicalSystem ds)
+void BodiesViewer::insertQGLShape(SHAPE f, auto ds)
 {
 
-  SP::QGLShape fig(new QGLShape(f, ds, camera()->frame()));
+  auto fig(new QGLShape(f, ds, camera()->frame()));
 
   shapes_.push_back(fig);
 }
@@ -726,19 +726,19 @@ void BodiesViewer::mouseMoveEvent(QMouseEvent *e)
         shapes_[selectedName()]->setSelection(true);
         shapes_[selectedName()]->saveFExt();
 
-        SP::SiconosVector fext(new SiconosVector());
+        siconos::algebra::SiconosVector fext;
         fext->resize(ask<ForFExt>(*shapes_[selectedName()]->DS())->size());
 
         switch (Type::value(*shapes_[selectedName()]->DS()))
         {
         case Type::NewtonEulerDS :
         {
-          std11::static_pointer_cast<NewtonEulerDS>(shapes_[selectedName()]->DS())->setFExtPtr(fext);
+          std11::static_pointer_cast<NewtonEulerDS>(shapes_[selectedName()]->DS())->setConstantFext(fext);
           break;
         };
         case Type::LagrangianDS :
         {
-          std11::static_pointer_cast<LagrangianDS>(shapes_[selectedName()]->DS())->setFExtPtr(fext);
+          std11::static_pointer_cast<LagrangianDS>(shapes_[selectedName()]->DS())->setConstantFext(fext);
           break;
         };
         default :
@@ -748,11 +748,11 @@ void BodiesViewer::mouseMoveEvent(QMouseEvent *e)
         }
       }
 
-      SP::SiconosVector fext = ask<ForFExt>(*shapes_[selectedName()]->DS());
+      std::shared_ptr<siconos::algebra::SiconosVector> fext = ask<ForFExt>(*shapes_[selectedName()]->DS());
 
       lastSelected_ = selectedName();
 
-      SP::SiconosVector q =
+      std::shared_ptr<siconos::algebra::SiconosVector> q =
         ask<ForPosition>(*shapes_[selectedName()]->DS());
 
       double massValue =
@@ -764,11 +764,11 @@ void BodiesViewer::mouseMoveEvent(QMouseEvent *e)
       //      Vec t = frame->translation();
       //      printf("translation : %g,%g,%g ; rotation : %g,%g,%g\n", t[0],t[1],t[2],r[0],r[2],r[3]);
 
-      fext->setValue(0, -((float)cpos[0] - q->getValue(0))*massValue * 30);
-      fext->setValue(1, -((float)cpos[1] - q->getValue(1))*massValue * 30);
+      (*fext)(0) = -((float)cpos[0] - (*q)(0))*massValue * 30;
+      (*fext)(1) = -((float)cpos[1] - (*q)(1))*massValue * 30;
       if (ask<ForNdof>(*shapes_[selectedName()]->DS()) > 3)
       {
-        fext->setValue(2, -((float)cpos[2] - q->getValue(2))*massValue * 30);
+        (*fext)(2) = -((float)cpos[2] - (*q)(2))*massValue * 30;
       }
 
     }

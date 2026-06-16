@@ -1,19 +1,38 @@
+/* Siconos is a program dedicated to modeling, simulation and control
+ * of non smooth dynamical systems.
+ *
+ * Copyright 2023 INRIA.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-#include "SiconosKernel.hpp"
+#include <SiconosKernel.hpp>
+#include <chrono>
+#include <string>
 
 using namespace std;
+using Matrix = siconos::algebra::SiconosMatrix;
+using Vector = siconos::algebra::SiconosVector;
 
 // main program
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   // Exception handling
-  try
-  {
+  try {
     // == User-defined parameters ==
     unsigned int ndof = 2;  // number of degrees of freedom of your system
     double t0 = 0.0;
-    double T = 20.0;        // Total simulation times
-    double h = 1.0e-1;      // Time step
+    double T = 20.0;    // Total simulation times
+    double h = 1.0e-1;  // Time step
     double Vinit = 10.0;
 
     double G = 10.0;
@@ -38,68 +57,69 @@ int main(int argc, char* argv[])
     // x(0) = x0
     // Note: r = Blambda, B defines in relation below.
 
-    SP::SiconosMatrix A(new SimpleMatrix(ndof, ndof));
+    auto A = std::make_shared<Matrix>(ndof, ndof);
+    A->setZero();
     (*A)(0, 1) = 1.0;
-    SP::SiconosVector x0(new SiconosVector(ndof));
+    auto x0 = std::make_shared<Vector>(ndof);
     (*x0)(0) = Vinit;
     (*x0)(1) = Vinit;
-    SP::FirstOrderLinearTIDS doubleIntegrator(new FirstOrderLinearTIDS(x0, A));
-
+    auto doubleIntegrator = std::make_shared<siconos::modeling::FirstOrderLinearDS>(*x0, siconos::algebra::alias_t);
+    doubleIntegrator->setConstantA(*A, siconos::algebra::alias_t);
     // --------------------
     // --- Interactions ---
     // --------------------
-    unsigned int ninter = 2; // dimension of your Interaction = size of y and lambda vectors
+    unsigned int ninter = 2;  // dimension of your Interaction = size of y and lambda vectors
 
     // First relation, related to the doubleIntegrator
     // y = Cx + Dlambda
     // r = Blambda
-    SP::SimpleMatrix B(new SimpleMatrix(ndof, ninter));
+    auto B = std::make_shared<Matrix>(ndof, ninter);
+    B->setZero();
     (*B)(1, 0) = G;
-    (*B)(1, 1) = G*beta;
-    SP::SimpleMatrix C(new SimpleMatrix(ninter, ndof));
-    C->eye();
-    SP::FirstOrderLinearTIR twistingRelation(new FirstOrderLinearTIR(C, B));
+    (*B)(1, 1) = G * beta;
+    auto C = std::make_shared<Matrix>(ninter, ndof);
+    C->setIdentity();
+    auto twistingRelation = std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*C, *B);
 
     // NonSmoothLaw
     unsigned int nslawSize = 2;
-    SP::SimpleMatrix H(new SimpleMatrix(4, 2));
+    auto H = std::make_shared<Matrix>(4, 2);
+    H->setZero();
     (*H)(0, 0) = 1.0;
-    (*H)(1, 0) = -h/2.0;
+    (*H)(1, 0) = -h / 2.0;
     (*H)(2, 0) = -1.0;
-    (*H)(3, 0) = h/2.0;
+    (*H)(3, 0) = h / 2.0;
     (*H)(1, 1) = 1.0;
     (*H)(3, 1) = -1.0;
 
-    SP::SiconosVector K(new SiconosVector(4));
-    (*K)(0) = -1.0;
-    (*K)(1) = -1.0;
-    (*K)(2) = -1.0;
-    (*K)(3) = -1.0;
-    SP::NonSmoothLaw nslaw(new NormalConeNSL(nslawSize, H, K));
+    auto K = std::make_shared<Vector>(4);
+    K->setConstant(-1.);
+    auto nslaw = std::make_shared<siconos::modeling::NormalConeNSL>(nslawSize, H, K);
 
-    SP::Interaction twistingInteraction(new Interaction(nslaw, twistingRelation));
+    auto twistingInteraction =
+        std::make_shared<siconos::modeling::Interaction>(nslaw, twistingRelation);
 
     // -------------
     // --- Model ---
     // -------------
-    SP::NonSmoothDynamicalSystem itw(new NonSmoothDynamicalSystem(t0, T));
+    auto itw = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
     itw->insertDynamicalSystem(doubleIntegrator);
-    itw->link(twistingInteraction,doubleIntegrator);
+    itw->link(twistingInteraction, doubleIntegrator);
 
     // ------------------
     // --- Simulation ---
     // ------------------
     // TimeDiscretisation
-    SP::TimeDiscretisation td(new TimeDiscretisation(t0, h));
+    auto td = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
     // == Creation of the Simulation ==
-    SP::TimeStepping s(new TimeStepping(itw, td));
+    auto s = std::make_shared<siconos::simulation::TimeStepping>(itw, td);
     // -- OneStepIntegrators --
     double theta = 0.5;
-    SP::EulerMoreauOSI integrator(new EulerMoreauOSI(theta));
+    auto integrator = std::make_shared<siconos::integrators::EulerMoreauOSI>(theta);
     s->insertIntegrator(integrator);
     // -- OneStepNsProblem --
 
-    SP::AVI osnspb(new AVI());
+    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::AVI>();
     s->insertNonSmoothProblem(osnspb);
 
     // =========================== End of model definition ===========================
@@ -107,36 +127,32 @@ int main(int argc, char* argv[])
     // ================================= Computation =================================
 
     // --- Get the values to be plotted ---
-    unsigned outputSize = 5; // number of required data
-    unsigned N = ceil((T - t0) / h) + 10; // Number of time steps
+    unsigned outputSize = 5;               // number of required data
+    unsigned N = ceil((T - t0) / h) + 1;  // Number of time steps
 
-    SP::SiconosMatrix dataPlot(new SimpleMatrix(N, outputSize));
+    auto dataPlot = std::make_shared<Matrix>(N, outputSize);
 
-    SiconosVector& xProc = *doubleIntegrator->x();
-    SiconosVector& lambdaProc = *twistingInteraction->lambda(0);
+    auto& xProc = *doubleIntegrator->x();
+    auto& lambdaProc = *twistingInteraction->lambda(0);
 
     // -> saved in a matrix dataPlot
-    (*dataPlot)(0, 0) = itw->t0(); // Initial time of the model
+    (*dataPlot)(0, 0) = itw->t0();  // Initial time of the model
     (*dataPlot)(0, 1) = xProc(0);
     (*dataPlot)(0, 2) = xProc(1);
     (*dataPlot)(0, 3) = -1.0;
 
-
     (*dataPlot)(0, 4) = -1.0;
 
-
-
     // ==== Simulation loop =====
-    cout << "====> Start computation ... " << endl << endl;
+    cout << "====> Start computation ... \n\n";
 
     // *z = *(myProcessInteraction->y(0)->getVectorPtr(0));
-    unsigned int k = 0; // Current step
+    unsigned int k = 0;  // Current step
 
     // Simulation loop
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
-    while(s->hasNextEvent())
-    {
+    while (s->hasNextEvent()) {
       k++;
       //  osnspb->setNumericsVerboseMode(1);
 
@@ -149,37 +165,31 @@ int main(int argc, char* argv[])
       (*dataPlot)(k, 4) = lambdaProc(1);
       s->nextStep();
     }
-    dataPlot->resize(k, dataPlot->size(1));
 
     cout << "End of computation - Number of iterations done: " << k - 1 << endl;
     end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
-                  (end-start).count();
-    cout << endl <<  "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation time : " << elapsed << " ms" << endl;
-    cout << "====> Output file writing ..." << endl;
-    ioMatrix::write("Twisting.dat", "ascii", *dataPlot, "noDim");
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    cout << endl << "End of computation - Number of iterations done: " << k - 1 << endl;
+    cout << "Computation time : " << elapsed << " ms\n";
+    cout << "====> Output file writing ...\n";
+
+    siconos::algebra::io::write("Twisting.dat", *dataPlot, siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
 
     // We do not compare the Lagrange multiplier that are very
     // sensitive to numerical approximations
-    Index idx;
-    idx.push_back(0);
-    idx.push_back(1);
-    idx.push_back(2);
-
-    // Comparison with a reference file
-    double error = 0;
-    if((error=ioMatrix::compareRefFile(*dataPlot, "Twisting.ref", 1e-12, idx)) >= 0.0
-        && error > 1e-12)
-    {
+    std::vector<int> idx = {0, 1, 2};
+    double error = 0.0, eps = 1e-12;
+    if ((error = siconos::algebra::io::compareRefFile(*dataPlot, "Twisting.ref", eps, idx)) >
+        eps)
       return 1;
-    }
+    else
+      return 0;
 
   }
 
-  catch(...)
-  {
-    Siconos::exception::process();
+  catch (...) {
+    siconos::exception::process();
     return 1;
   }
 }

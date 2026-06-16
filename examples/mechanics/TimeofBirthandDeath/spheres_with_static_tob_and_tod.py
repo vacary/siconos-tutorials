@@ -4,12 +4,14 @@
 # Example of one object under gravity with one contactor and a ground
 # using the Siconos proposed mechanics API
 #
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
 
 import siconos.numerics as sn
-import siconos.kernel as sk
+import siconos.modeling as sm
 
 import math
 # Creation of the hdf5 file for input/output
@@ -74,9 +76,9 @@ angle = math.pi/4.0
     
 def apply_gravity(body):
     g = 9.81
-    weight = [body.scalarMass() * g * math.sin(angle), 0.,
-              - body.scalarMass() * g * math.cos(angle)]
-    body.setFExtPtr(weight)  # scalMass() dans quel bibli ?
+    weight = [body.scalarMass * g * math.sin(angle), 0.,
+              - body.scalarMass * g * math.cos(angle)]
+    body.setConstantFext(weight, sm.copy_t)
 
     
 # Run the simulation from the inputs previously defined and add
@@ -87,27 +89,37 @@ from siconos.mechanics.collision.bullet import SiconosBulletOptions
 bullet_options = SiconosBulletOptions()
 bullet_options.worldScale = 1.0
 bullet_options.contactBreakingThreshold = 0.04
-bullet_options.perturbationIterations = 0.
-bullet_options.minimumPointsPerturbationThreshold = 0.
+bullet_options.perturbationIterations = 0
+bullet_options.minimumPointsPerturbationThreshold = 0
 
-options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 100
-options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-8
+options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-8
+
+
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = 4.
+run_options["h"] = 1e-3
+
+
+run_options["solver_options"] = options
+run_options["bullet_options"] = bullet_options
+# run_options['constraint_activation_threshold']=1e-05
+
+
+run_options["Newton_max_iter"] = 20
+run_options["output_frequency"] = None
+
+# run_options["verbose"] = False
+run_options["with_timer"] = False
+# run_options["violation_verbose"] = True
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
 
 with MechanicsHdf5Runner(mode='r+', set_external_forces=apply_gravity) as io:
 
     # By default earth gravity is applied and the units are those
     # of the International System of Units.
-    io.run(with_timer=False,
-           bullet_options=bullet_options,
-           face_class=None,
-           edge_class=None,
-           t0=0,
-           T=4.0,
-           h=1e-3,
-           theta=0.50001,
-           Newton_max_iter=20,
-           set_external_forces=None,
-           solver_options=options,
-           numerics_verbose=False,
-           output_frequency=None)
+    io.run(run_options)

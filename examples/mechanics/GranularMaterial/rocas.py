@@ -95,11 +95,29 @@ def un_cubo(io, name, cname, roca_size=0.05, density=1, trans=None, tob=None):
                   mass=volume*density,
                   time_of_birth=tob,
                   inertia=inertia*density)
+def una_esfera(io, name, cname, roca_size=0.05, density=1, trans=None, tob=None):
+    # Definition of a sphere
+
+    io.add_primitive_shape(
+        cname, "Sphere", (roca_size/2.,), insideMargin=0.0, outsideMargin=0.0
+    )
+
+    volume = 4/3. * math.pi * roca_size**3
+    mass = volume*density
+    inertia = numpy.eye(3) *  2/5. * mass * roca_size**2
+
+    io.add_object(name,
+                  [Contactor(cname)],
+                  translation=trans,
+                  #velocity=veloci,
+                  mass=mass,
+                  time_of_birth=tob,
+                  inertia=inertia)
 
 
 def create_rocas(io, n_layer=5, n_row=5, n_col=5, x_shift=3.0,
                  roca_size=0.05, top=0, rate=0.01, density=1,
-                 distribution = ('uniform', 0.1)):
+                 distribution = ('uniform', 0.1), rock_shape = 'roca'):
 
     N = n_layer*n_row*n_col
 
@@ -132,6 +150,18 @@ def create_rocas(io, n_layer=5, n_row=5, n_col=5, x_shift=3.0,
 
     k=0
     print('Creation of the rocks')
+    if rock_shape == 'roca':
+        create_shape = una_roca
+        print('Creation of the rocks')
+    elif rock_shape == 'esfera':
+        create_shape = una_esfera
+        print('Creation of the rocks (spheres)')
+    elif rock_shape == 'cubo':
+        create_shape = un_cubo
+        print('Creation of the rocks (cubes)')
+
+
+
     for n in range(n_layer):
         for i in range(n_row):
             for j in range(n_col):
@@ -143,6 +173,6 @@ def create_rocas(io, n_layer=5, n_row=5, n_col=5, x_shift=3.0,
                          top]
                 name = 'rock'+str(n)+'_'+str(i)+'_'+str(j)
                 cname = 'RockCS'+str(n)+'_'+str(i)+'_'+str(j)
-                una_roca(io, name, cname, sizes[k], density, trans,
-                         tob = n*rate + random.random()*rate)
+                create_shape(io, name, cname, sizes[k], density, trans,
+                            tob = n*rate + random.random()*rate)
                 k += 1

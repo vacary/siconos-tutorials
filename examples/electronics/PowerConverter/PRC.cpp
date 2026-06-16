@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,94 +14,100 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 #include <SiconosKernel.hpp>
 #include <chrono>
 
-using namespace std;
+using Matrix = siconos::algebra::SiconosMatrix;
+using Vector = siconos::algebra::SiconosVector;
 
-int main(int argc, char* argv[])
-{
-
+int main(int argc, char* argv[]) {
   double t0 = 0.0;
-  double T = 2e-3;    // Total simulation time
-  double h_step = 5.0e-8;  // Time step
-  double Lfvalue = 0.4e-3;   // inductance
-  double Cfvalue = 2.2e-6;   // capacitance
-  double Lrvalue = 150e-6;   // inductance
+  double T = 2e-3;          // Total simulation time
+  double h_step = 5.0e-8;   // Time step
+  double Lfvalue = 0.4e-3;  // inductance
+  double Cfvalue = 2.2e-6;  // capacitance
+  double Lrvalue = 150e-6;  // inductance
   double Crvalue = 68e-9;   // capacitance
-  double Rvalue = 33.0; // resistance
-  string Modeltitle = "PRC";
-  string Author = "Ivan Merillas Santos";
-  string Description = " ";
-  string Date = "February 2006";
-  string Bnamefunction = "Vgen";
-  //double Vgen = sin(2*M_PI*55000*0)/fabs(sin(2*M_PI*55000*0));
+  double Rvalue = 33.0;     // resistance
+  std::string Modeltitle = "PRC";
+  std::string Author = "Ivan Merillas Santos";
+  std::string Description = " ";
+  std::string Date = "February 2006";
+  std::string Bnamefunction = "Vgen";
+  // double Vgen = sin(2*M_PI*55000*0)/fabs(sin(2*M_PI*55000*0));
 
   // Chrono
   std::chrono::time_point<std::chrono::system_clock> start, end;
   start = std::chrono::system_clock::now();
 
-  try
-  {
-
+  try {
     // --- Dynamical system specification ---
 
-    cout << "====> Model loading ..." << endl << endl;
-    SP::SiconosVector init_state(new SiconosVector(4));
+    std::cout << "====> Model loading ..."
+              << "\n"
+              << "\n";
+    auto init_state = std::make_shared<Vector>(4);
     (*init_state)(0) = 0.0;
     (*init_state)(1) = 0.0;
     (*init_state)(2) = 0.0;
     (*init_state)(3) = 0.0;
 
-    SP::SimpleMatrix LS_A(new SimpleMatrix(4, 4));
+    auto LS_A = std::make_shared<Matrix>(4, 4);
     (*LS_A)(0, 1) = -1.0 / Lrvalue;
     (*LS_A)(1, 0) = 1.0 / Crvalue;
     (*LS_A)(2, 3) = -1.0 / Lfvalue;
     (*LS_A)(3, 2) = 1.0 / Cfvalue;
     (*LS_A)(3, 3) = -1.0 / (Rvalue * Cfvalue);
 
-    SP::FirstOrderLinearDS LSPRC(new FirstOrderLinearDS(init_state, LS_A));
+    auto LSPRC = std::make_shared<siconos::modeling::FirstOrderLinearDS>(
+        *init_state, siconos::algebra::alias_t);
+    LSPRC->setConstantA(*LS_A, siconos::algebra::alias_t);
 
-    // Lrvalue is required in the plug-in, thus we set z[0] = 100.0/ Lrvalue.
-    SP::SiconosVector z(new SiconosVector(1));
-
-    // z[0] is used as a parameter in the plug-in.
-    (*z)(0) = 1.0 / Lrvalue;
-    LSPRC->setzPtr(z);
-    LSPRC->setComputebFunction("PRCPlugin", "computeU");
-
+    auto z = 1.0 / Lrvalue;
+    LSPRC->setComputebVectorFunction(
+        [z](double time, Eigen::Ref<siconos::algebra::MapVectorType> result) {
+          result.setZero();
+          double f = 55000.0;
+          if (time == 0.0)
+            result(0) = 0;
+          else {
+            result(0) = z * sin(2.0 * M_PI * f * time) / fabs(sin(2.0 * M_PI * f * time));
+          }
+        });
     // --- Interaction between linear system and non smooth system ---
 
     // -> Relation
-    SP::SimpleMatrix Int_C(new SimpleMatrix(4, 4));
+    auto Int_C = std::make_shared<Matrix>(4, 4);
+    Int_C->setZero();
     (*Int_C)(0, 1) = -1.0;
     (*Int_C)(1, 1) = 1.0;
     (*Int_C)(2, 2) = 1.0;
     (*Int_C)(3, 2) = 1.0;
 
-    SP::SimpleMatrix Int_D(new SimpleMatrix(4, 4));
+    auto Int_D = std::make_shared<Matrix>(4, 4);
+    Int_D->setZero();
     (*Int_D)(0, 2) = 1.0;
     (*Int_D)(1, 3) = 1.0;
     (*Int_D)(2, 0) = -1.0;
     (*Int_D)(3, 1) = -1.0;
 
-    SP::SimpleMatrix Int_B(new SimpleMatrix(4, 4));
+    auto Int_B = std::make_shared<Matrix>(4, 4);
+    Int_B->setZero();
     (*Int_B)(1, 0) = -1.0 / Crvalue;
     (*Int_B)(1, 1) = 1.0 / Crvalue;
     (*Int_B)(2, 2) = 1.0 / Lfvalue;
     (*Int_B)(2, 3) = 1.0 / Lfvalue;
-    SP::FirstOrderLinearTIR LTIRPRC(new FirstOrderLinearTIR(Int_C, Int_B));
-    LTIRPRC->setDPtr(Int_D);
+    auto LTIRPRC = std::make_shared<siconos::modeling::FirstOrderLinearTIR>(*Int_C, *Int_B);
+    LTIRPRC->setConstantD(*Int_D);
 
     // -> Non-smooth law
-    SP::NonSmoothLaw nslaw(new ComplementarityConditionNSL(4));
+    auto nslaw = std::make_shared<siconos::modeling::ComplementarityConditionNSL>(4);
 
-    SP::Interaction InterPRC(new Interaction(nslaw, LTIRPRC));
-
+    auto InterPRC = std::make_shared<siconos::modeling::Interaction>(nslaw, LTIRPRC);
 
     // --- Model creation ---
-    SP::NonSmoothDynamicalSystem PRC(new NonSmoothDynamicalSystem(t0, T));
+    auto PRC = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
     PRC->setTitle(Modeltitle);
     PRC->setAuthor(Author);
     PRC->setDescription(Description);
@@ -116,29 +122,29 @@ int main(int argc, char* argv[])
     // ------------------
     // -- (1) OneStepIntegrators --
     double theta = 0.5;
-    SP::EulerMoreauOSI aOSI(new EulerMoreauOSI(theta));
+    auto aOSI = std::make_shared<siconos::integrators::EulerMoreauOSI>(theta);
 
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation aTiDisc(new TimeDiscretisation(t0, h_step));
+    auto aTiDisc = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h_step);
 
     // -- (3) Non smooth problem
-    SP::LCP aLCP(new LCP());
+    auto aLCP = std::make_shared<siconos::nonsmooth_formulations::LCP>();
 
     // -- (4) Simulation setup with (1) (2) (3)
-    SP::TimeStepping aTS(new TimeStepping(PRC, aTiDisc, aOSI, aLCP));
+    auto aTS = std::make_shared<siconos::simulation::TimeStepping>(PRC, aTiDisc, aOSI, aLCP);
 
     // =========================== End of model definition ===========================
 
     // ================================= Computation =================================
 
     double h = aTS->timeStep();
-    int N = ceil((T - t0) / h); // Number of time steps
+    int N = ceil((T - t0) / h);  // Number of time steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
-    SimpleMatrix dataPlot(N, 5);
+    Matrix dataPlot(N, 5);
 
-    SP::SiconosVector x =  LSPRC->x();
+    auto x = LSPRC->x();
 
     // For the initial time step:
     int k = 0;
@@ -158,9 +164,8 @@ int main(int argc, char* argv[])
     dataPlot(k, 4) = (*x)(3);
 
     // --- Time loop  ---
-    cout << "====> Start computation ... " << endl << endl;
-    for(k = 1 ; k < N ; ++k)
-    {
+    std::cout << "====> Start computation ... \n";
+    for (k = 1; k < N; ++k) {
       aTS->computeOneStep();
       // --- Get values to be plotted ---
       dataPlot(k, 0) = aTS->nextTime();
@@ -172,17 +177,22 @@ int main(int argc, char* argv[])
       aTS->nextStep();
     }
     // Number of time iterations
-    cout << "End of computation - Number of iterations done: " << k - 1 << endl;
+    std::cout << "End of computation - Number of iterations done: " << k - 1 << "\n";
 
     // dataPlot (ascii) output
-    cout << "====> Output file writing ..." << endl;
-    ioMatrix::write("PRC.dat", "ascii", dataPlot, "noDim");
+    std::cout << "====> Output file writing ...\n";
+    siconos::algebra::io::write("PRC.dat", dataPlot, siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
+
+    double error = 0.0, eps = 1e-12;
+    if ((error = siconos::algebra::io::compareRefFile(dataPlot, "PRC.ref", eps)) > eps)
+      return 1;
+
   }
 
   // --- Exceptions handling ---
-  catch(...)
-  {
-    Siconos::exception::process();
+  catch (...) {
+    siconos::exception::process();
     return 1;
   }
 }

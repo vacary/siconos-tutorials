@@ -23,20 +23,20 @@ from siconos.control.simulation import ControlZOHSimulation
 from siconos.control.sensor import LinearSensor
 from siconos.control.controller import LinearSMC
 
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib.pyplot import subplot, title, plot, grid, savefig, xlabel, ylabel
-from numpy import eye, empty, zeros, savetxt
+from numpy import eye, zeros, savetxt
 from math import ceil
 from matplotlib import rc
-import matplotlib.pyplot as plt
-import numpy as np
 import scipy
 from scipy import arange
 
 import distutils.spawn
-if distutils.spawn.find_executable('latex'):
-    rc('text', usetex=True)
+
+if distutils.spawn.find_executable("latex"):
+    rc("text", usetex=True)
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 # variable declaration
 ndof = 2  # Number of degrees of freedom of your system
@@ -46,7 +46,7 @@ h = 1.0e-4  # time step for simulation
 hControl = 1.0e-2  # time step for control
 Xinit = 1.0  # initial position
 theta = 0.5
-N = int(ceil((T-t0)/h + 10))  # number of time steps
+N = int(ceil((T - t0) / h + 10))  # number of time steps
 outputSize = 5  # number of variable to store at each time step
 
 # Matrix declaration
@@ -55,7 +55,7 @@ x0 = [Xinit, -Xinit]
 sensorC = eye(ndof)
 Csurface = [[0, 1]]
 Brel = [[0], [2]]
-#Drel = [[0, 0]]
+# Drel = [[0, 0]]
 # Simple check
 if h > hControl:
     print("hControl must be bigger than h")
@@ -87,53 +87,53 @@ sim.run()
 dataPlot = sim.data()
 
 # Save to disk
-savetxt('SMCExampleImplicit-py.dat', dataPlot)
+savetxt("SMCExampleImplicit-py.dat", dataPlot)
 # Plot interesting data
 
-subplot(211)
-ylabel(r'$\sigma$')
-xlabel(r't')
-plot(dataPlot[:, 0], dataPlot[:, 2])
-grid()
-subplot(212)
-ylabel(r'$\bar{u}^s$')
-xlabel(r't')
+plt.subplot(211)
+plt.ylabel(r"$\sigma$")
+plt.xlabel(r"t")
+plt.plot(dataPlot[:, 0], dataPlot[:, 2])
+plt.grid()
+plt.subplot(212)
+plt.ylabel(r"$\bar{u}^s$")
+plt.xlabel(r"t")
 plt.ylim(-2.1, 2.1)
-plot(dataPlot[:, 0], dataPlot[:, 3])
-savefig("ismc_sigma_u.png")
+plt.plot(dataPlot[:, 0], dataPlot[:, 3])
+plt.savefig("ismc_sigma_u.png")
 
-subplot(211)
-ylabel(r'$\sigma$')
-xlabel(r't')
-plt.xlim(xmin=.49)
+plt.subplot(211)
+plt.ylabel(r"$\sigma$")
+plt.xlabel(r"t")
+plt.xlim(xmin=0.49)
 plt.ylim(-0.03, 0.03)
-plot(dataPlot[4900:, 0], dataPlot[4900:, 2])
-grid()
-subplot(212)
-ylabel(r'$\bar{u}^s$')
-xlabel(r't')
+plt.plot(dataPlot[4900:, 0], dataPlot[4900:, 2])
+plt.grid()
+plt.subplot(212)
+plt.ylabel(r"$\bar{u}^s$")
+plt.xlabel(r"t")
 plt.ylim(-2.1, 2.1)
-plt.xlim(xmin=.49)
-p1 = plot(dataPlot[4900:, 0], dataPlot[4900:, 3])
-#p2 = plot(dataPlot[4900:, 0], np.sin(50*dataPlot[4900:, 0]))
-#plt.legend((p1[0], p2[0]), (r'$\bar{u}^s(t)$', r'$-\rho(t)$'), ncol=2)
-savefig("ismc_sigma_u_z.png")
+plt.xlim(xmin=0.49)
+p1 = plt.plot(dataPlot[4900:, 0], dataPlot[4900:, 3])
+# p2 = plt.plot(dataPlot[4900:, 0], np.sin(50*dataPlot[4900:, 0]))
+# plt.legend((p1[0], p2[0]), (r'$\bar{u}^s(t)$', r'$-\rho(t)$'), ncol=2)
+plt.savefig("ismc_sigma_u_z.png")
 
 u_z = dataPlot[5100:, 3]
 n = len(u_z)
-Y = scipy.fft(dataPlot[5100:, 3])/n
+Y = scipy.fft(dataPlot[5100:, 3]) / n
 k = arange(n)
-T = n*h
-frq = k/T
-frq = frq[list(range(int(n/2)))]
-Y = Y[list(range(int(n/2)))]
-plot(frq, abs(Y), 'r')
-xlabel(r'freq (Hz)')
-title(r'Frequency spectrum of $\bar{u}^s$')
-savefig("ismc_u_freq.png")
+T = n * h
+frq = k / T
+frq = frq[list(range(int(n / 2)))]
+Y = Y[list(range(int(n / 2)))]
+plt.plot(frq, abs(Y), "r")
+plt.xlabel(r"freq (Hz)")
+plt.title(r"Frequency spectrum of $\bar{u}^s$")
+plt.savefig("ismc_u_freq.png")
 
 # TODO
 # compare with the reference
-#ref = getMatrix(SimpleMatrix("result.ref"))
-#if (norm(dataPlot - ref[1:,:]) > 1e-12):
+# ref = getMatrix(SiconosMatrix("result.ref"))
+# if (norm(dataPlot - ref[1:,:]) > 1e-12):
 #    print("Warning. The result is rather different from the reference file.")

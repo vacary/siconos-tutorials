@@ -3,7 +3,7 @@
 # Siconos is a program dedicated to modeling, simulation and control
 # of non smooth dynamical systems.
 #
-# Copyright 2021 INRIA.
+# Copyright 2026 INRIA.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,81 +20,76 @@
 #
 
 
-import  numpy as np
-
+import numpy as np
 from numpy.linalg import norm
-from siconos.kernel import FirstOrderLinearTIDS, FirstOrderLinearDS, RelayNSL, Interaction, FirstOrderLinearR, NonSmoothDynamicalSystem,\
-    EulerMoreauOSI, TimeDiscretisation, TimeStepping, Relay
-
-
-
-
-# LagrangianLinearTIDS, NewtonImpactNSL,\
-#     LagrangianLinearTIR, Interaction, NonSmoothDynamicalSystem, MoreauJeanOSI,\
-#     TimeDiscretisation, LCP, TimeStepping
-from siconos.kernel import SimpleMatrix, getMatrix
-
+import siconos.modeling as sm
+import siconos.integrators as si
+import siconos.simulation as ss
+import siconos.nonsmooth_formulations as snsf
 import siconos.numerics as sn
 
+import math
+import siconos.plot_config as sicoplot
 
-from numpy import eye, empty, float64, zeros
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 """
 
 Equations of motion
 
 m1 x1" +  k1  x1 =  r(t)
-Coulomb(x1'(t),r(t))=0 
+Coulomb(x1'(t),r(t))=0
 
 """
 
 
-t0 = 0       # start time
-T = 100     # end time
-h = 1e-02    # time step
+t0 = 0  # start time
+T = 100  # end time
+h = 1e-02  # time step
 theta = 0.5  # theta scheme
 
-m = 1; stiffness = 1;
+m = 1
+stiffness = 1
 alpha = 1
-xinit=12.
-vinit=6.
+xinit = 12.0
+vinit = 6.0
 
-x0 = [xinit, vinit]    # initial state
+x0 = np.array([xinit, vinit], dtype=np.float64)  # initial state
 
-A = np.zeros((2,2))
+A = np.zeros((2, 2), dtype=np.float64, order="F")
 
-A[0,1] = 1
-A[1,0] = -stiffness/m
+A[0, 1] = 1
+A[1, 0] = -stiffness / m
 
 #
 # dynamical system
 #
 
-oscillator = FirstOrderLinearTIDS(x0, A)
-#oscillator.display()
-
-#oscillator = FirstOrderLinearDS(x0, A)
-#oscillator.setComputebFunction("plugins", "TwoDofsOscillatorB")
-
+oscillator = sm.FirstOrderLinearDS(x0, sm.alias_t)
+oscillator.setConstantA(A, sm.alias_t)
 #
 # Interactions
 #
 
 
-B = np.array([[0] , [alpha]])
-C = np.array([[0  , 1.]])
+B = np.array([[0], [alpha]], dtype=np.float64, order="F")
+C = np.array([[0, 1.0]], dtype=np.float64, order="F")
 
-nslaw = RelayNSL(1, -1, 1)
+nslaw = sm.RelayNSL(1, -1, 1)
 
-relation = FirstOrderLinearR(C, B)
-inter = Interaction(nslaw, relation)
+# relation = sm.FirstOrderLinearR(C, B)
+relation = sm.FirstOrderLinearR()
+relation.setConstantBAlias(B)
+relation.setConstantCAlias(C)
+inter = sm.Interaction(nslaw, relation)
 
-inter.display()
+print(inter)
 
 #
 # Model
 #
-frictionOscillator = NonSmoothDynamicalSystem(t0, T)
+frictionOscillator = sm.NonSmoothDynamicalSystem(t0, T)
 
 # add the dynamical system to the non smooth dynamical system
 frictionOscillator.insertDynamicalSystem(oscillator)
@@ -103,46 +98,43 @@ frictionOscillator.insertDynamicalSystem(oscillator)
 frictionOscillator.link(inter, oscillator)
 
 
-
 #
 # Simulation
 #
 
 # (1) OneStepIntegrators
-OSI = EulerMoreauOSI(theta)
+OSI = si.EulerMoreauOSI(theta)
 
 # (2) Time discretisation --
-t = TimeDiscretisation(t0, h)
+t = ss.TimeDiscretisation(t0, h)
 
 # (3) one step non smooth problem
-osnspb = Relay()
-osnspb.setSolverId(sn.SICONOS_RELAY_LEMKE);
+osnspb = snsf.Relay()
+osnspb.setSolverId(sn.solver_ids.SICONOS_RELAY_LEMKE)
 
-osnspb.numericsSolverOptions().dparam[0] = 1e-08;
+osnspb.numericsSolverOptions().dparam[0] = 1e-08
 # (4) Simulation setup with (1) (2) (3)
-s = TimeStepping(frictionOscillator,t, OSI, osnspb)
+s = ss.TimeStepping(frictionOscillator, t, OSI, osnspb)
 
 # end of model definition
 
 #
 # computation
 #
-import math
-
 # the number of time steps
 N = math.ceil((T - t0) / h)
 
 # # Get the values to be plotted
 # # ->saved in a matrix dataPlot
 
-dataPlot = zeros((N+1, 6))
+dataPlot = np.zeros((N + 1, 6))
 
 # #
 # # numpy pointers on dense Siconos vectors
 # #
 x = oscillator.x()
 # p = ball.p(1)
-lambda_ = inter.lambda_(0)
+lambda_ = inter.lambda_python(0)
 y = inter.y(0)
 
 
@@ -161,7 +153,7 @@ k = 1
 # time loop
 while s.hasNextEvent():
     s.computeOneStep()
-    #print('.')
+    # print('.')
     dataPlot[k, 0] = s.nextTime()
     dataPlot[k, 1] = x[0]
     dataPlot[k, 2] = x[1]
@@ -173,40 +165,40 @@ while s.hasNextEvent():
 #
 # comparison with the reference file (produced by the cpp version)
 #
-ref = getMatrix(SimpleMatrix("FrictionOscillator.ref"))
-if (norm(dataPlot[0:10000,0:6] - ref[0:10000,0:6]) > 1e-12):
-    print("Warning. The result is rather different from the reference file.", norm(dataPlot[0:10000,0:6] - ref[0:10000,0:6]) )
+ref = np.loadtxt("FrictionOscillator.ref", skiprows=1)
+if norm(dataPlot[0:10000, 0:6] - ref[0:10000, 0:6]) > 1e-12:
+    print(
+        "Warning. The result is rather different from the reference file.",
+        norm(dataPlot[0:10000, 0:6] - ref[0:10000, 0:6]),
+    )
 else:
-    print("Error with the reference file.", norm(dataPlot[0:10000,0:6] - ref[0:10000,0:6]) )
+    print(
+        "Error with the reference file.",
+        norm(dataPlot[0:10000, 0:6] - ref[0:10000, 0:6]),
+    )
 
 #
 # plots
 #
-import matplotlib,os
-havedisplay = "DISPLAY" in os.environ
-if not havedisplay:
-    matplotlib.use('Agg')
-
-import matplotlib.pyplot as plt
 plt.subplot(411)
-plt.title('position x1')
+plt.title("position x1")
 plt.plot(dataPlot[:, 0], dataPlot[:, 1])
 plt.grid()
 plt.subplot(412)
-plt.title('velocity dot x1')
+plt.title("velocity dot x1")
 plt.plot(dataPlot[:, 0], dataPlot[:, 2])
 plt.grid()
 plt.figure()
 plt.plot(dataPlot[:, 1], dataPlot[:, 2])
-plt.title('lambda')
+plt.title("lambda")
 
 
 plt.figure()
 plt.plot(dataPlot[:, 0], dataPlot[:, 3])
-plt.title('lambda')
+plt.title("lambda")
 
 
-if havedisplay:
+if enable_plot:
     plt.show()
 else:
     plt.savefig("bbts.png")

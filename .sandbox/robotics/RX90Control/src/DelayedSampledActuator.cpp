@@ -34,7 +34,7 @@ using namespace ActuatorFactory;
 DelayedSampledActuator::DelayedSampledActuator(): Actuator()
 {}
 
-DelayedSampledActuator::DelayedSampledActuator(int type, SP::TimeDiscretisation t): Actuator(type, t)
+DelayedSampledActuator::DelayedSampledActuator(int type, std::shared_ptr<siconos::simulation::TimeDiscretisation> t): Actuator(type, t)
 {}
 
 DelayedSampledActuator::~DelayedSampledActuator()
@@ -63,7 +63,7 @@ void DelayedSampledActuator::actuate()
   itS = getSensors()->begin();
   //  EventsContainer capteurEvents = (*itS)->getEvents();
   //  DataSet data;
-  SP::Event event  = (*itS)->event();
+  auto event  = (*itS)->event();
   //  Event * event = *(capteurEvents.begin());
   DataSet * data(new DataSet((*itS)->getData()));
   *state = *(((*data)[event])["StoredX"]);

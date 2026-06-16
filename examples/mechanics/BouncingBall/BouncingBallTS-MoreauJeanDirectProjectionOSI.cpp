@@ -1,7 +1,7 @@
 /* Siconos is a program dedicated to modeling, simulation and control
  * of non smooth dynamical systems.
  *
- * Copyright 2021 INRIA.
+ * Copyright 2024 INRIA.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,63 +14,64 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
-/*!\file BouncingBallTS.cpp
-  \brief \ref EMBouncingBall - C++ input file, Time-Stepping version -
+/*
   V. Acary, F. Perignon.
 
   A Ball bouncing on the ground.
-  Direct description of the model.
-  Simulation with a Time-Stepping scheme.
+  - Simulation with a TimeSteppingDirectProjection scheme
 */
 
-#include "SiconosKernel.hpp"
+#include <SiconosKernel.hpp>
 #include <chrono>
-using namespace std;
 
-int main(int argc, char* argv[])
-{
-  try
-  {
+using Matrix = siconos::algebra::SiconosMatrix;
+using Vector = siconos::algebra::SiconosVector;
 
+int main(int argc, char *argv[]) {
+  try {
     // ================= Creation of the model =======================
 
     // User-defined main parameters
-    unsigned int nDof = 3;           // degrees of freedom for the ball
-    double t0 = 0;                   // initial computation time
-    double T = 10;                  // final computation time
-    double h = 0.005;                // time step
-    double position_init = 1.0;      // initial position for lowest bead.
-    double velocity_init = 0.0;      // initial velocity for lowest bead.
-    double theta = 0.5;              // theta for MoreauJeanOSI integrator
-    double R = 0.1; // Ball radius
-    double m = 1; // Ball mass
-    double g = 9.81; // Gravity
+    int nDof = 3;       // degrees of freedom for the ball
+    double t0 = 0;               // initial computation time
+    double T = 10;               // final computation time
+    double h = 0.005;            // time step
+    double position_init = 1.0;  // initial position for lowest bead.
+    double velocity_init = 0.0;  // initial velocity for lowest bead.
+    double theta = 0.5;          // theta for MoreauJeanOSI integrator
+    double R = 0.1;              // Ball radius
+    double m = 1;                // Ball mass
+    double g = 9.81;             // Gravity
     // -------------------------
     // --- Dynamical systems ---
     // -------------------------
 
-    cout << "====> Model loading ..." << endl << endl;
+    std::cout << "====> Model loading ...\n";
 
-    SP::SiconosMatrix Mass(new SimpleMatrix(nDof, nDof));
-    (*Mass)(0, 0) = m;
-    (*Mass)(1, 1) = m;
-    (*Mass)(2, 2) = 2. / 5 * m * R * R;
+    Matrix mass{nDof, nDof};
+    mass.setZero();
+    mass(0, 0) = m;
+    mass(1, 1) = m;
+    mass(2, 2) = 2. / 5 * m * R * R;
 
     // -- Initial positions and velocities --
-    SP::SiconosVector q0(new SiconosVector(nDof));
-    SP::SiconosVector v0(new SiconosVector(nDof));
-    (*q0)(0) = position_init;
-    (*v0)(0) = velocity_init;
+    Vector q0{nDof};
+    q0.setZero();
+    q0(0) = position_init;
+    Vector v0{nDof};
+    v0.setZero();
+    v0(0) = velocity_init;
 
     // -- The dynamical system --
-    SP::LagrangianLinearTIDS ball(new LagrangianLinearTIDS(q0, v0, Mass));
+    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(q0, v0, mass, siconos::algebra::alias_t);
 
     // -- Set external forces (weight) --
-    SP::SiconosVector weight(new SiconosVector(nDof));
-    (*weight)(0) = -m * g;
-    ball->setFExtPtr(weight);
+    Vector weight{nDof};
+    weight.setZero();
+    weight(0) = -m * g;
+    ball->setConstantFext(weight, siconos::algebra::alias_t);
 
     // --------------------
     // --- Interactions ---
@@ -81,18 +82,17 @@ int main(int argc, char* argv[])
 
     // Interaction ball-floor
     //
-    SP::SimpleMatrix H(new SimpleMatrix(1, nDof));
-    (*H)(0, 0) = 1.0;
+    Matrix H{1, nDof};
+    H.setZero();
+    H(0, 0) = 1.0;
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
+    auto nslaw = std::make_shared<siconos::modeling::NewtonImpactNSL>(e);
+    auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
-    SP::NonSmoothLaw nslaw(new NewtonImpactNSL(e));
-    SP::Relation relation(new LagrangianLinearTIR(H));
-
-    SP::Interaction inter(new Interaction(nslaw, relation));
-
-    // -------------
-    // --- Model ---
-    // -------------
-    SP::NonSmoothDynamicalSystem bouncingBall(new NonSmoothDynamicalSystem(t0, T));
+    // --------------------------------
+    // --- NonSmoothDynamicalSystem ---
+    // --------------------------------
+    auto bouncingBall = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
 
     // add the dynamical system in the non smooth dynamical system
     bouncingBall->insertDynamicalSystem(ball);
@@ -100,45 +100,45 @@ int main(int argc, char* argv[])
     // link the interaction and the dynamical system
     bouncingBall->link(inter, ball);
 
-
     // ------------------
     // --- Simulation ---
     // ------------------
 
     // -- (1) OneStepIntegrators --
-    SP::MoreauJeanDirectProjectionOSI OSI(new MoreauJeanDirectProjectionOSI(theta));
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanDirectProjectionOSI>(theta);
 
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
     // -- (3) one step non smooth problem
-    SP::OneStepNSProblem osnspb(new LCP());
-    SP::OneStepNSProblem osnspb_pos(new MLCPProjectOnConstraints(SICONOS_MLCP_ENUM));
+    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::LCP>();
+    auto osnspb_pos =
+        std::make_shared<siconos::nonsmooth_formulations::MLCPProjectOnConstraints>(
+            SICONOS_MLCP_ENUM);
 
     // -- (4) Simulation setup with (1) (2) (3)
-    unsigned int levelForProjection = 1; //(default =1)
-    SP::TimeSteppingDirectProjection s(new TimeSteppingDirectProjection(bouncingBall, t, OSI, osnspb, osnspb_pos, levelForProjection));
+    unsigned int levelForProjection = 1;  //(default =1)
+    auto s = std::make_shared<siconos::simulation::TimeSteppingDirectProjection>(
+        bouncingBall, t, OSI, osnspb, osnspb_pos, levelForProjection);
+
     s->setProjectionMaxIteration(20);
     s->setConstraintTolUnilateral(1e-08);
     s->setConstraintTol(1e-04);
-
     // =========================== End of model definition ===========================
 
     // ================================= Computation =================================
 
-    int N = ceil((T - t0) / h); // Number of time steps
+    int N = ceil((T - t0) / h);  // Number of time steps
 
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 7;
-    SimpleMatrix dataPlot(N + 1, outputSize);
+    Matrix dataPlot(N + 1, outputSize);
 
-    SP::SiconosVector q = ball->q();
-    SP::SiconosVector v = ball->velocity();
-    SP::SiconosVector p1 = ball->p(1);
-    SP::SiconosVector lambda1; // = inter->lambda(1);
-    SP::SiconosVector lambda0 = inter->lambda(0);
-    SP::SiconosVector p0; // = ball->p(0);
+    auto q = ball->q();
+    auto v = ball->velocity();
+    auto p1 = ball->p(1);
+    auto lambda0 = inter->lambda(0);
 
     dataPlot(0, 0) = bouncingBall->t0();
     dataPlot(0, 1) = (*q)(0);
@@ -148,69 +148,53 @@ int main(int argc, char* argv[])
     dataPlot(0, 5) = 0.0;
     dataPlot(0, 6) = (*lambda0)(0);
     // --- Time loop ---
-    cout << "====> Start computation ... " << endl << endl;
+    std::cout << "====> Start computation ... \n";
     // ==== Simulation loop - Writing without explicit event handling =====
     int k = 1;
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
-
-    while(s->hasNextEvent())
-    {
+    auto start = std::chrono::system_clock::now();
+    while (s->hasNextEvent()) {
       s->computeOneStep();
-      //std ::cout << "time step k = " << k << std::endl;
-      // --- Get values to be plotted ---
-      lambda1 = inter->lambda(1);
-      p0  = ball->p(0);
-      dataPlot(k, 0) =  s->nextTime();
+      // std ::cout << "time step k = " << k << std::endl;
+      //  --- Get values to be plotted ---
+      dataPlot(k, 0) = s->nextTime();
       dataPlot(k, 1) = (*q)(0);
       dataPlot(k, 2) = (*v)(0);
       dataPlot(k, 3) = (*p1)(0);
-      dataPlot(k, 4) = (*lambda1)(0);
-      dataPlot(k, 5) = (*p0)(0);
+      dataPlot(k, 4) = (*inter->lambda(1))(0);
+      dataPlot(k, 5) = (*ball->p(0))(0);
       dataPlot(k, 6) = (*lambda0)(0);
 
       s->nextStep();
-      progressBar((double)k/N);
+      siconos::tools::progressBar((double)k / N);
       k++;
     }
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "\nEnd of computation - Number of iterations done: " << k - 1;
+    std::cout << "\nComputation time : " << elapsed << " ms\n";
 
-    end = std::chrono::system_clock::now();
-    int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>
-                  (end-start).count();
-    cout << endl <<  "End of computation - Number of iterations done: " << k - 1 << endl;
-    cout << "Computation time : " << elapsed << " ms" << endl;
     // --- Output files ---
-    cout << "====> Output file writing ..." << endl;
-    dataPlot.resize(k, outputSize);
-    ioMatrix::write("result.dat", "ascii", dataPlot, "noDim");
-    // Comparison with a reference file
-    double error=0.0, eps=1e-12;
+    std::cout << "====> Output file writing ...\n";
+    siconos::algebra::io::write("BouncingBallTS-MoreauJeanDirectProjectionOSI.dat", dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
+    double error = 0.0, eps = 1e-12;
 
-    if(levelForProjection == 1)
-    {
-      if((error=ioMatrix::compareRefFile(
-                  dataPlot, "BouncingBallTS-MoreauJeanDirectProjectionOSI.ref",
-                  eps)) >= 0.0
-          && error > eps)
+    if (levelForProjection == 1) {
+      if ((error = siconos::algebra::io::compareRefFile(
+               dataPlot, "BouncingBallTS-MoreauJeanDirectProjectionOSI.ref", eps)) >= eps)
+        return 1;
+    } else {
+      if ((error = siconos::algebra::io::compareRefFile(
+               dataPlot, "BouncingBallTS-MoreauJeanDirectProjectionOSI-level0.ref", eps)) >=
+          eps)
         return 1;
     }
-    else
-    {
-      if((error=ioMatrix::compareRefFile(
-                  dataPlot, "BouncingBallTS-MoreauJeanDirectProjectionOSI-level0.ref",
-                  eps)) >= 0.0
-          && error > eps)
-        return 1;
-    }
-
+    return 0;
   }
 
-  catch(...)
-  {
-    Siconos::exception::process();
+  catch (...) {
+    siconos::exception::process();
     return 1;
   }
-
-
-
 }

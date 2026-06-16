@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Siconos is a program dedicated to modeling, simulation and control
 # of non smooth dynamical systems.
 #
@@ -19,153 +17,108 @@
 #
 #
 
-from siconos.kernel import NewtonEulerDS, NewtonImpactNSL,\
-     NewtonEulerR, NewtonEuler1DR, Interaction,\
-     MoreauJeanOSI, TimeDiscretisation, LCP, TimeStepping,\
-     changeFrameAbsToBody,changeFrameBodyToAbs,\
-     rotationVectorFromQuaternion, quaternionFromRotationVector,\
-     SiconosVector, NonSmoothDynamicalSystem
-
-
 import numpy as np
+import siconos.modeling as sm
+import siconos.simulation
+import siconos.integrators
+import siconos.nonsmooth_formulations
+import siconos.geometry as sg
+import numpy.linalg as LA
+import siconos.plot_config as sicoplot
 
-import math
-        
-t0 = 0.0     # start time
-h = 0.001   # time step
-N= 10000
-T = h*N
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
+
+
+t0 = 0.0  # start time
+h = 0.001  # time step
+N = 10000
+T = 4.61  # h * N
 theta = 0.5  # theta scheme
-
-class UnstableRotation(NewtonEulerDS):
-
-    def __init__(self,x, v):
-        I = np.zeros((3, 3))
-        I[0, 0] = 5.0
-        I[1, 1] = 10.0
-        I[2, 2] = 1.0
-        m=1.0
-        NewtonEulerDS.__init__(self,x, v, m, I)
-        # Allocation of _MExt
-        self.setMExtPtr(SiconosVector(3))
-        # specify that MExt is expressed in the inertial frame.
-        self.setIsMextExpressedInInertialFrame(True)
-
-    def computeMExt(self, time, mExt=None):
-        td = 2.0 - h
-        if mExt is None :
-            mExt = self._mExt
-
-        if isinstance(mExt,SiconosVector):
-            mExt.zero()
-            if (0 <= time < td):
-                mExt.setValue(0, 20.0)
-            elif (td <= time <= td + h):
-                mExt.setValue(1, 1.0 / (5.0 * h))
-        else:
-            mExt[:]=0
-            if (0 <= time < td):
-                mExt[0] =20.
-            elif (td <= time <= td + h):
-                mExt[1]= 1.0 / (5.0 * h)
-        
 
 #
 # dynamical system
 #
-x = [0, 0, 0, 1.0, 0, 0, 0]  # initial configuration
-v = [0, 0, 0, 0, 0, 0]  # initial velocity
-unstableRotation = UnstableRotation(x, v)
+# initial configuration
+initial_position = np.zeros(7, dtype=np.float64)
+initial_position[3] = 1.0
+initial_twist = np.zeros(6, dtype=np.float64)
+inertia = np.zeros((3, 3), dtype=np.float64, order="F")
+inertia[0, 0] = 5.0
+inertia[1, 1] = 10.0
+inertia[2, 2] = 1.0
+mass = 1.0
 
 
+def compute_mext(time, mExt):
+    td = 2.0 - h
+    mExt[:] = 0
+    if 0 <= time < td:
+        mExt[0] = 20.0
+    elif td <= time <= td + h:
+        mExt[1] = 1.0 / (5.0 * h)
 
 
+unstableRotation = sm.NewtonEulerDS(
+    initial_position, initial_twist, mass, inertia, sm.alias_t
+)
 
-class HeavyTop(NewtonEulerDS):
+unstableRotation.setComputeMextFunction(compute_mext)
+unstableRotation.setIsMextExpressedInInertialFrame(True)
 
-    def __init__(self,x, v):
-        I = np.zeros((3, 3))
-        I[0, 0] = 5.0
-        I[1, 1] = 5.0
-        I[2, 2] = 1.0
-        m=1.0
-        NewtonEulerDS.__init__(self,x, v, m, I)
-        self._Mg=20
-        self._l=1.0
-        self.setComputeJacobianMIntqByFD(True)
-        # Allocation of _mInt
-        self._mInt = SiconosVector(3)
-
-
-    def centermass(self,q):
-        r= np.zeros(3)
-        E3 = SiconosVector(3)
-        E3.zero()
-        E3.setValue(2,1.0)
-        rotateAbsToBody(q,E3)
-        r[0] = E3.getValue(0)
-        r[1] = E3.getValue(1)
-        r[2] = E3.getValue(2)
-        return r
-        
-    def computeMInt(self, time, q, v, mInt=None):
-        if mInt is None :
-            mInt = self._mInt
-        if isinstance(mInt,SiconosVector):
-            r = self.centermass(q)
-            m =  self._Mg*self._l*np.cross(r,[0,0,1.0])
-            mInt.setValue(0,m[0])
-            mInt.setValue(1,m[1])
-            mInt.setValue(2,m[2])
-            changeFrameAbsToBody(q,mInt)
-            #print("mInt========")
-            mInt.display()
-        else:
-            r = self.centermass(q)
-            m =  self._Mg*self._l*np.cross(r,[0,0,1.0])
-            m_sv = SiconosVector(m)
-            changeFrameAbsToBody(q,m_sv)
-            m_sv.display()
-            mInt[0] = m_sv.getValue(0) 
-            mInt[1] = m_sv.getValue(1) 
-            mInt[2] = m_sv.getValue(2) 
-            print("mInt", mInt)
+rotationVector_init = np.zeros(3, dtype=np.float64)
+rotationVector_init[0] = 0.3
+initial_twist_heavy_top = np.asarray([0, 0, 0, 0, 0, 50], dtype=np.float64)
+initial_position_heavy_top = sg.quaternionFromRotationVector(
+    np.asarray([0.3, 0, 0])
+)  # rotationVector_init)
+inertia_heavytop = np.zeros((3, 3), dtype=np.float64, order="F")
+inertia_heavytop[0, 0] = 5.0
+inertia_heavytop[1, 1] = 5.0
+inertia_heavytop[2, 2] = 1.0
+mass_heavytop = 1.0
+Mg = 20
+length = 1.0
 
 
+def centermass(q):
+    r = np.zeros(3)
+    E3 = np.zeros(3)
+    E3[2] = 1.0
+    rotateAbsToBody(q, E3)
+    r[0] = E3[0]
+    r[1] = E3[1]
+    r[2] = E3[2]
+    return r
 
-rotationVector_init= SiconosVector(3)
-rotationVector_init.zero()
-rotationVector_init.setValue(0,0.3)
-x=SiconosVector(7)
-quaternionFromRotationVector(rotationVector_init,x)
 
-#x = [0, 0, 0, 1.0, 0, 0, 0]  # initial configuration
-v = [0, 0, 0, 0, 0, 50]  # initial velocity
-heavytop = HeavyTop(x, v)
+def compute_mint(twist, pos, time, mint):
+    r = centermass(pos)
+    mint[...] = np.asarray(Mg * length * np.cross(r, [0, 0, 1.0]))
+    sg.rewriteVectorFromAbsoluteToBodyFrame(q, mint)
+    print("mInt", mint)
 
+
+heavytop = sm.NewtonEulerDS(
+    initial_position_heavy_top,
+    initial_twist_heavy_top,
+    mass_heavytop,
+    inertia_heavytop,
+    sm.alias_t,
+)
+heavytop.setComputeJacobianMintOver_q_byFD(True)
 
 
 ds = unstableRotation
 
-#ds = heavytop
+# ds = heavytop
 
-ds.display()
-
-# test swig director
-# ds.computeMInt(1,x,v)
-# ds._mInt.display()
-# m=SiconosVector(3)
-# ds.computeMInt(1,x,v,m)
-# m.display()
-# m=np.zeros(3)
-# ds.computeMInt(1,x,v,m)
-# print m
-# raw_input()
+print(ds)
 
 
 # Non-Smooth Dynamical System
 #
-nsds = NonSmoothDynamicalSystem(t0, T)
+nsds = sm.NonSmoothDynamicalSystem(t0, T)
 
 # add the dynamical system to the non smooth dynamical system
 nsds.insertDynamicalSystem(ds)
@@ -175,19 +128,19 @@ nsds.insertDynamicalSystem(ds)
 #
 
 # (1) OneStepIntegrators
-OSI = MoreauJeanOSI(theta)
+OSI = siconos.integrators.MoreauJeanOSI(theta)
 
 # (2) Time discretisation --
-t = TimeDiscretisation(t0, h)
+t = siconos.simulation.TimeDiscretisation(t0, h)
 
 # (3) one step non smooth problem
-osnspb = LCP()
+osnspb = siconos.nonsmooth_formulations.LCP()
 
 # (4) Simulation setup with (1) (2) (3)
-s = TimeStepping(nsds, t, OSI, osnspb)
-#s.setDisplayNewtonConvergence(True)
+s = siconos.simulation.TimeStepping(nsds, t, OSI, osnspb)
+# s.setDisplayNewtonConvergence(True)
 s.setNewtonTolerance(1e-10)
-#s.setNewtonMaxIteration(1)
+# s.setNewtonMaxIteration(1)
 
 # end of model definition
 
@@ -197,7 +150,7 @@ s.setNewtonTolerance(1e-10)
 
 # Get the values to be plotted
 # ->saved in a matrix dataPlot
-dataPlot = np.empty((N+1, 26))
+dataPlot = np.empty((N + 1, 25))
 
 #
 # numpy pointers on dense Siconos vectors
@@ -209,7 +162,7 @@ p = ds.p(1)
 #
 # initial data
 #
-k=0
+k = 0
 dataPlot[k, 1] = q[0]
 dataPlot[k, 2] = q[1]
 dataPlot[k, 3] = q[2]
@@ -226,35 +179,32 @@ dataPlot[k, 12] = v[4]
 dataPlot[k, 13] = v[5]
 
 omega = v[3:6]
-print("omega", omega)
-angular_momentum = np.dot(ds.inertia(),omega)
-am= SiconosVector(angular_momentum)
-changeFrameBodyToAbs(q,am)
+inertia = ds.totalInertiaMatrix
+angular_momentum = np.dot(inertia[3:6, 3:6], omega)
+sg.rewriteVectorFromBodyToAbsoluteFrame(q, angular_momentum)
 
-dataPlot[k, 14] = am.getValue(0)
-dataPlot[k, 15] = am.getValue(1)
-dataPlot[k, 16] = am.getValue(2)
-dataPlot[k, 17] = am.norm2()
+dataPlot[k, 14] = angular_momentum[0]
+dataPlot[k, 15] = angular_momentum[1]
+dataPlot[k, 16] = angular_momentum[2]
+dataPlot[k, 17] = LA.norm(angular_momentum)
 
-rotationVector = SiconosVector(3)
-rotationVectorFromQuaternion(q[3],q[4],q[5],q[6], rotationVector)
-dataPlot[k, 18] = rotationVector.getValue(0)
-dataPlot[k, 19] = rotationVector.getValue(1)
-dataPlot[k, 20] = rotationVector.getValue(2)
-
-
-dataPlot[k, 22] = h* omega[0]
-dataPlot[k, 23] = h* omega[1]
-dataPlot[k, 24] = h* omega[2]
-dataPlot[k, 25] = np.linalg.norm(h*omega)
+rotationVector = np.zeros(3)
+rotationVector = sg.rotationVectorFromQuaternion(q[3], q[4], q[5], q[6])
+dataPlot[k, 18] = rotationVector[0]
+dataPlot[k, 19] = rotationVector[1]
+dataPlot[k, 20] = rotationVector[2]
 
 
+dataPlot[k, 21] = h * omega[0]
+dataPlot[k, 22] = h * omega[1]
+dataPlot[k, 23] = h * omega[2]
+dataPlot[k, 24] = LA.norm(h * omega)
 
 
 k = 1
 
 # time loop
-while(s.hasNextEvent() and k < N):
+while s.hasNextEvent() and k < N:
     # print(' ' )
     # print (
     #     '------- k = ',
@@ -262,7 +212,7 @@ while(s.hasNextEvent() and k < N):
     #     '-----------------------------------------')
     # print(' ' )
     s.computeOneStep()
-    dataPlot[k, 0] = s.nextTime()    
+    dataPlot[k, 0] = s.nextTime()
     dataPlot[k, 1] = q[0]
     dataPlot[k, 2] = q[1]
     dataPlot[k, 3] = q[2]
@@ -279,92 +229,78 @@ while(s.hasNextEvent() and k < N):
     dataPlot[k, 13] = v[5]
 
     omega = v[3:6]
-    angular_momentum = np.dot(ds.inertia(),omega)
-    am= SiconosVector(angular_momentum)
-    changeFrameBodyToAbs(q,am)
+    inertia = ds.totalInertiaMatrix
+    angular_momentum = np.dot(inertia[3:6, 3:6], omega)
+    sg.rewriteVectorFromBodyToAbsoluteFrame(q, angular_momentum)
     a = np.zeros(1)
-    a[0] = am.getValue(0)
-    #a[1] = am.getValue(1)
+    a[0] = angular_momentum[0]
+    # a[1] = am(1)
     # print "omega", omega
     # print "angular_momentum", angular_momentum,
     # print "q=", q
-    # print " norm(a[1:2])", np.linalg.norm(a) 
-    #raw_input()
-    dataPlot[k, 14] = am.getValue(0)
-    dataPlot[k, 15] = am.getValue(1)
-    dataPlot[k, 16] = am.getValue(2)
-    dataPlot[k, 17] = am.norm2()
+    # print " norm(a[1:2])", np.linalg.norm(a)
+    # raw_input()
+    dataPlot[k, 14] = angular_momentum[0]
+    dataPlot[k, 15] = angular_momentum[1]
+    dataPlot[k, 16] = angular_momentum[2]
+    dataPlot[k, 17] = LA.norm(angular_momentum)
+    rotationVector = sg.rotationVectorFromQuaternion(q[3], q[4], q[5], q[6])
 
-    
-    rotationVector = SiconosVector(3)
-    rotationVectorFromQuaternion(q[3],q[4],q[5],q[6], rotationVector)
-    dataPlot[k, 18] = rotationVector.getValue(0)
-    dataPlot[k, 19] = rotationVector.getValue(1)
-    dataPlot[k, 20] = rotationVector.getValue(2)
-    
-    
-    dataPlot[k, 22] = h* omega[0]
-    dataPlot[k, 23] = h* omega[1]
-    dataPlot[k, 24] = h* omega[2]
-    dataPlot[k, 25] = np.linalg.norm(h*omega)
+    dataPlot[k, 18] = rotationVector[0]
+    dataPlot[k, 19] = rotationVector[1]
+    dataPlot[k, 20] = rotationVector[2]
 
-    
+    dataPlot[k, 21] = h * omega[0]
+    dataPlot[k, 22] = h * omega[1]
+    dataPlot[k, 23] = h * omega[2]
+    dataPlot[k, 24] = LA.norm(h * omega)
 
-    
-    
     k = k + 1
     s.nextStep()
 
 
-
-
-dataPlot=np.resize(dataPlot,(k-2,26))
+dataPlot = np.resize(dataPlot, (k - 2, 25))
 
 
 np.savetxt("result-py.dat", dataPlot)
-#
-# comparison with the reference file
-#
-from siconos.kernel import SimpleMatrix, getMatrix
 
-#
-# plots
-#
-from matplotlib.pyplot import subplot, title, plot, grid, show, figure
+ref = np.loadtxt("result-py.ref")
 
+assert np.allclose(ref, dataPlot)
 
-figure(num='Moreau Jean Siconos', figsize=(12, 12))
-subplot(321)
-title('angular velocities Omega')
-plot(dataPlot[:, 0], dataPlot[:, 11])
-plot(dataPlot[:, 0], dataPlot[:, 12])
-#plot(dataPlot[:, 0], dataPlot[:, 13])
+plt.figure(num="Moreau Jean Siconos", figsize=(12, 12))
+plt.subplot(321)
+plt.title("angular velocities Omega")
+plt.plot(dataPlot[:, 0], dataPlot[:, 11])
+plt.plot(dataPlot[:, 0], dataPlot[:, 12])
+# plt.plot(dataPlot[:, 0], dataPlot[:, 13])
 
-subplot(322)
-title('rotation vector')
-plot(dataPlot[:, 0], dataPlot[:, 18])
-plot(dataPlot[:, 0], dataPlot[:, 19])
-plot(dataPlot[:, 0], dataPlot[:, 20])
+plt.subplot(322)
+plt.title("rotation vector")
+plt.plot(dataPlot[:, 0], dataPlot[:, 18])
+plt.plot(dataPlot[:, 0], dataPlot[:, 19])
+plt.plot(dataPlot[:, 0], dataPlot[:, 20])
 
-subplot(323)
-title('Theta (h Omega)')
-plot(dataPlot[:, 0], dataPlot[:, 22])
-plot(dataPlot[:, 0], dataPlot[:, 23])
-plot(dataPlot[:, 0], dataPlot[:, 24])
+plt.subplot(323)
+plt.title("Theta (h Omega)")
+plt.plot(dataPlot[:, 0], dataPlot[:, 21])
+plt.plot(dataPlot[:, 0], dataPlot[:, 22])
+plt.plot(dataPlot[:, 0], dataPlot[:, 23])
 
-subplot(325)
-title('norm of Theta')
-plot(dataPlot[:, 0], dataPlot[:, 25])
+plt.subplot(325)
+plt.title("norm of Theta")
+plt.plot(dataPlot[:, 0], dataPlot[:, 24])
 
-subplot(324)
-title('angular momentum (pi[0])')
-plot(dataPlot[:, 0], dataPlot[:, 14])
-#plot(dataPlot[:, 0], dataPlot[:, 15])
-#plot(dataPlot[:, 0], dataPlot[:, 16])
+plt.subplot(324)
+plt.title("angular momentum (pi[0])")
+plt.plot(dataPlot[:, 0], dataPlot[:, 14])
+# plt.plot(dataPlot[:, 0], dataPlot[:, 15])
+# plt.plot(dataPlot[:, 0], dataPlot[:, 16])
 
-subplot(326)
-title('norm of angular momentum  pi')
-plot(dataPlot[:, 0], dataPlot[:, 17])
+plt.subplot(326)
+plt.title("norm of angular momentum  pi")
+plt.plot(dataPlot[:, 0], dataPlot[:, 17])
 
-grid()
-show()
+plt.grid()
+if enable_plot:
+    plt.show()

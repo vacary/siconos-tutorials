@@ -3,7 +3,7 @@
 # Siconos is a program dedicated to modeling, simulation and control
 # of non smooth dynamical systems.
 #
-# Copyright 2021 INRIA.
+# Copyright 2025 INRIA.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 # limitations under the License.
 #
 #
-#-----------------------------------------------------------------------
+# -----------------------------------------------------------------------
 #
 #  DiodeBridgeCapFilter  : sample of an electrical circuit involving :
 #  - a 1st linear dynamical system LSDiodeBridge1 consisting of
@@ -54,82 +54,112 @@
 #  - a linear time invariant relation between the state variables and y and
 #    lambda (derived from the Kirchhoff laws)
 #
-#-----------------------------------------------------------------------
+# -----------------------------------------------------------------------
+
+
+import siconos.modeling as sm
+import siconos.simulation
+import siconos.integrators
+import siconos.nonsmooth_formulations
+import numpy as np
+from numpy import linalg as LA
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
 
 t0 = 0.0
-T = 5.0e-3       # Total simulation time
+T = 5.0e-3  # Total simulation time
 h_step = 1.0e-6  # Time step
-Lvalue = 1e-2    # inductance
-Cvalue = 1e-6    # capacitance
-Rvalue = 1e3     # resistance
-Cfilt  = 300.0e-9 # filtering capacitor
-VinitLS1 = 10.0   # initial voltage LC oscillator
-VinitLS2 = 0.0    # initial voltage Cfilt
+Lvalue = 1e-2  # inductance
+Cvalue = 1e-6  # capacitance
+Rvalue = 1e3  # resistance
+Cfilt = 300.0e-9  # filtering capacitor
+VinitLS1 = 10.0  # initial voltage LC oscillator
+VinitLS2 = 0.0  # initial voltage Cfilt
 
 Modeltitle = "DiodeBridge"
-
-withPlot = True
-if (withPlot):
-    import matplotlib
-    matplotlib.use('Agg')
-    from matplotlib.pyplot import subplot, title, plot, grid, savefig
-
-from siconos.kernel import FirstOrderLinearDS, FirstOrderLinearTIR, \
-                           ComplementarityConditionNSL, Interaction,\
-                           NonSmoothDynamicalSystem, EulerMoreauOSI, TimeDiscretisation, LCP,  \
-                           TimeStepping
 
 #
 # dynamical system
 #
-init_stateLS1 = [VinitLS1, 0]
+init_stateLS1 = np.asarray(
+    [VinitLS1, 0],
+    dtype=np.float64,
+)
 
-LS1_A = [[0,          -1.0/Cvalue],
-     [1.0/Lvalue, 0          ]]
+LS1_A = np.asarray(
+    [[0, -1.0 / Cvalue], [1.0 / Lvalue, 0]],
+    order="F",
+    dtype=np.float64,
+)
 
-LS1DiodeBridgeCapFilter = FirstOrderLinearDS(init_stateLS1, LS1_A)
+LS1DiodeBridgeCapFilter = sm.FirstOrderLinearDS(init_stateLS1, sm.alias_t)
+LS1DiodeBridgeCapFilter.setConstantA(LS1_A, sm.alias_t)
 
-init_stateLS2 = [VinitLS2]
+init_stateLS2 = np.asarray(
+    [VinitLS2],
+    dtype=np.float64,
+)
 
-LS2_A = [[-1.0/(Rvalue*Cfilt)]]
+LS2_A = np.asarray(
+    [[-1.0 / (Rvalue * Cfilt)]],
+    order="F",
+    dtype=np.float64,
+)
 
-LS2DiodeBridgeCapFilter = FirstOrderLinearDS(init_stateLS2, LS2_A)
-
+LS2DiodeBridgeCapFilter = sm.FirstOrderLinearDS(init_stateLS2, sm.alias_t)
+LS2DiodeBridgeCapFilter.setConstantA(LS2_A, sm.alias_t)
 #
 # Interactions
 #
 
-C = [[0.,   0., 1.0],
-     [0,    0., 0.0],
-     [-1.,  0., 1.0],
-     [1.,   0., 0.0]]
+C = np.asarray(
+    [[0.0, 0.0, 1.0], [0, 0.0, 0.0], [-1.0, 0.0, 1.0], [1.0, 0.0, 0.0]],
+    order="F",
+    dtype=np.float64,
+)
 
-D = [[0.0, -1.0, 0.,  0.],
-     [1.0,  0.0,  1., -1.],
-     [0.0,       -1.,         0.,  0.],
-     [0.,         1.,         0.,  0.]]
+D = np.asarray(
+    [
+        [0.0, -1.0, 0.0, 0.0],
+        [1.0, 0.0, 1.0, -1.0],
+        [0.0, -1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+    ],
+    order="F",
+    dtype=np.float64,
+)
 
-B = [[0.,        0., -1./Cvalue, 1./Cvalue],
-     [0.,        0.,  0.,        0.       ],
-     [1.0/Cfilt,        0.,  1.0/Cfilt,        0.       ]]
+B = np.asarray(
+    [
+        [0.0, 0.0, -1.0 / Cvalue, 1.0 / Cvalue],
+        [0.0, 0.0, 0.0, 0.0],
+        [1.0 / Cfilt, 0.0, 1.0 / Cfilt, 0.0],
+    ],
+    order="F",
+    dtype=np.float64,
+)
 
-LTIRDiodeBridgeCapFilter = FirstOrderLinearTIR(C, B)
-LTIRDiodeBridgeCapFilter.setDPtr(D)
+LTIRDiodeBridgeCapFilter = sm.FirstOrderLinearTIR(C, B)
+LTIRDiodeBridgeCapFilter.setConstantD(D)
 
-nslaw = ComplementarityConditionNSL(4)
-InterDiodeBridgeCapFilter = Interaction(nslaw, LTIRDiodeBridgeCapFilter)
+nslaw = sm.ComplementarityConditionNSL(4)
+InterDiodeBridgeCapFilter = sm.Interaction(nslaw, LTIRDiodeBridgeCapFilter)
 
 #
 # Model
 #
-DiodeBridgeCapFilter = NonSmoothDynamicalSystem(t0, T)
+DiodeBridgeCapFilter = sm.NonSmoothDynamicalSystem(t0, T)
 DiodeBridgeCapFilter.setTitle(Modeltitle)
 #   add the dynamical system in the non smooth dynamical system
 DiodeBridgeCapFilter.insertDynamicalSystem(LS1DiodeBridgeCapFilter)
 DiodeBridgeCapFilter.insertDynamicalSystem(LS2DiodeBridgeCapFilter)
 
 #   link the interaction and the dynamical system
-DiodeBridgeCapFilter.link(InterDiodeBridgeCapFilter, LS1DiodeBridgeCapFilter, LS2DiodeBridgeCapFilter)
+DiodeBridgeCapFilter.link(
+    InterDiodeBridgeCapFilter, LS1DiodeBridgeCapFilter, LS2DiodeBridgeCapFilter
+)
 
 #
 # Simulation
@@ -138,17 +168,17 @@ DiodeBridgeCapFilter.link(InterDiodeBridgeCapFilter, LS1DiodeBridgeCapFilter, LS
 # (1) OneStepIntegrators
 theta = 0.5
 gamma = 0.5
-aOSI = EulerMoreauOSI(theta, gamma)
-aOSI.setUseGammaForRelation(True)
+aOSI = siconos.integrators.EulerMoreauOSI(theta, gamma)
+aOSI.useGammaForRelation = True
 
 # (2) Time discretisation
-aTiDisc = TimeDiscretisation(t0, h_step)
+aTiDisc = siconos.simulation.TimeDiscretisation(t0, h_step)
 
 # (3) Non smooth problem
-aLCP = LCP()
+aLCP = siconos.nonsmooth_formulations.LCP()
 
 # (4) Simulation setup with (1) (2) (3)
-aTS = TimeStepping(DiodeBridgeCapFilter, aTiDisc, aOSI, aLCP)
+aTS = siconos.simulation.TimeStepping(DiodeBridgeCapFilter, aTiDisc, aOSI, aLCP)
 
 # end of model definition
 
@@ -167,14 +197,13 @@ print("Number of steps : ", N)
 # Get the values to be plotted
 # ->saved in a matrix dataPlot
 
-from numpy import zeros
-dataPlot = zeros([N-1, 10])
+dataPlot = np.zeros([N, 10])
 
 x = LS1DiodeBridgeCapFilter.x()
 print("Initial state : ", x)
 y = InterDiodeBridgeCapFilter.y(0)
 print("First y : ", y)
-lambda_ = InterDiodeBridgeCapFilter.lambda_(0)
+lambda_ = InterDiodeBridgeCapFilter.lambda_python(0)
 
 # For the initial time step:
 # time
@@ -189,78 +218,72 @@ dataPlot[k, 2] = x[1]
 dataPlot[k, 3] = lambda_[0]
 
 # diode R1 voltage
-dataPlot[k, 4] = - y[0]
+dataPlot[k, 4] = -y[0]
 
 # diode F2 voltage
-dataPlot[k, 5] = - lambda_[1]
+dataPlot[k, 5] = -lambda_[1]
 
 # diode F1 current
 dataPlot[k, 6] = lambda_[2]
 
 
-
-
-
 k += 1
-while (k < N-1):
+while k < N:
     aTS.computeOneStep()
-    #aLCP.display()
+    # aLCP.display()
     dataPlot[k, 0] = aTS.nextTime()
     #  inductor voltage
     dataPlot[k, 1] = x[0]
     # inductor current
     dataPlot[k, 2] = x[1]
     # diode R1 current
-    dataPlot[k, 3] =    lambda_[0]
+    dataPlot[k, 3] = lambda_[0]
     # diode R1 voltage
-    dataPlot[k, 4] = - y[0]
+    dataPlot[k, 4] = -y[0]
     # diode F2 voltage
-    dataPlot[k, 5] = - lambda_[1]
+    dataPlot[k, 5] = -lambda_[1]
     # diode F1 current
     dataPlot[k, 6] = lambda_[2]
     k += 1
     aTS.nextStep()
 
-# comparison with reference file
-from siconos.kernel import SimpleMatrix, getMatrix
-from numpy.linalg import norm
 
-ref = getMatrix(SimpleMatrix("DiodeBridgeCapFilter.ref"))
+ref = np.loadtxt("DiodeBridgeCapFilter.ref", skiprows=1)
 
-error = norm(dataPlot[:,0:4] - ref[:,0:4])
-print("error = " , error)
+error = LA.norm(dataPlot[:, 0:4] - ref[:, 0:4])
+print("error = ", error)
 
-assert (error < 1e-09)
+assert error < 1e-09
 withRef = False
-if (withPlot):
+if enable_plot:
     #
     # plots
     #
-    subplot(411)
-    title('inductor voltage')
-    plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 1])
-    if (withRef):
-        plot(ref[0:k - 1, 0], ref[0:k - 1, 1])
-    grid()
-    subplot(412)
-    title('inductor current')
-    plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 2])
-    if (withRef):
-        plot(ref[0:k - 1, 0], ref[0:k - 1, 2])
-    grid()
-    subplot(413)
-    title('diode R1 (blue) and F2 (green) voltage')
-    plot(dataPlot[0:k - 1, 0], -dataPlot[0:k - 1, 4])
-    plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 5])
-    if (withRef):
-        plot(ref[0:k - 1, 0], -ref[0:k - 1, 4])
-        plot(ref[0:k - 1, 0], ref[0:k - 1, 5])
-    grid()
+    plt.subplot(411)
+    plt.title("inductor voltage")
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 1])
+    if withRef:
+        plt.plot(ref[0 : k - 1, 0], ref[0 : k - 1, 1])
+    plt.grid()
+    plt.subplot(412)
+    plt.title("inductor current")
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 2])
+    if withRef:
+        plt.plot(ref[0 : k - 1, 0], ref[0 : k - 1, 2])
+    plt.grid()
+    plt.subplot(413)
+    plt.title("diode R1 (blue) and F2 (green) voltage")
+    plt.plot(dataPlot[0 : k - 1, 0], -dataPlot[0 : k - 1, 4])
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 5])
+    if withRef:
+        plt.plot(ref[0 : k - 1, 0], -ref[0 : k - 1, 4])
+        plt.plot(ref[0 : k - 1, 0], ref[0 : k - 1, 5])
+    plt.grid()
 
-    subplot(414)
-    title('resistor voltage')
-    plot(dataPlot[0:k - 1, 0], -dataPlot[0:k - 1, 4] - dataPlot[0:k - 1, 5]  )
-    if (withRef):
-        plot(dataPlot[0:k - 1, 0], -ref[0:k - 1, 4] - ref[0:k - 1, 5]  )
-    grid()
-    savefig("diode_bridge_capfilter_tgs.png")
+    plt.subplot(414)
+    plt.title("resistor voltage")
+    plt.plot(dataPlot[0 : k - 1, 0], -dataPlot[0 : k - 1, 4] - dataPlot[0 : k - 1, 5])
+    if withRef:
+        plt.plot(dataPlot[0 : k - 1, 0], -ref[0 : k - 1, 4] - ref[0 : k - 1, 5])
+    plt.grid()
+    plt.savefig("diode_bridge_capfilter_tgs.png")

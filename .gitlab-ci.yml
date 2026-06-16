@@ -3,9 +3,9 @@ variables:
   CTEST_BUILD_MODEL: Continuous
   # Default behavior regarding cdash submission
   CDASH_SUBMIT: 0
-  # Name of the docker image used to run examples. Default = master.
+  # Name of the docker image used to run examples.
   # Set by CI in siconos project for "triggered" examples.
-  SICONOS_DOCKER_NAME: siconoslab-master
+  LAB_NAME: siconoslab # use siconoslab-occ to access to a full install including opencascade
   
 
 # -- Template for examples build-test-install jobs --
@@ -26,44 +26,34 @@ variables:
       reports:
         junit: $CI_PROJECT_DIR/build-examples/test_results.xml
 
-# examples, on ubuntu20 with a standard (default)
-# Siconos installation (based on current development, master branch, version
-# Run only when a push has been done to this project.
+# examples, on a standard (default) Siconos installation
+# (based on current siconos-tutorials branch --> it assumes that a branch of the same name exists in siconos repo)
 run-examples:
   variables:
-    IMAGE_NAME: $CI_REGISTRY_IMAGE/siconoslab-master
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/$LAB_NAME-$CI_COMMIT_REF_SLUG
     CDASH_SUBMIT: 1
   extends: .examples-build
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'
-      when: always
-    - when: never
-
-# examples, on ubuntu20 with a standard (default)
-# Siconos installation (based on the last commit in siconos)
-# - Run only when triggered from siconos project
-# - Run on a docker image corresponding to a specific branch in siconos project.
-#   (var: SICONOS_DOCKER_NAME, automatically set by CI in siconos project)
-#
-# This job runs in  multi-project pipelines only
-triggered-examples:
-  variables:
-    IMAGE_NAME: $CI_REGISTRY_IMAGE/siconoslab-$CI_COMMIT_REF_SLUG
-    CDASH_SUBMIT: 1
-    BUILD_DIR: ${CI_PROJECT_DIR}/build-examples
-  extends: .examples-build
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "pipeline"'
-      when: always
-    - when: never
+    - if: '$CI_PIPELINE_SOURCE == "pipeline"' # - Run when triggered from siconos project
  
-
 # examples, with a standard (default) Siconos installation
-# with version from release 4.5 (latest)
+# with version from release 4.4 (latest)
 # Triggered manualy.
 run-examples:release:
   variables:
-    IMAGE_NAME: $CI_REGISTRY_IMAGE/siconos-release-4.5
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/siconoslab-release-4.4
+    CDASH_SUBMIT: 1
+  extends: .examples-build
+  when: manual
+
+
+# examples, with a standard (default) Siconos installation
+# with version from master (public last available version)
+# Triggered manualy.
+run-examples:master:
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/siconoslab-occ-master
     CDASH_SUBMIT: 1
   extends: .examples-build
   when: manual

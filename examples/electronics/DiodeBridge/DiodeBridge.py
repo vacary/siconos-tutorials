@@ -23,7 +23,7 @@
 #  DiodeBridge  : sample of an electrical circuit involving :
 #    - a linear dynamical system consisting of an LC oscillator (1 µF , 10 mH)
 #    - a non smooth system (a 1000 Ohm resistor supplied through a 4
-#	diodes bridge) in parallel with the oscillator
+# 	diodes bridge) in parallel with the oscillator
 #
 #  Expected behavior :
 #
@@ -45,64 +45,76 @@
 #  for the reverse voltage across the diode or for the diode
 #  current (see figure in the template file)
 #    - a linear time invariant relation between the state variables and
-#	y and lambda (derived from Kirchhoff laws)
+# 	y and lambda (derived from Kirchhoff laws)
 #
 # -----------------------------------------------------------------------
 
-import siconos.kernel as sk
+import siconos.modeling as sm
+import siconos.integrators as si
+import siconos.simulation as ss
+import siconos.nonsmooth_formulations as snsf
 import numpy as np
-with_plot = False
-if with_plot:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
+import siconos.plot_config as sicoplot
+
+# Turn off interactive backend by default
+plt, enable_plot = sicoplot.choose_backend(False)
+
 
 t0 = 0.0
-T = 5.0e-3       # Total simulation time
+T = 5.0e-3  # Total simulation time
 h_step = 1.0e-6  # Time step
-Lvalue = 1e-2    # inductance
-Cvalue = 1e-6    # capacitance
-Rvalue = 1e3     # resistance
-Vinit = 10.0     # initial voltage
+Lvalue = 1e-2  # inductance
+Cvalue = 1e-6  # capacitance
+Rvalue = 1e3  # resistance
+Vinit = 10.0  # initial voltage
 Modeltitle = "DiodeBridge"
 
 #
 # dynamical system
 #
-init_state = [Vinit, 0]
-A = np.zeros((2, 2), dtype=np.float64)
-A.flat[...] = [0., -1.0 / Cvalue, 1.0 / Lvalue, 0.]
+init_state = np.array([Vinit, 0], dtype=np.float64)
+A = np.zeros((2, 2), dtype=np.float64, order="F")
+A.flat[...] = [0.0, -1.0 / Cvalue, 1.0 / Lvalue, 0.0]
 
-LSDiodeBridge = sk.FirstOrderLinearDS(init_state, A)
+LSDiodeBridge = sm.FirstOrderLinearDS(init_state, sm.alias_t)
+LSDiodeBridge.setConstantA(A, sm.alias_t)
 
 #
 # Interactions
 #
 
-C = [[0.,   0.],
-     [0,    0.],
-     [-1.,  0.],
-     [1.,   0.]]
+C = np.array(
+    [[0.0, 0.0], [0, 0.0], [-1.0, 0.0], [1.0, 0.0]], dtype=np.float64, order="F"
+)
 
-D = [[1./Rvalue, 1./Rvalue, -1.,  0.],
-     [1./Rvalue, 1./Rvalue,  0., -1.],
-     [1.,        0.,         0.,  0.],
-     [0.,        1.,         0.,  0.]]
+D = np.array(
+    [
+        [1.0 / Rvalue, 1.0 / Rvalue, -1.0, 0.0],
+        [1.0 / Rvalue, 1.0 / Rvalue, 0.0, -1.0],
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+    ],
+    dtype=np.float64,
+    order="F",
+)
 
-B = [[0.,        0., -1./Cvalue, 1./Cvalue],
-     [0.,        0.,  0.,        0.       ]]
+B = np.array(
+    [[0.0, 0.0, -1.0 / Cvalue, 1.0 / Cvalue], [0.0, 0.0, 0.0, 0.0]],
+    dtype=np.float64,
+    order="F",
+)
 
-LTIRDiodeBridge = sk.FirstOrderLinearTIR(C, B)
-LTIRDiodeBridge.setDPtr(D)
+LTIRDiodeBridge = sm.FirstOrderLinearTIR(C, B)
+LTIRDiodeBridge.setConstantD(D)
 
-nslaw = sk.ComplementarityConditionNSL(4)
-InterDiodeBridge = sk.Interaction(nslaw, LTIRDiodeBridge)
+nslaw = sm.ComplementarityConditionNSL(4)
+InterDiodeBridge = sm.Interaction(nslaw, LTIRDiodeBridge)
 
 
 #
 # Model
 #
-DiodeBridge = sk.NonSmoothDynamicalSystem(t0, T)
+DiodeBridge = sm.NonSmoothDynamicalSystem(t0, T)
 DiodeBridge.setTitle(Modeltitle)
 #   add the dynamical system in the non smooth dynamical system
 DiodeBridge.insertDynamicalSystem(LSDiodeBridge)
@@ -116,15 +128,15 @@ DiodeBridge.link(InterDiodeBridge, LSDiodeBridge)
 
 # (1) OneStepIntegrators
 theta = 0.5
-aOSI = sk.EulerMoreauOSI(theta)
+aOSI = si.EulerMoreauOSI(theta)
 # (2) Time discretisation
-aTiDisc = sk.TimeDiscretisation(t0, h_step)
+aTiDisc = ss.TimeDiscretisation(t0, h_step)
 
 # (3) Non smooth problem
-aLCP = sk.LCP()
+aLCP = snsf.LCP()
 
 # (4) Simulation setup with (1) (2) (3)
-aTS = sk.TimeStepping(DiodeBridge, aTiDisc, aOSI, aLCP)
+aTS = ss.TimeStepping(DiodeBridge, aTiDisc, aOSI, aLCP)
 
 # end of model definition
 
@@ -143,14 +155,13 @@ print("Number of steps : ", N)
 # Get the values to be plotted
 # ->saved in a matrix dataPlot
 
-from numpy import zeros
-dataPlot = zeros([N, 8])
+dataPlot = np.zeros([N, 8])
 
 x = LSDiodeBridge.x()
 print("Initial state : ", x)
 y = InterDiodeBridge.y(0)
 print("First y : ", y)
-lambda_ = InterDiodeBridge.lambda_(0)
+lambda_ = InterDiodeBridge.lambda_python(0)
 
 # For the initial time step:
 # time
@@ -165,10 +176,10 @@ dataPlot[k, 2] = x[1]
 dataPlot[k, 3] = y[0]
 
 # diode R1 voltage
-dataPlot[k, 4] = - lambda_[0]
+dataPlot[k, 4] = -lambda_[0]
 
 # diode F2 voltage
-dataPlot[k, 5] = - lambda_[1]
+dataPlot[k, 5] = -lambda_[1]
 
 # diode F1 current
 dataPlot[k, 6] = lambda_[2]
@@ -177,11 +188,10 @@ dataPlot[k, 6] = lambda_[2]
 dataPlot[k, 7] = y[0] + lambda_[2]
 
 
-
 k += 1
-while (k < N):
+while k < N:
     aTS.computeOneStep()
-    #aLCP.display()
+    # aLCP.display()
     dataPlot[k, 0] = aTS.nextTime()
     #  inductor voltage
     dataPlot[k, 1] = x[0]
@@ -190,9 +200,9 @@ while (k < N):
     # diode R1 current
     dataPlot[k, 3] = y[0]
     # diode R1 voltage
-    dataPlot[k, 4] = - lambda_[0]
+    dataPlot[k, 4] = -lambda_[0]
     # diode F2 voltage
-    dataPlot[k, 5] = - lambda_[1]
+    dataPlot[k, 5] = -lambda_[1]
     # diode F1 current
     dataPlot[k, 6] = lambda_[2]
     # resistor current
@@ -201,34 +211,34 @@ while (k < N):
     aTS.nextStep()
 
 # comparison with reference file
-from siconos.kernel import SimpleMatrix, getMatrix
-from numpy.linalg import norm
-
-ref = getMatrix(SimpleMatrix("DiodeBridge.ref"))
-
-assert (norm(dataPlot - ref) < 1e-12)
-
-if with_plot:
+ref = np.loadtxt("DiodeBridge.ref", skiprows=1)
+error = np.linalg.norm(dataPlot - ref)
+print("Error:", error)
+if error > 1e-12:
+    print("Warning. The result is rather different from the reference file.")
+    raise ValueError("Results are different from reference.")
+assert np.allclose(dataPlot, ref)
+if enable_plot:
     #
     # plots
     #
-    #plt.ion()
+    # plt.ion()
     plt.subplot(411)
-    plt.title('inductor voltage')
-    plt.plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 1])
+    plt.title("inductor voltage")
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 1])
     plt.grid()
     plt.subplot(412)
-    plt.title('inductor current')
-    plt.plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 2])
+    plt.title("inductor current")
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 2])
     plt.grid()
     plt.subplot(413)
-    plt.title('diode R1 (blue) and F2 (green) voltage')
-    plt.plot(dataPlot[0:k - 1, 0], -dataPlot[0:k - 1, 4])
-    plt.plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 5])
+    plt.title("diode R1 (blue) and F2 (green) voltage")
+    plt.plot(dataPlot[0 : k - 1, 0], -dataPlot[0 : k - 1, 4])
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 5])
     plt.grid()
     plt.subplot(414)
-    plt.title('resistor current')
-    plt.plot(dataPlot[0:k - 1, 0], dataPlot[0:k - 1, 7])
+    plt.title("resistor current")
+    plt.plot(dataPlot[0 : k - 1, 0], dataPlot[0 : k - 1, 7])
     plt.grid()
     plt.savefig("diode_bridge.png")
-
+    # plt.show()

@@ -1,35 +1,52 @@
-#!/usr/bin/env python
+# Siconos is a program dedicated to modeling, simulation and control
+# of non smooth dynamical systems.
+#
+# Copyright 2025 INRIA.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 #
 # Example of one object under gravity with one contactor and a ground
 # using the Siconos proposed mechanics API
 #
-
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
 
 import siconos.numerics as sn
-import siconos.kernel as sk
 
 import numpy as np
+
 # Creation of the hdf5 file for input/output
 with MechanicsHdf5Runner() as io:
 
     # Definition of a cylinder
     R = 0.1
     L = 2.0
-    io.add_primitive_shape('Cyl', 'Cylinder', (R, L))
-    io.add_primitive_shape('Stick', 'Box', (R, L, R))
+    io.add_primitive_shape("Cyl", "Cylinder", (R, L))
+    io.add_primitive_shape("Stick", "Box", (R, L, R))
 
     # Definition of the ground shape
-    io.add_primitive_shape('Ground', 'Box', (20, 10, 1.0))
-    
+    io.add_primitive_shape("Ground", "Box", (20, 10, 1.0))
+
     # Definition of the ground shape
-    io.add_primitive_shape('SmallBox', 'Box', (.1, .1, .1))
+    io.add_primitive_shape("SmallBox", "Box", (0.1, 0.1, 0.1))
 
     # Definition of a non smooth law. As no group ids are specified it
     # is between contactors of group id 0.
-    io.add_Newton_impact_friction_nsl('contact', mu=0.1, e=0.9)
+    io.add_Newton_impact_friction_nsl("contact", mu=0.1, e=0.9)
 
     # The sphere object made with an unique Contactor : the sphere shape.
     # As a mass is given, it is a dynamic system involved in contact
@@ -38,9 +55,9 @@ with MechanicsHdf5Runner() as io:
     mass_test = 1.0
     inertia_test = np.eye(3)
 
-    inertia_test[0, 0] = 0.25*mass_test*R*R + 1/3.0*mass_test*L*L
-    inertia_test[1, 1] = 0.5*mass_test*R*R
-    inertia_test[2, 2] = 0.25*mass_test*R*R + 1/3.0*mass_test*L*L
+    inertia_test[0, 0] = 0.25 * mass_test * R * R + 1 / 3.0 * mass_test * L * L
+    inertia_test[1, 1] = 0.5 * mass_test * R * R
+    inertia_test[2, 2] = 0.25 * mass_test * R * R + 1 / 3.0 * mass_test * L * L
     print(inertia_test)
     orientation_test = [0.14, 0.7, 0.7, 0]
     # io.add_object('cyl1', [Contactor('Cyl')],
@@ -50,10 +67,11 @@ with MechanicsHdf5Runner() as io:
     #               mass=1, inertia=inertia_test)
 
     import math
-    cs = math.cos(math.pi/4.0)
-    ss = math.sin(math.pi/4.0)
-    orientation_rot_x= [cs, ss, 0, 0]
-    
+
+    cs = math.cos(math.pi / 4.0)
+    ss = math.sin(math.pi / 4.0)
+    orientation_rot_x = [cs, ss, 0, 0]
+
     # io.add_object('cyl2', [Contactor('Cyl')],
     #               translation=[0, 0, L/2.0+L],
     #               orientation= orientation_rot_x,
@@ -66,17 +84,25 @@ with MechanicsHdf5Runner() as io:
     #               velocity=[0, 0, 0, 0, 0, 0],
     #               mass=1, inertia=inertia_test)
 
-    io.add_object('cyl4', [Contactor('Cyl')],
-                  translation=[1, 0, L/2.0+L-0.1],
-                  orientation= orientation_rot_x,
-                  velocity=[0, 0, 0, 0, 0, 0],
-                  mass=1, inertia=inertia_test)
+    io.add_object(
+        "cyl4",
+        [Contactor("Cyl")],
+        translation=[1, 0, L / 2.0 + L - 0.1],
+        orientation=orientation_rot_x,
+        velocity=[0, 0, 0, 0, 0, 0],
+        mass=1,
+        inertia=inertia_test,
+    )
 
-    io.add_object('cyl5', [Contactor('Cyl')],
-                  translation=[1, 0, L/2.0-.1],
-                  orientation= orientation_rot_x,
-                  velocity=[0, 0, 0, 0, 0, 0],
-                  mass=1, inertia=inertia_test)
+    io.add_object(
+        "cyl5",
+        [Contactor("Cyl")],
+        translation=[1, 0, L / 2.0 - 0.1],
+        orientation=orientation_rot_x,
+        velocity=[0, 0, 0, 0, 0, 0],
+        mass=1,
+        inertia=inertia_test,
+    )
 
     # io.add_object('cyl6', [Contactor('Cyl')],
     #               translation=[2, 0, L/2.0],
@@ -100,86 +126,87 @@ with MechanicsHdf5Runner() as io:
     #               velocity=[0, 0, 0, 0, 0, 0],
     #               mass=1, inertia=inertia_test)
 
+    r_ori = [cs, ss, 0, 0]
+    io.add_object(
+        "cyl_x",
+        [Contactor("Cyl", relative_orientation=r_ori)],
+        translation=[0, 0, L / 2.0 - 0.1],
+        # orientation= orientation_rot_x,
+        velocity=[0, 0, 0, 0, 0, 0],
+        mass=1,
+        inertia=inertia_test,
+    )
+    io.add_object(
+        "cyl_x2",
+        [Contactor("Cyl", relative_orientation=r_ori)],
+        translation=[0, 0, L / 2.0 - 0.1 + L],
+        # orientation= orientation_rot_x,
+        velocity=[0, 0, 0, 0, 0, 0],
+        mass=1,
+        inertia=inertia_test,
+    )
 
-    
-
-
-
-
-
-    r_ori = [cs,ss, 0, 0]
-    io.add_object('cyl_x', [Contactor('Cyl',relative_orientation=r_ori)],
-                  translation=[0, 0, L/2.0-0.1],
-                  #orientation= orientation_rot_x,
-                  velocity=[0, 0, 0, 0, 0, 0],
-                  mass=1, inertia=inertia_test)
-    io.add_object('cyl_x2', [Contactor('Cyl',relative_orientation=r_ori)],
-                  translation=[0, 0, L/2.0-0.1+L],
-                  #orientation= orientation_rot_x,
-                  velocity=[0, 0, 0, 0, 0, 0],
-                  mass=1, inertia=inertia_test)
-
-
-    
-    
-
-    # io.add_object('compound', [Contactor('Cyl', relative_translation=[-1,0,0],  relative_orientation=r_ori),
-    #                            Contactor('Cyl', relative_translation=[1,0,0], relative_orientation=r_ori),
-    #                            Contactor('Stick', relative_translation=[-1.5,0,0], relative_orientation=r_ori),
-    #                            Contactor('Stick', relative_translation=[1.5,0,0], relative_orientation=r_ori)
+    # io.add_object('compound',
+    #  [Contactor('Cyl', relative_translation=[-1,0,0],  relative_orientation=r_ori),
+    #   Contactor('Cyl', relative_translation=[1,0,0], relative_orientation=r_ori),
+    #   Contactor('Stick', relative_translation=[-1.5,0,0], relative_orientation=r_ori),
+    #   Contactor('Stick', relative_translation=[1.5,0,0], relative_orientation=r_ori)
     #                            ],
     #               translation=[6, 0, L/2.0-0.1],
     #               #orientation= orientation_rot_x,
     #               velocity=[0, 0, 0, 0, 0, 0],
     #               mass=1, inertia=inertia_test)
 
-    # io.add_object('compound2', [Contactor('Cyl', relative_translation=[-1,0,0],  relative_orientation=r_ori),
-    #                             Contactor('Cyl', relative_translation=[1,0,0], relative_orientation=r_ori),
-    #                             Contactor('Stick', relative_translation=[-1.5,0,0], relative_orientation=r_ori),
-    #                             Contactor('Stick', relative_translation=[1.5,0,0], relative_orientation=r_ori)
+    # io.add_object('compound2',
+    #  [Contactor('Cyl', relative_translation=[-1,0,0],  relative_orientation=r_ori),
+    #  Contactor('Cyl', relative_translation=[1,0,0], relative_orientation=r_ori),
+    #   Contactor('Stick', relative_translation=[-1.5,0,0], relative_orientation=r_ori),
+    #  Contactor('Stick', relative_translation=[1.5,0,0], relative_orientation=r_ori)
     #                            ],
     #               translation=[6, 0, L/2.0-0.1+L],
     #               #orientation= orientation_rot_x,
     #               velocity=[0, 0, 0, 0, 0, 0],
     #               mass=1, inertia=inertia_test)
 
-
-    
-
     # the ground object made with the ground shape. As the mass is
     # not given, it is a static object only involved in contact
     # detection.
-    io.add_object('ground', [Contactor('Ground')],
-                  translation=[0, 0, -0.6])
+    io.add_object("ground", [Contactor("Ground")], translation=[0, 0, -0.6])
 
 # Run the simulation from the inputs previously defined and add
 # results to the hdf5 file. The visualisation of the output may be done
 # with the vview command.
-options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 1000
-options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-6
+options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 1000
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-6
 
-test= True
+test = True
 if test:
-    T=0.1
+    T = 0.1
 else:
-    T=20.0
+    T = 20.0
+
+run_options = MechanicsHdf5Runner_run_options()
+run_options["t0"] = 0
+run_options["T"] = T
+run_options["h"] = 0.0005
 
 
-with MechanicsHdf5Runner(mode='r+') as io:
+run_options["solver_options"] = options
+run_options["multipoints_iterations"] = True
+
+run_options["Newton_max_iter"] = 20
+run_options["output_frequency"] = None
+
+# run_options["verbose"] = False
+run_options["with_timer"] = False
+# run_options["violation_verbose"] = True
+
+run_options['numerics_verbose'] = False
+run_options['numerics_verbose_level'] = 0
+
+with MechanicsHdf5Runner(mode="r+") as io:
 
     # By default earth gravity is applied and the units are those
     # of the International System of Units.
-    io.run(with_timer=False,
-           face_class=None,
-           edge_class=None,
-           t0=0,
-           T=T,
-           h=0.0005,
-           multipoints_iterations=True,
-           theta=0.50001,
-           Newton_max_iter=20,
-           set_external_forces=None,
-           solver_options=options,
-           numerics_verbose=False,
-           output_frequency=None)
+    io.run(run_options)

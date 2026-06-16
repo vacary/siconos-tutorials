@@ -54,75 +54,74 @@ int main(int argc, char* argv[])
         cout << "====> Model definition ..." <<  endl;
 
 
-        SP::SiconosVector init(new SiconosVector({x1_0, x2_0, z_0}));
+        std::shared_ptr<siconos::algebra::SiconosVector> init(new SiconosVector({x1_0, x2_0, z_0}));
 
-        SP::SiconosMatrix A( new SimpleMatrix(dimX,dimX) ); 
+        std::shared_ptr<siconos::algebra::SiconosMatrix> A( new SimpleMatrix(dimX,dimX) ); 
         // *** sliding
         // double B0 = 0.0;
         // double B1 = 1.0;
         // should have slide or jump (multiple solutions)
         double B0 = -1.0;
         double B1 = 0.5;
-        A->setRow(0,SiconosVector({0.0, 0.0, B0}));
-        A->setRow(1,SiconosVector({0.0, 0.0, B1}));
-        A->setRow(2,SiconosVector({1.0, -1.0, 0.0}));
+        A->row(0) =SiconosVector({0.0, 0.0, B0});
+        A->row(1)=SiconosVector({0.0, 0.0, B1});
+        A->row(2)=SiconosVector({1.0, -1.0, 0.0});
 
         cout << "matrix A: " << endl;
-        A->display();
+        siconos::algebra::print(*A);
 
-        SP::SimpleMatrix E(new SimpleMatrix(dimX,dimX));
+        auto E(new SimpleMatrix(dimX,dimX));
         (*E)(0,0) = 1.0;
         (*E)(1,1) = 1.0;
 
         cout << "matrix E: " << endl;
-        E->display();
+        siconos::algebra::print(*E);
 
-        SP::SiconosVector b(new SiconosVector({1.0, 0.0, 1.0}));
+        std::shared_ptr<siconos::algebra::SiconosVector> b(new SiconosVector({1.0, 0.0, 1.0}));
 
         cout << "vector b: " << endl;
-        b->display();
+        siconos::algebra::print(*b);
 
         // Siconos smooth dynamical system
-        SP::FirstOrderLinearTIDS dyn(new FirstOrderLinearTIDS(init,A));
-        dyn->setbPtr(b);
-        dyn->setMPtr(E);
+        auto dyn = std::make_shared<FirstOrderLinearDS>(*init,*A, *b);
+        dyn->setConstantMMatrix(E);
 
         // -------------------------
         // --- LCP Relation ---
         // -------------------------
 
 
-        // IDE complains when smartpoint is SP::SiconosMatrix why ? not virtual ?
-        SP::SimpleMatrix C( new SimpleMatrix(dimLambda,dimX) );
+        // IDE complains when smartpoint is std::shared_ptr<siconos::algebra::SiconosMatrix> why ? not virtual ?
+        auto C( new SimpleMatrix(dimLambda,dimX) );
         (*C)(0,0) = 2.0;
         (*C)(1,0) = 1.0;
 
-        SP::SimpleMatrix D( new SimpleMatrix(dimLambda,dimLambda) );
+        auto D( new SimpleMatrix(dimLambda,dimLambda) );
         (*D)(0,0) = 1.0;
         (*D)(1,2) = 1.0;
         (*D)(2,1) = -1.0;
 
-        SP::SimpleMatrix R( new SimpleMatrix(dimX,dimLambda) );
+        auto R( new SimpleMatrix(dimX,dimLambda) );
         (*R)(2,0) = 1.0;
         (*R)(2,1) = -1.0;
 
-        SP::SiconosVector e(new SiconosVector({0.0, 0.0, 2.0}));
+        std::shared_ptr<siconos::algebra::SiconosVector> e(new SiconosVector({0.0, 0.0, 2.0}));
 
         // Relation LCP lhs
-        SP::FirstOrderLinearTIR relation(new FirstOrderLinearTIR(C, R) );
-        relation->setDPtr(D);
+        auto relation(new FirstOrderLinearTIR(C, R) );
+        relation->setConstantD(*D);
         relation->setePtr(e);
 
         // NonSmooth law: LCP
-        SP::NonSmoothLaw nslaw(new ComplementarityConditionNSL(dimLambda));
+        auto nslaw(new ComplementarityConditionNSL(dimLambda));
 
         // interaction 
-        SP::Interaction inter(new Interaction(nslaw, relation));
+        auto inter(new Interaction(nslaw, relation));
 
         // -----------------------------
         // --- Siconos Model Entity ---
         // ----------------------------
-        SP::NonSmoothDynamicalSystem switch_dae(new NonSmoothDynamicalSystem(t0, T));
+        auto switch_dae(new NonSmoothDynamicalSystem(t0, T));
 
         // add the dynamical system in the non smooth dynamical system
         switch_dae->insertDynamicalSystem(dyn);
@@ -137,15 +136,15 @@ int main(int argc, char* argv[])
         // -- (1) OneStepIntegrators --
         double theta = 1.0;
         double gamma = 1.0;
-        SP::EulerMoreauOSI osi(new EulerMoreauOSI(theta,gamma));
+        auto osi(new EulerMoreauOSI(theta,gamma));
 
 
         // -- (2) Time discretisation --
-        SP::TimeDiscretisation td(new TimeDiscretisation(t0, h));
+        auto td(new TimeDiscretisation(t0, h));
 
         // -- (3) one step non smooth problem
-        SP::LCP osnspb(new LCP(SICONOS_LCP_ENUM));
-        // SP::LCP osnspb(new LCP());
+        auto osnspb(new LCP(SICONOS_LCP_ENUM));
+        // auto osnspb(new LCP());
         osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_MULTIPLE_SOLUTIONS] = 1; // 1 for multiple solutions,
                                                                                          // 0 else .
         osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_USE_DGELS] = 0; // 1 if useDGELS 
@@ -156,7 +155,7 @@ int main(int argc, char* argv[])
         
         
         // -- (4) Simulation setup with (1) (2) (3)
-        SP::TimeStepping s(new TimeStepping(switch_dae, td, osi, osnspb));
+        auto s(new TimeStepping(switch_dae, td, osi, osnspb));
 
         // s->setResetAllLambda(false);
 
@@ -171,8 +170,8 @@ int main(int argc, char* argv[])
         unsigned int outputSize = 7;
         SimpleMatrix dataPlot(N + 1, outputSize);
 
-        SP::SiconosVector x = dyn->x();
-        SP::SiconosVector lambda = inter->lambda(0);
+        std::shared_ptr<siconos::algebra::SiconosVector> x = dyn->x();
+        std::shared_ptr<siconos::algebra::SiconosVector> lambda = inter->lambda(0);
 
         dataPlot(0, 0) = switch_dae->t0();
         dataPlot(0, 1) = (*x)(0);   // x1
@@ -202,15 +201,15 @@ int main(int argc, char* argv[])
         {
             
             s->computeOneStep();
-            osnspb->display();
+            siconos::algebra::print(*osnspb);
 
             cout << "# of solutions: " 
                  << osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_NUMBER_OF_SOLUTIONS] << endl; // Number of solutions
             cout << "Mode of solutions: " 
                  << osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_CURRENT_ENUM] << endl; // Number of solutions
             
-            // M_00 = osnspb->M()->defaultMatrix()->getValue(0,0);
-            // q_0  = osnspb->q()->getValue(0);
+            // M_00 = (*osnspb->M()->defaultMatrix())(0, 0);
+            // q_0  = (*osnspb->q())(0);
             // --- Get values to be plotted ---
             dataPlot(k, 0) =  s->nextTime();
             dataPlot(k, 1) = (*x)(0);

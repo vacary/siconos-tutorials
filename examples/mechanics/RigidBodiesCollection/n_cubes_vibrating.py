@@ -1,4 +1,19 @@
-#!/usr/bin/env python
+# Siconos is a program dedicated to modeling, simulation and control
+# of non smooth dynamical systems.
+#
+# Copyright 2026 INRIA.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 #
 # Example of two cubes, one with a convex shape, one with a primitive
@@ -6,57 +21,61 @@
 #
 
 from siconos.mechanics.collision.tools import Contactor
-from siconos.io.mechanics_run import MechanicsHdf5Runner
+from siconos.io.mechanics_run import (
+    MechanicsHdf5Runner,
+    MechanicsHdf5Runner_run_options,
+)
 import siconos.numerics as sn
-import siconos.kernel as sk
-
+import numpy as np
 import random
 import math
 
-n_cube=3
-n_row=2
-n_col=2
+n_cube = 3
+n_row = 2
+n_col = 2
 # Creation of the hdf5 file for input/output
 with MechanicsHdf5Runner() as io:
     for i in range(n_row):
         for j in range(n_col):
             for n in range(n_cube):
-            # Definition of a cube as a convex shape
-                io.add_convex_shape('CubeCS'+str(n)+'_'+str(i)+'_'+str(j), [ (-1.0, 1.0, -1.0),
-                                                                           (-1.0, -1.0, -1.0),
-                                                                           (-1.0, -1.0, 1.0),
-                                                                           (-1.0, 1.0, 1.0),
-                                                                           (1.0, 1.0, 1.0),
-                                                                           (1.0, 1.0, -1.0),
-                                                                           (1.0, -1.0, -1.0),
-                                                                           (1.0, -1.0, 1.0)])
-
-
+                # Definition of a cube as a convex shape
+                io.add_convex_shape(
+                    "CubeCS" + str(n) + "_" + str(i) + "_" + str(j),
+                    [
+                        (-1.0, 1.0, -1.0),
+                        (-1.0, -1.0, -1.0),
+                        (-1.0, -1.0, 1.0),
+                        (-1.0, 1.0, 1.0),
+                        (1.0, 1.0, 1.0),
+                        (1.0, 1.0, -1.0),
+                        (1.0, -1.0, -1.0),
+                        (1.0, -1.0, 1.0),
+                    ],
+                )
 
     # Alternative to the previous convex shape definition.
-    #io.add_primitive_shape('CubePrim', 'Box', (2, 2, 2))
+    # io.add_primitive_shape('CubePrim', 'Box', (2, 2, 2))
 
     # Definition of the ground shape
     # io.add_primitive_shape('Ground', 'Box', (200, 200, .5))
-    
-    io.add_primitive_shape('MovingGround', 'Box', (200, 200, .5))
-    
+
+    io.add_primitive_shape("MovingGround", "Box", (200, 200, 0.5))
 
     # Definition of the left shape
     # io.add_primitive_shape('Left', 'Box', (100, 0.5, 50.))
 
     # Definition of the right shape
-    #io.add_primitive_shape('Right', 'Box', (100, 0.5, 50.))
+    # io.add_primitive_shape('Right', 'Box', (100, 0.5, 50.))
 
     # Definition of the rear shape
-    #io.add_primitive_shape('Rear0', 'Box', (0.5, 100., 50.))
+    # io.add_primitive_shape('Rear0', 'Box', (0.5, 100., 50.))
 
     # Definition of the front shape
-    #io.add_primitive_shape('Front', 'Box', (100, 0.5, 50.))
+    # io.add_primitive_shape('Front', 'Box', (100, 0.5, 50.))
 
     # Definition of a non smooth law. As no group ids are specified it
     # is between contactors of group id 0.
-    io.add_Newton_impact_friction_nsl('contact', mu=0.3)
+    io.add_Newton_impact_friction_nsl("contact", mu=0.3)
 
     # The cube object made with an unique Contactor : the cube shape.
     # As a mass is given, it is a dynamic system involved in contact
@@ -65,10 +84,20 @@ with MechanicsHdf5Runner() as io:
     for i in range(n_row):
         for j in range(n_col):
             for n in range(n_cube):
-                io.add_object('cubeCS'+str(n)+'_'+str(i)+'_'+str(j), [Contactor('CubeCS'+str(n)+'_'+str(i)+'_'+str(j))],
-                             translation=[3.0*i, 3.0*j, 2.05*(n+1)],
-                             velocity=[10*(1.0+2.0*(random.random()-1.0)/2.0), 10*(1.0+2.0*(random.random()-1.0)/2.0), 0, 1, 1, 1],
-                             mass=1)
+                io.add_object(
+                    "cubeCS" + str(n) + "_" + str(i) + "_" + str(j),
+                    [Contactor("CubeCS" + str(n) + "_" + str(i) + "_" + str(j))],
+                    translation=[3.0 * i, 3.0 * j, 2.05 * (n + 1)],
+                    velocity=[
+                        10 * (1.0 + 2.0 * (random.random() - 1.0) / 2.0),
+                        10 * (1.0 + 2.0 * (random.random() - 1.0) / 2.0),
+                        0,
+                        1,
+                        1,
+                        1,
+                    ],
+                    mass=1,
+                )
 
     # io.add_object('cube2', [Contactor('CubePrim')], translation=[0, 3, 2],
     #              velocity=[10, 0, 0, 1, 1, 1],
@@ -79,16 +108,22 @@ with MechanicsHdf5Runner() as io:
     # detection.
     # io.add_object('ground', [Contactor('Ground')],
     #              translation=[50, 50, 0])
-    
-    io.add_object('movingground', [Contactor('MovingGround')],
-                 translation=[50, 50, 0],
-                 mass=1.0)
 
-    io.add_boundary_condition('vibration', 'movingground', indices=[0,1,2,3,4,5], bc_class='HarmonicBC',
-                            a=[0.0,0.0,0.0,0.0,0.0,0.0], b=[0.0,0.0,10.0,0.0,0.0,0.0],
-                            omega= [0.0,0.0,math.pi,0.0,0.0,0.0],
-                            phi=[0.0,0.0,0.0,0.0,0.0,0.0])
-    #io.add_boundary_condition('fixed', 'movingground', indices=[0,1,3,4,5])
+    io.add_object(
+        "movingground", [Contactor("MovingGround")], translation=[50, 50, 0], mass=1.0
+    )
+
+    io.add_boundary_condition(
+        "vibration",
+        "movingground",
+        indices=np.asarray([0, 1, 2, 3, 4, 5]),
+        bc_class="HarmonicBC",
+        a=np.asarray([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+        b=[0.0, 0.0, 10.0, 0.0, 0.0, 0.0],
+        omega=[0.0, 0.0, math.pi, 0.0, 0.0, 0.0],
+        phi=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    )
+    # io.add_boundary_condition('fixed', 'movingground', indices=[0,1,3,4,5])
 
     # io.add_object('left', [Contactor('Left')],
     #              translation=[0, 50., 25.])
@@ -98,38 +133,39 @@ with MechanicsHdf5Runner() as io:
     #              translation=[25., 0., 250.])
 
 
-
 # Run the simulation from the inputs previously defined and add
 # results to the hdf5 file. The visualisation of the output may be done
 # with the vview command.
 
-test=True
+test = True
 if test:
-    nstep=100
-    step=0.0005
+    nstep = 100
+    step = 0.0005
 else:
-    nstep=100000
-    step=0.0005
+    nstep = 100000
+    step = 0.0005
 
 
 # Create solver options
-options = sk.solver_options_create(sn.SICONOS_FRICTION_3D_NSGS)
-options.iparam[sn.SICONOS_IPARAM_MAX_ITER] = 100
-options.dparam[sn.SICONOS_DPARAM_TOL] = 1e-4
-with MechanicsHdf5Runner(mode='r+') as io:
+options = sn.solver_options_create(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)
+options.iparam[sn.params.SICONOS_IPARAM_MAX_ITER] = 100
+options.dparam[sn.params.SICONOS_DPARAM_TOL] = 1e-4
+
+run_options = MechanicsHdf5Runner_run_options()
+
+run_options["t0"] = 0.0
+run_options["T"] = nstep * step
+run_options["h"] = step
+run_options["multipoints_iterations"] = True
+run_options["theta"] = 0.50001
+run_options["Newton_max_iter"] = 1
+run_options["solver_options"] = options
+run_options["output_frequency"] = 100
+
+with MechanicsHdf5Runner(mode="r+") as io:
 
     # By default earth gravity is applied and the units are those
     # of the International System of Units.
     # Because of fixed collision margins used in the collision detection,
     # sizes of small objects may need to be expressed in cm or mm.
-    io.run(with_timer=False,
-           gravity_scale=1,
-           t0=0,
-           T=nstep*step,
-           h=step,
-           multipoints_iterations=True,
-           theta=0.50001,
-           Newton_max_iter=1,
-           solver_options=options,
-           numerics_verbose=False,
-           output_frequency=100)
+    io.run(run_options)

@@ -27,23 +27,23 @@ class Problem
 {
 public:
 
-    SP::SiconosMatrix A;
-    SP::SimpleMatrix R;
-    SP::SiconosVector b;
-    SP::SimpleMatrix C;
-    SP::SimpleMatrix D;
-    SP::SiconosVector e;
-    SP::SimpleMatrix M;
-    SP::SiconosVector init;
+    std::shared_ptr<siconos::algebra::SiconosMatrix> A;
+    std::shared_ptr<siconos::algebra::SiconosMatrix> R;
+    std::shared_ptr<siconos::algebra::SiconosVector> b;
+    std::shared_ptr<siconos::algebra::SiconosMatrix> C;
+    std::shared_ptr<siconos::algebra::SiconosMatrix> D;
+    std::shared_ptr<siconos::algebra::SiconosVector> e;
+    std::shared_ptr<siconos::algebra::SiconosMatrix> M;
+    std::shared_ptr<siconos::algebra::SiconosVector> init;
     double t0;
     double T;
     ProblemType type;
     unsigned int dimX = 3; // forced for example
     unsigned int dimLambda = 3; // forced for example
 
-    Problem(SP::SiconosMatrix lA, SP::SimpleMatrix lR, SP::SiconosVector lb,
-            SP::SimpleMatrix lC, SP::SimpleMatrix lD, SP::SiconosVector le,
-            SP::SimpleMatrix lM, SP::SiconosVector linit,
+    Problem(std::shared_ptr<siconos::algebra::SiconosMatrix> lA, std::shared_ptr<siconos::algebra::SiconosMatrix> lR, std::shared_ptr<siconos::algebra::SiconosVector> lb,
+            std::shared_ptr<siconos::algebra::SiconosMatrix> lC, std::shared_ptr<siconos::algebra::SiconosMatrix> lD, std::shared_ptr<siconos::algebra::SiconosVector> le,
+            std::shared_ptr<siconos::algebra::SiconosMatrix> lM, std::shared_ptr<siconos::algebra::SiconosVector> linit,
             double lt0, double lT, ProblemType ltype ){
 
     A       = lA;
@@ -78,7 +78,7 @@ public:
     /*Simulate a nonsmooth DAE for a given time step
       The size of the problem is fixed  
     */   
-    SP::SimpleMatrix simulate(Problem* p, double h, int *out){
+    std::shared_ptr<siconos::algebra::SiconosMatrix> simulate(Problem* p, double h, int *out){
         unsigned int dimX       = p->dimX;    // Dimension of the system state variables
         unsigned int dimLambda  = p->dimLambda;    // Dimension of the system lambda variables
         double t0       = p->t0;          // initial computation time
@@ -87,24 +87,23 @@ public:
         // -------------------------
         // --- Dynamical systems ---
         // -------------------------
-        SP::FirstOrderLinearTIDS dyn(new FirstOrderLinearTIDS(p->init,p->A));
-        dyn->setbPtr(p->b);
+        auto dyn(new FirstOrderLinearDS(p->init,p->A, p->b));
         dyn->setMPtr(p->M);
         // -------------------------
         // --- LCP Relation ---
         // -------------------------
         // Relation LCP lhs
-        SP::FirstOrderLinearTIR relation(new FirstOrderLinearTIR(p->C, p->R) );
-        relation->setDPtr(p->D);
+        auto relation(new FirstOrderLinearTIR(p->C, p->R) );
+        relation->setConstantD(*p->D);
         relation->setePtr(p->e);
         // NonSmooth law: LCP
-        SP::NonSmoothLaw nslaw(new ComplementarityConditionNSL(dimLambda));
+        auto nslaw(new ComplementarityConditionNSL(dimLambda));
         // interaction 
-        SP::Interaction inter(new Interaction(nslaw, relation));
+        auto inter(new Interaction(nslaw, relation));
         // -----------------------------
         // --- Siconos Model Entity ---
         // ----------------------------
-        SP::NonSmoothDynamicalSystem switch_dae(new NonSmoothDynamicalSystem(t0, T));
+        auto switch_dae(new NonSmoothDynamicalSystem(t0, T));
         // add the dynamical system in the non smooth dynamical system
         switch_dae->insertDynamicalSystem(dyn);
         // link the interaction and the dynamical system
@@ -115,17 +114,17 @@ public:
         // -- (1) OneStepIntegrators --
         double theta = 1.0;
         double gamma = 1.0;
-        SP::EulerMoreauOSI osi(new EulerMoreauOSI(theta,gamma));
+        auto osi(new EulerMoreauOSI(theta,gamma));
         // -- (2) Time discretisation --
-        SP::TimeDiscretisation td(new TimeDiscretisation(t0, h));
+        auto td(new TimeDiscretisation(t0, h));
         // -- (3) one step non smooth problem
-        SP::LCP osnspb(new LCP(SICONOS_LCP_ENUM));
+        auto osnspb(new LCP(SICONOS_LCP_ENUM));
         osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_MULTIPLE_SOLUTIONS] = 1; 
         osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_SKIP_TRIVIAL] = SICONOS_LCP_SKIP_TRIVIAL_NO;
         osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_SEED] = 0; // SEED
         // osnspb->setNumericsVerboseMode(true);
         // -- (4) Simulation setup with (1) (2) (3)
-        SP::TimeStepping s(new TimeStepping(switch_dae, td, osi, osnspb));
+        auto s(new TimeStepping(switch_dae, td, osi, osnspb));
 
         // =========================== End of model definition ===========================
         //   // ================================= Computation =================================
@@ -134,10 +133,10 @@ public:
         // --- Get the values to be plotted ---
         // -> saved in a matrix dataPlot
         unsigned int outputSize = 7;
-        SP::SimpleMatrix dataPlot( new SimpleMatrix(N + 1, outputSize));
+        std::shared_ptr<siconos::algebra::SiconosMatrix> dataPlot( new SimpleMatrix(N + 1, outputSize));
 
-        SP::SiconosVector x = dyn->x();
-        SP::SiconosVector lambda = inter->lambda(0);
+        std::shared_ptr<siconos::algebra::SiconosVector> x = dyn->x();
+        std::shared_ptr<siconos::algebra::SiconosVector> lambda = inter->lambda(0);
 
         (*dataPlot)(0, 0) = switch_dae->t0();
         (*dataPlot)(0, 1) = (*x)(0);   // x1
@@ -167,7 +166,7 @@ public:
                osnspb->numericsSolverOptions()->iparam[SICONOS_LCP_IPARAM_ENUM_SEED] = i; // SEED 
                s->computeOneStep();
                diff = *x-xk;
-               norm_diff = diff.norm2();
+               norm_diff = diff.norm();
                if(norm_diff<norm)
                {
                     xsol = *x;
@@ -207,7 +206,7 @@ public:
         for(unsigned int i=0;i<time_steps.size();i++)
         {
             double h = time_steps[i]; 
-            SP::SimpleMatrix current_results;
+            std::shared_ptr<siconos::algebra::SiconosMatrix> current_results;
             int k;
             current_results = simulate(problem,h,&k);
             // int N = ceil((problem->T - problem->t0) / h)+1; // not satisfying
@@ -216,7 +215,7 @@ public:
             // temporary as SiconosVector({x1f, x2f}) is not accepted by IDE
             vector<double> tmp({x1f, x2f}); 
             SiconosVector xf = SiconosVector(tmp);
-            // diff.norm2()
+            // diff.norm()
             switch(problem->type) {
                 case SLIDING_CROSSING :
                     tmp = vector<double>({6.5*2./3.,6.5*2./3. + 1});
@@ -236,7 +235,7 @@ public:
             // cout << diff << endl;
             // cout << k-1 << endl;
             diff = diff - xf;
-            double current_error = diff.norm2();
+            double current_error = diff.norm();
             errors[i] = current_error;
             cout << current_error << endl;
         }

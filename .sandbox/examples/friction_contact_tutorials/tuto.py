@@ -37,7 +37,7 @@ fc3d = sn.FrictionContactProblem(3, nc, W, q, mu)
 # --- Set solver options ---
 
 # Check Friction_cst.h for a list of solvers ids.
-solver_options = sn.SolverOptions(sn.SICONOS_FRICTION_3D_NSGS)#sn.SICONOS_FRICTION_3D_FPP)
+solver_options = sn.SolverOptions(sn.solver_ids.SICONOS_FRICTION_3D_NSGS)#sn.solver_ids.SICONOS_FRICTION_3D_FPP)
 
 eps = np.finfo(np.float64).eps
 solver_options.dparam[0] = 100 * eps

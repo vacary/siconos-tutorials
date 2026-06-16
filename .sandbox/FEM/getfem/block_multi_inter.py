@@ -31,8 +31,8 @@ v0 = np.zeros(sico.nbdof)
 
 block = kernel.LagrangianLinearTIDS(sico.q0,v0,sico.Mass.full())
 F = sico.RHS
-block.setFExtPtr(F)
-block.setKPtr(sico.Stiff.full())
+block.setConstantFext(F)
+block.setStiffnessMatrix(sico.Stiff.full())
 
 position_init = sico.pos
 

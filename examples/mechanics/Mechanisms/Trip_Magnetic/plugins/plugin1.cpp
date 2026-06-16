@@ -116,14 +116,14 @@ extern "C" void MZPlatineMomemtumDueSpringFct(double *qEquipage, double *qPlatin
   double K2=244.46;
 
   // double norm2_q =0.0;
-  // for (int i =0; i <7; i++){norm2_q +=(qEquipage[i]-sDS[EQUIPAGE]->q()->getValue(i))*(qEquipage[i]-sDS[EQUIPAGE]->q()->getValue(i));
+  // for (int i =0; i <7; i++){norm2_q +=(qEquipage[i]-sDS[EQUIPAGE]->q()(i))*(qEquipage[i]-sDS[EQUIPAGE]->q()(i));
   // }
   // if (sqrt(norm2_q) < 1e-12)
   // {
   //   std::cout << "qEquipage belongs to DS EQUIPAGE. accuracy "<< norm2_q <<std::endl;
   // }
   // norm2_q =0.0;
-  // for (int i =0; i <7; i++){norm2_q +=(qPlatine[i]-sDS[PLATINE]->q()->getValue(i))*(qPlatine[i]-sDS[PLATINE]->q()->getValue(i));
+  // for (int i =0; i <7; i++){norm2_q +=(qPlatine[i]-sDS[PLATINE]->q()(i))*(qPlatine[i]-sDS[PLATINE]->q()(i));
   // }
   // if (sqrt(norm2_q) < 1e-12)
   // {
@@ -407,12 +407,12 @@ extern "C" void externalBarreMomentum(double t, double* q,double *v,double *m, u
 
 // /*artificial momentum*/
 //   /*spring white*/
-//   double Theta_equipage=2*acos(sDS[EQUIPAGE]->q()->getValue(3));
-//   if (sDS[EQUIPAGE]->q()->getValue(6)<0)
+//   double (*Theta_equipage=2*acos(sDS[EQUIPAGE]->q())(3));
+//   if (*(sDS[EQUIPAGE]->q())(6)<0)
 //     Theta_equipage=-Theta_equipage;
 
-//   double Theta0_equipage=2*acos(sDS[EQUIPAGE]->q0()->getValue(3));
-//   if (sDS[EQUIPAGE]->q0()->getValue(6)<0)
+//   double (*Theta0_equipage=2*acos(sDS[EQUIPAGE]->q0())(3));
+//   if (*(sDS[EQUIPAGE]->q0())(6)<0)
 //     Theta0_equipage=-Theta0_equipage;
 //   if (Theta_equipage>Theta0_equipage + 4*M_PI/180.0){
 //     f[2]-=5;

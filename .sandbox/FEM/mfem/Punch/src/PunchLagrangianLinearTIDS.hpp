@@ -68,7 +68,7 @@ class PunchLagrangianLinearTIDS : public LagrangianLinearTIDS
 
   LinearElacticMaterial _mat;
 
-  SP::SimpleMatrix create_matrix_from_mfem(SparseMatrix A)
+  auto create_matrix_from_mfem(SparseMatrix A)
   {
     int * Ai  = A.GetI();
     int * Aj  = A.GetJ();
@@ -77,7 +77,7 @@ class PunchLagrangianLinearTIDS : public LagrangianLinearTIDS
 
     int nnz = Ai[size];
 
-    SP::SimpleMatrix M(new SimpleMatrix(size,size,Siconos::SPARSE,nnz));
+    auto M(new SimpleMatrix(size,size,siconos::SPARSE,nnz));
 
     for (int row =0; row < size ; row++)
     {
@@ -145,7 +145,7 @@ public:
    }
 
 
-   unsigned int nDof = fespace->GetTrueVSize();
+   int nDof = fespace->GetTrueVSize();
    _ndof = nDof;
 
    cout << "Number of finite element unknowns: " << fespace->GetTrueVSize()
@@ -244,11 +244,11 @@ public:
    double velocity_init=-1.0;
 
    // -- Initial positions and velocities --
-   SP::SiconosVector q0(new SiconosVector(nDof,position_init));
-   SP::SiconosVector v0(new SiconosVector(nDof,velocity_init));
+   std::shared_ptr<siconos::algebra::SiconosVector> q0(new SiconosVector(nDof,position_init));
+   std::shared_ptr<siconos::algebra::SiconosVector> v0(new SiconosVector(nDof,velocity_init));
 
    _init(q0,v0);
-   _K = create_matrix_from_mfem(A);
+   stiffnessMatrix_ = create_matrix_from_mfem(A);
    _mass = create_matrix_from_mfem(M);
 
 

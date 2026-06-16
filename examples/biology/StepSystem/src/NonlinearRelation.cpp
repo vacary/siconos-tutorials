@@ -1,97 +1,77 @@
-#ifndef NONLINEARRELATION_CPP
-#define NONLINEARRELATION_CPP
-
+/* Siconos is a program dedicated to modeling, simulation and control
+ * of non smooth dynamical systems.
+ *
+ * Copyright 2024 INRIA.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #include "NonlinearRelation.hpp"
 
-//#include "const.h"
+#include <BlockVector.hpp>
 
+// #include "const.h"
 
 // #define DEBUG_STDOUT
 // #define DEBUG_MESSAGES
 #include "siconos_debug.h"
 
-NonlinearRelation::NonlinearRelation():
-  FirstOrderType2R()
-{
+user_defined::NonlinearRelation::NonlinearRelation() : FirstOrderType2R{} {
+  setComputehFunction([](const siconos::algebra::BlockVector& state,
+                         const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
+                         Eigen::Ref<siconos::algebra::SiconosVector> y) {
+    DEBUG_PRINTF("user_defined::NonlinearRelation::computeh at time %e\n ", t);
+    DEBUG_EXPR(siconos::algebra::print(x));
+    DEBUG_EXPR(siconos::algebra::print(lambda));
+    y(0) = 4.0 - state(0);
+    y(1) = 4.0 - state(1);
+    y(2) = 8.0 - state(0);
+    y(3) = 8.0 - state(1);
+    DEBUG_EXPR(siconos::algebra::print(y));
+  });
+
+  setComputegFunction([](const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
+                         siconos::algebra::BlockVector& res) {
+    DEBUG_EXPR(siconos::algebra::print(lambda));
+
+    res(0) = 40.0 * (1 - lambda(2)) * (lambda(1));
+    res(1) = 40.0 * (lambda(0)) * (1 - lambda(3));
+
+    DEBUG_EXPR(siconos::algebra::print(res));
+  });
+
+  setComputeJacobianhOver_stateFunction(
+      [](const siconos::algebra::BlockVector& state,
+         const Eigen::Ref<const siconos::algebra::SiconosVector>& lam,
+         Eigen::Ref<siconos::algebra::MapType> result) {
+        result.setZero();
+        result.setValue(0, 0, -1);
+        result.setValue(1, 1, -1);
+        result.setValue(2, 0, -1);
+        result.setValue(3, 1, -1);
+        DEBUG_EXPR(std::cout << result << "\n";);
+      });
+
+  setComputeJacobiangOver_lambdaFunction(
+      [](const Eigen::Ref<const siconos::algebra::SiconosVector>& lambda,
+         Eigen::Ref<siconos::algebra::MapType> result) {
+        DEBUG_PRINTF(
+            "user_defined::NonlinearRelation::compute jacobian g over lambda at time %e\n ",
+            t);
+        DEBUG_EXPR(siconos::algebra::print(lambda));
+        result.setValue(1, 0, 40.0 * (1 - lambda(3)));
+        result.setValue(0, 1, 40.0 * (1 - lambda(2)));
+        result.setValue(0, 2, -40.0 * lambda(1));
+        result.setValue(1, 3, -40.0 * lambda(0));
+        DEBUG_EXPR(siconos::algebra::print(result));
+      });
 }
-
-/*y = h(X)*/
-void NonlinearRelation::computeh(double t, const BlockVector& x, const SiconosVector& lambda, SiconosVector& y)
-{
-  DEBUG_PRINTF("NonlinearRelation::computeh at time %e\n ", t);
-  DEBUG_EXPR(x.display());
-  DEBUG_EXPR(lambda.display());
-  y.setValue(0, 4.0 - x(0));
-  y.setValue(1, 4.0 - x(1));
-  y.setValue(2, 8.0 - x(0));
-  y.setValue(3, 8.0 - x(1));
-  DEBUG_EXPR(y.display());
-}
-
-/*g=g(lambda)*/
-void NonlinearRelation::computeg(double t, const SiconosVector& lambda, BlockVector& r)
-{
-  DEBUG_PRINTF("NonlinearRelation::computeg at time %e\n ", t);
-  DEBUG_EXPR(lambda.display());
-
-  r.setValue(0, 40.0 * (1 - lambda(2)) * (lambda(1)));
-  r.setValue(1, 40.0 * (lambda(0)) * (1 - lambda(3)));
-  /*
-  #ifdef SICONOS_DEBUG
-    std::cout<<"NonlinearRelation::computeg with lambda="<<std::endl;
-    lambda.display();
-    std::cout<<std::endl;
-    std::cout<<"NonlinearRelation::computeg modif g_alpha : \n";
-    inter.data(g_alpha)->display();
-    std::cout<<std::endl;
-  #endif
-  */
-  DEBUG_EXPR(r.display());
-
-
-}
-
-void NonlinearRelation::computeJachlambda(double t, const BlockVector& x, const SiconosVector& lambda, SimpleMatrix& D)
-{
-  DEBUG_PRINTF("NonlinearRelation::computeJachlambda at time %e\n ", t);
-  D.zero();
-}
-
-void NonlinearRelation::computeJachx(double t, const BlockVector& x, const SiconosVector& lambda, SimpleMatrix& C)
-{
-  DEBUG_PRINTF("NonlinearRelation::computeJachx at time %e\n ", t);
-
-  C.setValue(0, 0, -1);
-  C.setValue(0, 1, 0);
-  C.setValue(1, 0, 0);
-  C.setValue(1, 1, -1);
-  C.setValue(2, 0, -1);
-  C.setValue(2, 1, 0);
-  C.setValue(3, 0, 0);
-  C.setValue(3, 1, -1);
-  DEBUG_EXPR(C.display());
-
-}
-
-void NonlinearRelation::computeJacglambda(double t, const SiconosVector& lambda, SimpleMatrix& B)
-{
-  DEBUG_PRINTF("NonlinearRelation::computeJacglambda at time %e\n ", t);
-  DEBUG_EXPR(lambda.display());
-
-
-  B.setValue(0, 0, 0);
-  B.setValue(1, 0, 40.0 * (1 - lambda(3)));
-
-  B.setValue(0, 1, 40.0 * (1 - lambda(2)));
-  B.setValue(1, 1, 0);
-
-  B.setValue(0, 2, -40.0 * lambda(1));
-  B.setValue(1, 2, 0);
-
-  B.setValue(0, 3, 0);
-  B.setValue(1, 3, -40.0 * lambda(0));
-  DEBUG_EXPR(B.display());
-
-}
-#endif
-
