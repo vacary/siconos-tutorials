@@ -25,12 +25,14 @@
   Simulation with a Time-Stepping scheme.
 */
 
+#include <BinaryCohesiveNSL.hpp>
 #include <SiconosKernel.hpp>
-#include "MechanicsFwd.hpp"
-#include "BinaryCohesiveNSL.hpp"
+//#include "BinaryCohesiveNSL.hpp"
 #include <chrono>
 using namespace std;
 
+using Matrix = siconos::algebra::SiconosMatrix;
+using Vector = siconos::algebra::SiconosVector;
 
 int main(int argc, char* argv[])
 {
@@ -56,25 +58,28 @@ int main(int argc, char* argv[])
 
     cout << "====> Model loading ..." <<  endl;
 
-    SP::SiconosMatrix Mass(new SimpleMatrix(nDof, nDof));
-    (*Mass)(0, 0) = m;
-    (*Mass)(1, 1) = m;
-    (*Mass)(2, 2) = 2. / 5 * m * R * R;
+    Matrix mass{nDof, nDof};
+    mass.setZero();
+    mass(0, 0) = m;
+    mass(1, 1) = m;
+    mass(2, 2) = 2. / 5 * m * R * R;
 
     // -- Initial positions and velocities --
-    SP::SiconosVector q0(new SiconosVector(nDof));
-    SP::SiconosVector v0(new SiconosVector(nDof));
-    (*q0)(0) = position_init;
-    (*v0)(0) = velocity_init;
+    Vector q0{nDof};
+    q0.setZero();
+    q0(0) = position_init;
+    Vector v0{nDof};
+    v0.setZero();
+    v0(0) = velocity_init;
 
     // -- The dynamical system --
-    SP::LagrangianLinearTIDS ball(new LagrangianLinearTIDS(q0, v0, Mass));
-
+    auto ball = std::make_shared<siconos::modeling::LagrangianLinearTIDS>(
+        q0, v0, mass, siconos::algebra::alias_t);
     // -- Set external forces (weight) --
-    SP::SiconosVector weight(new SiconosVector(nDof));
-    (*weight)(0) = -m * g;
-    /*ball->setFExtPtr(weight);*/
-    ball->setComputeFExtFunction("plugins", "ballFExt");
+    Vector weight{nDof};
+    weight.setZero();
+    weight(0) = -m * g;
+    ball->setConstantFext(weight, siconos::algebra::alias_t);
     // --------------------
     // --- Interactions ---
     // --------------------
@@ -86,20 +91,19 @@ int main(int argc, char* argv[])
 
     // Interaction ball-floor
     //
-    SP::SimpleMatrix H(new SimpleMatrix(3, nDof));
-    (*H)(0, 0) = 1.0;
-    (*H)(1, 1) = 1.0;
-    (*H)(2, 2) = 0.0;
+    Matrix H{1, nDof};
+    H.setZero();
+    H(0, 0) = 1.0;
     
-    SP::NonSmoothLaw nslaw(new BinaryCohesiveNSL(e, 0, 0, sigma_c, delta_c,3));
-    SP::Relation relation(new LagrangianLinearTIR(H));
 
-    SP::Interaction inter(new Interaction(nslaw, relation));
+    auto nslaw = std::make_shared<siconos::mechanics::czm::BinaryCohesiveNSL>(e, 0, 0, sigma_c, delta_c,3);
+    auto relation = std::make_shared<siconos::modeling::LagrangianLinearTIR>(H);
+    auto inter = std::make_shared<siconos::modeling::Interaction>(nslaw, relation);
 
     // -------------
     // --- Model ---
     // -------------
-    SP::NonSmoothDynamicalSystem bouncingBall(new NonSmoothDynamicalSystem(t0, T));
+    auto bouncingBall = std::make_shared<siconos::modeling::NonSmoothDynamicalSystem>(t0, T);
 
     // add the dynamical system in the non smooth dynamical system
     bouncingBall->insertDynamicalSystem(ball);
@@ -112,18 +116,18 @@ int main(int argc, char* argv[])
     // ------------------
 
     // -- (1) OneStepIntegrators --
-    SP::MoreauJeanOSI OSI(new MoreauJeanOSI(theta));
+    auto OSI = std::make_shared<siconos::integrators::MoreauJeanOSI>(theta);
 
 
     // -- (2) Time discretisation --
-    SP::TimeDiscretisation t(new TimeDiscretisation(t0, h));
+    auto t = std::make_shared<siconos::simulation::TimeDiscretisation>(t0, h);
 
     // -- (3) one step non smooth problem
-    SP::OneStepNSProblem osnspb(new CohesiveFrictionContact(3));
+    auto osnspb = std::make_shared<siconos::nonsmooth_formulations::LCP>();    
     osnspb->numericsSolverOptions()->dparam[SICONOS_DPARAM_TOL] = 1e-10; // Tolerance
 
     // -- (4) Simulation setup with (1) (2) (3)
-    SP::TimeStepping s(new TimeStepping(bouncingBall, t, OSI, osnspb));
+    auto s = std::make_shared<siconos::simulation::TimeStepping>(bouncingBall, t, OSI, osnspb);
 
     // =========================== End of model definition ===========================
 
@@ -135,27 +139,28 @@ int main(int argc, char* argv[])
     // --- Get the values to be plotted ---
     // -> saved in a matrix dataPlot
     unsigned int outputSize = 12;
-    SimpleMatrix dataPlot(N + 1, outputSize);
+    Matrix dataPlot(N + 1, outputSize);
 
-    SP::SiconosVector q = ball->q();
-    SP::SiconosVector v = ball->velocity();
-    SP::SiconosVector p = ball->p(1);
-    SP::SiconosVector f = ball->fExt();
-    SP::SiconosVector y = inter->y(0);
-    SP::SiconosVector lambda = inter->lambda(1);
+    auto q = ball->q_read();
+    auto v = ball->velocity_read();
+    auto p = *(ball->p(1));
+    auto f = ball->totalForces(); //fext()?
+    auto y = *(inter->y(0));
+    auto lambda = *(inter->lambda(1));
+    
     int idx =0;
     dataPlot(0, idx++) = bouncingBall->t0();
-    dataPlot(0, idx++) = (*q)(0);
-    dataPlot(0, idx++) = (*q)(1);
-    dataPlot(0, idx++) = (*v)(0);
-    dataPlot(0, idx++) = (*v)(1);
-    dataPlot(0, idx++) = (*p)(0);
-    dataPlot(0, idx++) = (*y)(0);
-    dataPlot(0, idx++) = (*y)(1);
-    dataPlot(0, idx++) = (*lambda)(0);
-    dataPlot(0, idx++) = (*lambda)(1);
+    dataPlot(0, idx++) = q(0);
+    dataPlot(0, idx++) = q(1);
+    dataPlot(0, idx++) = v(0);
+    dataPlot(0, idx++) = v(1);
+    dataPlot(0, idx++) = p(0);
+    dataPlot(0, idx++) = y(0);
+    dataPlot(0, idx++) = y(1);
+    dataPlot(0, idx++) = lambda(0);
+    dataPlot(0, idx++) = lambda(1);
     dataPlot(0, idx++) = 1.0;
-    dataPlot(0, idx++) = (*f)(0);
+    dataPlot(0, idx++) = f(0);
     
     
     // --- Time loop ---
@@ -171,21 +176,21 @@ int main(int argc, char* argv[])
       // --- Get values to be plotted ---
       idx=0;
       dataPlot(k, idx++) =  s->nextTime();
-      dataPlot(k, idx++) = (*q)(0);
-      dataPlot(k, idx++) = (*q)(1);
-      dataPlot(k, idx++) = (*v)(0);
-      dataPlot(k, idx++) = (*v)(1);
-      dataPlot(k, idx++) = (*p)(0);
-      dataPlot(k, idx++) = (*y)(0);
-      dataPlot(k, idx++) = (*y)(1);
-      dataPlot(k, idx++) = (*lambda)(0);
-      dataPlot(k, idx++) = (*lambda)(1);
-      SP::BinaryCohesiveNSL nslaw_BinaryCohesiveNSL(std::dynamic_pointer_cast<BinaryCohesiveNSL>(inter->nonSmoothLaw()));
+      dataPlot(k, idx++) = q(0);
+      dataPlot(k, idx++) = q(1);
+      dataPlot(k, idx++) = v(0);
+      dataPlot(k, idx++) = v(1);
+      dataPlot(k, idx++) = p(0);
+      dataPlot(k, idx++) = y(0);
+      dataPlot(k, idx++) = y(1);
+      dataPlot(k, idx++) = lambda(0);
+      dataPlot(k, idx++) = lambda(1);
+      auto nslaw_BinaryCohesiveNSL(std::dynamic_pointer_cast<siconos::mechanics::czm::BinaryCohesiveNSL>(inter->nonSmoothLaw()));
       dataPlot(k, idx++) = nslaw_BinaryCohesiveNSL->beta(*(inter));
-      dataPlot(k, idx++) = (*f)(0);
+      dataPlot(k, idx++) = f(0);
     
       std::cout << "beta = " << nslaw_BinaryCohesiveNSL->beta(*(inter)) << std::endl;
-      std::cout << "f = " <<  (*f)(0) << std::endl;
+      std::cout << "f = " <<  f(0) << std::endl;
       
       //getchar();
       //osnspb->display();
@@ -201,9 +206,11 @@ int main(int argc, char* argv[])
     // --- Output files ---
     cout << "====> Output file writing ..." << endl;
     dataPlot.resize(k, outputSize);
-    ioMatrix::write("BouncingBallTS-BinaryCZM.dat", "ascii", dataPlot, "noDim");
+    siconos::algebra::io::write("BouncingBallTS-BinaryCZM.dat",  dataPlot,
+                                siconos::algebra::io::ASCII_OUT,
+                                siconos::algebra::io::WriteType::nodim);
     double error=0.0, eps=1e-12;
-    if((error=ioMatrix::compareRefFile(dataPlot, "BouncingBallTS-BinaryCZM.ref", eps)) >= 0.0
+    if((error= siconos::algebra::io::compareRefFile(dataPlot, "BouncingBallTS-BinaryCZM.ref", eps)) >= 0.0
         && error > eps)
       return 1;
 
@@ -211,7 +218,7 @@ int main(int argc, char* argv[])
 
   catch(...)
   {
-    Siconos::exception::process();
+    siconos::exception::process();
     return 1;
   }
 
